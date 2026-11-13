@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../kit/base.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* A taped bug-fix note distinguishes a hypothesis from a fix, and the robot inspects a labeled package. Motion notes: on twos (15 fps); the note and robot hold for 2 s, yellow highlighting sweeps across in 0.5 s, the note and robot slide to their small places 2.6 to 3.2 s while the camera pushes in and the box pops in at 3 s; the red straps draw on 5 to 5.8 s, the buckle pops at 5.8 s, the robot raises its arms at 6 s and 'hypothesis' types under 'fix' from 6.3 s. */
+
+const P = MG.prog;
+const BEATS = {
+  camera: [[0, [1.06, 960, 500]], [2.5, [1.06, 960, 500]], [3.5, [
+    1.65,
+    1040,
+    650,
+  ]], [7.5, [1.65, 1040, 650]]],
+};
+
+function stars(p) {
+  [[160, 220, 24], [1570, 160, 22], [1790, 340, 18], [250, 650, 16]].forEach((
+    [x, y, r],
+    i,
+  ) => p.star(x, y, r, { seed: 100 + i }));
+}
+function box(p, x, y, w, h, fill = SK.WHITE) {
+  p.rect(x, y, w, h, { fill, w: 4, seed: Math.round(x + y) });
+}
+MG.scene({
+  title: "sketch / hypothesis-note",
+  duration: 7.66,
+  ref: [720.67, 728.33],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    SK.paper(ctx, { spiral: true });
+    // Camera transforms the entire illustrated world, including its marks.
+    const [zoom, cx, cy] = MG.kf(t, BEATS.camera);
+    ctx.setTransform(zoom, 0, 0, zoom, 960 - cx * zoom, 540 - cy * zoom);
+    const p = SK.pen(ctx, t);
+    stars(p);
+    // the note and the robot slide to their small places while the camera pushes in
+    const k = P(t, 2.6, 0.6, 'inOutCubic');
+    p.with(MG.lerp(260, 170, k), 100, { scale: MG.lerp(1, 0.68, k) }, () => {
+      box(p, 0, 0, 1050, 370);
+      p.rect(30, -12, 170, 28, { fill: "#e7dbad", color: null, seed: 1 });
+      p.rect(850, -12, 170, 28, { fill: "#e7dbad", color: null, seed: 2 });
+      p.text("bug-fix.md", 35, 40, { size: 32, color: SK.GREY });
+      p.text("Belt-and-suspenders that", 45, 125, {
+        size: 58,
+        hl: P(t, 1, .5),
+      });
+      p.text("“might help” is a hypothesis,", 45, 205, { size: 58 });
+      p.text("not a fix. It does not ship.", 45, 285, { size: 58 });
+    });
+    SK.ground(p, 870);
+    SK.robot(p, MG.lerp(1460, 690, k), 870, {
+      s: MG.lerp(1, 0.8, k),
+      w: 6,
+      face: t > 6 ? "worried" : "neutral",
+      armL: t > 6 ? "up" : "down",
+      armR: t > 6 ? "up" : "down",
+      seed: 30,
+    });
+    if (t > 3) {
+      // The parcel pops out beside the robot, then its straps are drawn on.
+      p.with(1170, 870, { scale: P(t, 3, .4, "outBack") }, () => {
+      box(p, -220, -300, 440, 300, "#e6bd80");
+      p.with(-1170, -870, {}, () => {
+      p.poly([[950, 570], [1010, 520], [1450, 520], [1390, 570]], {
+        closed: true,
+        fill: "#f3d09a",
+        seed: 50,
+      });
+      box(p, 1050, 620, 240, 110);
+      p.text("fix", 1170, 655, { size: 48, align: "center" });
+      if (t > 6.3) {
+        p.text("hypothesis", 1170, 700, {
+          size: 30,
+          align: "center",
+          p: P(t, 6.3, .6),
+        });
+      }
+      if (t > 5) {
+        p.line(950, 750, 1390, 750, { w: 23, color: SK.RED, seed: 60, p: P(t, 5, 0.4) });
+        p.hatch([[950, 738], [1390, 738], [1390, 762], [950, 762]], { gap: 8, color: SK.RED_LINE, seed: 63, p: P(t, 5.1, 0.4) });
+        p.line(1020, 530, 1020, 850, { w: 20, color: SK.RED, seed: 61, p: P(t, 5.3, 0.3) });
+        p.line(1320, 530, 1320, 850, { w: 20, color: SK.RED, seed: 62, p: P(t, 5.5, 0.3) });
+        if (t > 5.8) p.with(1175, 767, { scale: P(t, 5.8, 0.25, 'outBack') }, () => box(p, -35, -32, 70, 65, SK.WHITE));
+      }
+      if (t > 6 && t < 8) SK.pencil(p, 1200, 650, { s: .65 });
+      });
+      });
+    }
+  },
+});
+</script>

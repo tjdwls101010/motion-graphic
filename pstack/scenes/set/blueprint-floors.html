@@ -1,0 +1,302 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>set / blueprint-floors</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script src="../../kit/set.js"></script>
+<script>
+/* A cutaway building of denim-felt floors between two blue posts shows five layers of safeguards, each with a round medallion, a monospace name plaque and a handwritten Korean caption. Red bugs get stopped on the way: a starburst on the codebase floor, three gates on the static-analysis rail, a magnifier-wielding bugbot on the wooden rules floor, then paper sheets for skills and the style guide before the camera pulls back to the whole stack. Motion notes: the camera starts wide on floor 1 (0 s), pushes into the windows at 1.8-2.5 s, moves down to floor 2 at 3.8-4.6 s (floor 1 is the top storey, so the camera descends storey by storey), to floor 3 at 6.6-7.3 s, to floor 4 at 10.4-11.1 s and floor 5 at 11.5-12 s, then pulls back at 12.3-13.3 s; the codebase paper drops into its window at 1.3 s, the bug rolls in at 2 s and bursts at 2.5 s, three bugs ride the rail to the gates from 5.7 s, the bugbot rolls in at 9 s and its magnifier reaches the bug at 10.2 s and the bug shrinks away under it, a last bug bursts beside the stack at 13 s; the hand-drawn motion is on twos. */
+const BEATS = {
+  paper: 1.3, bug: 2.0, burst: 2.5,
+  tiltTwo: 3.8, analysis: 4.9, gates: 5.2, riders: 5.7,
+  tiltThree: 6.6, rules: 7.4, note: 7.9, bot: 9.0, catch: 10.2,
+  tiltFour: 10.4, skills: 11.0, style: 11.6, pull: 12.3, last: 13.0,
+};
+const PITCH = 380;
+const TOP = 36;
+const FRONT = 202;
+const STRIP = 27;
+const SLAB = TOP + FRONT + STRIP;
+const POST = { left: 0, right: 1610, w: 47, top: 150, bottom: 2400 };
+const GROUND = 2145;
+const MEDALLION = { x: 130, r: 60 };
+const FLOORS = [
+  { title: 'codebase', caption: '코드베이스 · 아키텍처', kind: 'denim', ring: 'blue', appear: 0, plaque: 0.9 },
+  { title: 'static analysis', caption: '정적 분석', kind: 'denim', ring: 'blue', appear: BEATS.tiltTwo + 0.2, plaque: BEATS.analysis },
+  { title: 'rules / bugbot', caption: '규칙 · 리뷰 봇', kind: 'wood', ring: 'wood', appear: BEATS.tiltThree + 0.2, plaque: BEATS.rules },
+  { title: 'skills', caption: '스킬', kind: 'paper', ring: 'paper', appear: BEATS.tiltFour + 0.2, plaque: BEATS.skills },
+  { title: 'style guide', caption: '스타일 가이드', kind: 'paper', ring: 'paper', appear: BEATS.style - 0.4, plaque: BEATS.style },
+];
+const floorY = i => 300 + PITCH * i;
+const WINDOWS = [{ x: 945, tile: true }, { x: 1222, tile: false }];
+const WINDOW = { w: 140, dy: 47, h: 138 };
+const GATES = [{ x: 720, name: 'lint' }, { x: 1120, name: 'compiler' }, { x: 1440, name: 'ci' }];
+const LOOKS = {
+  denim: { top: '#9db6d2', topLine: 'rgba(40,64,100,.35)', strip: '#33507c', stripLine: 'rgba(10,20,40,.45)' },
+  wood: { top: '#efd4a2', topLine: 'rgba(130,80,30,.35)', strip: '#bd8441', stripLine: 'rgba(80,40,10,.4)' },
+};
+// Camera keys as [time, [zoom, centre x, centre y]]; zoom is interpolated on a log scale so a pull-back feels even.
+const CAMERA = [
+  [0, [1.27, 825, 542]], [1.8, [1.27, 825, 542]], [2.5, [2, 1185, 462]], [3.8, [2, 1185, 462]],
+  [4.6, [1.2, 862, 920]], [6.6, [1.2, 862, 920]], [7.3, [1, 1000, 1387]], [10.4, [1, 1000, 1387]],
+  [11.1, [0.85, 830, 1854]], [11.5, [0.85, 830, 1854]], [12, [0.85, 830, 1950]], [BEATS.pull, [0.85, 830, 1950]],
+  [13.3, [0.4, 830, 1275]],
+];
+function camera(t) {
+  const logZoom = MG.kf(t, CAMERA.map(([time, [z]]) => [time, Math.log(z)]));
+  const cx = MG.kf(t, CAMERA.map(([time, [, x]]) => [time, x]));
+  const cy = MG.kf(t, CAMERA.map(([time, [, , y]]) => [time, y]));
+  return [Math.exp(logZoom), cx, cy];
+}
+
+/** Wipe-in clip for a floor: everything drawn until restore is revealed from the left as prog goes 0 to 1. */
+function wipe(ctx, y, prog) {
+  const x0 = POST.left + POST.w;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x0 - 12, y - 90, (POST.right - x0 + 24) * prog, SLAB + 180);
+  ctx.clip();
+}
+
+/** One floor slab: a light top face, a front face in felt or wood texture with hatching, and a dark underside strip. */
+function slab(p, ctx, y, kind) {
+  const look = LOOKS[kind];
+  const x0 = POST.left + POST.w;
+  const w = POST.right - x0;
+  const front = kind === 'denim' ? SET.denim(ctx) : SET.wood(ctx);
+  const tint = kind === 'denim' ? 'rgba(20,40,76,.30)' : 'rgba(90,50,18,.28)';
+  p.rect(x0, y, w, TOP + 3, { fill: look.top, w: 4, seed: y + 1, wob: 2.4 });
+  for (let k = 1; k < 6; k++) p.line(x0, y + k * 6, x0 + w, y + k * 6 + 1, { color: look.topLine, w: 1.3, seed: y + 10 + k });
+  p.rect(x0, y + TOP, w, FRONT, { fill: front, w: 4.5, seed: y + 2, wob: 2.4 });
+  p.hatch([[x0, y + TOP], [x0 + w, y + TOP], [x0 + w, y + TOP + FRONT], [x0, y + TOP + FRONT]], { color: tint, gap: 13, w: 1.3, angle: kind === 'denim' ? -58 : -20, seed: y + 3 });
+  p.rect(x0, y + TOP + FRONT, w, STRIP, { fill: look.strip, w: 4.5, seed: y + 4, wob: 2.4 });
+  for (let k = 1; k < 4; k++) p.line(x0, y + TOP + FRONT + k * 6, x0 + w, y + TOP + FRONT + k * 6, { color: look.stripLine, w: 1.4, seed: y + 20 + k });
+  // Small rivets run along the felt front.
+  if (kind === 'denim') {
+    for (let x = 310; x < POST.right - 30; x += 262) {
+      for (const dy of [61, 221]) p.circle(x, y + TOP + dy - TOP, 10, { fill: '#c5d3e4', w: 2.5, seed: x + y + dy });
+    }
+  }
+}
+
+/** Blue felt post: a vertical beam with striped texture. */
+function post(p, ctx, x) {
+  p.rect(x, POST.top, POST.w, POST.bottom - POST.top, { fill: SET.denim(ctx), w: 4.5, seed: 910 + x, wob: 2.2 });
+  for (let k = 1; k < 5; k++) p.line(x + k * 9, POST.top + 4, x + k * 9, POST.bottom - 4, { color: 'rgba(15,30,60,.4)', w: 1.4, seed: 920 + k + x });
+}
+
+/** Window opening in a felt wall: a dark recess with a thin light lip. */
+function opening(p, x, y) {
+  p.rect(x, y, WINDOW.w, WINDOW.h, { r: 10, fill: '#1f2b44', w: 5, seed: 600 + x });
+  p.line(x + 12, y + WINDOW.h - 5, x + WINDOW.w - 12, y + WINDOW.h - 5, { color: '#9cb4d4', w: 2, seed: 601 + x });
+}
+
+/** The bug stop-and-burst at the codebase window: a rolling bug, then a big starburst with impact rays that pops in. */
+function codebaseBug(p, ctx, t) {
+  const y = floorY(0) + TOP + 91;
+  const x = 1360;
+  if (t < BEATS.burst) {
+    const roll = MG.prog(t, BEATS.bug, BEATS.burst - BEATS.bug, 'inQuad');
+    if (roll > 0) SET.burst(p, MG.lerp(2100, x, roll), y, 46, 810);
+    return;
+  }
+  const pop = MG.prog(t, BEATS.burst, 0.3, 'outBack');
+  p.with(x, y, { scale: pop }, () => SET.burst(p, 0, 0, 100, 811, { points: 12 }));
+  SET.rays(p, x, y, 105 * pop, 190 * pop, 9, 830, MG.prog(t, BEATS.burst + 0.05, 0.25, 'outCubic'));
+}
+
+/** Floor 1: two windows, the codebase paper lowering into the left one, the bug at the right one. */
+function floorOne(p, ctx, t) {
+  const y = floorY(0);
+  WINDOWS.forEach((win, i) => {
+    const wy = y + TOP + WINDOW.dy;
+    opening(p, win.x, wy);
+    if (!win.tile) return;
+    const drop = MG.prog(t, BEATS.paper, 0.6, 'outCubic');
+    if (drop <= 0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(win.x + 8, wy + 8, WINDOW.w - 16, WINDOW.h - 16);
+    ctx.clip();
+    p.rect(win.x + 12, wy + MG.lerp(-130, 12, drop), WINDOW.w - 24, WINDOW.h - 24, { fill: '#f1e8d0', w: 3, seed: 640 });
+    p.hatch([[win.x + 12, wy + 12], [win.x + WINDOW.w - 12, wy + 12], [win.x + WINDOW.w - 12, wy + WINDOW.h - 12], [win.x + 12, wy + WINDOW.h - 12]], { color: 'rgba(150,125,85,.3)', gap: 7, w: 1.2, angle: -55, seed: 641 });
+    ctx.restore();
+    // The string the paper hangs from stays until it has landed.
+    if (drop < 1) p.line(win.x + WINDOW.w / 2, y - 80, win.x + WINDOW.w / 2, wy + MG.lerp(-130, 12, drop), { color: '#2b2723', w: 2, seed: 642 });
+  });
+}
+
+/** Floor 2: a rail with three gates; bugs ride along it and stop at the gates. */
+function floorTwo(p, ctx, t) {
+  const y = floorY(1);
+  const rail = y + TOP + 183;
+  // End blocks, the dark slot where bugs enter, and the rail itself with white tick marks.
+  p.rect(560, rail - 105, 95, 125, { r: 6, fill: '#7f9ec2', w: 4, seed: 700 });
+  p.rect(575, rail - 135, 16, 125, { fill: '#10131c', w: 2, seed: 701 });
+  p.rect(1560, rail - 100, 52, 120, { r: 6, fill: '#7f9ec2', w: 4, seed: 702 });
+  p.rect(650, rail - 6, 920, 16, { fill: '#232b3d', w: 3.5, seed: 703 });
+  for (let x = 670; x < 1560; x += 54) p.line(x, rail + 7, x + 12, rail - 3, { color: '#f4eedc', w: 2, seed: 710 + x });
+  GATES.forEach((gate, i) => {
+    const appear = MG.prog(t, BEATS.gates + i * 0.22, 0.4, 'outBack');
+    if (appear <= 0) return;
+    p.with(gate.x, rail + 10, { scale: appear }, () => {
+      // Legs, steel crossbar and a small signal knob make the gate.
+      p.rect(-62, -132, 16, 132, { fill: '#1f2b44', w: 3.5, seed: 720 + i });
+      p.rect(46, -132, 16, 132, { fill: '#1f2b44', w: 3.5, seed: 730 + i });
+      p.rect(-68, -145, 136, 30, { r: 6, fill: '#9fb6d2', w: 4, seed: 740 + i });
+      p.circle(52, -130, 8, { fill: i === 2 ? '#c5d3e4' : '#f0cf55', w: 2.5, seed: 750 + i });
+      p.poly([[-50, 8], [50, 8], [40, 36], [-40, 36]], { closed: true, fill: '#1f2b44', w: 3, seed: 760 + i });
+      SET.plaque(p, -50, -205, gate.name, { size: 22, h: 40, p: MG.prog(t, BEATS.gates + 0.3 + i * 0.22, 0.3), seed: 770 + i });
+    });
+  });
+  // Three bugs ride in from the slot and stop at their gates, then wobble.
+  GATES.forEach((gate, i) => {
+    const start = BEATS.riders + i * 0.25;
+    const run = MG.prog(t, start, 1 + i * 0.5, 'outQuad');
+    if (run <= 0) return;
+    const x = MG.lerp(610, gate.x, run);
+    const wobble = run >= 1 ? Math.sin((t - start) * 9) * 1.5 : 0;
+    SET.burst(p, x, rail - 4 + wobble, 25, 780 + i, { points: 8, w: 3 });
+  });
+}
+
+/** Floor 3: the rules note pinned to the wood, a lone bug and the bugbot with its magnifier. */
+function floorThree(p, ctx, t) {
+  const y = floorY(2);
+  const note = MG.prog(t, BEATS.note, 0.4, 'outBack');
+  if (note > 0) {
+    p.with(785, y + 12, { scale: note }, () => {
+      p.rect(0, 0, 300, 205, { fill: '#f6efdb', w: 4, seed: 800 });
+      p.hatch([[4, 4], [296, 4], [296, 200], [4, 200]], { color: 'rgba(150,125,85,.25)', gap: 7, w: 1, angle: -55, seed: 801 });
+      p.text('rules', 24, 48, { size: 32, weight: 800, font: '"JetBrains Mono"' });
+      for (let k = 0; k < 3; k++) p.line(24, 100 + k * 28, 24 + 230 - k * 40, 100 + k * 28, { w: 2.5, color: '#4a4036', p: MG.prog(t, BEATS.note + 0.5 + k * 0.15, 0.2), seed: 802 + k });
+      p.circle(214, 14, 13, { fill: '#f0cf55', w: 3, seed: 810 });
+    });
+  }
+  const bugX = 1250;
+  const bugY = y + 185;
+  const caught = MG.prog(t, BEATS.catch, 0.25);   // BEATS.catch is when the lens arrives (bot + 0.6 + 0.6), before the camera leaves this floor at 10.4 s
+  if (t > BEATS.note + 0.4 && caught < 1) {
+    const pop = MG.prog(t, BEATS.note + 0.4, 0.3, 'outBack');
+    SET.burst(p, bugX, bugY, 36 * pop * (1 - caught), 820, { points: 8, w: 3 });
+  }
+  const roll = MG.prog(t, BEATS.bot, 0.8, 'outCubic');
+  if (roll <= 0) return;
+  const botX = MG.lerp(1750, 1480, roll);
+  const botY = y + SLAB - 20;
+  // The magnifier slides out of the bot on a cable until it covers the bug.
+  const reach = MG.prog(t, BEATS.bot + 0.6, 0.6, 'inOutCubic');
+  const lensX = MG.lerp(botX - 70, bugX, reach);
+  const lensY = MG.lerp(botY - 90, bugY, reach);
+  p.curve([[botX - 55, botY - 85], [(botX + lensX) / 2, Math.max(lensY, botY - 85) + 40], [lensX + 40, lensY + 30]], { color: '#4b4137', w: 3, seed: 830 });
+  p.circle(lensX, lensY, 54, { fill: 'rgba(255,255,255,.35)', color: '#9b8f7c', w: 8, seed: 831 });
+  p.circle(lensX, lensY, 54, { color: '#2b2723', w: 2.5, seed: 832 });
+  p.with(botX, botY, { scale: 1 }, () => {
+    for (const wx of [-42, 42]) p.circle(wx, 0, 20, { fill: '#38506f', w: 4, seed: 840 + wx });
+    p.rect(-65, -180, 130, 160, { r: 18, fill: '#6f9bcb', w: 5, seed: 841 });
+    p.hatch([[-60, -175], [60, -175], [60, -25], [-60, -25]], { color: 'rgba(20,40,76,.28)', gap: 9, w: 1.3, angle: -58, seed: 842 });
+    SET.plaque(p, -50, -78, 'bugbot', { size: 17, h: 28, seed: 843 });
+    p.rect(-52, -285, 104, 95, { r: 16, fill: '#222f48', w: 5, seed: 844 });
+    p.circle(-20, -240, 9, { fill: '#cfe4f4', w: 2, seed: 845 });
+    p.circle(20, -240, 9, { fill: '#cfe4f4', w: 2, seed: 846 });
+    p.line(0, -285, 0, -320, { w: 4, seed: 847 });
+    p.circle(0, -325, 8, { fill: '#f0cf55', w: 3, seed: 848 });
+  });
+}
+
+/** Floor 4: a paper sheet taped at its corners with handwriting. */
+function floorFour(p, ctx, t, y) {
+  const x0 = POST.left + POST.w + 10;
+  const w = POST.right - x0 - 10;
+  p.rect(x0, y + 40, w, 190, { fill: '#f1ead7', w: 4, seed: 900 });
+  p.hatch([[x0 + 4, y + 44], [x0 + w - 4, y + 44], [x0 + w - 4, y + 226], [x0 + 4, y + 226]], { color: 'rgba(150,125,85,.22)', gap: 8, w: 1, angle: -55, seed: 901 });
+  for (let k = 0; k < 4; k++) p.line(520 + k * 40, y + 110 + k * 28, 1320 - k * 160, y + 110 + k * 28, { color: '#b9b0a0', w: 2, seed: 902 + k });
+  for (const [tx, ty, rot] of [[x0 - 20, y + 36, -40], [x0 + w - 20, y + 36, 40], [x0 - 20, y + 226, 40], [x0 + w - 20, y + 226, -40]]) {
+    p.with(tx + 25, ty, { rot }, () => p.rect(-30, -11, 60, 22, { fill: 'rgba(232,211,128,.8)', w: 1.5, color: 'rgba(120,100,40,.5)', seed: 906 + Math.round(tx) }));
+  }
+}
+
+/** Floor 5: a paper sheet hanging from three pegs on a string. */
+function floorFive(p, ctx, t, y) {
+  const x0 = 560;
+  const w = 900;
+  p.line(x0 - 60, y + 52, x0 + w + 100, y + 56, { color: '#4b4137', w: 2.5, seed: 950 });
+  p.poly([[x0, y + 62], [x0 + w, y + 66], [x0 + w - 20, y + 220], [x0 + 6, y + 214]], { closed: true, fill: '#f4eedd', w: 4, seed: 951 });
+  p.hatch([[x0 + 6, y + 66], [x0 + w - 10, y + 70], [x0 + w - 24, y + 214], [x0 + 10, y + 210]], { color: 'rgba(150,125,85,.2)', gap: 8, w: 1, angle: -55, seed: 952 });
+  for (const px of [x0 + 120, x0 + 450, x0 + 780]) {
+    p.rect(px - 9, y + 40, 18, 44, { r: 4, fill: '#d9a34a', w: 3, seed: 953 + px });
+  }
+}
+
+/** A floor's number medallion, plaque, caption and slab; slab and contents are revealed by a wipe at appear. */
+function floor(p, ctx, t, i) {
+  const def = FLOORS[i];
+  const y = floorY(i);
+  const built = MG.prog(t, def.appear, 0.55, 'outCubic');
+  // The unbuilt floor is outlined in lavender with a ghost number until its slab wipes in.
+  if (built < 1) {
+    SET.medallion(p, MEDALLION.x, y + 118, MEDALLION.r, String(i + 1), 'ghost', 500 + i);
+    p.line(POST.left + POST.w, y + 14, POST.right, y + 14, { color: '#b9b1e4', w: 2, seed: 510 + i });
+    p.line(POST.left + POST.w, y + 226, POST.right, y + 226, { color: '#b9b1e4', w: 2, seed: 520 + i });
+  }
+  if (built <= 0) return;
+  wipe(ctx, y, built);
+  if (def.kind === 'paper') {
+    if (i === 3) floorFour(p, ctx, t, y);
+    else floorFive(p, ctx, t, y);
+  } else slab(p, ctx, y, def.kind);
+  SET.medallion(p, MEDALLION.x, y + 118, MEDALLION.r, String(i + 1), def.ring, 530 + i);
+  ctx.restore();
+  const textColor = def.kind === 'denim' ? '#f6f0de' : '#4a3320';
+  const plaqueP = MG.prog(t, def.plaque, 0.45);
+  const captionY = def.kind === 'paper' ? y + 175 : y + 160;
+  const plaqueY = def.kind === 'paper' ? y + 82 : y + TOP + 8;
+  if (plaqueP > 0) SET.plaque(p, 205, plaqueY, def.title, { p: plaqueP, seed: 540 + i });
+  p.text(def.caption, 215, captionY, { size: 44, color: textColor, p: MG.prog(t, def.plaque + 0.5, 0.7) });
+  if (i === 0) floorOne(p, ctx, t);
+  if (i === 1) floorTwo(p, ctx, t);
+  if (i === 2) floorThree(p, ctx, t);
+}
+
+/** The strength gauge left of the building: a hatched spike labelled strong at the top and weak at the bottom. */
+function gauge(p) {
+  const pts = [[-290, 420], [-170, 420], [-232, 2180]];
+  p.poly(pts, { closed: true, fill: '#d9d1be', w: 3.5, seed: 960 });
+  p.hatch(pts, { color: 'rgba(60,52,42,.5)', gap: 7, w: 1.3, angle: 70, seed: 961 });
+  p.text('강함', -232, 360, { size: 58, align: 'center' });
+  p.text('약함', -232, 2260, { size: 58, align: 'center' });
+}
+
+MG.scene({
+  title: 'set / blueprint-floors',
+  duration: 13.5,
+  ref: [1315, 1328.5],
+  setup: stage => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    const p = SK.pen(ctx, t);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#efe6d0';
+    ctx.fillRect(0, 0, 1920, 1080);
+    SET.camera(ctx, ...camera(t));
+    // Cream paper with faint pencil dashes fills the world behind the building.
+    ctx.fillStyle = SET.cream(ctx);
+    ctx.fillRect(-4000, -1500, 9000, 5000);
+    // Wooden ground the building stands in.
+    ctx.fillStyle = SET.wood(ctx);
+    ctx.fillRect(-4000, GROUND, 9000, 1200);
+    p.line(-4000, GROUND, 5000, GROUND + 3, { w: 4.5, seed: 970, step: 80 });
+    gauge(p);
+    FLOORS.forEach((def, i) => floor(p, ctx, t, i));
+    post(p, ctx, POST.left);
+    post(p, ctx, POST.right);
+    codebaseBug(p, ctx, t);
+    // The last bug bursts on the ground beside the stack once the camera has pulled back.
+    const last = MG.prog(t, BEATS.last, 0.3, 'outBack');
+    if (last > 0) p.with(2120, 2330, { scale: last }, () => SET.burst(p, 0, 0, 100, 990, { points: 12 }));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  },
+});
+</script>

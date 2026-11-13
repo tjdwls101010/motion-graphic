@@ -1,0 +1,196 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>felt / hanging-sign-robot</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/felt.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/felt.js"></script>
+<script>
+/* A blue hand-inked robot stands on a wooden floor while a golden wooden sign hangs from clamps on a rail: "No is an acceptable answer." The camera dives to the sign, the sign is underlined and the word No circled, then the view returns to the robot, whose cheerful bubbles ("네!", "완벽해요!", "좋은 생각이에요!") are cut short when the sign slides along the rail onto its chest. Its face goes flat and a red "아니요." bubble answers. The look is ink outlines, diagonal pencil hatching and hatched offset shadows rather than felt. Motion notes: the sign drops in at 0.5 s and swings; the camera pushes to 1.41× on the sign at 1.15–1.55 s, the underline draws at 1.3 s and the circle at 2.1 s; the camera pans back to the robot at 3.0–3.45 s; "네!" appears at 0.9 s with a happy squint and again at 3.2 s, "완벽해요!" at 3.4 s which changes to "좋은 생각이에요!" at 3.95 s; the sign slides to the chest at 4.1–4.7 s; red screws and flat face at 4.9 s; "아니요." pops at 5.3 s. */
+const BEATS = { signDrop: .5, push: 1.15, underline: 1.3, circle: 2.1, pan: 3, yes: 3.2, perfect: 3.4, good: 3.95, slide: 4.1, flat: 4.9, reply: 5.3 };
+// Camera: time, world centre x, y, zoom. The world is the robot-and-sign view at zoom 1.
+const CAMERA = [[0, 1143, 607, .86], [1.15, 1143, 607, .86], [1.55, 1785, 555, 1.41], [3, 1785, 555, 1.41], [3.45, 960, 540, 1]];
+// The sign rests to the right of the robot, then moves to the robot's chest; sizes in world pixels.
+const SIGN = { w: 800, h: 212, restX: 1385, restY: 448, endX: 510, endY: 548 };
+const INK = "#2b1c14";
+
+/** Hatched offset shadow behind a shape: the shape's path d drawn again shifted by dx, dy and filled with dark diagonal hatching. */
+const shadow = (p, tag, a, dx = 12, dy = 12) => Felt.add(p, tag, { ...a, transform: `translate(${dx} ${dy})`, fill: "url(#hatchShadow)", stroke: "none" });
+/** Inked shape with a fill colour, an optional pencil hatch overlay pattern id and an ink outline. */
+const inked = (p, tag, a, fill, hatch, w = 5) => {
+  const e = Felt.add(p, tag, { ...a, fill, stroke: INK, "stroke-width": w, "stroke-linejoin": "round", "stroke-linecap": "round" });
+  if (hatch) Felt.add(p, tag, { ...a, fill: `url(#${hatch})`, stroke: "none" });
+  return e;
+};
+
+MG.scene({
+  title: "felt / hanging-sign-robot",
+  duration: 6.1,
+  ref: [992.2, 998.3],
+  setup(stage) {
+    let s = Felt.root(stage);
+    let lines = "";
+    for (let i = 0; i < 18; i++) {
+      lines += `<path d="M${(MG.hash(i, 1) * 150).toFixed(0)} ${(MG.hash(i, 2) * 150).toFixed(0)} l${((60 + MG.hash(i, 3) * 60) * .62).toFixed(0)} ${(60 + MG.hash(i, 3) * 60).toFixed(0)}" stroke="${i % 3 ? "#cdbd9b" : "#b9a77f"}" stroke-width="1.1" opacity="${i % 3 ? .55 : .35}"/>`;
+    }
+    Felt.add(s, "defs", {
+      html: `<pattern id="wallLines" width="150" height="150" patternUnits="userSpaceOnUse"><rect width="150" height="150" fill="#f1e7d3"/>${lines}</pattern>
+      <pattern id="hatchBlue" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0 V9" stroke="#3f77a3" stroke-width="1.7" opacity=".6"/></pattern>
+      <pattern id="hatchBlue2" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(-42)"><path d="M0 0 V26" stroke="#2f5f88" stroke-width="1.2" opacity=".5"/></pattern>
+      <pattern id="hatchGold" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-28)"><path d="M0 0 V8" stroke="#b97a1e" stroke-width="1.3" opacity=".45"/></pattern>
+      <pattern id="hatchShadow" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0 V5" stroke="#4a392b" stroke-width="1.5" opacity=".75"/></pattern>
+      <pattern id="hatchNavy" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><path d="M0 0 V7" stroke="#2c3470" stroke-width="1.4" opacity=".8"/></pattern>
+      <pattern id="hatchLines" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 3 H6" stroke="#2f5c80" stroke-width="1.6" opacity=".8"/></pattern>
+      <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="6" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>`,
+    });
+    let world = Felt.add(s, "g", {});
+    // Cream wall with diagonal pencil strokes, wood floor, rail along the top.
+    Felt.add(world, "rect", { x: -200, y: -200, width: 2700, height: 1110, fill: "url(#wallLines)" });
+    Felt.add(world, "rect", { x: -200, y: 905, width: 2700, height: 500, fill: "url(#floor)" });
+    Felt.add(world, "path", { d: "M-200 905 H2500", stroke: INK, "stroke-width": 5 });
+    for (let i = 0; i < 6; i++) {
+      Felt.add(world, "path", { d: `M-200 ${935 + i * 52} H2500`, stroke: "#8a5527", "stroke-width": 1.6, opacity: .4 });
+    }
+    inked(world, "rect", { x: -200, y: -30, width: 2700, height: 56 }, "#6b9ec4", "hatchBlue");
+    // Short mounting posts under the rail, and the two clamps the sign will hang from (hidden once the sign takes over).
+    for (let k = 0; k < 5; k++) {
+      inked(world, "rect", { x: 739 + (k - 1) * 560, y: 24, width: 20, height: 34 }, "#6b9ec4", "hatchBlue", 4);
+    }
+    let railClamps = [62, 738].map((x) => inked(world, "rect", { x: SIGN.restX + x - 26, y: 0, width: 52, height: 34 }, "#e8c45c", "hatchGold", 4));
+    // Wall clock: wooden ring with hatched shadow, cream face, ticks and hands.
+    let clock = Felt.add(world, "g", { filter: "url(#wobble)" });
+    shadow(clock, "circle", { cx: 1790, cy: 175, r: 92 }, 11, 11);
+    inked(clock, "circle", { cx: 1790, cy: 175, r: 92 }, "#dca75f", "hatchGold", 4);
+    inked(clock, "circle", { cx: 1790, cy: 175, r: 74 }, "#f6efdf", null, 3);
+    for (let i = 0; i < 12; i++) {
+      let a = i * Math.PI / 6;
+      Felt.add(clock, "path", { d: `M${1790 + 60 * Math.sin(a)} ${175 - 60 * Math.cos(a)} L${1790 + 68 * Math.sin(a)} ${175 - 68 * Math.cos(a)}`, stroke: INK, "stroke-width": 3, "stroke-linecap": "round" });
+    }
+    Felt.add(clock, "path", { d: "M1790 175 L1716 163 M1790 175 L1838 188 M1790 175 L1846 122", stroke: INK, "stroke-width": 3.5, "stroke-linecap": "round", fill: "none" });
+    // Robot: hatched floor shadow, torso, neck spring, head, ears, screen, paddles, speaker and lights.
+    let robot = Felt.add(world, "g", {});
+    let shapes = Felt.add(robot, "g", { filter: "url(#wobble)" });
+    Felt.add(shapes, "ellipse", { cx: 912, cy: 905, rx: 330, ry: 26, fill: "url(#hatchShadow)", opacity: .85 });
+    [[527, 560, 61, 258, 588, 708, 80, 38], [1233, 560, 62, 258, 1157, 706, 76, 40]].forEach(([px, py, pw, ph, bx, by, bw, bh]) => {
+      inked(shapes, "rect", { x: bx, y: by, width: bw, height: bh }, "#7aa9cc", "hatchBlue");
+      inked(shapes, "rect", { x: px, y: py, width: pw, height: ph, rx: 4 }, "#6c9fc6", "hatchBlue");
+      Felt.add(shapes, "circle", { cx: px + pw / 2, cy: 658, r: 10, fill: "#161a45" });
+    });
+    inked(shapes, "path", { d: "M683 610 H1135 L1187 897 H640 Z" }, "#a3cae2", "hatchBlue");
+    Felt.add(shapes, "path", { d: "M683 610 H1135 L1187 897 H640 Z", fill: "url(#hatchBlue2)" });
+    inked(shapes, "rect", { x: 855, y: 604, width: 113, height: 22, rx: 3 }, "#86b1cc", "hatchBlue", 4);
+    for (let i = 0; i < 5; i++) {
+      Felt.add(shapes, "path", { d: `M872 ${548 + i * 12} q40 -9 80 0`, fill: "none", stroke: INK, "stroke-width": 4, "stroke-linecap": "round" });
+    }
+    inked(shapes, "ellipse", { cx: 685, cy: 375, rx: 24, ry: 46 }, "#6c9fc6", "hatchBlue", 4);
+    inked(shapes, "ellipse", { cx: 1138, cy: 375, rx: 24, ry: 46 }, "#6c9fc6", "hatchBlue", 4);
+    inked(shapes, "rect", { x: 700, y: 222, width: 420, height: 318, rx: 46 }, "#9fc8df", "hatchBlue");
+    Felt.add(shapes, "rect", { x: 700, y: 222, width: 420, height: 318, rx: 46, fill: "url(#hatchBlue2)" });
+    inked(shapes, "rect", { x: 745, y: 268, width: 333, height: 202, rx: 30 }, "#171b45", "hatchNavy", 4);
+    Felt.add(shapes, "path", { d: "M912 222 V152", stroke: INK, "stroke-width": 4 });
+    Felt.add(shapes, "circle", { cx: 912, cy: 146, r: 32, fill: "#c9d0f2", opacity: .3 });
+    inked(shapes, "circle", { cx: 912, cy: 146, r: 17 }, "#c9d0f2", null, 3.5);
+    inked(shapes, "circle", { cx: 823, cy: 785, r: 58 }, "#7aa9c8", "hatchLines", 4);
+    // Eyes, smile, happy eyes and the status lights stay crisp and are toggled in render.
+    let face = Felt.add(robot, "g", {});
+    let eyes = [840, 980].map((x) => Felt.add(face, "ellipse", { cx: x, cy: 358, rx: 21, ry: 29, fill: "#dbe3f8" }));
+    let happy = Felt.add(face, "path", { d: "M818 366 Q840 336 862 366 M958 366 Q980 336 1002 366", fill: "none", stroke: "#dbe3f8", "stroke-width": 7, "stroke-linecap": "round" });
+    let smile = Felt.add(face, "path", { d: "M875 432 Q910 460 947 432", fill: "none", stroke: "#cdd6f4", "stroke-width": 5, "stroke-linecap": "round" });
+    let flat = Felt.add(face, "path", { d: "M872 430 H942", fill: "none", stroke: "#cdd6f4", "stroke-width": 5, "stroke-linecap": "round" });
+    let ticks = Felt.add(face, "path", { d: "M628 245 q-22 -22 -30 -48 M1196 245 q22 -22 30 -48", fill: "none", stroke: INK, "stroke-width": 3.5, "stroke-linecap": "round" });
+    let shake = Felt.add(face, "path", { d: "M526 330 q-20 36 0 76 M545 340 q-14 28 0 56 M1296 330 q20 36 0 76 M1277 340 q14 28 0 56", fill: "none", stroke: INK, "stroke-width": 3.5, "stroke-linecap": "round" });
+    Felt.add(face, "circle", { cx: 960, cy: 780, r: 12, fill: "#62b05a", stroke: INK, "stroke-width": 2.5 });
+    Felt.add(face, "circle", { cx: 1010, cy: 782, r: 14, fill: "#dfe3f7", stroke: INK, "stroke-width": 2.5 });
+    let light3 = Felt.add(face, "circle", { cx: 1062, cy: 778, r: 12, fill: "#dfe3f7", stroke: INK, "stroke-width": 2.5 });
+    // Sign group: its origin is the sign's top-left corner; strings and clamps follow it up to the rail.
+    let sign = Felt.add(world, "g", {});
+    let strings = Felt.add(sign, "path", { fill: "none", stroke: INK, "stroke-width": 3 });
+    let clamps = [62, 738].map((x) => inked(sign, "rect", { x: x - 26, y: 0, width: 52, height: 34 }, "#e8c45c", "hatchGold", 4));
+    let board = Felt.add(sign, "g", { filter: "url(#wobble)" });
+    let boardPath = { x: 0, y: 0, width: SIGN.w, height: SIGN.h, rx: 18 };
+    shadow(board, "rect", boardPath, 14, 14);
+    inked(board, "rect", boardPath, "#e9af4a", "hatchGold", 6);
+    Felt.add(board, "rect", { x: 20, y: 20, width: SIGN.w - 40, height: SIGN.h - 40, rx: 10, fill: "none", stroke: "#7a5424", "stroke-width": 2.4 });
+    [[34, 34], [SIGN.w - 34, 34], [34, SIGN.h - 34], [SIGN.w - 34, SIGN.h - 34]].forEach(([x, y]) => inked(board, "circle", { cx: x, cy: y, r: 11 }, "#8d6126", null, 3));
+    Felt.text(sign, SIGN.w / 2, 84, "No is an acceptable answer.", 57, { "text-anchor": "middle", "letter-spacing": 1, fill: INK });
+    let underline = Felt.add(sign, "path", { d: "M58 118 Q400 122 745 116", fill: "none", stroke: "#e03a2e", "stroke-width": 6, "stroke-linecap": "round", pathLength: 1 });
+    Felt.text(sign, SIGN.w / 2, 166, "Agreement is not the default, candor over sycophancy.", 28, { "text-anchor": "middle", fill: INK });
+    let circle = Felt.add(sign, "path", { d: "M148 52 C138 18 62 16 42 50 C32 86 100 104 138 82 C156 68 152 50 128 30", fill: "none", stroke: "#e03a2e", "stroke-width": 5, "stroke-linecap": "round", pathLength: 1 });
+    let screws = [48, SIGN.w - 38].map((x) => {
+      let g = Felt.add(sign, "g", {});
+      Felt.add(g, "circle", { cx: x, cy: 120, r: 24, fill: "#d9372c", stroke: INK, "stroke-width": 3 });
+      Felt.add(g, "path", { d: `M${x - 8} ${112} L${x + 8} ${128}`, stroke: INK, "stroke-width": 3 });
+      return g;
+    });
+    // Speech bubbles with hatched shadows: cheerful cream ones and the red answer.
+    const bubble = (x, y, w, h, tailD, stroke, fill = "#fbf6e8") => {
+      let g = Felt.add(robot, "g", { filter: "url(#wobble)" });
+      let box = { x, y, width: w, height: h, rx: 36 };
+      shadow(g, "rect", box, 9, 9);
+      inked(g, "rect", box, fill, null, 4).setAttribute("stroke", stroke);
+      let tail = Felt.add(g, "path", { d: tailD, fill, stroke, "stroke-width": 4, "stroke-linejoin": "round" });
+      return { g, tail };
+    };
+    let yes = bubble(360, 62, 175, 138, "M492 200 L536 276 L520 200", INK);
+    let yesText = Felt.text(yes.g.parentNode, 447, 152, "네!", 84, { "text-anchor": "middle" });
+    let perfect = bubble(97, 268, 483, 152, "M445 420 L462 446 L482 420", INK);
+    let perfectText = Felt.text(perfect.g.parentNode, 338, 366, "완벽해요!", 76, { "text-anchor": "middle" });
+    let answer = bubble(1322, 122, 313, 178, "M1356 300 L1357 352 L1396 298", "#dc3a30");
+    let answerText = Felt.text(answer.g.parentNode, 1478, 232, "아니요.", 84, { "text-anchor": "middle", fill: "#d93a2e", stroke: "#d93a2e" });
+    return { world, railClamps, eyes, happy, smile, flat, ticks, shake, light3, sign, strings, clamps, underline, circle, screws, yes, yesText, perfect, perfectText, answer, answerText };
+  },
+  render(t, r) {
+    // Camera framing is applied to the whole inked world.
+    let z = MG.kf(t, CAMERA.map((k) => [k[0], k[3]]));
+    let cx = MG.kf(t, CAMERA.map((k) => [k[0], k[1]]));
+    let cy = MG.kf(t, CAMERA.map((k) => [k[0], k[2]]));
+    r.world.setAttribute("transform", `translate(${960 - cx * z} ${540 - cy * z}) scale(${z})`);
+    // The sign drops with a small swing, then slides along the rail to the robot's chest.
+    let drop = MG.prog(t, BEATS.signDrop, .5, "outBack");
+    let slide = MG.prog(t, BEATS.slide, .6, "inOutCubic");
+    let x = MG.mix(SIGN.restX, SIGN.endX, slide);
+    let y = MG.mix(SIGN.restY, SIGN.endY, slide) - (1 - drop) * 520;
+    let swing = (Math.sin((t - BEATS.signDrop) * 9) * Math.exp(-(t - BEATS.signDrop) * 2.2) * 3 + Math.sin((t - BEATS.slide) * 10) * Math.exp(-(t - BEATS.slide) * 3) * 2 * (t > BEATS.slide ? 1 : 0)) * (t > BEATS.signDrop ? 1 : 0);
+    r.sign.setAttribute("transform", `translate(${x} ${y}) rotate(${swing} ${SIGN.w / 2} ${-y + 24})`);
+    r.sign.style.opacity = t >= BEATS.signDrop ? 1 : 0;
+    r.railClamps.forEach((c) => (c.style.display = t >= BEATS.signDrop ? "none" : ""));
+    r.strings.setAttribute("d", `M62 ${-y + 24} V0 M738 ${-y + 24} V0`);
+    r.clamps.forEach((c) => c.setAttribute("transform", `translate(0 ${-y + 24})`));
+    MG.draw(r.underline, MG.prog(t, BEATS.underline, .3));
+    MG.draw(r.circle, MG.prog(t, BEATS.circle, .35));
+    r.screws.forEach((e) => Felt.visible(e, t >= BEATS.flat ? 1 : 0));
+    // Robot face: smile, a happy squint while the sign drops in, flat once the sign covers it.
+    const happyNow = t > 0.9 && t < 1.6;
+    const flatNow = t >= BEATS.flat;
+    const blink = (t > 2.2 && t < 2.3) || (t > 4.5 && t < 4.6);
+    r.happy.style.display = happyNow ? "" : "none";
+    r.ticks.style.display = happyNow ? "" : "none";
+    r.eyes.forEach((e) => {
+      e.style.display = happyNow ? "none" : "";
+      e.setAttribute("ry", blink ? 4 : 29);
+    });
+    r.smile.style.display = flatNow ? "none" : "";
+    r.flat.style.display = flatNow ? "" : "none";
+    r.shake.style.display = flatNow && t < 6 && Math.floor(t * 8) % 2 === 0 ? "" : "none";
+    r.light3.setAttribute("fill", t > 0.4 && t < 0.7 || flatNow ? "#161a45" : "#dfe3f7");
+    // Bubbles pop: 네!, then 완벽해요! which becomes 좋은 생각이에요!, then the red answer.
+    const pop = (b, label, on, at) => {
+      let p = MG.prog(t, at, .25, "outBack");
+      // Only the bubble scales; its text fades in once the bubble is nearly full size (scaling both from their own boxes pulled them apart mid-pop).
+      b.g.style.opacity = on ? 1 : 0;
+      b.g.style.transformBox = "fill-box";
+      b.g.style.transformOrigin = "50% 100%";
+      b.g.style.transform = `scale(${on ? Math.max(.01, p) : 0})`;
+      label.style.transform = "";
+      label.style.opacity = on ? MG.prog(t, at + .12, .1) : 0;
+    };
+    const yesOn = (t >= .9 && t < 1.6) || (t >= BEATS.yes && t < BEATS.slide + .5);
+    pop(r.yes, r.yesText, yesOn, t < 1.6 ? .9 : BEATS.yes);
+    pop(r.perfect, r.perfectText, t >= BEATS.perfect && t < BEATS.slide + .5, BEATS.perfect);
+    r.perfectText.textContent = t < BEATS.good ? "완벽해요!" : "좋은 생각이에요!";
+    r.perfectText.setAttribute("font-size", t < BEATS.good ? 76 : 62);
+    pop(r.answer, r.answerText, t >= BEATS.reply, BEATS.reply);
+  },
+});
+</script>

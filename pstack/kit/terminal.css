@@ -1,0 +1,73 @@
+/* Shared terminal backdrop, window, annotations and code colours. */
+.term-root {
+  position: absolute;
+  inset: 0;
+  background: #efefef;
+  font-family: 'JetBrains Mono', monospace;
+  transform-origin: center;
+}
+.term-window {
+  position: absolute;
+  left: 85px;
+  top: 45px;
+  width: 1750px;
+  height: 990px;
+  overflow: hidden;
+  border-radius: 17px;
+  background: #192426;
+  box-shadow: 0 8px 22px #0005;
+  color: #a9b0ae;
+  font: 23px/1.22 'JetBrains Mono', monospace;
+}
+.term-body {
+  position: absolute;
+  inset: 55px 22px 22px;
+  overflow: hidden;
+}
+.term-header {
+  display: flex;
+  height: 145px;
+  gap: 25px;
+  color: #89928f;
+}
+.term-pixel {
+  width: 105px;
+  height: 66px;
+  margin: 20px 0 0 10px;
+  background: #c5785e;
+  clip-path: polygon(10% 0, 90% 0, 90% 15%, 100% 15%, 100% 80%, 85% 80%, 85% 100%, 70% 100%, 70% 80%, 30% 80%, 30% 100%, 15% 100%, 15% 80%, 0 80%, 0 15%, 10% 15%);
+}
+.term-header strong { color: #d1d7d4; }
+.term-rule { height: 17px; border-top: 1px solid #52605e; }
+.term-line { position: relative; min-height: 28px; white-space: pre; }
+.term-muted { color: #71807c; }
+.term-green { color: #a6d39a; }
+.term-red { color: #d8957d; }
+.term-prompt { padding: 4px 6px; color: #d9dfdc; background: #303b3b; white-space: pre; }
+.term-status { padding-top: 8px; border-top: 1px solid #53605e; color: #7d9987; }
+.term-webcam {
+  position: absolute;
+  right: 38px;
+  bottom: 45px;
+  width: 300px;
+  height: 290px;
+  border: 2px solid #e7efec;
+  border-radius: 30px;
+  background: linear-gradient(#dbe5e2, #a8c1bd);
+  box-shadow: 0 5px 14px #0005;
+}
+.term-key {
+  position: absolute;
+  padding: 10px 19px;
+  border-radius: 15px;
+  background: #c5ff19;
+  color: #17221b;
+  box-shadow: 0 8px 10px #0007;
+  font: 800 45px Pretendard, sans-serif;
+  transform-origin: center;
+}
+.term-arrow { position: absolute; overflow: visible; color: #c9ff20; font: 800 30px Pretendard, sans-serif; }
+.term-arrow path { fill: none; stroke: #c9ff20; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.term-hl { color: #17251c; background: linear-gradient(#c6f51b, #c6f51b) no-repeat left center / calc(var(--p, 1) * 100%) 95%; }
+.term-sticker { position: absolute; padding: 10px 24px; border: 3px solid #ddd; border-radius: 8px; background: #252747; color: white; font: 700 37px Gaegu; }
+.term-diff { padding: 4px 20px; background: #285d2a; color: #b3d5a7; }

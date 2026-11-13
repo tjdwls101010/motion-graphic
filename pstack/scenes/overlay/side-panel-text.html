@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>overlay / side-panel-text</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/overlay.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/overlay.js"></script>
+<script>
+/* A pale side panel weighs when pstack is useful, from individual edits to larger team codebases. Motion notes: the panel wipes in over 0.45 s at 0.6 s; lines rise at 1.1, 1.5, 4.1 and 6.1 s, each over 0.3 s, and earlier lines turn grey as later lines arrive. */
+const BEATS = { panel: .6, pill: 1, lines: [1.1, 1.5, 4.1, 6.1] };
+const POS = { panelWidth: 960, rise: 18 };
+const CAMERA = [[0, [1, 0, 0]], [8, [1, 0, 0]]];
+const LINES = ['한 줄 수정엔 그냥', '개인 작업엔 방해될 수도', '팀 작업엔 좋고', '큰 코드베이스면 더'];
+
+MG.scene({
+  title: 'overlay / side-panel-text',
+  duration: 8,
+  ref: [891, 899],
+  setup(stage) {
+    const world = OV.root(stage);
+    const panel = MG.el('div', { class: 'ov-panel' });
+    const pill = MG.el('div', { class: 'ov-pill', text: 'pstack, 언제 쓰나' });
+    const lines = LINES.map((text) => MG.el('div', { class: 'ov-line', text }));
+    panel.append(pill, ...lines);
+    world.append(panel);
+    return { world, panel, pill, lines };
+  },
+  render(t, r) {
+    OV.camera(r.world, t, CAMERA);
+    // The panel wipes in from the right and carries the small heading with it.
+    const wipe = MG.prog(t, BEATS.panel, .45, 'outCubic');
+    r.panel.style.transform = `translateX(${(1 - wipe) * POS.panelWidth}px)`;
+    const pill = MG.prog(t, BEATS.pill, .2, 'outBack');
+    r.pill.style.opacity = String(MG.clamp(pill * 2));
+    r.pill.style.transform = `scale(${.9 + .1 * pill})`;
+    // Each line rises into place; the next line reduces its contrast.
+    r.lines.forEach((line, i) => {
+      const q = MG.prog(t, BEATS.lines[i], .3, 'outCubic');
+      const dim = i < 2 ? MG.prog(t, BEATS.lines[Math.min(i + 1, 2)], .3) : 0;
+      const grey = Math.round(36 + 117 * dim);
+      line.style.opacity = String(q);
+      line.style.transform = `translateY(${(1 - q) * POS.rise}px)`;
+      line.style.color = `rgb(${grey}, ${grey}, ${grey})`;
+    });
+  },
+});
+</script>

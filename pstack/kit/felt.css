@@ -1,0 +1,4 @@
+/* The felt family paints its textured paper shapes in SVG at stage resolution. */
+#mg-stage svg {
+  display: block;
+}

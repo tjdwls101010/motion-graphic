@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ui / readme-highlight-zoom</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/ui.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/ui.js"></script>
+<style>
+  .page { position: absolute; left: 0; top: 0; width: 1770px; transform-origin: 0 0; font: 400 16px/1.6 Pretendard, sans-serif; color: #3a3a3a; }
+  .chrome { padding: 26px 34px 0; }
+  .chrome .bar { height: 12px; border-radius: 6px; background: #e4e4e4; margin-bottom: 18px; }
+  .chrome .tabs { display: flex; gap: 22px; margin: 26px 0; }
+  .chrome .tabs i { width: 84px; height: 12px; border-radius: 6px; background: #e9e9e9; }
+  .chrome .rule { height: 2px; background: #ececec; margin: 22px 0; }
+  .readme { position: absolute; left: 180px; top: 380px; width: 1280px; }
+  .readme h1 { font: 800 34px/1.2 Pretendard; margin: 0 0 22px; padding-bottom: 14px; border-bottom: 1.5px solid #e4e4e4; color: #1f1f1f; }
+  .readme p { margin: 0 0 18px; }
+  .readme a { color: #3b6fd4; text-decoration: underline; }
+  .readme .sk { height: 9px; border-radius: 5px; background: #e2e2e2; margin: 0 0 12px; }
+  .ask { position: absolute; left: 1322px; top: 362px; width: 86px; height: 86px; border-radius: 50%; background: #bcb8f8; border: 4px solid #2a2a2a; display: grid; place-items: center; font: 800 48px 'JetBrains Mono', monospace; box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3); }
+</style>
+<script>
+/* Reading one sentence out of a web page. The window frame never moves; the page inside it is zoomed in three steps (whole page -> the README block -> one sentence), with a highlighter pass at each stop, the rest of the text removed before the last push, and a "?" badge left on the sentence to be answered later. Idea carried: guide the eye from "here is the source" to "this exact phrase".
+   Motion notes: the frame is the constant, only its contents scale (transform on an inner page with overflow hidden), so the viewer keeps their bearings; each zoom is 0.6-0.9 s inOutCubic and nothing else starts until it has landed (the highlighter begins 0.1 s after the second zoom ends); the highlighter sweeps left to right in 0.5 s, and a second phrase is marked 2.2 s after the first; before the final push everything that is not the paragraph fades (0.5 s) so the big zoom lands on a clean field; at full zoom the unmarked words drop to light grey and only one highlight remains; the badge pops (outBack 0.35 s) 0.6 s after the zoom settles. */
+const { prog, kf, lerp, el } = MG;
+MG.scene({
+  title: 'ui / readme-highlight-zoom',
+  duration: 16, ref: [43.3, 59.3],
+  setup(stage) {
+    const root = UI.root(stage);
+    const win = UI.window(root, 75, 60, 1770, 840, 'github.com/…/plugins/…/pstack/README.md');
+    const chrome = el('div', { class: 'chrome' },
+      el('div', { class: 'bar', style: { width: '170px' } }),
+      el('div', { class: 'tabs' }, ...Array.from({ length: 7 }, () => el('i'))),
+      el('div', { class: 'rule' }),
+      el('div', { class: 'bar', style: { width: '420px' } }),
+      el('div', { class: 'bar', style: { width: '1500px', height: '34px', background: '#f1f1f1' } }),
+      el('div', { class: 'bar', style: { width: '1500px', height: '30px', background: '#f6f6f6' } }));
+    const a = el('span', { class: 'hl', text: "i'm not a president or ceo," });
+    const b = el('span', { class: 'hl', text: "but i've worked with millions of lines of code" });
+    const rest1 = el('span', { text: "i'm " }), link = el('a', { text: 'poteto' }), rest2 = el('span', { text: '. ' }), sp = el('span', { text: ' ' });
+    const rest3 = el('span', { text: " at Meta, Netflix, and Cursor. i'm also on the react core team where i help build and maintain react compiler." });
+    const para = el('p', {}, rest1, link, rest2, a, sp, b, rest3);
+    const filler = el('div', {}, ...[100, 62, 0, 100, 96, 40, 0, 100, 88].map((w) => (w ? el('div', { class: 'sk', style: { width: w + '%' } }) : el('div', { style: { height: '14px' } }))));
+    const h1 = el('h1', { text: 'pstack' });
+    const page = el('div', { class: 'page' }, chrome, el('div', { class: 'readme' }, h1, para, filler));
+    win.body.append(page);
+    const ask = el('div', { class: 'ask', text: '?' });
+    root.append(ask);
+    return { win, page, chrome, filler, a, b, greys: [rest1, link, rest2, b, rest3], h1, ask };
+  },
+  render(t, r) {
+    MG.show(r.win.el, prog(t, 0.1, 0.45, 'outBack'), { scale: 0.92 });
+    // three camera stops inside the fixed frame: [zoom, x, y]
+    const [z, x, y] = kf(t, [
+      [3.0, [1, 0, 0]],
+      [3.6, [1.45, -150, -200], 'inOutCubic'],
+      [4.3, [1.45, -150, -200]],
+      [4.9, [1.87, -297, -454], 'inOutCubic'],
+      [11.7, [1.87, -297, -454]],
+      [12.6, [5.5, -1270, -2150], 'inOutCubic'],
+    ]);
+    r.page.style.transform = `translate(${x}px, ${y}px) scale(${z})`;
+    // highlighter passes at the second stop
+    const close = prog(t, 11.9, 0.6);
+    UI.hl(r.a, prog(t, 5.0, 0.5, 'outCubic'));
+    UI.hl(r.b, prog(t, 7.2, 0.5, 'outCubic') * (1 - close));
+    // clear the field before the last push
+    const clear = 1 - prog(t, 9.2, 0.5);
+    r.chrome.style.opacity = clear;
+    r.filler.style.opacity = clear;
+    // at full zoom only the marked phrase keeps its ink
+    const grey = `rgb(${lerp(58, 176, close)},${lerp(58, 176, close)},${lerp(58, 182, close)})`;
+    r.greys.forEach((g) => { g.style.color = grey; });
+    r.h1.style.color = `rgb(${lerp(31, 170, close)},${lerp(31, 170, close)},${lerp(31, 170, close)})`;
+    MG.show(r.ask, prog(t, 13.2, 0.35, 'outBack'), { scale: 0.3 });
+  },
+});
+</script>

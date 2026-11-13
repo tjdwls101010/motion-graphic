@@ -1,0 +1,95 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sketch / stack-tags-pile</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* A red "pstack" tag is pulled in on a string, a stick figure walks up to it, then look-alike grey "stack" tags rain down and bury it while the camera pulls back to show the notebook binding. Idea carried: "yet another stack".
+   Motion notes: everything moves on twos (15 fps); the one coloured object arrives first and alone; falling tags accelerate (ease-in), land with a small rotation settle, and their spawn rate ramps up so the pile reads as an avalanche; named tags (gstack, superpowers) are inked black so they stand out from the grey pencil crowd. */
+const { prog, kf, ease, rng, clamp, lerp } = MG;
+const GROUND = 800;
+
+// Heap of grey tags: spawn time, landing spot and resting tilt, all fixed by the seed.
+const TAGS = (() => {
+  const r = rng(41), out = [], N = 78;
+  for (let i = 0; i < N; i++) {
+    const u = i / (N - 1);
+    const x = 700 + r() * 1180;
+    const bump = Math.max(0, 1 - Math.pow((x - 1330) / 640, 2));
+    out.push({
+      spawn: 3.2 + 6.4 * Math.pow(u, 0.62),            // dense late: rate keeps rising
+      x, y: GROUND - 34 - u * 470 * bump - r() * 26,
+      rot: (r() - 0.5) * 56, fromX: x + (r() - 0.5) * 260, spin: (r() - 0.5) * 140, seed: 2000 + i * 9,
+    });
+  }
+  return out;
+})();
+const NAMED = [
+  { label: 'gstack', spawn: 4.3, x: 1165, y: 742, rot: -4, fromX: 1020, spin: 30, w: 290, seed: 3100 },
+  { label: 'superpowers', spawn: 5.3, x: 1500, y: 690, rot: 3, fromX: 1560, spin: -24, w: 440, seed: 3200 },
+];
+
+function fall(tag, t) {
+  const u = prog(t, tag.spawn, 0.75, ease.inQuad);                 // gravity
+  const settle = prog(t, tag.spawn + 0.75, 0.35);                  // one damped rock after landing
+  const rock = settle < 1 ? Math.sin(settle * Math.PI * 2) * (1 - settle) * 7 : 0;
+  return { x: lerp(tag.fromX, tag.x, u), y: lerp(-90, tag.y, u), rot: tag.rot + tag.spin * (1 - u) + rock };
+}
+
+MG.scene({
+  title: 'sketch / stack-tags-pile',
+  duration: 10, ref: [90, 100],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    // camera: close on the hero tag, out to the walker, then a slow pull-back that reveals the binding
+    const [z, cx] = kf(t, [[1.5, [1.55, 1500]], [2.3, [1, 960], 'inOutCubic'], [8.2, [1, 960]], [10, [0.84, 960], 'inOutCubic']]);
+    const cy = 760;
+    SK.paper(ctx, { spiral: true }, { z: Math.max(1, z / 0.84), cx: 960, cy: 640 });
+    ctx.setTransform(z, 0, 0, z, 960 - cx * z, cy - cy * z);
+    const pen = SK.pen(ctx, t);
+
+    SK.ground(pen, GROUND, { p: prog(t, 0.1, 0.5, 'outCubic'), x1: -400, x2: 2300 });
+    const pencilOut = prog(t, 0.55, 0.45, 'inCubic');
+    if (t < 1) SK.pencil(pen, lerp(700, 1500, prog(t, 0.1, 0.5, 'outCubic')) + pencilOut * 500, GROUND - pencilOut * 500, { rot: 0 });
+
+    // hero tag slides in on its red string
+    const tagX = lerp(-300, 1250, prog(t, 0.7, 0.7, 'outCubic'));
+    pen.line(-400, GROUND + 4, tagX - 120, GROUND - 6, { color: SK.RED_LINE, w: 2.5, seed: 11, step: 80 });
+    const hero = pen.with.bind(pen);
+    hero(tagX, GROUND - 26, { rot: -3 }, () => {
+      const box = [[-98, -42], [130, -42], [130, 42], [-98, 42], [-125, 15], [-125, -15]];
+      pen.poly(box.concat([box[0]]), { closed: true, fill: '#ee8a72', w: 4, seed: 21, step: 60 });
+      pen.hatch(box, { color: 'rgba(200,60,40,0.55)', gap: 8, seed: 22 });
+      pen.circle(-92, 0, 9, { w: 3, fill: '#efe9d8', seed: 23 });
+      pen.text('pstack', 18, 2, { size: 50, align: 'center' });
+    });
+    const q = prog(t, 1.15, 0.3, 'outBack') * (1 - prog(t, 3.9, 0.3));
+    if (q > 0) pen.with(1420, GROUND - 120, { scale: q, rot: 8 }, () => pen.text('?', 0, 0, { size: 84, color: '#6e685e', align: 'center' }));
+
+    // the walker
+    const walk = prog(t, 1.8, 1.1);
+    SK.man(pen, lerp(-120, 475, ease.outQuad(walk)), GROUND, {
+      stride: walk < 1 ? Math.sin(walk * Math.PI * 5) * 0.8 : 0,
+      armL: t > 5 ? 'hips' : 'down', armR: t > 5 ? 'hips' : 'down',
+      face: t > 7.6 ? 'angry' : 'neutral', look: 1, sweat: t > 6.4, seed: 500,
+    });
+
+    // the avalanche (grey first so the inked, named tags always stay readable on top)
+    const drawTag = (tag, named) => {
+      if (t < tag.spawn) return;
+      const f = fall(tag, t);
+      SK.tag(pen, f.x, f.y, named ? tag.label : 'stack', named
+        ? { rot: f.rot, w: tag.w, h: 96, size: 56, lw: 5, seed: tag.seed }
+        : { rot: f.rot, w: 236, h: 80, size: 36, lw: 2.6, color: SK.GREY, ring: true, fill: '#f1ece0', seed: tag.seed });
+    };
+    for (const tag of TAGS) drawTag(tag, false);
+    for (const tag of NAMED) drawTag(tag, true);
+
+    for (const [sx, sy, r] of [[236, 172, 30], [1650, 130, 22]]) pen.star(sx, sy, r, { seed: 60 + r });
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  },
+});
+</script>

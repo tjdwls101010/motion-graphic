@@ -1,0 +1,21 @@
+/* base.css — fonts, the stage box and the player bar. Family looks live in ui.css, terminal.css and overlay.css; the canvas families (sketch, set) paint their own backgrounds. */
+@font-face { font-family: 'Gaegu'; font-weight: 400; src: url('fonts/Gaegu-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Gaegu'; font-weight: 700; src: url('fonts/Gaegu-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Jua'; font-weight: 400; src: url('fonts/Jua-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Pretendard'; font-weight: 100 900; src: url('fonts/PretendardVariable.woff2') format('woff2-variations'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 100 800; src: url('fonts/JetBrainsMono[wght].ttf') format('truetype'); }
+
+html, body { margin: 0; height: 100%; background: #101010; overflow: hidden; }
+body { display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: Pretendard, system-ui, sans-serif; }
+#mg-frame { position: relative; flex: none; overflow: hidden; }
+#mg-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #fff; }
+#mg-stage * { box-sizing: border-box; }
+
+#mg-bar { height: 44px; width: 100%; display: flex; align-items: center; gap: 12px; padding: 0 14px; box-sizing: border-box; color: #cfcfcf; font: 500 13px/1 'JetBrains Mono', ui-monospace, monospace; }
+#mg-bar button { width: 34px; height: 28px; border: 1px solid #444; border-radius: 6px; background: #1c1c1c; color: #eee; cursor: pointer; }
+#mg-bar input[type='range'] { flex: 1; accent-color: #b8b5f5; }
+#mg-bar .mg-time { min-width: 110px; text-align: right; }
+#mg-bar .mg-title { color: #8a8a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+
+body.mg-capture { display: block; background: #000; }
+body.mg-capture #mg-frame { width: 1920px; height: 1080px; }

@@ -1,0 +1,105 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>felt / recap-corkboard</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/felt.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/felt.js"></script>
+<script>
+/* A crowned potato and a portrait sit on the board while a blank sheet pops up, becomes the tied SKILL.md bundle and gets a pstack tag. The camera pulls back to the whole board, three role-hatted characters rise along the left, a bearded craftsman with a toy car appears behind the counter on the right and a red string ties his pin to the pstack tag. Speech bubbles turn the board into a small conversation. Motion notes: camera starts at 1.5× on the portrait and potato, pulls back to the full board at 2.4–3.1 s and closes in to 1.44× on the bundle and craftsman at 9.3–10 s; the blank sheet pops at 1 s and gets its twine and lettering at 1.8 s, the pstack tag at 2.1 s; the characters rise at 4.1, 4.6 and 5.1 s; the craftsman at 5.7 s, the string draws at 6 s; the blue board at 7 s; the first bubble pops at 8 s and the second types in at 10.5 s; the toy car rolls left from 8 s to 11 s. */
+const BEATS = { paper: 1, details: 1.8, stack: 2.1, roles: [4.1, 4.6, 5.1], craftsman: 5.7, string: 6, board: 7, firstBubble: 8, secondBubble: 10.5, car: 8 };
+// Camera: time, world centre x, y, zoom.
+const CAMERA = [[0, 1040, 465, 1.5], [2.4, 1040, 465, 1.5], [3.1, 960, 540, 1], [9.3, 960, 540, 1], [10, 1402, 586, 1.44]];
+// Role characters: head centre, label, tag position, look.
+const ROLES = [
+  { x: 228, y: 738, label: "디자이너", tag: [147, 530, 165, 62], skin: "#efb792", shirt: "stripePink", hat: "beret", hatColor: "#a98ad4" },
+  { x: 452, y: 745, label: "CEO", tag: [405, 535, 100, 60], skin: "#c98f62", shirt: "stripeNavy", hat: "top", hatColor: "#9b82d0" },
+  { x: 680, y: 718, label: "QA", tag: [640, 500, 85, 62], skin: "#9d6540", shirt: "stripeGreen", hat: "cap", hatColor: "#3aa39e" },
+];
+
+MG.scene({
+  title: "felt / recap-corkboard",
+  duration: 12,
+  ref: [1397.7, 1409.7],
+  setup(stage) {
+    let s = Felt.root(stage);
+    Felt.wall(s);
+    let g = Felt.add(s, "g", {});
+    Felt.board(g);
+    Felt.clock(g);
+    Felt.shelf(g);
+    Felt.tag(g, 333, 195, 195, 83, "gstack", 50, { tape: true, tapeAt: .5, spacing: 2, rot: -1 });
+    Felt.pin(g, 370, 207);
+    Felt.photo(g, 787, 140, 348, 330, -1.5);
+    let pot = Felt.potato(g, 1235, 432, .8);
+    Felt.crown(g, 1222, 366, .85);
+    let paper = Felt.bundle(g, 815, 565);
+    paper.details.style.opacity = 0;
+    let stack = Felt.tag(g, 1052, 680, 150, 62, "pstack", 40, { spacing: 1, rot: 2 });
+    let people = ROLES.map((r) => {
+      let q = Felt.add(g, "g", {});
+      let body = Felt.person(q, r.x, r.y, 1, { skin: r.skin, shirt: r.shirt, hat: r.hat, hatColor: r.hatColor, hair: "#4a3326", mouth: "smile" });
+      Felt.tag(q, r.tag[0], r.tag[1], r.tag[2], r.tag[3], r.label, 38, { spacing: 2, rot: r.label === "QA" ? 2 : -2 });
+      return q;
+    });
+    // The CEO holds a blue felt board with a white dashboard sketch.
+    let board = Felt.add(g, "g", {});
+    Felt.add(board, "rect", { x: 303, y: 850, width: 297, height: 148, fill: "#4b70b6", filter: "url(#felt)" });
+    Felt.add(board, "path", { d: "M345 960 V878 H468 V960 M488 940 V878 H575 V940", fill: "none", stroke: "#f2f6ff", "stroke-width": 3.5, "stroke-linecap": "round" });
+    // Craftsman behind the counter, counter, toy car and the pin the red string ends on.
+    let craftsman = Felt.person(g, 1576, 655, 1, { kind: "craft", skin: "#c58a5a", hair: "#5a3d2e", shirt: "stripeCream", mouth: "smile", closed: true });
+    Felt.counter(g);
+    let car = Felt.add(g, "g", {});
+    Felt.add(car, "path", { d: "M1286 828 H1420 Q1428 828 1428 836 V858 H1278 V836 Q1278 828 1286 828Z", fill: "#f2a6c0", filter: "url(#felt)" });
+    Felt.add(car, "path", { d: "M1308 828 Q1310 796 1326 794 H1372 Q1388 796 1390 828Z", fill: "#f2a6c0", filter: "url(#felt)" });
+    Felt.add(car, "rect", { x: 1322, y: 802, width: 54, height: 22, rx: 6, fill: "#bfe0ee" });
+    [1308, 1398].forEach((wx) => {
+      Felt.add(car, "circle", { cx: wx, cy: 862, r: 22, fill: "#3c4468", filter: "url(#felt)" });
+      Felt.add(car, "path", { d: `M${wx - 9} ${852} L${wx} ${863} L${wx + 9} ${852} M${wx} ${863} V${876}`, stroke: "#f2f4ff", "stroke-width": 3, fill: "none", "stroke-linecap": "round" });
+    });
+    let line = Felt.string(g, "M1190 714 Q1380 640 1503 527");
+    let pin = Felt.add(g, "g", {});
+    Felt.pin(pin, 1503, 527);
+    let b1 = Felt.bubble(g, 285, 358, 327, "올바른 걸?", 130, .5);
+    let b2 = Felt.bubble(g, 1353, 338, 342, "", 130, .44);
+    let b2Text = Felt.text(b2, 70, 90, "", 56, { "letter-spacing": 2 });
+    return { g, pot, paper, stack, people, board, craftsman, car, line, pin, b1, b2, b2Text };
+  },
+  render(t, r) {
+    // Camera framing is applied to the whole paper world.
+    let z = MG.kf(t, CAMERA.map((k) => [k[0], k[3]]));
+    let cx = MG.kf(t, CAMERA.map((k) => [k[0], k[1]]));
+    let cy = MG.kf(t, CAMERA.map((k) => [k[0], k[2]]));
+    r.g.setAttribute("transform", `translate(${960 - cx * z} ${540 - cy * z}) scale(${z})`);
+    // Potato: surprised first, then smiling; it squints happily while the bundle arrives.
+    Felt.mood(r.pot, t < .8 ? "o" : "smile");
+    Felt.blink(r.pot, (t > 1.8 && t < 3) || (t > 4.5 && t < 4.62));
+    // Blank sheet first, then the twine and lettering, then the pstack tag.
+    Felt.pop(r.paper, MG.prog(t, BEATS.paper, .4), 815, 565, 1, 142, 94);
+    r.paper.details.style.opacity = t >= BEATS.details ? 1 : 0;
+    Felt.pop(r.stack, MG.prog(t, BEATS.stack, .3), 1052, 680, 1, 75, 31);
+    // Characters rise from below the screen edge with a spring.
+    r.people.forEach((p, i) => {
+      let u = MG.prog(t, BEATS.roles[i], .5, "outBack");
+      p.setAttribute("transform", `translate(0 ${(1 - u) * 380})`);
+      p.style.opacity = t >= BEATS.roles[i] ? 1 : 0;
+      Felt.look(p, { closed: t > 7 && t < 8, mouth: t > 7.6 && t < 10.5 && i === 1 ? "o" : "smile" });
+    });
+    Felt.pop(r.board, MG.prog(t, BEATS.board, .3), 303, 850, 1, 148, 74);
+    // The craftsman rises behind the counter; the string draws to his pin and the car rolls left.
+    let c = MG.prog(t, BEATS.craftsman, .5, "outBack");
+    r.craftsman.setAttribute("transform", `translate(1576 ${655 + (1 - c) * 260})`);
+    r.craftsman.style.opacity = t >= BEATS.craftsman ? 1 : 0;
+    Felt.look(r.craftsman, { closed: t < 10.2, mouth: t > 10.8 ? "o" : "smile" });
+    MG.draw(r.line, MG.prog(t, BEATS.string, .8));
+    Felt.visible(r.pin, MG.prog(t, BEATS.string + .7, .2));
+    let roll = MG.prog(t, BEATS.car, 3, "inOutQuad");
+    r.car.setAttribute("transform", `translate(${-roll * 112} 0)`);
+    r.car.style.opacity = t >= BEATS.craftsman ? 1 : 0;
+    Felt.pop(r.b1, MG.prog(t, BEATS.firstBubble, .3), 285, 358, 1, 163, 65);
+    Felt.pop(r.b2, MG.prog(t, BEATS.secondBubble, .3), 1353, 338, 1, 171, 65);
+    r.b2Text.textContent = MG.typed("진짜 되나?", MG.prog(t, BEATS.secondBubble + .3, .8));
+  },
+});
+</script>

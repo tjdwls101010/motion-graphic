@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../kit/base.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* Signposts mark zero and one while the pstack toolbox moves toward a phone checklist, turning one working thing into many. Motion notes: the two signposts and the phone pop in at 0.1, 0.3 and 0.5 s (0.35-0.4 s, outBack), the toolbox pops in at 1 s over 0.4 s, a ghost phone appears at 2.8 s and its red cross is drawn in two strokes at 3.5 and 3.75 s, then the case hops right and the sign pops to 1 → N in 0.4 s; everything moves on twos. */
+
+const P = MG.prog;
+const BEATS = {
+  camera: [[0, [1.25, 960, 600]], [3, [1.25, 960, 600]], [6, [1.7, 1200, 650]], [
+    10,
+    [1.9, 1300, 650],
+  ]],
+};
+
+function stars(p) {
+  [[160, 220, 24], [1570, 160, 22], [1790, 340, 18], [250, 650, 16]].forEach((
+    [x, y, r],
+    i,
+  ) => p.star(x, y, r, { seed: 100 + i }));
+}
+function box(p, x, y, w, h, fill = SK.WHITE) {
+  p.rect(x, y, w, h, { fill, w: 5, seed: Math.round(x + y) });
+}
+function phone(p, x, y, s = 1) {
+  p.with(x, y, { scale: s }, () => {
+    p.rect(-95, -205, 190, 410, { r: 30, fill: SK.WHITE, w: 5, seed: 809 });
+    p.rect(-80, -185, 160, 360, { r: 12, w: 4, seed: 810 });
+    p.line(-25, -195, 25, -195, { seed: 811, w: 3 });
+    p.line(-25, 190, 25, 190, { seed: 812, w: 3 });
+    for (let i = 0; i < 5; i++) {
+      p.rect(-62, -135 + i * 55, 18, 18, { w: 3.5, seed: 820 + i });
+      p.line(-30, -125 + i * 55, 57, -125 + i * 55, { w: 3.5, seed: 830 + i });
+      if (i < 3) {
+        p.text("✓", -53, -128 + i * 55, {
+          size: 23,
+          color: "#658c66",
+          align: "center",
+        });
+      }
+    }
+  });
+}
+function toolbox(p, x, y, s = 1) {
+  p.with(x, y, { scale: s }, () => {
+    p.curve([[-65, -75], [-60, -115], [60, -115], [65, -75]], {
+      w: 5,
+      seed: 90,
+    });
+    box(p, -145, -75, 290, 150, "#e97155");
+    p.line(-145, -25, 145, -25, { w: 4, seed: 91 });
+    p.rect(-105, -38, 28, 32, { fill: "#ddb793", w: 3, seed: 92 });
+    p.rect(78, -38, 28, 32, { fill: "#ddb793", w: 3, seed: 93 });
+    p.text("pstack", 0, 20, { size: 50, color: SK.WHITE, align: "center" });
+  });
+}
+MG.scene({
+  title: "sketch / zero-to-one-toolbox",
+  duration: 8.33,
+  ref: [478.67, 487],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    SK.paper(ctx, { spiral: true });
+    // Camera transforms the entire illustrated world, including its marks.
+    const [zoom, cx, cy] = MG.kf(t, BEATS.camera);
+    ctx.setTransform(zoom, 0, 0, zoom, 960 - cx * zoom, 540 - cy * zoom);
+    const p = SK.pen(ctx, t);
+    stars(p);
+    SK.ground(p, 850);
+    // signposts and the phone pop in at the start; the second sign pops again when it turns into 1 → N
+    function sign(x, label, pop) {
+      p.with(x, 850, { scale: Math.max(0.01, pop) }, () => {
+        p.line(0, 0, 0, -230, { seed: x, w: 5 });
+        const width = label.length > 1 ? 280 : 140;
+        box(p, -width / 2, -295, width, 90, "#edc384");
+        p.text(label, 0, -250, { size: 62, align: "center" });
+      });
+    }
+    sign(260, "0", P(t, 0.1, 0.35, "outBack"));
+    if (t > 6) sign(870, "1 → N", P(t, 6, 0.4, "outBack"));
+    else sign(870, "1", P(t, 0.3, 0.35, "outBack"));
+    p.with(1450, 850, { scale: Math.max(0.01, P(t, 0.5, 0.4, "outBack")) }, () => phone(p, 0, -235, .8));
+    // The case pops onto the ground, then hops toward the phone.
+    if (t > 1) {
+      const hop = P(t, 4.9, .8, "inOutCubic");
+      const pop = P(t, 1, .4, "outBack");
+      const lift = Math.sin(Math.PI * hop) * 230;
+      toolbox(p, MG.lerp(620, 1650, hop), 780 - lift, .7 * pop);
+    }
+    if (t > 2.8 && t < 6) {
+      p.with(610, 330, { scale: .55 }, () => p.rect(-95, -205, 190, 410, { r: 30, color: SK.GREY, w: 4, seed: 888 }));
+      p.text("?", 750, 250, { size: 70 });
+      if (t > 3.5) {
+        p.line(480, 180, 740, 440, { w: 16, color: SK.RED_LINE, p: P(t, 3.5, .25), seed: 10 });
+        p.line(740, 180, 480, 440, { w: 16, color: SK.RED_LINE, p: P(t, 3.75, .25), seed: 11 });
+      }
+    }
+    if (t > 6.2) {
+      p.with(
+        1640,
+        630,
+        { rot: -35 },
+        () => p.rect(-15, -150, 30, 220, { fill: SK.RED, seed: 50 }),
+      );
+      p.circle(1610, 550, 32, { seed: 51 });
+      p.line(1610, 550, 1700, 520, { w: 7, seed: 52 });
+    }
+    if (t < 1.5) SK.pencil(p, 620, 700, { s: .7 });
+  },
+});
+</script>

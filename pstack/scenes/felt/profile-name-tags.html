@@ -1,0 +1,117 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>felt / profile-name-tags</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/felt.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/felt.js"></script>
+<script>
+/* A pinned portrait gains a name tag and a handle tag on red strings, then a potato pops up beside them and hops along a dotted career path, landing on one felt badge after another, before the camera closes in on the final team label. Motion notes: camera starts at 1.57× on the portrait, pushes to 1.8× at 3.8–4.5 s, pulls back to the full board at 6.0–6.6 s and closes in to 1.42× on the last badges at 11.2–12.4 s; the name string draws at 1.2 s and its tag pops at 1.3 s, the handle string at 2.7 s and its tag at 2.8 s; the potato squash-pops at 4.85 s, then makes one arcing hop over the tags to the lower left from 5.95 to 6.7 s; badges pop at 7.4, 8.4 and 9.6 s with the potato hopping onto each one 0.5 s later; the dotted path reveals over 3 s from 7 s; the dashed team tag pops at 11.8 s and types its text over 1 s from 12 s. */
+const BEATS = {
+  nameString: 1.2,
+  name: 1.3,
+  handleString: 2.7,
+  handle: 2.8,
+  potato: 4.85,
+  path: 7,
+  badges: [7.4, 8.4, 9.6],
+  finalTag: 11.8,
+  typing: 12,
+};
+// Badge centres, circle colours and captions along the career path.
+const BADGES = [
+  { x: 640, y: 700, label: "M", fill: "#cfe5f2", name: "Meta" },
+  { x: 960, y: 615, label: "N", fill: "#f4c1d5", name: "Netflix" },
+  { x: 1276, y: 702, label: "C", fill: "#abdeca", name: "Cursor" },
+];
+const CAMERA = [[0, 621, 288, 1.57], [3.8, 621, 288, 1.57], [4.5, 808, 317, 1.8], [6, 808, 317, 1.8], [6.6, 960, 540, 1], [11.2, 960, 540, 1], [12.4, 1296, 604, 1.42]];
+
+/** Hop offset: an arc that lifts by h pixels between t0 and t1 and is zero elsewhere. */
+const hop = (t, t0, t1, h) => {
+  const u = MG.prog(t, t0, t1 - t0);
+  return -h * 4 * u * (1 - u);
+};
+
+MG.scene({
+  title: "felt / profile-name-tags",
+  duration: 14,
+  ref: [28.5, 42.5],
+  setup(stage) {
+    let s = Felt.root(stage);
+    Felt.wall(s);
+    let scene = Felt.add(s, "g", {});
+    Felt.board(scene);
+    Felt.clock(scene);
+    Felt.shelf(scene);
+    let photo = Felt.photo(scene, 188, 122, 420, 415);
+    let line1 = Felt.string(scene, "M397 137 Q520 214 704 199");
+    let line2 = Felt.string(scene, "M397 137 Q500 325 702 335");
+    let tag1 = Felt.tag(scene, 688, 140, 305, 118, "로렌 탄", 76, { tape: true, pin: true, spacing: 8, rot: -1.2 });
+    let tag2 = Felt.tag(scene, 686, 290, 258, 90, "@poteto", 56, { tape: true, pin: true, spacing: 3, rot: 1.4, tapeAt: .45 });
+    let dotted = Felt.add(scene, "path", {
+      d: "M410 730 Q520 742 640 700 T960 615 T1276 702 T1440 688",
+      fill: "none",
+      stroke: "#7a5238",
+      "stroke-width": 6,
+      "stroke-linecap": "round",
+      "stroke-dasharray": "1 15",
+    });
+    let mask = Felt.add(scene, "mask", { id: "career-reveal", maskUnits: "userSpaceOnUse", x: 0, y: 0, width: 1920, height: 1080 });
+    let dottedReveal = Felt.add(mask, "path", {
+      d: "M410 730 Q520 742 640 700 T960 615 T1276 702 T1440 688",
+      fill: "none",
+      stroke: "white",
+      "stroke-width": 20,
+      pathLength: 1,
+    });
+    dotted.setAttribute("mask", "url(#career-reveal)");
+    let badges = BADGES.map((b) => Felt.badge(scene, b.x, b.y, b.label, b.fill));
+    let captions = BADGES.map((b) => Felt.text(scene, b.x, b.y + 130, b.name, 34, { "text-anchor": "middle", "letter-spacing": 3 }));
+    let pot = Felt.potato(scene, 0, 0, 1);
+    // The final team label: a dashed ink outline around a paper tag whose text types on.
+    let tag = Felt.tag(scene, 1138, 400, 590, 92, "", 52, { rot: -1.5, seed: 9 });
+    Felt.add(tag, "rect", {
+      x: -20,
+      y: -18,
+      width: 630,
+      height: 128,
+      rx: 8,
+      fill: "none",
+      stroke: "#2a211c",
+      "stroke-width": 3.4,
+      "stroke-dasharray": "15 11",
+    });
+    let label = Felt.text(tag, 36, 64, "", 50, { "letter-spacing": 3 });
+    return { scene, photo, line1, line2, tag1, tag2, pot, dotted, dottedReveal, badges, captions, tag, label };
+  },
+  render(t, r) {
+    // Camera framing is applied to the whole paper world.
+    let z = MG.kf(t, CAMERA.map((k) => [k[0], k[3]]));
+    let cx = MG.kf(t, CAMERA.map((k) => [k[0], k[1]]));
+    let cy = MG.kf(t, CAMERA.map((k) => [k[0], k[2]]));
+    r.scene.setAttribute("transform", `translate(${960 - cx * z} ${540 - cy * z}) scale(${z})`);
+    // Draw the strings, then pop their paper labels in place.
+    MG.draw(r.line1, MG.prog(t, BEATS.nameString, .5));
+    MG.draw(r.line2, MG.prog(t, BEATS.handleString, .5));
+    Felt.pop(r.tag1, MG.prog(t, BEATS.name, .4), 688, 140, 1, 152, 59);
+    Felt.pop(r.tag2, MG.prog(t, BEATS.handle, .4), 686, 290, 1, 129, 45);
+    // The potato squash-pops beside the tags, hops over them, then to the lower left and onto each badge.
+    let px = MG.kf(t, [[5, 1010], [5.95, 1010], [6.4, 752], [6.7, 420], [7.45, 420], [7.9, 640], [8.4, 640], [8.85, 960], [9.7, 960], [10.2, 1276], [10.8, 1276], [11.3, 1480]]);
+    let py = MG.kf(t, [[5, 232], [5.95, 232], [6.4, 257], [6.7, 640], [7.45, 640], [7.9, 508], [8.4, 508], [8.85, 462], [9.7, 462], [10.2, 520], [10.8, 520], [11.3, 616]]);
+    py += hop(t, 5.95, 6.7, 70) + hop(t, 7.45, 7.9, 90) + hop(t, 8.4, 8.85, 90) + hop(t, 9.7, 10.2, 90) + hop(t, 10.8, 11.3, 60);
+    Felt.squashPop(r.pot, MG.prog(t, BEATS.potato, .7), px, py, 1);
+    const blink = (t > 5.6 && t < 5.76) || (t > 8.9 && t < 9.05) || (t > 10.5 && t < 10.66);
+    Felt.blink(r.pot, blink);
+    // The dotted path reveals along the career, and each badge springs in with its caption.
+    MG.draw(r.dottedReveal, MG.prog(t, BEATS.path, 3));
+    r.badges.forEach((b, i) => {
+      let at = BEATS.badges[i];
+      Felt.pop(b, MG.prog(t, at, .4), BADGES[i].x, BADGES[i].y);
+      Felt.visible(r.captions[i], MG.prog(t, at + .2, .3));
+    });
+    Felt.pop(r.tag, MG.prog(t, BEATS.finalTag, .35), 1138, 400, 1, 295, 46);
+    r.label.textContent = MG.typed("SpaceXAI · Grok Bot 팀", MG.prog(t, BEATS.typing, 1));
+  },
+});
+</script>

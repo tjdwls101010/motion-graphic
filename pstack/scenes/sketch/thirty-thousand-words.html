@@ -1,0 +1,149 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../kit/base.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* Loose pages gather into a stack under the handwritten word count, the stack gets a red cover, then the headline and book shrink into a small tag at the top left and a desk scene takes the frame: a large monitor with code lines, a play button and a bug, and a bespectacled senior colleague with a name badge standing beside it. A green check is drawn on the monitor corner at the end.
+Motion notes: on twos (15 fps). Pages collect 0 to 1 s, the headline writes 1 to 2.2 s, the red cover fills from 2.5 s; the camera eases out 4.0 to 4.6 s and the book and headline shrink into the tag 4.6 to 5.3 s (tag strips pop at 5.3 s). The desk draws on 5.1 to 5.8 s, the grey monitor pops at 5.3 s and turns white at 6.4 s while code lines type to 7.6 s, the senior pops at 6.8 s, the play button pops at 7.6 s, the bug at 8.0 s, the check is drawn 8.5 to 8.9 s; the camera pushes in to 1.26x from 6.9 to 8.0 s. */
+
+const P = MG.prog;
+const TAG = { s: 0.28, tx: -54, ty: 76 };     // the final transform of the headline composite: x' = s*x + tx
+const MONITOR = { x: 884, y: 274, w: 377, h: 288 };
+const CODE = [210, 150, 250, 110, 200];  // code line lengths
+const BEATS = {
+  camera: [
+    [0, [1.25, 960, 520]], [4.0, [1.25, 960, 520]], [4.6, [1, 960, 540]],
+    [6.9, [1, 960, 540]], [8.0, [1.26, 900, 500]], [12, [1.26, 900, 500]],
+  ],
+  shrink: [4.6, 0.7],
+  deskAt: 5.1, monitorAt: 5.3, whiteAt: 6.4, seniorAt: 6.8, playAt: 7.6, bugAt: 8.0, checkAt: 8.5,
+};
+
+// The headline composite: the stack of pages, red cover, handwritten count and subtitle. lw keeps the line from getting thinner than the tag needs.
+function headline(p, t, lw) {
+  const q = P(t, 0, 1);
+  for (let i = 0; i < 9; i++) {
+    const x = 550 + (1 - q) * (i - 4) * 115, y = 650 - i * 15 - (1 - q) * (i % 3) * 160;
+    p.poly([[x, y], [x + 440, y], [x + 470, y - 100], [x + 30, y - 100], [x, y]], { closed: true, fill: SK.WHITE, w: lw, seed: 10 + i });
+  }
+  if (t > 1) {
+    p.text('약', 1010, 330, { size: 120, p: P(t, 1, 0.4) });
+    p.text('3만', 1120, 330, { size: 120, p: P(t, 1.4, 0.4), hl: P(t, 1.7, 0.5) });
+    p.text('단어', 1325, 330, { size: 120, p: P(t, 1.8, 0.4) });
+    p.text('SKILL.md 56개', 1010, 410, { size: 40, color: SK.GREY, weight: 400, p: P(t, 2.2, 0.4) });
+    p.text('· 합계 33,305 단어', 1250, 410, { size: 40, color: SK.GREY, weight: 400, p: P(t, 2.7, 0.5) });
+  }
+  if (t > 2.5) {
+    const cover = [[550, 530], [990, 530], [1020, 450], [580, 450]];
+    p.poly(cover.concat([cover[0]]), { closed: true, fill: '#e88469', w: lw, seed: 40, p: P(t, 2.5, 0.4) });
+    p.hatch(cover, { seed: 41, w: Math.max(2.2, lw * 0.5), p: P(t, 2.7, 0.6) });
+  }
+}
+
+function keyboardAndMug(p, vis) {
+  p.rect(975, 586, 170, 14, { w: 4, fill: SK.WHITE, p: vis, seed: 210 });
+  p.rect(1296, 540, 42, 46, { r: 8, w: 4.5, fill: SK.WHITE, p: vis, seed: 211 });
+  p.curve([[1338, 552], [1358, 556], [1358, 574], [1338, 576]], { w: 4, p: vis, seed: 212 });
+}
+
+function senior(p, x, gy, t) {
+  const hy = gy - 515;
+  const ink = { w: 5 };
+  p.line(x - 14, gy - 262, x - 20, gy, { ...ink, seed: 601 });
+  p.line(x + 16, gy - 262, x + 22, gy, { ...ink, seed: 602 });
+  p.line(x - 20, gy, x - 48, gy, { ...ink, seed: 603 });
+  p.line(x + 22, gy, x + 50, gy, { ...ink, seed: 604 });
+  p.poly([[x - 32, gy - 460], [x - 56, gy - 350], [x - 50, gy - 290]], { ...ink, seed: 605 });
+  p.circle(x - 50, gy - 282, 10, { w: 4, fill: SK.WHITE, seed: 606 });
+  p.poly([[x + 32, gy - 460], [x + 80, gy - 400], [x + 125, gy - 424]], { ...ink, seed: 607 });
+  p.circle(x + 130, gy - 426, 10, { w: 4, fill: SK.WHITE, seed: 608 });
+  p.rect(x - 34, gy - 470, 68, 210, { ...ink, r: 20, fill: SK.WHITE, seed: 609 });
+  p.hatch([[x - 32, gy - 400], [x + 32, gy - 400], [x + 32, gy - 262], [x - 32, gy - 262]], { color: 'rgba(90,84,74,0.5)', gap: 8, w: 1.8, seed: 610, angle: -55 });
+  p.rect(x - 20, gy - 395, 40, 34, { w: 3.5, fill: SK.WHITE, seed: 611 });
+  p.text('선배', x, gy - 377, { size: 22, align: 'center' });
+  for (let i = 0; i < 4; i++) p.line(x - 18 + i * 12, gy - 548, x - 20 + i * 12, gy - 565, { w: 4, seed: 620 + i, wob: 0.8 });
+  p.circle(x, hy - 20, 34, { ...ink, fill: SK.WHITE, seed: 612 });
+  p.circle(x - 15, hy - 20, 13, { w: 4, seed: 613 });
+  p.circle(x + 15, hy - 20, 13, { w: 4, seed: 614 });
+  p.line(x - 2, hy - 20, x + 2, hy - 20, { w: 4, seed: 615 });
+  p.circle(x - 14, hy - 19, 3, { w: 3, fill: SK.INK, seed: 616 });
+  p.circle(x + 16, hy - 19, 3, { w: 3, fill: SK.INK, seed: 617 });
+  p.curve([[x - 8, hy + 2], [x, hy + 6], [x + 9, hy + 2]], { w: 3.5, seed: 618 });
+}
+
+MG.scene({
+  title: 'sketch / thirty-thousand-words',
+  duration: 12,
+  ref: [287, 299],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    SK.paper(ctx, { spiral: true });
+    // camera over the whole illustrated world
+    const [zoom, cx, cy] = MG.kf(t, BEATS.camera);
+    ctx.setTransform(zoom, 0, 0, zoom, 960 - cx * zoom, 540 - cy * zoom);
+    const p = SK.pen(ctx, t);
+    for (const [sx, sy, r] of [[160, 320, 24], [1760, 250, 22], [1790, 560, 18], [250, 740, 16], [1000, 1000, 16]]) p.star(sx, sy, r, { seed: 100 + r });
+
+    // headline composite, shrinking into the upper-left tag
+    const e = P(t, ...BEATS.shrink, 'inOutCubic');
+    const s = MG.lerp(1, TAG.s, e);
+    ctx.save();
+    ctx.translate(TAG.tx * e, TAG.ty * e);
+    ctx.scale(s, s);
+    headline(p, t, Math.max(4.2, 3 / s));
+    if (t < 3.4) SK.pencil(p, 1050 + P(t, 1, 2) * 300, 380, { s: 0.7 });
+    ctx.restore();
+    if (t > 5.3) {
+      const pop = P(t, 5.3, 0.3, 'outBack');
+      p.with(95, 168, { rot: -14, scale: pop }, () => p.rect(-60, -14, 120, 30, { fill: 'rgba(240,225,150,0.75)', color: null, seed: 80 }));
+      p.with(450, 262, { rot: 12, scale: pop }, () => p.rect(-50, -13, 100, 26, { fill: 'rgba(240,225,150,0.75)', color: null, seed: 81 }));
+    }
+
+    if (t < BEATS.deskAt) return;
+    // desk: top plank, legs, keyboard and mug draw on
+    const vis = P(t, BEATS.deskAt, 0.7);
+    p.rect(815, 605, 560, 24, { fill: '#e3c08a', w: 4.5, p: vis, seed: 200 });
+    p.line(850, 629, 846, 852, { w: 5, p: vis, seed: 201 });
+    p.line(1340, 629, 1344, 852, { w: 5, p: vis, seed: 202 });
+    SK.ground(p, 852, { p: vis, x1: 560, x2: 1480 });
+    keyboardAndMug(p, vis);
+    if (t > 7.2) for (let i = 0; i < 2; i++) p.curve([[1306 + i * 20, 520], [1296 + i * 20, 498], [1312 + i * 20, 478], [1302 + i * 20, 458]], { color: SK.GREY, w: 3, p: P(t, 7.2 + i * 0.2, 0.5), seed: 220 + i });
+    // monitor: grey placeholder, then white with code lines, a play button and a bug
+    const M = MONITOR, white = t >= BEATS.whiteAt;
+    const mp = P(t, BEATS.monitorAt, 0.4, 'outBack');
+    p.with(M.x + M.w / 2, M.y + M.h, { scale: Math.max(0.01, mp) }, () => {
+      p.rect(-M.w / 2, -M.h, M.w, M.h, { fill: white ? SK.WHITE : '#aaa498', w: 10, seed: 230 });
+      p.line(0, 0, 0, 24, { w: 6, seed: 231 });
+      p.line(-60, 26, 62, 26, { w: 6, seed: 232 });
+    });
+    if (white) {
+      CODE.forEach((len, i) => p.line(M.x + 36, M.y + 44 + i * 36, M.x + 36 + len, M.y + 44 + i * 36, { w: 5, p: P(t, 6.5 + i * 0.18, 0.2), seed: 240 + i, wob: 0.8 }));
+      if (t > BEATS.playAt) {
+        p.with(M.x + 95, M.y + 238, { scale: P(t, BEATS.playAt, 0.3, 'outBack') }, () => {
+          p.rect(-52, -24, 104, 48, { r: 10, fill: SK.WHITE, w: 4.5, seed: 250 });
+          p.poly([[-12, -13], [-12, 13], [14, 0], [-12, -13]], { closed: true, fill: SK.INK, w: 3, seed: 251 });
+        });
+      }
+      if (t > BEATS.bugAt) {
+        p.with(M.x + 290, M.y + 190, { scale: P(t, BEATS.bugAt, 0.3, 'outBack') }, () => {
+          for (const sd of [-1, 1]) for (let k = 0; k < 3; k++) p.line(sd * 12, -6 + k * 9, sd * 34, -14 + k * 13, { w: 4, seed: 260 + k * 3 + sd });
+          p.line(-6, -22, -16, -38, { w: 4, seed: 270 });
+          p.line(6, -22, 16, -38, { w: 4, seed: 271 });
+          p.ellipse(0, 4, 17, 22, { fill: SK.WHITE, w: 5, seed: 272 });
+          p.hatch([[-14, -10], [14, -10], [14, 24], [-14, 24]], { color: SK.RED_LINE, gap: 6, w: 2.4, seed: 273, angle: -50 });
+        });
+      }
+      if (t > BEATS.checkAt) p.poly([[1226, 296], [1252, 328], [1308, 252]], { w: 12, color: '#5f9a63', p: P(t, BEATS.checkAt, 0.4), seed: 280 });
+    }
+
+    // the senior colleague
+    if (t > BEATS.seniorAt) {
+      const pop = P(t, BEATS.seniorAt, 0.35, 'outBack');
+      p.with(770, 852, { scale: Math.max(0.01, pop) }, () => senior(p, 0, 0, t));
+    }
+  },
+});
+</script>

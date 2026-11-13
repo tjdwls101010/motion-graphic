@@ -1,7 +1,8 @@
 # reference footage and anything extracted from it stay local (third-party video, and over GitHub's 100 MB limit)
-references.mp4
-out/
+/pstack/references.mp4
+/pstack/out/
 .codex-runs/
+.claude-runs/
 .claude/
 .DS_Store
 __pycache__/

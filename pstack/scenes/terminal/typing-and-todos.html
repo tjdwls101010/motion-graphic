@@ -1,0 +1,62 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/terminal.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/terminal.js"></script>
+<script>
+/* A prompt is typed and submitted, then a todo list streams in and skipped steps are called out. The annotations make the agent's order of work visible. Motion notes: typing ends at 2 s, Enter pops at 2.1 s, output begins at 3 s, todos stagger by 0.35 s from 6 s, strikes sweep at 10 s and an arrow draws at 11 s. */
+const BEATS = { type: 0, enter: 2.1, output: 3, todos: 6, strike: 10, arrow: 11 };
+const FRAME = { keyX: 1250, keyY: 550, arrowX: 640, arrowY: 450 };
+const CAMERA = [[0, [1, 0, 0]], [16, [1, 0, 0]]];
+const PROMPT = '/pstack:poteto-mode 투두 목록 화면을 카드형, 리스트형, 칸반형 세 가지로 만들어서 비교하고 싶어';
+const OUTPUT = [
+  '● Running 2 shell commands…',
+  '✻ Thinking… (esc to interrupt)',
+  '● 진행 상황 (Prototype 플레이북)',
+  '● Update Todos',
+  '  □ 무엇을 결정할지 정하기',
+  '  □ 참고 자료 모으기',
+  '  □ 카드형 레이아웃 만들기',
+  '  □ 리스트형 레이아웃 만들기',
+  '  □ 칸반형 레이아웃 만들기',
+  '  □ 화면 비교 및 검증',
+];
+MG.scene({
+  title: 'terminal / typing-and-todos',
+  duration: 16,
+  ref: [504, 520],
+  setup(stage) {
+    const root = Terminal.root(stage);
+    const win = Terminal.window(root);
+    Terminal.header(win.body);
+    win.body.append(MG.el('div', { class: 'term-rule' }));
+    const prompt = Terminal.line(win.body, '', 'term-prompt');
+    const lines = OUTPUT.map(() => Terminal.line(win.body, ''));
+    win.body.append(MG.el('div', { class: 'term-rule' }));
+    Terminal.status(win.body);
+    Terminal.webcam(root);
+    const key = Terminal.key(root, '↵', FRAME.keyX, FRAME.keyY);
+    const arrow = Terminal.arrow(root, '건너뛴 단계', FRAME.arrowX, FRAME.arrowY);
+    return { root, prompt, lines, key, arrow };
+  },
+  render(t, refs) {
+    Terminal.camera(refs.root, t, CAMERA);
+    // Type and submit the prompt.
+    refs.prompt.textContent = '❯ ' + MG.typed(PROMPT, MG.prog(t, BEATS.type, 2)) + (t < BEATS.enter && MG.blink(t) ? ' ▌' : '');
+    Terminal.pop(refs.key, t, BEATS.enter, 3.1);
+    // Output and todo rows stream in individually.
+    refs.lines.forEach((line, i) => {
+      const start = i < 3 ? BEATS.output + i : BEATS.todos + (i - 3) * 0.35;
+      line.textContent = t > start ? OUTPUT[i] : '';
+      if (i === 1 && t > start) line.textContent = '✻ Thinking… (' + Math.floor(t - start) + 's · esc to interrupt)';
+      line.style.color = i === 1 ? '#c98772' : i === 3 ? '#a9d59b' : '';
+      const strike = i >= 4 && i <= 5 ? MG.prog(t, BEATS.strike + (i - 4) * 0.2, 0.5) : 0;
+      line.style.background = `linear-gradient(#84918d, #84918d) no-repeat left 55% / ${strike * 440}px 2px`;
+    });
+    // Draw the explanatory arrow after the skipped rows are crossed out.
+    Terminal.arrowShow(refs.arrow, t, BEATS.arrow, 16.1);
+  },
+});
+</script>

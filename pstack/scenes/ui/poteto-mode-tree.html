@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ui / poteto-mode-tree</title>
+<link rel="stylesheet" href="../../kit/base.css">
+<link rel="stylesheet" href="../../kit/ui.css">
+<script src="../../kit/motion.js"></script>
+<script src="../../kit/stage.js"></script>
+<script src="../../kit/ui.js"></script>
+<style>
+  .slot { position: absolute; top: 255px; height: 595px; border-radius: 28px; overflow: hidden; }
+  .slot .ghost { position: absolute; inset: 0; border: 2.5px dashed #dcdcdc; border-radius: 28px; background: #f3f3f3; display: grid; place-items: center; font: 800 44px 'JetBrains Mono', monospace; color: #c4c4c4; }
+  .slot .solid { position: absolute; inset: 0; border: 3px solid #2a2a2a; border-radius: 28px; background: #fff; box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.2); }
+  .slot .head { position: absolute; left: 26px; right: 26px; top: 20px; height: 70px; border-bottom: 2px solid #e6e6e6; }
+  .slot .name { font: 800 30px/1.2 Pretendard, sans-serif; white-space: nowrap; }
+  .slot .path { font: 500 17px/1.2 'JetBrains Mono', monospace; color: #a3a3a3; white-space: nowrap; }
+  .slot .count { position: absolute; right: 0; top: -2px; font: 800 60px/1 'JetBrains Mono', monospace; }
+  .slot .full { position: absolute; left: 26px; top: 112px; width: 708px; }
+  .slot .mini { position: absolute; left: 26px; top: 112px; font: 700 19px/1.75 'JetBrains Mono', monospace; white-space: nowrap; }
+  .sub { border: 2.5px solid #2a2a2a; border-radius: 14px; padding: 14px 18px; background: #fff; transform-origin: 50% 50%; }
+  .sub b { display: block; font: 800 25px/1.2 'JetBrains Mono', monospace; }
+  .sub i { display: block; font: 600 18px/1.4 Pretendard, sans-serif; font-style: normal; color: #555; margin-top: 2px; }
+  .sub q { display: block; font: italic 500 14.5px/1.4 Pretendard, sans-serif; color: #9a9a9a; margin-top: 6px; quotes: none; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .rows { display: grid; gap: 14px; }
+  .wrap { display: flex; flex-wrap: wrap; gap: 14px; }
+  .wrap > div:last-child { flex-basis: 100%; }
+  .pill { position: absolute; left: 648px; top: 62px; width: 624px; height: 112px; border-radius: 30px; background: #2a2a2a; color: #fff; display: flex; align-items: center; gap: 22px; padding: 0 34px; font: 800 46px 'JetBrains Mono', monospace; box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.35); }
+  .pill .ring { width: 56px; height: 56px; border-radius: 50%; background: #fff; color: #2a2a2a; display: grid; place-items: center; font-size: 32px; flex: none; }
+  .pill .tag { margin-left: auto; background: #fff; color: #2a2a2a; border-radius: 12px; padding: 6px 14px; font: 800 24px Pretendard, sans-serif; }
+</style>
+<script>
+/* A structure is revealed top-down: four unknown "?" slots, then the router pill that owns them, then connector lines, and then each slot in turn opens like an accordion, takes a title and a count that runs up from zero, shows a few sample children, and folds back to a compact list when the next slot opens. Idea carried: "one router, then 23 + 24 + 32 + 2 things beneath it" without ever showing everything at once.
+   Motion notes: placeholders first, so the viewer knows how many parts are coming; the accordion is a single 0.7 s inOutCubic in which the outgoing slot narrows exactly as the incoming one widens (total width constant, nothing else moves); counts start 0.5 s after their slot opens and ease out over 1.3 s (1.8 s for the largest); children pop one at a time (scale 0.85 -> 1, outBack, 0.3 s) roughly every 0.8 s (every 0.3 s in the third slot, where they are only name chips), and only the newest carries the lavender ring; a folded slot keeps its count and a small list so progress stays visible. */
+const { prog, ease, lerp, clamp, el } = MG;
+const X0 = 90, GAP = 35, EQUAL = 420, NARROW = 285, WIDE = 760, BUS_Y = 218, TOP = 255;
+const SLOTS = [
+  { name: '플레이북', path: 'playbooks/', count: 23, open: 4.0, close: 10.5, grid: true,
+    kids: [['bug fix', '버그 수정', '"reproduce a defect, root-cause it, and fix with runtime evidence."', 6.6], ['feature', '기능 추가', '"new or changed behavior, built from a named data shape."', 7.5], ['refactoring', '리팩터링', '"a behavior-preserving change to structure or shape."', 8.2], ['perf', '성능 개선', '"have a measured slowness and improve it against a baseline."', 9.0]],
+    mini: ['bug fix', 'feature', 'refactoring', 'perf', 'prototype', 'investigation'] },
+  { name: '원칙', path: 'principle-*', count: 24, open: 10.5, close: 18.8,
+    kids: [['laziness-protocol', '', '"Bias toward deletion and the smallest change that solves the problem."', 12.6], ['fix-root-causes', '', '"Trace each symptom back to the first place the system went wrong and fix it there."', 14.2], ['prove-it-works', '', '"Verify against the real artifact … not a proxy, self-report, or \'it compiles\'."', 15.6]],
+    more: ['— 외 21개 (model-the-domain …)', 16.3],
+    mini: ['laziness-protocol', 'fix-root-causes', 'prove-it-works', 'model-the-domain', 'attack-the-premise'] },
+  { name: '작업 스킬', path: 'skills/', count: 32, open: 18.8, close: 22.6, wrap: true, slow: 1.8,
+    kids: [['how', '', '', 20.2], ['architect', '', '', 20.5], ['setup-pstack', '', '', 20.8], ['create-verification-skill', '', '', 21.1], ['tdd', '', '', 21.4], ['why', '', '', 21.7]],
+    more: ['— 외 26개', 22.0],
+    mini: ['how', 'architect', 'setup-pstack', 'create-verification…', 'tdd', 'why'] },
+  { name: '서브에이전트', path: 'agents/', count: 2, open: 22.6, close: 99,
+    kids: [['poteto-agent', '', '"Delegate subagent for code-writing and helper tasks."', 24.0], ['comment-sicko', '', '"A deranged comment-hater that savors deletion."', 24.6]], mini: [] },
+];
+MG.scene({
+  title: 'ui / poteto-mode-tree',
+  duration: 25.2, ref: [321.5, 346.7],
+  setup(stage) {
+    const root = UI.root(stage);
+    const svg = MG.svg('svg', { width: 1920, height: 1080, style: { position: 'absolute', left: 0, top: 0 } });
+    root.append(svg);
+    const line = (dash) => { const p = MG.svg('path', { fill: 'none', stroke: '#4a4a4a', 'stroke-width': 2.5, 'stroke-dasharray': dash ? '9 7' : '' }); svg.append(p); return p; };
+    const trunk = line(false), bus = line(false), drops = SLOTS.map(() => line(true)), dropsSolid = SLOTS.map(() => line(false));
+    const label = el('span'), tag = el('span', { class: 'tag', text: '라우터' });
+    const pill = el('div', { class: 'pill' }, el('span', { class: 'ring', text: 'P' }), label, tag);
+    root.append(pill);
+    const slots = SLOTS.map((s) => {
+      const ghost = el('div', { class: 'ghost', text: '?' });
+      const count = el('span', { class: 'count', text: '0' });
+      const kids = s.kids.map(([b, i, q]) => el('div', { class: 'sub' }, el('b', { text: b }), i ? el('i', { text: i }) : null, q ? el('q', { text: q }) : null));
+      const more = s.more ? el('div', { style: { font: "700 18px 'JetBrains Mono', monospace", color: '#777', paddingLeft: '6px' }, text: s.more[0] }) : null;
+      const full = el('div', { class: 'full ' + (s.grid ? 'grid2' : s.wrap ? 'wrap' : 'rows') }, ...kids, more);
+      const mini = el('div', { class: 'mini' }, ...s.mini.map((m, i) => el('div', { text: m, style: { opacity: i < 3 ? 1 : i === 3 ? 0.55 : 0.3 } })));
+      const solid = el('div', { class: 'solid' }, el('div', { class: 'head' }, el('div', { class: 'name', text: s.name }), el('div', { class: 'path', text: s.path }), count), full, mini);
+      const node = el('div', { class: 'slot' }, ghost, solid);
+      root.append(node);
+      return { node, ghost, solid, count, kids, more, full, mini };
+    });
+    return { pill, label, tag, trunk, bus, drops, dropsSolid, slots };
+  },
+  render(t, r) {
+    // ghosts drift in together, slightly staggered
+    r.slots.forEach((s, i) => MG.show(s.node, prog(t, 0.1 + i * 0.07, 0.5, 'outCubic'), { dy: 26 }));
+    // router pill: pop, type its name, then the role tag
+    MG.show(r.pill, prog(t, 1.5, 0.4, 'outBack'), { scale: 0.8 });
+    UI.type(r.label, 'poteto-mode', prog(t, 1.7, 0.5));
+    MG.show(r.tag, prog(t, 2.4, 0.3, 'outBack'), { scale: 0.5 });
+
+    // accordion widths: everyone equal until the first slot opens, then exactly one wide slot
+    const G = prog(t, SLOTS[0].open, 0.7, 'inOutCubic');
+    const act = SLOTS.map((s) => prog(t, s.open, 0.7, 'inOutCubic') - prog(t, s.close, 0.7, 'inOutCubic'));
+    let x = X0;
+    const centres = [];
+    r.slots.forEach((s, i) => {
+      const def = SLOTS[i], w = lerp(EQUAL, lerp(NARROW, WIDE, act[i]), G);
+      s.node.style.left = x + 'px';
+      s.node.style.width = w + 'px';
+      centres.push(x + w / 2);
+      x += w + lerp(40, GAP, G);
+      const opened = prog(t, def.open, 0.35);
+      s.ghost.style.opacity = 1 - opened;
+      s.solid.style.opacity = opened;
+      const n = Math.round(def.count * prog(t, def.open + 0.5, def.slow || 1.3, 'outCubic'));
+      s.count.textContent = n;
+      s.full.style.opacity = clamp(act[i] * 2 - 1);
+      s.mini.style.opacity = clamp(1 - act[i] * 2) * prog(t, def.close + 0.2, 0.4);
+      s.kids.forEach((k, j) => {
+        const at = def.kids[j][3], next = def.kids[j + 1] ? def.kids[j + 1][3] : def.more ? def.more[1] : 99;
+        MG.show(k, prog(t, at, 0.3, 'outBack'), { scale: 0.85 });
+        const ring = prog(t, at, 0.2) * (1 - prog(t, next, 0.3));
+        k.style.boxShadow = `0 0 0 ${5 * ring}px rgba(188,184,248,${ring})`;
+      });
+      if (s.more) s.more.style.opacity = prog(t, def.more[1], 0.3);
+    });
+
+    // connectors: trunk drops from the pill, the bus grows outwards from the middle, then the drops fall
+    const pt = prog(t, 2.7, 0.25), pb = prog(t, 2.95, 0.45, 'outCubic'), pd = prog(t, 3.35, 0.3);
+    r.trunk.setAttribute('d', `M960 174V${lerp(174, BUS_Y, pt)}`);
+    r.bus.setAttribute('d', pb > 0 ? `M${lerp(960, centres[0], pb)} ${BUS_Y}H${lerp(960, centres[3], pb)}` : '');
+    centres.forEach((c, i) => {
+      const d = pd > 0 ? `M${c} ${BUS_Y}V${lerp(BUS_Y, TOP, pd)}` : '';
+      const opened = prog(t, SLOTS[i].open, 0.35);
+      r.drops[i].setAttribute('d', d);
+      r.dropsSolid[i].setAttribute('d', d);
+      r.drops[i].style.opacity = 1 - opened;       // dashed while the slot is still unknown
+      r.dropsSolid[i].style.opacity = opened;
+    });
+  },
+});
+</script>

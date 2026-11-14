@@ -252,7 +252,7 @@
     ctx.restore();
   };
 
-  /* pointer(ctx, tip, opts) — a hand from off-screen with one finger out: a sleeve, a fist with three folded fingers, the pointing finger and its nail. Drawn at insert size (the finger is 92 px thick at scale 1) with the fingertip at `tip`, pointing left and the sleeve running off to the lower right; `scale` shrinks it for a wide shot, `rot` turns it about the fingertip (-PI / 2 points it down from above), `flip` mirrors it to point right. lw is the outline width on screen, whatever the scale. */
+  /* pointer(ctx, tip, opts) — a hand from off-screen with one finger out: a sleeve, a fist with three folded fingers, the pointing finger and its nail. Drawn at insert size (the finger is 92 px thick at scale 1) with the fingertip at `tip`, pointing left and the sleeve running off to the lower right; `scale` shrinks it for a wide shot, `rot` turns it about the fingertip (-PI / 2 points it down from above), `flip` mirrors it to point right. The mirror is applied after the turn, so with flip the turn runs the other way: a mirrored hand pointing down from above is rot +PI / 2. lw is the outline width on screen, whatever the scale. */
   IB.pointer = (ctx, tip, o = {}) => {
     const { scale = 1, rot = 0, flip = false, sleeve = C.yellow, skin = C.skin[1], lw = 8, seed = 540 } = o, w = lw / scale;
     ctx.save();

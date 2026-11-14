@@ -8,21 +8,22 @@
 <script src="../../kit/figure.js"></script>
 <script>
 /* 큰 상자를 끌어안고 용을 써 보지만 꿈쩍도 않자 한숨 쉬고 다시 자세를 잡아, 한 번에 들어 올려 세 걸음 휘청이며 옮겨 놓고 "휴." 한다. 원본에 없는 창작 장면으로, 원본의 느린 연기(3프레임에 한 장)를 무게를 보여 주는 데 썼다. 전달하는 생각: 무거운 것은 느리게, 끊어서 움직인다.
-   Motion notes: one locked shot, 8 s, figure 540 px tall. The rule here is that weight is frame rate: everything light is on twos (12 fps), everything that fights the box is on threes (8 fps). Timeline in seconds: stand 0-1; bend to the box in 3 drawings on twos (poseMix 0.4, 0.8, 1); strain 1.5-2.5 on threes, 8 drawings alternating two poses 16 px apart while the box does not move and shake marks re-roll each drawing; slump held 0.5 s; deeper grip held dead still 0.5 s (the anticipation); lift at 3.5 in 3 drawings on twos, box up 60, 200, 256 px, body leaning back 0.2 rad; three staggering steps 4.0-5.5 on threes, 4 drawings per step, 110 px per step (stride 0.1 h, a quarter of the unloaded walk's), the box sagging 10 px on each passing drawing; set down in 2 drawings with a four-line burst and two dust puffs for 2 drawings; rest on the box 0.83 s; stand and wipe the brow at 6.5, bubble at 6.83. The box is rigid throughout: it tilts 0.02 rad under strain and never squashes. The figure is drawn in two passes with the box between its arms (IB.figure `only`). */
+   Motion notes: one locked shot, 8 s, figure 540 px tall. The rule here is that weight is frame rate: everything light is on twos (12 fps), everything that fights the box is on threes (8 fps). Timeline in seconds: stand 0-1; bend to the box in 3 drawings on twos (poseMix 0.4, 0.8, 1); strain 1.5-2.5 on threes, 8 drawings alternating two poses 16 px apart while the box does not move and shake marks re-roll each drawing; slump held 0.5 s; a deeper grip, one in-between and then dead still 0.42 s (the anticipation); lift at 3.5 in 3 drawings on twos, box up 60, 200, 256 px, body leaning back 0.2 rad; three staggering steps 4.0-5.5 on threes, 4 drawings per step, 110 px per step (0.2 h, half the unloaded walk's 0.42 h), the box sagging 10 px on each passing drawing; set down in 2 drawings with a four-line burst and two dust puffs for 2 drawings; rest on the box 0.83 s; stand and wipe the brow at 6.5, bubble at 6.83. The box is rigid throughout: it tilts 0.02 rad under strain and never squashes. Feet: she stands, lifts and sets down in one wide stance (110 px), the stagger starts and ends on a drawing whose planted foot is where the stance had it, and when she straightens only the free foot steps in, so a planted foot never slides. Every hand target is within the arm's reach of the pose it belongs to, so no hand floats off the box. The figure is drawn in two passes with the box between its arms (IB.figure `only`). */
 const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 760, STEPX = 110, BW = 230, BH = 210;
 const WHO = { h: 540, dir: 1, skin: C.skin[1], top: C.mint, tuck: true, bottom: C.navy, shoe: C.paper, hair: 'bun', seed: 20 };
 const H = WHO.h, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, AY = FLOOR - F.ankle * H, RISE = FLOOR - (HIPY + 50);
+const FT0 = [[55], [-55]], FT1 = [[-55], [55]];   // the wide stance before the carry (far foot ahead) and after it (near foot ahead)
 const feet = (X, far, near) => [[X + far[0], AY - IB.footLift(far[1] || 0, H) + (far[2] || 0), far[1] || 0], [X + near[0], AY - IB.footLift(near[1] || 0, H) + (near[2] || 0), near[1] || 0]];
 
 // poses, all for a figure whose place on the floor is X; the box stands 225 px ahead of it
 const P = {
-  stand: (X) => ({ ...IB.stand(X, FLOOR, WHO), face: { mouth: 'flat' } }),
-  grip: (X, deep = 0) => ({ hip: [X - 40, HIPY + 110 + deep], lean: 0.68, nod: -0.2, feet: feet(X, [44], [-30]), hands: [[X + 190, FLOOR - BH - 4], [X + 114, FLOOR - BH + 46]], face: { mouth: 'flat', brow: 1 } }),
-  strain: (X) => ({ hip: [X - 44, HIPY + 94], lean: 0.58, nod: -0.5, feet: feet(X, [44], [-30]), hands: [[X + 190, FLOOR - BH - 6], [X + 114, FLOOR - BH + 44]], face: { eye: 'closed', mouth: 'open', brow: 1 } }),
-  slump: (X) => ({ hip: [X - 34, HIPY + 64], lean: 0.9, nod: 0.5, feet: feet(X, [44], [-30]), hands: [[X + 168, FLOOR - BH - 8], [X + 128, FLOOR - BH - 4]], face: { eye: 'closed', mouth: 'frown' } }),
-  held: (X, sag = 0) => ({ hip: [X - 10, HIPY + 14 + sag * 0.6], lean: -0.2, nod: -0.1, feet: feet(X, [60], [-50]), hands: [[X + 150, HIPY + 30 + sag], [X + 62, HIPY + 44 + sag]], face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
-  wipe: (X) => { const p = IB.stand(X, FLOOR, WHO); p.hands = [[X + 30, HIPY - F.torso * H - 0.1 * H], p.hands[1]]; p.nod = -0.15; p.face = { eye: 'closed', mouth: 'open' }; return p; },
+  stand: (X) => ({ ...IB.stand(X, FLOOR, WHO), feet: feet(X, ...FT0), face: { mouth: 'flat' } }),
+  grip: (X, deep = 0, ft = FT0) => ({ hip: [X - 40, HIPY + 110 + deep], lean: 0.68, nod: -0.2, feet: feet(X, ...ft), hands: [[X + 130, FLOOR - BH - 4], [X + 114, FLOOR - BH + 46]], face: { mouth: 'flat', brow: 1 } }),
+  strain: (X) => ({ hip: [X - 44, HIPY + 94], lean: 0.58, nod: -0.5, feet: feet(X, ...FT0), hands: [[X + 130, FLOOR - BH - 6], [X + 112, FLOOR - BH + 24]], face: { eye: 'closed', mouth: 'open', brow: 1 } }),
+  slump: (X, ft = FT0) => ({ hip: [X - 34, HIPY + 64], lean: 0.9, nod: 0.5, feet: feet(X, ...ft), hands: [[X + 168, FLOOR - BH - 8], [X + 128, FLOOR - BH - 4]], face: { eye: 'closed', mouth: 'frown' } }),
+  held: (X, sag = 0, ft = FT0) => ({ hip: [X - 10, HIPY + 14 + sag * 0.6], lean: -0.2, nod: -0.1, feet: feet(X, ...ft), hands: [[X + 80, HIPY + sag], [X + 50, HIPY + 28 + sag]], face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
+  wipe: (X) => { const p = IB.stand(X + 42, FLOOR, WHO); p.feet = feet(X, [30], [55]); p.hands = [[X + 72, HIPY - F.torso * H - 0.1 * H], p.hands[1]]; p.nod = -0.15; p.face = { eye: 'closed', mouth: 'open' }; return p; },   // the near foot stays planted, the free one steps in beside it
 };
 const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), face: (u < 0.5 ? a : b).face });
 
@@ -38,15 +39,15 @@ function state(t) {
   if (t2 < 4) { const k = Math.min(2, n2(3.5)), u = [0.35, 0.8, 1][k]; return { pose: mix(P.grip(X0, 22), P.held(X0), u), box: [X0 + lerp(225, 150, u), FLOOR - [60, 200, RISE][k], 0], carried: true }; }
   if (t3 < 5.5) {
     // staggering forward: a small-stride walk on threes, the box sagging on every passing drawing
-    const k = n3(4), ph = (k / 8) % 1, X = X0 + STEPX * (k / 4), S = STEPX / 2, sag = k % 2 ? 10 : 0, p = P.held(X, sag);
+    const k = n3(4), ph = (k / 8) % 1, X = X0 + STEPX * (k / 4), S = STEPX / 2, sag = k % 4 === 2 ? 10 : 0, p = P.held(X, sag);
     const foot = (u) => (u < 0.5 ? [S * (1 - 4 * u), 0, 0] : [S * (-1 + 4 * (u - 0.5)), 0.25, -0.05 * H * Math.sin((u - 0.5) * 2 * Math.PI)]);
-    const near = foot(ph), far = foot((ph + 0.5) % 1);
-    p.feet = feet(X, [far[0] + 30, far[1], far[2]], [near[0] - 20, near[1], near[2]]);
+    const far = foot(ph), near = foot((ph + 0.5) % 1);   // starts with the far foot planted ahead, as the stance left it
+    p.feet = feet(X, far, near);
     return { pose: p, box: [X + 150, FLOOR - RISE + sag, 0], carried: true };
   }
-  if (t2 < 68 / 12 - 1e-6) { const k = n2(5.5); return k === 0 ? { pose: mix(P.held(X1), P.grip(X1), 0.5), box: [X1 + 190, FLOOR - 110, 0], carried: true } : { pose: P.grip(X1), box: box(X1), thud: 0 }; }
-  if (t2 < 6.5) return { pose: P.slump(X1), box: box(X1), thud: n2(68 / 12) + 1 };
-  return { pose: n2(6.5) === 0 ? mix(P.slump(X1), P.wipe(X1), 0.5) : P.wipe(X1), box: box(X1) };
+  if (t2 < 68 / 12 - 1e-6) { const k = n2(5.5); return k === 0 ? { pose: mix(P.held(X1, 0, FT1), P.grip(X1, 0, FT1), 0.5), box: [X1 + 190, FLOOR - 110, 0], carried: true } : { pose: P.grip(X1, 0, FT1), box: box(X1), thud: 0 }; }
+  if (t2 < 6.5) return { pose: P.slump(X1, FT1), box: box(X1), thud: n2(68 / 12) + 1 };
+  return { pose: n2(6.5) === 0 ? mix(P.slump(X1, FT1), P.wipe(X1), 0.5) : P.wipe(X1), box: box(X1) };
 }
 
 function crate(ctx, [x, y, tilt]) {
@@ -84,7 +85,7 @@ MG.scene({
       }
     }
     const X1 = X0 + 3 * STEPX;
-    IB.bubble(ctx, ['휴.'], t, 82 / 12, { tip: [X1 + 62, HIPY - F.torso * H - 0.1 * H], x: X1 - 96, y: HIPY - F.torso * H - 0.3 * H, seed: 500 });
+    IB.bubble(ctx, ['휴.'], t, 82 / 12, { tip: [X1 + 104, HIPY - 196], x: X1 + 250, y: HIPY - 300, seed: 500 });
   },
 });
 </script>

@@ -29,6 +29,13 @@
     ctx.fillRect(0, 0, MG.W, MG.H);
   };
 
+  /* crop(ctx, [x, y, w, h]) — frame the shot on one 16:9 region of the reference's 1920x1080 layout and enlarge it to fill the stage. Scenes leave the reference's copy out, so the half of the frame it occupied is cropped away; everything a scene draws stays in reference coordinates, which is what the numbers in STYLE.md are in. Call it right after IB.bg, then translate or scale on top of it for pans and zooms. Returns the scale. */
+  IB.crop = (ctx, [x, y, w]) => {
+    const s = MG.W / w;
+    ctx.setTransform(s, 0, 0, s, -x * s, -y * s);
+    return s;
+  };
+
   /* ---------- dust ---------- */
   /* Every grain of dust (edge dust, graphite shading, chalk) goes through here, for two reasons found the hard way with tools/check_pure.py.
      1. Chrome draws canvas paths with 4x MSAA, so an edge pixel has only five possible values and one sample flipping is a 62-level jump; which draws get MSAA depends on how the frame's operations are batched, and a frame with tens of thousands of operations is split into batches at points that vary from one capture to the next. Specks drawn one fillRect at a time (10,000 for one end-card smear) made a dense frame differ from itself by up to 63 pixels over the check's 40-level threshold (it allows 30).

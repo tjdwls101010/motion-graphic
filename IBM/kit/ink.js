@@ -69,10 +69,10 @@
      smooth  true: curve through the points; false: straight sides with crisp corners
      wob     how far the hand drifts off the true line, px
      seed    fixes the drift; give every stroke its own
-     from,to draw only this fraction of the stroke (0..1), for a line that is drawn on. They cut the outline only: a fill is always painted whole */
+     from,to draw only this fraction of the stroke (0..1), for a line that is drawn on. They cut the outline only: a fill is always painted whole, even when from >= to leaves no outline */
   IB.ink = (ctx, pts, o = {}) => {
     const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1 } = o;
-    if (pts.length < 2 || to <= from) return;
+    if (pts.length < 2) return;
     const step = Math.max(3, w * 1.6);
     let p = smooth ? spline(pts, closed, step) : resample(pts, closed, step);
     const n = p.length;
@@ -85,11 +85,12 @@
       ctx.fillStyle = fill;
       ctx.fill();
     }
-    if (w <= 0) return;
-    // a partial stroke is cut at the exact fraction, not at the nearest sample
-    const at = (u) => { const x = Math.min(n - 1, Math.max(0, u * (n - 1))), i = Math.min(n - 2, Math.floor(x)), v = x - i; return [q[i][0] + (q[i + 1][0] - q[i][0]) * v, q[i][1] + (q[i + 1][1] - q[i][1]) * v]; };
-    const a = Math.ceil(from * (n - 1) + 1e-9), b = Math.floor(to * (n - 1) - 1e-9);
-    const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : [at(from), ...q.slice(a, b + 1), at(to)];
+    if (w <= 0 || to <= from) return;
+    // a partial stroke is cut at the exact fraction, not at the nearest sample; on a closed outline the fraction runs all the way round to the start
+    const ring = closed ? q.concat([q[0]]) : q, last = ring.length - 1;
+    const at = (u) => { const x = Math.min(last, Math.max(0, u * last)), i = Math.min(last - 1, Math.floor(x)), v = x - i; return [ring[i][0] + (ring[i + 1][0] - ring[i][0]) * v, ring[i][1] + (ring[i + 1][1] - ring[i][1]) * v]; };
+    const a = Math.ceil(from * last + 1e-9), b = Math.floor(to * last - 1e-9);
+    const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : [at(from), ...ring.slice(a, b + 1), at(to)];
     const m = pick.length;
     if (m < 2) return;
     const L = [], R = [];
@@ -97,7 +98,7 @@
       const p0 = pick[Math.max(0, i - 1)], p1 = pick[Math.min(m - 1, i + 1)];
       const d = dist(p0, p1) || 1, nx = -(p1[1] - p0[1]) / d, ny = (p1[0] - p0[0]) / d;
       // pressure: the width breathes by ±18%, and an open stroke thins toward both ends like a lifted brush
-      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * (n - 1) + i) * 0.11));
+      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * last + i) * 0.11));
       if (taper) half *= 0.45 + 0.55 * Math.min(1, Math.min(i, m - 1 - i) / 3);
       L.push([pick[i][0] + nx * half, pick[i][1] + ny * half]);
       R.push([pick[i][0] - nx * half, pick[i][1] - ny * half]);

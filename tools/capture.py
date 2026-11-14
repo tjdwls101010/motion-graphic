@@ -9,7 +9,7 @@ A scene exposes window.__mg = {duration, fps, ref, seek(t)} when opened with ?ca
   capture.py scenes/ui/flip-counters.html --compare out/flip-cmp.jpg --n 6  reference frame above the render at the same moments
   capture.py --all --sheet-dir out/sheets                                   one contact sheet per scene under scenes/
 
---compare needs the reference video (default pstack/references.mp4, not in the repository) and the scene's `ref: [start, end]` seconds.
+--compare needs the reference video (default references/pstack/pstack.mp4, not in the repository) and the scene's `ref: [start, end]` seconds.
 Requires: pip install playwright pillow, Google Chrome, ffmpeg.
 """
 import argparse
@@ -75,7 +75,7 @@ def main():
     ap.add_argument('--mp4', help='mp4 output path')
     ap.add_argument('--mp4-dir', help='with --all: directory for one mp4 per scene')
     ap.add_argument('--compare', help='reference-vs-render sheet output path')
-    ap.add_argument('--ref', default=str(ROOT / 'references.mp4'), help='reference video for --compare')
+    ap.add_argument('--ref', default=str(ROOT / 'references' / 'pstack' / 'pstack.mp4'), help='reference video for --compare')
     ap.add_argument('--n', type=int, default=10, help='frames in a sheet or comparison')
     ap.add_argument('--cols', type=int, default=5)
     args = ap.parse_args()

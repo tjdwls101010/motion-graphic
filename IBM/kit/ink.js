@@ -102,7 +102,7 @@
   IB.ink = (ctx, pts, o = {}) => {
     const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1, grain = 1 } = o;
     if (pts.length < 2) return;
-    const step = Math.max(2.4, w);
+    const step = Math.min(6, Math.max(2.4, w));   // sample spacing follows the width, but a wide band is still sampled finely
     let p = smooth ? spline(pts, closed, step) : resample(pts, closed, step);
     const n = p.length;
     // drift each point off its place, slowly along the stroke
@@ -126,9 +126,9 @@
     for (let i = 0; i < m; i++) {
       const p0 = pick[Math.max(0, i - 1)], p1 = pick[Math.min(m - 1, i + 1)];
       const d = dist(p0, p1) || 1, nx = -(p1[1] - p0[1]) / d, ny = (p1[0] - p0[0]) / d;
-      // pressure: the width breathes by ±18%, and an open stroke thins toward both ends like a lifted brush
-      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * last + i) * step * 0.023));
-      if (rough) half *= 0.9 + 0.22 * MG.hash(seed + 29, a + i);   // tooth of the paper: the edge is never a clean curve
+      // pressure: the width breathes (±9% of the width, at most 1.2 px), and an open stroke thins toward both ends like a lifted brush
+      let half = w / 2 + Math.min(w * 0.09, 1.2) * drift(seed + 13, (from * last + i) * step * 0.023);
+      if (rough) half += (MG.hash(seed + 29, a + i) - 0.5) * 0.8;   // tooth of the paper: the edge is never a clean curve, by the same fraction of a pixel at any width
       if (taper) half *= 0.45 + 0.55 * Math.min(1, Math.min(i, m - 1 - i) / 3);
       L.push([pick[i][0] + nx * half, pick[i][1] + ny * half]);
       R.push([pick[i][0] - nx * half, pick[i][1] - ny * half]);

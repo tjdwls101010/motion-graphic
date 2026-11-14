@@ -1,0 +1,137 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>market / street-rush-hour</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script>
+/* 기둥 늘어선 거래소 건물과 고층 빌딩 선화 앞 인도를 사람들이 양쪽으로 바삐 지나가고 노란 택시가 가로지르는데, 연보라 옷 한 사람만 휴대폰을 보고 멈춰 서서 "올랐다!" 하고는 다시 인파에 섞인다. 원본에 없는 창작 장면으로, 원본의 설정 샷(빽빽한 흑백 선화에 색 한두 군데)에 멈춘 무대를 가로지르는 걷기를 여럿 겹쳐 금융가의 출근길을 그렸다. 전달하는 생각: 모두가 바삐 움직이는 거리에서 숫자 하나가 한 사람을 멈춰 세운다.
+   Motion notes: one locked shot, 7 s. Three layers, three clocks. The street is an establishing drawing that never moves: 1.5-4 px lines, no fills, windows as texture; only the flag on the roof flips between two drawings on threes. The cab is a machine and runs on ones, 520 px/s, crossing from 1.0 s with its spokes turning. The crowd walks on twos across the still pavement: every walker advances IB.walkLen / 12 per drawing (0.07 h: 16-19 px for these heights), so every planted foot stays put; thirteen walkers in two rows (floor y 930 and 985, heights 228-270; those heading left walk 14 px nearer than those heading right, so walkers who cross pass in front of one another), five of them a second wave that is still off-screen at the start, begin zero to five drawings out of phase so the crowd never steps in unison. The walker in lavender stops at 2.83 s on a drawing with one foot planted and one in the air (phase 5/6), brings the phone up in one in-between, the phone buzzes (shake marks, 4 drawings); bubble 3.5-4.75 s over a held pose while the crowd keeps passing in front and behind; walks on at 4.83 s from the same phase. Colour: yellow (the cab, one coat), lavender (the one who stops), blue for the small rising arrow on the phone; everyone else is white, charcoal or black. */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, ROAD = 856, T = (n) => n / 12;
+
+/* ---------- the street: drawn once per frame, never moving ---------- */
+function windows(ctx, x, y, cols, rows, w, h, gx, gy, seed) {
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) IB.box(ctx, x + c * gx, y + r * gy, w, h, { w: 1.5, seed: seed + r * 17 + c, wob: 0.4 });
+}
+function street(ctx, f) {
+  // far skyline, thin
+  for (const [x, w, top] of [[40, 150, 150], [330, 120, 60], [560, 90, 210], [1290, 110, 130], [1480, 170, 40], [1760, 140, 190]]) { IB.ink(ctx, [[x, 760], [x, top], [x + w, top], [x + w, 760]], { w: 1.6, smooth: false, seed: 10 + x }); for (let i = 1; i < 6; i++) IB.seg(ctx, x + 8, top + i * 46, x + w - 8, top + i * 46, { w: 1.2, seed: 20 + x + i }); }
+  // left tower
+  IB.box(ctx, 90, 96, 440, 664, { w: 3.4, seed: 100, fill: C.bg });
+  windows(ctx, 122, 130, 6, 10, 42, 40, 64, 56, 110);
+  IB.box(ctx, 250, 690, 120, 70, { w: 2.6, seed: 300 }); IB.seg(ctx, 310, 690, 310, 760, { w: 2, seed: 301 });
+  IB.ink(ctx, [[226, 690], [394, 690], [410, 664], [210, 664]], { closed: true, smooth: false, w: 2.6, seed: 302, fill: C.bg });
+  // right tower, stepped
+  IB.box(ctx, 1400, 250, 430, 510, { w: 3.4, seed: 320, fill: C.bg });
+  IB.box(ctx, 1470, 96, 290, 154, { w: 3, seed: 321, fill: C.bg });
+  windows(ctx, 1430, 284, 6, 8, 40, 38, 64, 56, 330);
+  windows(ctx, 1500, 122, 4, 2, 40, 38, 64, 56, 500);
+  IB.oval(ctx, 1615, 60, 26, 26, { w: 2.6, seed: 520, n: 14, fill: C.bg }); IB.seg(ctx, 1615, 60, 1615, 44, { w: 2, seed: 521 }); IB.seg(ctx, 1615, 60, 1626, 66, { w: 2, seed: 522 });
+  // the exchange: steps, six columns, entablature, pediment, flag
+  IB.box(ctx, 600, 300, 720, 460, { w: 3.6, seed: 540, fill: C.bg });
+  for (let i = 0; i < 3; i++) IB.box(ctx, 580 - i * 14, 716 + i * 15, 760 + i * 28, 15, { w: 2.4, seed: 541 + i, fill: C.bg });
+  IB.box(ctx, 600, 300, 720, 54, { w: 3, seed: 545, fill: C.bg });
+  for (let i = 0; i < 17; i++) IB.seg(ctx, 622 + i * 42, 312, 622 + i * 42, 342, { w: 1.6, seed: 546 + i });
+  IB.ink(ctx, [[584, 300], [960, 168], [1336, 300]], { closed: true, smooth: false, w: 3.6, seed: 570, fill: C.bg });
+  IB.ink(ctx, [[660, 286], [960, 196], [1260, 286]], { closed: true, smooth: false, w: 1.8, seed: 571 });
+  for (let i = 0; i < 6; i++) {
+    const x = 650 + i * 124;
+    IB.box(ctx, x - 22, 372, 44, 344, { w: 2.8, seed: 580 + i, fill: C.bg });
+    for (const dx of [-8, 8]) IB.seg(ctx, x + dx, 384, x + dx, 706, { w: 1.3, seed: 590 + i * 3 + dx });
+    IB.box(ctx, x - 30, 354, 60, 18, { w: 2.4, seed: 610 + i, fill: C.bg }); IB.box(ctx, x - 30, 700, 60, 16, { w: 2.4, seed: 620 + i, fill: C.bg });
+  }
+  for (let i = 0; i < 5; i++) IB.box(ctx, 690 + i * 124, 470, 44, 150, { w: 1.6, seed: 630 + i });
+  IB.seg(ctx, 960, 168, 960, 60, { w: 2.6, seed: 640 });
+  const flap = Math.floor(f / 3) % 2;   // the only thing on the street that moves, on threes
+  IB.ink(ctx, [[960, 64], [1010, 70 + flap * 6], [1052 - flap * 8, 62 - flap * 4], [1052 - flap * 8, 100 - flap * 4], [1010, 108 + flap * 6], [960, 102]], { closed: true, w: 2.2, seed: 641 + flap, fill: C.bg });
+  // kerb, lamp, hydrant, a sign with nothing written on it
+  IB.seg(ctx, -20, 762, 1940, 762, { w: 3, seed: 660 }); IB.seg(ctx, -20, ROAD + 6, 1940, ROAD + 6, { w: 3.4, seed: 661 });
+  for (let i = 0; i < 9; i++) IB.seg(ctx, 60 + i * 230, 812, 170 + i * 230, 812, { w: 2.2, seed: 670 + i });
+  IB.seg(ctx, 560, 760, 560, 420, { w: 4, seed: 680 }); IB.ink(ctx, [[560, 424], [566, 392], [600, 384]], { w: 3.4, seed: 681 }); IB.oval(ctx, 606, 400, 18, 22, { w: 2.6, seed: 682, n: 10, fill: C.bg });
+  IB.ink(ctx, [[1352, 760], [1352, 716], [1362, 704], [1378, 704], [1388, 716], [1388, 760]], { closed: true, smooth: false, w: 2.8, seed: 690, fill: C.bg }); IB.seg(ctx, 1344, 728, 1396, 728, { w: 2.6, seed: 691 });
+}
+
+function cab(ctx, x, spin) {
+  const y = ROAD - 34;   // the wheels stand on the road, inside its near edge
+  IB.ink(ctx, [[x - 190, y], [x - 196, y - 50], [x - 150, y - 62], [x - 104, y - 112], [x + 56, y - 112], [x + 110, y - 62], [x + 178, y - 54], [x + 192, y - 30], [x + 190, y]], { closed: true, smooth: false, fill: C.yellow, w: 3.4, seed: 700, wob: 0.5 });
+  IB.ink(ctx, [[x - 134, y - 64], [x - 96, y - 102], [x - 28, y - 102], [x - 28, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 701 });
+  IB.ink(ctx, [[x - 14, y - 64], [x - 14, y - 102], [x + 50, y - 102], [x + 92, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 702 });
+  IB.box(ctx, x - 44, y - 132, 60, 20, { fill: C.paper, w: 2.6, seed: 703 });
+  for (let i = 0; i < 9; i++) if (i % 2 === 0) { ctx.fillStyle = C.ink; ctx.fillRect(x - 126 + i * 26, y - 44, 26, 12); }
+  for (const wx of [x - 118, x + 116]) {
+    IB.oval(ctx, wx, y, 34, 34, { fill: C.charcoal, w: 3, seed: 710 + (wx > x ? 1 : 0), n: 16, wob: 0.3 });
+    IB.oval(ctx, wx, y, 14, 14, { fill: C.paper, w: 2, seed: 712, n: 10, wob: 0.2 });
+    IB.seg(ctx, wx - Math.cos(spin) * 13, y - Math.sin(spin) * 13, wx + Math.cos(spin) * 13, y + Math.sin(spin) * 13, { w: 2, seed: 713, wob: 0 });
+  }
+}
+
+/* ---------- the crowd ---------- */
+const suit = (c) => ({ top: c, topKind: 'long', bottom: c });
+const CROWD = [
+  { x0: 300, dir: 1, h: 270, floor: 985, off: 0, top: C.lavender, topKind: 'long', bottom: C.ink, hair: 'bun', skin: C.skin[2], hero: true },
+  { x0: -120, dir: 1, h: 258, floor: 985, off: 3, ...suit(C.charcoal), hair: 'short', skin: C.skin[1], prop: 'case' },
+  { x0: 1980, dir: -1, h: 262, floor: 985, off: 5, top: C.yellow, topKind: 'long', bottom: C.ink, hair: 'curly', skin: C.skin[4], prop: 'cup' },
+  { x0: 2460, dir: -1, h: 250, floor: 985, off: 2, ...suit(C.ink), hair: 'bald', skin: C.skin[3], prop: 'phone' },
+  { x0: 760, dir: 1, h: 232, floor: 930, off: 4, top: C.bg, topKind: 'long', bottom: C.charcoal, hair: 'pony', skin: C.skin[0], prop: 'cup' },
+  { x0: 60, dir: 1, h: 240, floor: 930, off: 1, ...suit(C.ink), hair: 'short', hairColor: '#8a8a8a', skin: C.skin[2], prop: 'case' },
+  { x0: 1560, dir: -1, h: 236, floor: 930, off: 3, ...suit(C.charcoal), hair: 'cap', hat: C.paper, skin: C.skin[1], prop: 'case' },
+  { x0: 2260, dir: -1, h: 228, floor: 930, off: 5, top: C.bg, topKind: 'long', bottom: C.ink, hair: 'bun', skin: C.skin[4], prop: 'phone' },
+  // the second wave, still off-screen when the scene starts
+  { x0: -640, dir: 1, h: 266, floor: 985, off: 2, top: C.bg, topKind: 'long', bottom: C.charcoal, hair: 'curly', skin: C.skin[3], prop: 'cup' },
+  { x0: -1010, dir: 1, h: 234, floor: 930, off: 0, ...suit(C.charcoal), hair: 'bun', skin: C.skin[0], prop: 'phone' },
+  { x0: 2900, dir: -1, h: 260, floor: 985, off: 4, ...suit(C.ink), hair: 'short', skin: C.skin[2], prop: 'case' },
+  { x0: 3250, dir: -1, h: 238, floor: 930, off: 1, top: C.bg, topKind: 'long', bottom: C.ink, hair: 'pony', skin: C.skin[1], prop: 'cup' },
+  { x0: -420, dir: 1, h: 230, floor: 930, off: 5, ...suit(C.ink), hair: 'cap', hat: C.paper, skin: C.skin[4], prop: 'case' },
+].map((w, i) => ({ ...w, shoe: w.bottom === C.ink ? C.paper : C.ink, seed: 800 + i * 30 }));
+// those walking left keep 14 px nearer the viewer than those walking right, so two who cross pass in front of one another instead of merging
+const ROWS = CROWD.map((w) => ({ ...w, floor: w.floor + (w.dir < 0 ? 14 : 0) })).sort((a, b) => a.floor - b.floor);
+const STOP = 34, GO = 58, PH_STOP = (STOP / 12) % 1;   // the hero stops on drawing 34 (2.83 s) and walks on at drawing 58 (4.83 s)
+
+function walker(ctx, w, k) {
+  const pace = IB.walkLen(w) / 12, d = w.dir;
+  let p, x, phone = 0;
+  if (w.hero && k >= STOP) {
+    const moved = Math.max(0, k - GO);
+    x = w.x0 + pace * (STOP + moved);
+    p = IB.walk(x, w.floor, w, ((STOP + moved) / 12) % 1);
+    if (k < GO) { p.feet = p.feet.map((ft) => [ft[0], w.floor - F.ankle * w.h, 0]); p.hip[1] = IB.stand(x, w.floor, w).hip[1]; p.lean = 0.02; phone = k === STOP ? 0.5 : 1; }
+  } else { x = w.x0 + d * pace * k; p = IB.walk(x, w.floor, w, ((k + w.off) / 12) % 1); }
+  if (x < -160 || x > 2080) return null;
+  const sh = [p.hip[0], p.hip[1] - F.torso * w.h], prop = phone ? 'look' : w.prop;
+  // what the hands are busy with, each target inside the arm's reach
+  if (prop === 'cup') p.hands = [p.hands[0], [sh[0] + 0.15 * w.h * d, sh[1] + 0.13 * w.h]];
+  if (prop === 'phone') { p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]]; p.elbow = [1, -1]; }   // at the ear, behind the face, the elbow folded back so the forearm does not cross the eyes
+  if (prop === 'look') { const base = IB.stand(x, w.floor, w).hands[1]; p.hands = [p.hands[0], [lerp(base[0], sh[0] + 0.17 * w.h * d, phone), lerp(base[1], sh[1] - 0.02 * w.h, phone)]]; p.nod = 0.2 * phone; }
+  const face = phone === 1 ? { eye: 'wide', mouth: k >= STOP + 6 ? 'smile' : 'flat' } : { mouth: 'flat' };
+  const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
+  if (prop === 'case') { const [hx, hy] = j.hands[0]; IB.seg(ctx, hx, hy + 6, hx, hy + 16, { w: lw, seed: w.seed + 20 }); IB.box(ctx, hx - 0.09 * w.h, hy + 16, 0.18 * w.h, 0.12 * w.h, { fill: w.bottom === C.ink ? C.charcoal : C.paper, w: lw, seed: w.seed + 21 }); }
+  if (prop === 'cup') { const [hx, hy] = j.hands[1]; IB.ink(ctx, [[hx - 9 + 8 * d, hy - 30], [hx + 9 + 8 * d, hy - 30], [hx + 6 + 8 * d, hy + 6], [hx - 6 + 8 * d, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.85, seed: w.seed + 22 }); }
+  if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1], px = hx + (prop === 'look' ? 6 : -2) * d, py = hy - (prop === 'look' ? 30 : 26); IB.box(ctx, px - 9, py, 18, 32, { fill: C.paper, w: lw * 0.85, seed: w.seed + 23 }); if (phone === 1) IB.ink(ctx, [[px - 5, py + 20], [px, py + 9], [px + 5, py + 20]], { closed: true, smooth: false, fill: C.blue, w: 1.2, seed: w.seed + 24 }); }
+  return { x, j, phone };
+}
+
+MG.scene({
+  title: 'market / street-rush-hour',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), k = Math.round(IB.twos(t) * 12);
+    street(ctx, f);
+    if (t >= 1) cab(ctx, -260 + 520 * (t - 1), (t - 1) * 520 / 34);
+    // the pavement: one chalk line per row, its crisp edge 11 px above the farther walkers' soles; its dust thins out by the nearer walkers' soles, 14 px lower
+    IB.smear(ctx, 960, 919, 1900, { h: 20, seed: 8, alpha: 0.4 });
+    IB.smear(ctx, 960, 974, 1900, { h: 20, seed: 9, alpha: 0.7 });
+    let hero = null;
+    for (const w of ROWS) { const r = walker(ctx, w, k); if (w.hero) hero = r; }
+    if (hero) {
+      const w = ROWS.find((r) => r.hero), s = k - (STOP + 1), [hx, hy] = hero.j.hands[1];
+      if (s >= 0 && s < 4) { IB.shake(ctx, hx + 26, hy - 16, 16, { a: -0.3, n: 2, seed: 900 + s, w: 2.4 }); IB.shake(ctx, hx - 14, hy - 22, 14, { a: Math.PI + 0.3, n: 2, seed: 910 + s, w: 2.4 }); }
+      IB.bubble(ctx, ['올랐다!'], t, T(42), { tip: [hero.x + 40, w.floor - 1.0 * w.h], x: hero.x + 170, y: w.floor - 1.34 * w.h, until: T(57), seed: 500 });
+    }
+  },
+});
+</script>

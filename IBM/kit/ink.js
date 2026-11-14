@@ -8,6 +8,7 @@
     bg: '#f0f0f0', ink: '#050505', paper: '#fdfdfd', charcoal: '#373737',
     royal: '#1e66f0', smear: '#2f6bea', blue: '#5cacf5', sky: '#c3e5fd', navy: '#0b2895',
     lavender: '#e5dbf9', yellow: '#fadb67', mustard: '#d2a005', green: '#42be64', mint: '#c1ecc0',
+    red: '#ee5a4a',   // not sampled from the reference, which has no red: added for the market scenes (falling prices), chosen to sit at the weight of `blue` and `green`
     skin: ['#f6c398', '#ddbb9c', '#d2b99b', '#b59674', '#a07d5a'],
   };
   IB.FONT = 'Pretendard';

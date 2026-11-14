@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>market / watched-chart-drops</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/desk.js"></script>
+<script>
+/* 책상에 앉은 사람이 모니터를 노려보면 차트가 내려가고, 포기하고 뒤로 기대 눈을 감으면 오르고, 실눈을 뜰 때마다 다시 꺾이더니 두 손으로 눈을 가리자 화면 위로 치솟아 "안 봐야 오르네." 한다. 원본에 없는 창작 장면으로, 원본 스팟의 "같은 박자를 되풀이하다 뒤집기"와 얼굴만 바뀌는 연기를 투자자의 징크스 개그로 옮겼다. 전달하는 생각: 들여다본다고 오르지 않는다. 상승은 파랑, 하락은 빨강이다.
+   Motion notes: one locked shot, 9 s, figure 520 px tall, seated (IB.sit). The chart is the second actor and it only ever reacts: it gains one point every 2 drawings (6 per second, 17 px apart; once the window is full it steps 17 px each time a point is added), and the direction of each new point is decided by where the eyes are on that drawing: watched, it falls 3 a step (4 on a peek); unwatched, it climbs 3, then 6 once the eyes are covered. A change of pose is one in-between (poseMix 0.5) and then a hold; the face changes on the same drawing as the pose. Beats: watch 0.5-1.5 s (flat), lean in and stare 1.5-3.0 s (falls), lean back with the hands behind the head and the eyes shut 3.0-4.5 s (climbs), peek 4.5-5.0 (falls), shut 5.0-5.75 (climbs), peek 5.75-6.25 (falls), both hands over the eyes from 6.25 s: the line climbs out of the top of the screen, the bubble comes at 7.0 s, and for the last 2 s the pose is dead still and only the line keeps stepping. The dot at the line's end and the arrow in the screen's corner are blue while it rises and red while it falls: with the yellow top that is the shot's three colours. */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 700, DESK = 716;
+const WHO = { h: 520, dir: 1, skin: C.skin[1], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 30 };
+const H = WHO.h, T = (n) => n / 12;
+// what the sitter is doing from each time on (twelfths of a second), and what that does to the chart per step
+const BEATS = [[0, 'watch', 0], [18, 'stare', -3], [36, 'back', 3], [54, 'peek', -4], [60, 'back', 3], [69, 'peek', -4], [75, 'cover', 6]];
+const beatAt = (n) => { let b = BEATS[0]; for (const x of BEATS) if (n >= x[0]) b = x; return b; };
+
+function pose(kind) {
+  const p = IB.sit(X0, FLOOR, WHO), hy = p.hip[1], key = p.hands;
+  if (kind === 'watch') return { ...p, face: { mouth: 'flat' } };
+  if (kind === 'stare') return { ...p, lean: 0.3, nod: 0.1, hands: [[X0 + 0.27 * H, hy - 0.1 * H - 6], [X0 + 0.23 * H, hy - 0.09 * H - 8]], face: { eye: 'wide', mouth: 'frown', brow: 1 } };
+  const back = { ...p, lean: -0.26, hands: [[X0 - 0.16 * H, hy - 0.33 * H], [X0 - 0.13 * H, hy - 0.31 * H]], elbow: [-1, -1] };
+  if (kind === 'back') return { ...back, nod: -0.1, face: { eye: 'closed', mouth: 'smile' } };
+  if (kind === 'peek') return { ...back, nod: 0.2, face: { eye: 'dot', mouth: 'flat', brow: -1 } };
+  return { ...p, lean: -0.06, hands: [[X0 + 0.055 * H, hy - 0.305 * H], [X0 + 0.04 * H, hy - 0.3 * H]], elbow: [1, 1], face: { eye: 'closed', mouth: 'flat' } };   // cover
+}
+function poseAt(tt) {
+  const n = Math.round(tt * 12), b = beatAt(n), cur = pose(b[1]);
+  if (n !== b[0] || b[0] === 0) return cur;
+  const prev = pose(beatAt(n - 1)[1]);   // the drawing a beat starts on is halfway there
+  return { ...IB.poseMix(prev, cur, 0.5), elbow: cur.elbow, face: cur.face };
+}
+// the chart's values: one new point every two drawings from 0.5 s, its direction set by the beat it lands in
+function series(tt) {
+  const steps = Math.max(0, Math.floor((Math.round(tt * 12) - 6) / 2) + 1), v = [50];
+  for (let i = 1; i < steps; i++) { const d = beatAt(6 + i * 2)[2]; v.push(v[i - 1] + (d === 0 ? (i % 2 ? 1.5 : -1.5) : d)); }
+  return steps ? v : [];
+}
+
+MG.scene({
+  title: 'market / watched-chart-drops',
+  duration: 9, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), p = poseAt(tt), look = { ...WHO, face: p.face };
+    IB.smear(ctx, X0 + 20, FLOOR - 6, 330, { h: 12, seed: 9 });
+    IB.smear(ctx, 1180, FLOOR - 4, 700, { h: 11, seed: 10 });
+    IB.chair(ctx, X0, FLOOR, H, 1);
+    IB.figure(ctx, p, look, 'far');
+    IB.desk(ctx, 800, 1560, DESK, FLOOR, { lw: 3.6 });
+    IB.box(ctx, 800 + 24, DESK - 12, 170, 12, { fill: C.bg, w: 2.8, seed: 50 });   // keyboard
+    // the monitor faces us, as props do on this stage, so we read what the sitter reads
+    const scr = IB.monitor(ctx, 1270, DESK, 520, 340, { lw: 3.8, seed: 60 });
+    const v = series(tt), n = v.length, WIN = 27, GAP = 17, first = Math.max(0, n - WIN), y = (val) => scr[1] + scr[3] - 30 - ((val - 20) / 60) * (scr[3] - 70);
+    ctx.save(); IB.clipRect(ctx, scr);
+    for (const g of [0.3, 0.6]) IB.seg(ctx, scr[0], scr[1] + scr[3] * g, scr[0] + scr[2], scr[1] + scr[3] * g, { w: 1.6, color: '#d9d9d9', seed: 70 + g * 10, grain: 0 });
+    const pts = v.slice(first).map((val, i) => [scr[0] + 22 + i * GAP, y(val)]);
+    if (pts.length > 1) IB.ink(ctx, pts, { w: 4, smooth: false, seed: 80 + first, taper: false, wob: 0.3 });
+    ctx.restore();
+    if (n > 1) {
+      const rising = v[n - 1] > v[n - 2], col = rising ? C.blue : C.red, end = pts[pts.length - 1];
+      if (end[1] > scr[1] + 12) IB.oval(ctx, end[0], end[1], 9, 9, { fill: col, w: 2.6, seed: 90, n: 9 });
+      const ax = scr[0] + 44, ay = scr[1] + 44;   // the arrow in the corner says the same thing
+      IB.ink(ctx, rising ? [[ax - 18, ay + 14], [ax, ay - 16], [ax + 18, ay + 14]] : [[ax - 18, ay - 14], [ax, ay + 16], [ax + 18, ay - 14]], { closed: true, smooth: false, fill: col, w: 2.8, seed: 91 });
+    }
+    IB.figure(ctx, p, look, 'near');
+    IB.bubble(ctx, ['안 봐야 오르네.'], t, T(84), { tip: [X0 + 34, p.hip[1] - 0.4 * H], x: X0 + 110, y: p.hip[1] - 0.62 * H, seed: 500 });
+  },
+});
+</script>

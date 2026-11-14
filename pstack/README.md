@@ -12,7 +12,7 @@
 open index.html
 ```
 
-장면을 열면 아래에 재생 막대가 나온다. 스페이스로 재생·정지, 좌우 화살표로 한 프레임씩 이동한다. 주소에 `?t=3.2`를 붙이면 3.2초에서 멈춘 채 열린다.
+갤러리의 카드에 마우스를 올리면 그 자리에서 장면이 재생되고, 클릭하면 장면이 크게 열린다. 장면을 열면 아래에 재생 막대가 나온다. 스페이스로 재생·정지, 좌우 화살표로 한 프레임씩 이동한다. 주소에 `?t=3.2`를 붙이면 3.2초에서 멈춘 채 열린다.
 
 ## 구조
 
@@ -28,9 +28,10 @@ kit/        공용 코드. 장면이 <script src>와 <link>로 불러 쓴다
   overlay.*   얼굴 캠 대체 배경, 테이프 라벨, 단계 배지, 칩
   fonts/      Gaegu, Jua, Pretendard, JetBrains Mono (모두 OFL, 라이선스 동봉)
 scenes/     계열별 장면: sketch, ui, felt, terminal, set, overlay, bumper
+thumbs/     갤러리 카드의 정지 썸네일(장면에서 렌더한 것). build_index.py --thumbs가 다시 만든다
 tools/
   capture.py      스틸, 콘택트 시트, mp4, 원본 대조 시트 렌더
-  build_index.py  index.html 재생성, 장면 메타데이터 점검(--check)
+  build_index.py  index.html 재생성, 썸네일 재렌더(--thumbs), 장면 메타데이터와 썸네일 점검(--check)
   check_pure.py   모든 장면의 render(t)가 시간의 순수 함수인지 검사
 ```
 
@@ -55,7 +56,7 @@ python3 tools/capture.py scenes/ui/flip-counters.html --compare out/flip-counter
 3. **스크립트 첫 주석에 "무슨 일이 일어나고 어떤 생각을 전달하는가" 2~4문장과 `Motion notes:`를 쓴다.** Motion notes에는 재사용할 기법과 실제로 쓴 수치(이징, 간격, 길이)를 적는다. 나중에 이 주석을 grep해서 장면을 찾는다.
 4. **빌드와 네트워크 없이 열려야 한다.** `file://`에서는 ES 모듈이 막히므로 일반 `<script src>`만 쓰고, CDN과 새 의존성을 들이지 않는다.
 5. **DOM·SVG 장면은 구조를 `setup`에서 한 번 만들고 `render`에서는 글자·스타일·속성만 갱신한다.** canvas 장면은 매 프레임 전체를 다시 그린다.
-6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py`로 색인을 다시 만들고, `--compare`로 원본과 대조한다.
+6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 색인을 다시 만들고, `--compare`로 원본과 대조한다.
 
 ## 원본과 다른 점
 

@@ -3,12 +3,14 @@
 URL parameters:
   ?t=3.2      open paused at 3.2 s
   ?capture    no player bar, stage at 1:1; tools/capture.py drives window.__mg.seek(t)
+  ?embed      no player bar, stage fitted to the window, looping: for an <iframe> preview (index.html uses it on hover). Posts { mg: 'ready' } to the parent after the first frame is drawn
 */
 (function (g) {
   const MG = (g.MG = g.MG || {});
   const W = (MG.W = 1920), H = (MG.H = 1080);
   const qs = new URLSearchParams(location.search);
   const CAPTURE = qs.has('capture');
+  const EMBED = qs.has('embed');
 
   /* Fonts every scene may draw with. Canvas text does not wait for a font, so they are loaded before the first render. */
   MG.FONTS = ['400 20px Gaegu', '700 20px Gaegu', '400 20px Pretendard', '800 20px Pretendard', '400 20px "JetBrains Mono"', '800 20px "JetBrains Mono"', '20px Jua'];
@@ -65,6 +67,7 @@ URL parameters:
     const boot = async () => {
       if (def.title) document.title = def.title;
       document.body.classList.toggle('mg-capture', CAPTURE);
+      document.body.classList.toggle('mg-embed', EMBED);
       const stage = MG.el('div', { id: 'mg-stage' });
       const frame = MG.el('div', { id: 'mg-frame' }, stage);
       document.body.append(frame);
@@ -86,7 +89,7 @@ URL parameters:
         }
       };
 
-      if (!CAPTURE) {
+      if (!CAPTURE && !EMBED) {
         ui = {
           btn: MG.el('button', { type: 'button', 'aria-label': 'play or pause' }),
           range: MG.el('input', { type: 'range', min: 0, max: dur, step: 'any', value: t }),
@@ -102,8 +105,11 @@ URL parameters:
           if (e.code === 'ArrowRight') { e.preventDefault(); playing = false; seek(t + oneFrame); }
           if (e.code === 'ArrowLeft') { e.preventDefault(); playing = false; seek(t - oneFrame); }
         });
+      }
+      if (!CAPTURE) {
+        const barHeight = ui ? 44 : 0;
         const fit = () => {
-          const s = Math.min(innerWidth / W, (innerHeight - 44) / H);
+          const s = Math.min(innerWidth / W, (innerHeight - barHeight) / H);
           stage.style.transform = `scale(${s})`;
           frame.style.width = W * s + 'px';
           frame.style.height = H * s + 'px';
@@ -125,6 +131,8 @@ URL parameters:
       }
       seek(t);
       g.__mg = { ready: true, duration: dur, fps: def.fps || 30, ref: def.ref || null, title: def.title || '', seek };
+      // tells an embedding page the first frame is on screen, so it can swap its poster for the live scene without a blank flash
+      if (EMBED && g.parent !== g) g.parent.postMessage({ mg: 'ready' }, '*');
     };
     if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot);
     else boot();

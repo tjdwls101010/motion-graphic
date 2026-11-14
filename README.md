@@ -2,7 +2,7 @@
 
 유튜브 영상에 나오는 모션그래픽을 코드로 다시 만든 디자인 레퍼런스 모음이다. 앞으로 클로드로 모션그래픽을 만들 때 "이런 룩, 이런 움직임"을 말로 설명하는 대신 장면 파일을 가리키고 그 코드를 가져다 쓰려는 용도다.
 
-- 영상 하나가 레퍼런스 폴더 하나다. 지금은 [pstack](pstack/README.md)(장면 32개, 7개 계열)과 [IBM](IBM/README.md)(장면 7개, 5개 계열)이 있다.
+- 영상 하나가 레퍼런스 폴더 하나다. 지금은 [pstack](pstack/README.md)(장면 15개, 3개 계열)과 [IBM](IBM/README.md)(장면 7개, 5개 계열)이 있다.
 - 장면은 전부 빌드 없이 브라우저에서 바로 열리는 HTML이다. 각 장면은 원본의 어느 구간을 재현했는지(`ref`)와 거기서 읽어 낸 모션 규칙(`Motion notes:`)을 파일 안에 적어 둔다.
 
 ## 보는 법
@@ -42,11 +42,11 @@ out/                         렌더 결과 작업 공간(.gitignore)
 ## 렌더
 
 ```bash
-python3 tools/capture.py pstack/scenes/ui/flip-counters.html --mp4 out/flip-counters.mp4
+python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --mp4 out/balance-scale.mp4
 ```
 
 ```bash
-python3 tools/capture.py pstack/scenes/ui/flip-counters.html --compare out/flip-counters.jpg --n 6
+python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/balance-scale.jpg --n 6
 ```
 
 두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.

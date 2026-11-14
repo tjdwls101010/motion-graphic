@@ -20,7 +20,7 @@ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i 
 장면은 공용 엔진(`../core/`) 위에 이 부품을 `<script src>`로 불러 쓴다. 전부 canvas에 그린다.
 
 ```
-ink.js   팔레트(IB.C), 붓펜 선과 채움(IB.ink, IB.box, IB.oval, IB.tube), 분필 스미어(IB.smear),
+ink.js   팔레트(IB.C), 붓펜 선과 채움(IB.ink, IB.box, IB.oval, IB.tube), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
          밀려 들어와 멈추는 카피(IB.copy, IB.TYPE), 12fps 양자화(IB.twos), 스피드라인 휩(IB.whip), 날벌레(IB.flyer)
 ```
 

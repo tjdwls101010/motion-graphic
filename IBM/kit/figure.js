@@ -1,4 +1,4 @@
-/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the thin legs of objects that walk (IB.peg), speech bubbles (IB.bubble) and shake marks (IB.shake). Needs ink.js; adds to the global IB. */
+/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the thin legs of objects that walk (IB.peg), speech bubbles (IB.bubble), the pointing hand from off-screen (IB.pointer) and shake marks (IB.shake). Needs ink.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;
@@ -136,8 +136,8 @@
   /* figure(ctx, pose, look) — draw one person.
      pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], grip: [false, false] }
            hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. Start from IB.stand() and move what the pose changes.
-     look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, face, seed }
-           h is the standing height in px, dir 1 faces right and -1 left. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
+     look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, face, seed }
+           h is the standing height in px, dir 1 faces right and -1 left. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
      Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands). Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
   IB.figure = (ctx, pose, look, only) => {
     const h = look.h, d = look.dir || 1, lw = look.lw || IB.figLine(h), seed = look.seed || 1, skin = look.skin || C.skin[2];
@@ -193,6 +193,24 @@
     };
   };
 
+  /* walk(x, floor, look, ph, opts) — one drawing of a walk cycle for a figure whose body is at x: ph 0..1 runs through two steps and ph = 0 is the contact with the near foot ahead. Draw 12 of them on twos for the reference's walk (1.0 s per two steps). Each step carries the body `stride` x h (default 0.21, so IB.walkLen = 0.84 h per cycle): either move x by that much per cycle across a still stage, or keep x and scroll the world under the feet.
+     Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peeling up to 0.6 rad over its last 25%. Swing foot: 0.085 h off the floor on a half sine. Hip lowest at each contact, 0.028 h higher at mid-stance. Arms swing against the legs by `swing` x h (default 0.11); a scene whose figure carries something overwrites p.hands. */
+  IB.walk = (x, floor, look, ph, o = {}) => {
+    const h = look.h, d = look.dir || 1, step = (o.stride == null ? 0.21 : o.stride) * h, p = IB.stand(x, floor, look), ay = floor - F.ankle * h;
+    const foot = (u) => {   // u: this foot's own phase. 0-0.5 on the floor sliding back under the body, 0.5-1 swinging forward
+      if (u < 0.5) { const k = u / 0.5, pitch = k < 0.15 ? -0.35 * (1 - k / 0.15) : k > 0.75 ? (0.6 * (k - 0.75)) / 0.25 : 0; return [step * (1 - 2 * k), -IB.footLift(pitch, h), pitch]; }
+      const k = (u - 0.5) / 0.5, pitch = lerp(0.6, -0.35, k);
+      return [step * (-1 + 2 * k), -0.085 * h * Math.sin(k * Math.PI) - IB.footLift(pitch, h) * (1 - Math.sin(k * Math.PI)), pitch];
+    };
+    const near = foot(ph), far = foot((ph + 0.5) % 1), sw = Math.cos(ph * 2 * Math.PI) * (o.swing == null ? 0.11 : o.swing) * h;
+    p.feet = [[x + far[0] * d, ay + far[1], far[2]], [x + near[0] * d, ay + near[1], near[2]]];
+    p.hip[1] += h * (0.014 + 0.014 * Math.cos(ph * 4 * Math.PI));
+    p.lean = o.lean == null ? 0.07 : o.lean;
+    p.hands = [[p.hands[0][0] + sw * d, p.hands[0][1] - Math.abs(sw) * 0.25], [p.hands[1][0] - sw * d, p.hands[1][1] - Math.abs(sw) * 0.25]];
+    return p;
+  };
+  IB.walkLen = (look, stride = 0.21) => 4 * stride * look.h;
+
   /* poseMix(a, b, u) — the pose a fraction u of the way from a to b, joint by joint. For the one or two in-betweens of a move; a held pose is just a (the reference holds its poses dead still). */
   IB.poseMix = (a, b, u) => {
     const mixPts = (p, q) => p.map((v, i) => v.map((c, j) => lerp(c, q[i][j] == null ? c : q[i][j], u)));
@@ -231,6 +249,19 @@
       ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       lines.forEach((l, i) => ctx.fillText(l, x, y - ((lines.length - 1) * pitch) / 2 + px * 0.36 + i * pitch));
     }
+    ctx.restore();
+  };
+
+  /* pointer(ctx, tip, opts) — a hand from off-screen with one finger out: a sleeve, a fist with three folded fingers, the pointing finger and its nail. Drawn at insert size (the finger is 92 px thick at scale 1) with the fingertip at `tip`, pointing left and the sleeve running off to the lower right; `scale` shrinks it for a wide shot, `rot` turns it about the fingertip (-PI / 2 points it down from above), `flip` mirrors it to point right. lw is the outline width on screen, whatever the scale. */
+  IB.pointer = (ctx, tip, o = {}) => {
+    const { scale = 1, rot = 0, flip = false, sleeve = C.yellow, skin = C.skin[1], lw = 8, seed = 540 } = o, w = lw / scale;
+    ctx.save();
+    ctx.translate(tip[0], tip[1]); ctx.rotate(rot); ctx.scale(flip ? -scale : scale, scale);
+    IB.tube(ctx, [[560, 330], [1500, 640]], { w: 250, edge: w, fill: sleeve, seed });
+    IB.ink(ctx, [[250, 10], [420, 40], [600, 180], [640, 330], [520, 440], [330, 400], [220, 270], [200, 110]], { closed: true, fill: skin, w, seed: seed + 1 });
+    for (const [x, y] of [[250, 168], [300, 262], [372, 338]]) IB.ink(ctx, [[x, y], [x + 60, y - 44], [x + 130, y - 36]], { w: w * 0.875, seed: seed + 2 + x });
+    IB.tube(ctx, [[300, 80], [150, 34], [44, 8]], { w: 92, edge: w, fill: skin, smooth: true, seed: seed + 6 });
+    IB.ink(ctx, [[12, -18], [60, -26], [96, -14]], { w: w * 0.75, seed: seed + 7 });
     ctx.restore();
   };
 

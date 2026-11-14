@@ -18,19 +18,7 @@ const CYCLE = 1.0, STEP = 0.21 * WHO.h, SPEED = (4 * STEP) / CYCLE, STOP = 5.0, 
 const travel = (t) => (t < STOP ? SPEED * t : SPEED * STOP + SPEED * RUNOUT * 0.5 * prog(t, STOP, RUNOUT, 'outQuad'));
 const END = travel(99);
 
-function walkPose(ph) {
-  const h = WHO.h, p = IB.stand(X0, FLOOR, WHO);
-  const foot = (u) => {   // u: this foot's own phase. 0-0.5 on the floor sliding back under the body, 0.5-1 swinging forward
-    if (u < 0.5) { const k = u / 0.5, pitch = k < 0.15 ? -0.35 * (1 - k / 0.15) : k > 0.75 ? (0.6 * (k - 0.75)) / 0.25 : 0; return [STEP * (1 - 2 * k), -IB.footLift(pitch, h), pitch]; }
-    const k = (u - 0.5) / 0.5, pitch = lerp(0.6, -0.35, k);
-    return [STEP * (-1 + 2 * k), -0.085 * h * Math.sin(k * Math.PI) - IB.footLift(pitch, h) * (1 - Math.sin(k * Math.PI)), pitch];
-  };
-  const near = foot(ph), far = foot((ph + 0.5) % 1), ay = FLOOR - F.ankle * h;
-  p.feet = [[X0 + far[0], ay + far[1], far[2]], [X0 + near[0], ay + near[1], near[2]]];
-  p.hip[1] += h * (0.014 + 0.014 * Math.cos(ph * 4 * Math.PI));
-  p.lean = 0.07;
-  return carry(p, 0);
-}
+const walkPose = (ph) => carry(IB.walk(X0, FLOOR, WHO, ph), 0);   // the cycle itself is the kit's (IB.walk); this figure only adds what it carries
 // both hands are busy: the far one holds a cup out in front, the near one holds the bag strap at the chest
 function carry(p, sip) {
   const h = WHO.h, sy = p.hip[1] - F.torso * h;

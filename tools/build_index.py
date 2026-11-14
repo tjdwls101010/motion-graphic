@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Rebuild index.html (the scene gallery of every reference) and print the scene list as a Markdown table.
 
-Reads every <ref>/scenes/<family>/<slug>.html (layout in library.py) and takes its duration, its `ref: [start, end]` range in the reference video and the first sentence of its top comment. The gallery groups scenes by reference, then by family in the order of <ref>/families.json. Each card shows the poster <ref>/thumbs/<family>-<slug>.jpg; hovering a card swaps the poster for the live scene in an <iframe> (opened with ?embed), and clicking opens the scene with its player.
+Reads every <ref>/scenes/<family>/<slug>.html (layout in library.py) and takes its duration, its `ref: [start, end]` range in the reference video and the first sentence of its top comment. A scene that reproduces no part of the video (a new scenario drawn in the reference's style) says so with `ref: null`; its card reads 창작 where the range would be. The gallery groups scenes by reference, then by family in the order of <ref>/families.json. Each card shows the poster <ref>/thumbs/<family>-<slug>.jpg; hovering a card swaps the poster for the live scene in an <iframe> (opened with ?embed), and clicking opens the scene with its player.
 
   build_index.py            write index.html, print a Markdown table
   build_index.py --thumbs   first re-render every poster (needs Google Chrome, pip install playwright pillow), then write index.html
-  build_index.py --check    exit 1 if a scene lacks duration, ref, the "Motion notes:" comment, its poster or a family listed in families.json; writes nothing
+  build_index.py --check    exit 1 if a scene lacks duration, ref (a range or an explicit null), the "Motion notes:" comment, its poster or a family listed in families.json; writes nothing
 """
 import argparse
 import html
@@ -27,8 +27,10 @@ def clock(sec):
 
 def read_scene(path):
     src = path.read_text()
-    dur = re.search(r'duration:\s*([\d.]+)', src)
-    ref = re.search(r'ref:\s*\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\]', src)
+    call = src[src.find('MG.scene('):] if 'MG.scene(' in src else ''   # the declaration; the comment above it is prose and may quote a duration or a ref
+    dur = re.search(r'duration:\s*([\d.]+)', call)
+    said = re.search(r'ref:\s*(?:(null)\b|\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\])', call)
+    ref = said if said and not said.group(1) else None
     comment = re.search(r'<script>\s*/\*(.*?)\*/', src, re.S)
     text = ' '.join(comment.group(1).split()) if comment else ''
     summary = re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0] if text else ''
@@ -37,7 +39,8 @@ def read_scene(path):
         'path': path, 'ref': reference, 'family': family, 'slug': slug, 'href': path.relative_to(ROOT).as_posix(),
         'thumb': library.thumb(path).relative_to(ROOT).as_posix(),
         'duration': float(dur.group(1)) if dur else None,
-        'span': (float(ref.group(1)), float(ref.group(2))) if ref else None,
+        'span': (float(ref.group(2)), float(ref.group(3))) if ref else None,
+        'original': bool(said and said.group(1)),   # declared to have no range in the reference video
         'summary': summary, 'has_notes': 'Motion notes:' in text,
     }
 
@@ -128,7 +131,7 @@ def main():
         except FileNotFoundError:
             sys.exit(f'{ref}/families.json is missing: list the families of {ref} as {{"family": "label", ...}}')
     if args.check:
-        bad = [s['href'] for s in scenes if s['duration'] is None or s['span'] is None or not s['has_notes']]
+        bad = [s['href'] for s in scenes if s['duration'] is None or (s['span'] is None and not s['original']) or not s['has_notes']]
         bad += [f"{s['thumb']} (run build_index.py --thumbs)" for s in scenes if not (ROOT / s['thumb']).exists()]
         bad += [f"{s['href']} (family {s['family']} is not in {s['ref']}/families.json)" for s in scenes if s['family'] not in families[s['ref']]]
         for b in bad:
@@ -149,7 +152,7 @@ def main():
                 continue
             cards.append(f'<h3>{html.escape(label)} <code>{fam}</code></h3><div class="grid">')
             for s in rows:
-                span = f"{clock(s['span'][0])}–{clock(s['span'][1])}" if s['span'] else '—'
+                span = f"{clock(s['span'][0])}–{clock(s['span'][1])}" if s['span'] else '창작' if s['original'] else '—'
                 length = f"{s['duration']:g}s" if s['duration'] is not None else '—'   # an unfinished scene still gets listed
                 has_poster = (ROOT / s['thumb']).exists()
                 if not has_poster:

@@ -103,7 +103,7 @@ function walker(ctx, w, k) {
   const sh = [p.hip[0], p.hip[1] - F.torso * w.h], prop = phone ? 'look' : w.prop;
   // what the hands are busy with, each target inside the arm's reach
   if (prop === 'cup') p.hands = [p.hands[0], [sh[0] + 0.15 * w.h * d, sh[1] + 0.13 * w.h]];
-  if (prop === 'phone') p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]];   // at the ear, behind the face
+  if (prop === 'phone') { p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]]; p.elbow = [1, -1]; }   // at the ear, behind the face, the elbow folded back so the forearm does not cross the eyes
   if (prop === 'look') { const base = IB.stand(x, w.floor, w).hands[1]; p.hands = [p.hands[0], [lerp(base[0], sh[0] + 0.17 * w.h * d, phone), lerp(base[1], sh[1] - 0.02 * w.h, phone)]]; p.nod = 0.2 * phone; }
   const face = phone === 1 ? { eye: 'wide', mouth: k >= STOP + 6 ? 'smile' : 'flat' } : { mouth: 'flat' };
   const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
@@ -122,9 +122,9 @@ MG.scene({
     const f = IB.frame(t), k = Math.round(IB.twos(t) * 12);
     street(ctx, f);
     if (t >= 1) cab(ctx, -260 + 520 * (t - 1), (t - 1) * 520 / 34);
-    // the pavement: a chalk line 11 px above each row's soles
-    IB.smear(ctx, 960, 923, 1900, { h: 12, seed: 8, alpha: 0.45 });
-    IB.smear(ctx, 960, 978, 1900, { h: 16, seed: 9 });
+    // the pavement: one chalk line per row, its crisp edge 11 px above the farther walkers' soles; its dust thins out by the nearer walkers' soles, 14 px lower
+    IB.smear(ctx, 960, 919, 1900, { h: 20, seed: 8, alpha: 0.4 });
+    IB.smear(ctx, 960, 974, 1900, { h: 20, seed: 9, alpha: 0.7 });
     let hero = null;
     for (const w of ROWS) { const r = walker(ctx, w, k); if (w.hero) hero = r; }
     if (hero) {

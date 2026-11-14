@@ -8,10 +8,10 @@
 <script src="../../kit/figure.js"></script>
 <script>
 /* 차트 선을 레일 삼은 노란 카트가 딸깍딸깍 느리게 꼭대기까지 올라가 한참 멈췄다가, 한 장에 바닥까지 곤두박질치고 남은 힘으로 작은 언덕을 넘어 서자 탄 사람이 "…내려 주세요." 한다. 원본에 없는 창작 장면으로, 원본의 "긴 준비, 스미어 한 장, 긴 정지"와 3프레임 단위의 느린 연기를 주가 차트 은유로 옮겼다. 전달하는 생각: 오르는 데는 오래 걸리고 떨어지는 것은 한순간이다.
-   Motion notes: one locked shot, 7.5 s. The rail is the chart line itself (one ink stroke through 11 points) on two axes; the cart is placed by its two wheels, each at its own arc length along that same curve, and the body spans the chord between them, so both wheels stay on the line through every bend. Climb 0.5-3.0 s on threes (8 fps), 21 drawings whose steps shrink toward the top (1 - (1 - u)^1.5), a tick mark flipping sides behind the wheel on every drawing: slow and countable is what climbing looks like. Three more drawings creep the last 24 px onto the crest, then the cart is dead still 0.63 s (3.38-4.0 s) while shake marks flicker for 4 drawings. The plunge is ONE drawing at 4.0 s: the cart two thirds of the way down, stretched 2.1x along the rail, four speed lines trailing, arms already up. On the next drawing it is at the lowest point of the dip with a four-line burst for 2 drawings, then it runs on twos: up the small hill in 6 drawings (outQuad), over and along to the end in 8 (inOutQuad), stopped at 5.25 s. The bubble shows 6.0-6.75 s over a still pose and leaves on a hard cut; from then only the rider's head rocks, two drawings alternating on threes. The climb's beats are on the threes grid (eighths of a second); it hands over to twos at 4.0 s, which is on both grids. The cart is rigid and turns with the rail's slope; the rider is drawn inside the cart's turned frame, so the body tips with it. Two colours: the yellow cart, the mint top. */
+   Motion notes: one locked shot, 7.5 s. The rail is the chart line itself (one ink stroke through 11 points) on two axes; the cart is placed by its two wheels: each wheel's centre is one radius off the curve along the curve's own normal at that wheel's arc length, and the body spans the line between the two centres, so both wheels roll on the line through every bend and the short overhangs clear a dip narrower than the cart. Climb 0.5-3.0 s on threes (8 fps), 21 drawings whose steps shrink toward the top (1 - (1 - u)^1.5), a tick mark flipping sides behind the wheel on every drawing: slow and countable is what climbing looks like. Three more drawings creep the last 24 px onto the crest, then the cart is dead still 0.63 s (3.38-4.0 s) while shake marks flicker for 4 drawings. The plunge is ONE drawing at 4.0 s: the cart two thirds of the way down, stretched 2.1x along the rail, four speed lines trailing, arms already up. On the next drawing it is at the lowest point of the dip with a four-line burst for 2 drawings, then it runs on twos: up the small hill in 6 drawings (outQuad), over and along to the end in 8 (inOutQuad), stopped at 5.25 s. The bubble shows 6.0-6.75 s over a still pose and leaves on a hard cut; from then only the rider's head rocks, two drawings alternating on threes. The climb's beats are on the threes grid (eighths of a second); it hands over to twos at 4.0 s, which is on both grids. The cart is rigid and turns with the rail's slope; the rider is drawn inside the cart's turned frame, so the body tips with it. Two colours: the yellow cart, the mint top. */
 const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, AX = 220, BASE = 900;
-const P = [[270, 838], [430, 792], [690, 340], [820, 246], [905, 330], [1040, 758], [1180, 800], [1330, 566], [1470, 520], [1610, 596], [1770, 578]];
+const P = [[270, 838], [430, 792], [690, 340], [820, 246], [905, 330], [1030, 730], [1200, 806], [1390, 580], [1520, 530], [1650, 596], [1790, 580]];
 const WHO = { h: 250, dir: 1, skin: C.skin[2], top: C.mint, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'pony', seed: 40 };
 const T = (n) => n / 12, K = 1.35;   // K: the cart and its rider are drawn at this scale, with line widths divided back
 
@@ -51,19 +51,20 @@ function ride(t) {
 }
 
 function cart(ctx, r, stretch) {
-  // the rear wheel stands on the rail 40 K behind s and the front one 42 K ahead; the cart lies along the chord between them, lifted by half the rail's thickness
-  const rear = railAt(r.s - 40 * K * stretch).p, front = railAt(r.s + 42 * K * stretch).p, a = Math.atan2(front[1] - rear[1], front[0] - rear[0]), h = WHO.h;
-  const p = [lerp(rear[0], front[0], 40 / 82) + Math.sin(a) * 2.75, lerp(rear[1], front[1], 40 / 82) - Math.cos(a) * 2.75];
+  // each wheel's centre sits one radius (plus half the rail's thickness) off the rail along the rail's normal there, 40 K behind s and 42 K ahead; the cart hangs between the two centres
+  const R = 11 * K + 2.75, off = (q) => [q.p[0] + Math.sin(q.a) * R, q.p[1] - Math.cos(q.a) * R];
+  const rear = off(railAt(r.s - 40 * K * stretch)), front = off(railAt(r.s + 42 * K * stretch)), a = Math.atan2(front[1] - rear[1], front[0] - rear[0]), h = WHO.h;
+  const p = [lerp(rear[0], front[0], 40 / 82) - Math.sin(a) * 11 * K, lerp(rear[1], front[1], 40 / 82) + Math.cos(a) * 11 * K];
   ctx.save();
   ctx.translate(p[0], p[1]); ctx.rotate(a); ctx.scale(stretch * K, K);
   const who = { ...WHO, lw: IB.figLine(h * K) / K };
   // the rider sits inside: hip low in the cart, feet forward and hidden, hands on the bar or thrown up
   const up = r.mood === 'drop', hip = [-14, -52];
-  const pose = { hip, lean: up ? -0.12 : 0.03, nod: r.mood === 'dizzy' ? 0.25 + (r.rock ? 0.14 : 0) : up ? -0.3 : r.mood === 'scared' ? 0.1 : 0, feet: [[26, -26, -0.3], [18, -24, -0.3]], hands: up ? [[26, -180], [4, -186]] : [[50, -92], [44, -88]], grip: [!up, !up], knee: [1, 1] };
+  const pose = { hip, lean: up ? -0.12 : 0.03, nod: r.mood === 'dizzy' ? 0.25 + (r.rock ? 0.14 : 0) : up ? -0.3 : r.mood === 'scared' ? 0.1 : 0, feet: [[26, -36, 0], [18, -34, 0]], hands: up ? [[26, -180], [4, -186]] : [[50, -92], [44, -88]], grip: [!up, !up], knee: [1, 1] };
   const face = r.mood === 'calm' ? { mouth: 'smile' } : r.mood === 'scared' ? { eye: 'wide', mouth: 'flat', brow: -1 } : r.mood === 'drop' ? { eye: 'wide', mouth: 'open' } : { eye: 'closed', mouth: 'frown' };
   IB.figure(ctx, pose, { ...who, face }, 'far');
   if (!up) IB.seg(ctx, 40, -50, 50, -94, { w: 3.4 / K, seed: 60 });                                               // the bar
-  IB.ink(ctx, [[-70, -66], [-62, -16], [64, -16], [78, -52], [58, -52], [50, -40], [-48, -40], [-52, -66]], { closed: true, smooth: false, fill: C.yellow, w: 3.8 / K, seed: 61 });
+  IB.ink(ctx, [[-66, -66], [-58, -16], [58, -16], [72, -52], [56, -52], [48, -40], [-46, -40], [-50, -66]], { closed: true, smooth: false, fill: C.yellow, w: 3.8 / K, seed: 61 });
   for (const x of [-40, 42]) { IB.oval(ctx, x, -11, 11, 11, { fill: C.paper, w: 3.2 / K, seed: 62 + x, n: 10 }); IB.oval(ctx, x, -11, 3, 3, { fill: C.ink, w: 0, n: 6 }); }
   IB.figure(ctx, pose, { ...who, face }, 'near');
   ctx.restore();

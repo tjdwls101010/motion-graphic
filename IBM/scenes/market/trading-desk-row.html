@@ -29,7 +29,7 @@ function poses(t) {
   if (n(T(39)) >= 0 && n(T(39)) < 6) { a.nod = -0.3; a.face = { eye: 'wide', mouth: 'open' }; } else a.face = { mouth: n(T(45)) >= 0 ? 'smile' : 'flat' };
   // 2: the caller: on the phone, up on their feet, down again, typing
   const x = SEATS[1], sit = IB.sit(x, FLOOR, WHO[1]), sh = (p) => [p.hip[0], p.hip[1] - F.torso * H];
-  const call = { ...sit, lean: -0.06, hands: [[x + 0.2 * H, sit.hip[1] - 0.16 * H - (k3 % 2 ? 16 : 0)], [x - 0.035 * H, sit.hip[1] - F.torso * H - 0.085 * H]], grip: [false, true], face: { mouth: k3 % 2 ? 'open' : 'flat' }, phone: true };   // the handset at the ear, behind the face
+  const call = { ...sit, lean: -0.06, hands: [[x + 0.2 * H, sit.hip[1] - 0.16 * H - (k3 % 2 ? 16 : 0)], [x - 0.035 * H, sit.hip[1] - F.torso * H - 0.085 * H]], grip: [false, true], elbow: [1, -1], face: { mouth: k3 % 2 ? 'open' : 'flat' }, phone: true };   // the handset at the ear, behind the face; the elbow folds back so the forearm does not cross the eyes
   const up = IB.stand(x + 0.24 * H, FLOOR, WHO[1]); up.feet = sit.feet;
   up.hands = [[up.hip[0] + 0.1 * H, sh(up)[1] - 0.24 * H], [up.hip[0] + 0.21 * H, sh(up)[1] + 0.02 * H]]; up.grip = [true, true]; up.face = { eye: 'wide', mouth: 'open' }; up.phone = true;
   let b = call;
@@ -45,7 +45,7 @@ function poses(t) {
 
 /* The board: twelve cells, each a pair of bars standing in for a name and a price, and an arrow. */
 function board(ctx, tt) {
-  ctx.save(); ctx.translate(0, 60);   // hung low, leaving a band above the heads for the bubble
+  ctx.save(); ctx.translate(0, 50);   // hung low, leaving a band above the heads for the bubble
   IB.shade(ctx, 330, 392, 1260, 14, { from: 'top', seed: 5, alpha: 0.5 });
   IB.box(ctx, 320, 110, 1280, 280, { fill: C.paper, w: 3.6, seed: 400 });
   IB.seg(ctx, 320, 156, 1600, 156, { w: 2.6, seed: 401 });
@@ -90,7 +90,7 @@ MG.scene({
     IB.bg(ctx);
     const tt = IB.twos(t), k = Math.round(tt * 12), ps = poses(t);
     board(ctx, tt);
-    IB.oval(ctx, 1740, 270, 54, 54, { fill: C.paper, w: 3.4, seed: 480, n: 18 }); IB.seg(ctx, 1740, 270, 1740, 236, { w: 3, seed: 481 }); IB.seg(ctx, 1740, 270, 1762, 282, { w: 3, seed: 482 });
+    IB.oval(ctx, 1740, 260, 54, 54, { fill: C.paper, w: 3.4, seed: 480, n: 18 }); IB.seg(ctx, 1740, 260, 1740, 226, { w: 3, seed: 481 }); IB.seg(ctx, 1740, 260, 1762, 272, { w: 3, seed: 482 });
     IB.smear(ctx, 960, FLOOR - 4, 1760, { h: 14, seed: 9 });
     sheet(ctx, tt, T(57), [SEATS[0] + 300, DESK - 20], [SEATS[0] + 470, FLOOR - 6], 600);
     sheet(ctx, tt, T(60), [SEATS[1] + 290, DESK - 20], [SEATS[1] + 500, FLOOR - 6], 610);
@@ -114,7 +114,7 @@ MG.scene({
       if (tt >= T(60) - 1e-6 && !p.phone && !p.cup) { IB.shake(ctx, x + 124, DESK - 40, 14, { a: -Math.PI / 2 - 0.5, n: 2, seed: 800 + i * 40 + k, w: 2.4 }); IB.shake(ctx, x + 196, DESK - 40, 14, { a: -Math.PI / 2 + 0.5, n: 2, seed: 820 + i * 40 + k, w: 2.4 }); }
     });
     const b = ps[1];
-    IB.bubble(ctx, ['매수!'], t, T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 500, until: T(57), seed: 900 });
+    IB.bubble(ctx, ['매수!'], t, T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 512, until: T(57), seed: 900 });
   },
 });
 </script>

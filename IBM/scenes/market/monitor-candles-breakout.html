@@ -55,7 +55,7 @@ MG.scene({
       const [op, cl, hi, lo] = DATA[BREAK], x = at.x(BREAK), top = at.y(cl) - (at.y(op) - at.y(cl)) * 0.14;
       IB.seg(ctx, x, top - 30, x, at.y(lo), { w: 5.6, seed: 200 });
       IB.box(ctx, x - 19, top, 38, at.y(op) - top, { fill: C.blue, w: 7, seed: 201 });
-      for (const dx of [-62, -44, 46]) IB.seg(ctx, x + dx, at.y(op) - 20, x + dx, at.y(op) - 150 - Math.abs(dx), { w: 4, seed: 203 + dx });
+      for (const dx of [-62, -44, 46]) IB.seg(ctx, x + dx, at.y(op) - 20, x + dx, at.y(op) - 150 - Math.abs(dx), { w: 5, seed: 203 + dx });
     }
     if (b >= 1 && b < 3) for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.42, r0 = 50 + (b - 1) * 22, r1 = r0 + 54, x = at.x(BREAK), y = at.y(DATA[BREAK][2]) - 10; IB.seg(ctx, x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1, { w: 6, seed: 210 + i + b * 7 }); }
 

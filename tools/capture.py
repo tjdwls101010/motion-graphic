@@ -86,7 +86,7 @@ def main():
         ap.error('--all takes no scene and writes one file per scene: use --sheet-dir / --mp4-dir (--compare takes a single scene)')
     if not (args.at or args.sheet or args.sheet_dir or args.mp4 or args.mp4_dir or args.compare):
         ap.error('nothing to do: give --at, --sheet, --sheet-dir, --mp4, --mp4-dir or --compare')
-    scenes = sorted((ROOT / 'scenes').rglob('*.html')) if args.all else [Path(args.scene)]
+    scenes = sorted((ROOT / 'pstack' / 'scenes').rglob('*.html')) if args.all else [Path(args.scene)]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chrome', headless=True)

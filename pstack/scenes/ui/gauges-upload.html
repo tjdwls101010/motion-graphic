@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ui / gauges-upload</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<link rel="stylesheet" href="../../kit/ui.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ui.js"></script>
+<style>
+  .form { padding: 34px 40px; display: grid; grid-template-columns: 300px 1fr; gap: 40px; font: 700 22px Pretendard; color: #9b9b9b; }
+  .thumb { height: 200px; border: 3px dashed #d2d2d2; border-radius: 16px; background: #f1f1f1; display: grid; place-items: center; color: #c4c4c4; margin-top: 12px; }
+  .field { height: 78px; border: 3px solid #dcdcdc; border-radius: 14px; margin: 12px 0 26px; display: flex; align-items: center; padding: 0 22px; font: 800 36px Pretendard; color: #2a2a2a; }
+  .field.on { border-color: #2a2a2a; }
+  .field.ph { font: 600 22px Pretendard; color: #c4c4c4; height: 96px; }
+  .foot { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; border-top: 2px solid #e6e6e6; display: flex; align-items: center; justify-content: flex-end; padding: 0 40px; }
+  .send { background: #2a2a2a; color: #fff; border-radius: 999px; padding: 14px 44px; font: 800 30px Pretendard; }
+  .gauge { text-align: center; font: 800 36px Pretendard; padding: 26px 20px !important; }
+  .gauge small { position: absolute; top: 250px; font: 600 19px Pretendard; color: #a8a8a8; }
+</style>
+<script>
+/* "I was going to upload a review for the views": an upload form fills in, the pointer goes for the button, and two dials answer what would happen. The "views" dial swings high; the "useful at work" dial rises, hesitates and falls back. The dials then clear and the form is set aside into a drafts folder. Idea carried: two measures of the same act pointing in opposite directions.
+   Motion notes: dial needles never ease in a straight line: they rise with an overshoot and then settle with a decaying wobble (sin * exp falloff, ~1 s), which reads as a physical instrument; the dark arc fills together with the needle; the second dial starts 1.4 s after the first so the two verdicts are read one at a time, and its fall is slower (0.7 s) than its rise (0.4 s); the unanswered dial sits at 40% opacity until its turn; the pointer travels on an eased diagonal and the button dips to 0.94 scale for 0.12 s as the click. */
+const { prog, lerp, clamp, el } = MG;
+const A0 = 160, SWEEP = 220, R = 118;
+const polar = (cx, cy, r, deg) => [cx + r * Math.cos((deg * Math.PI) / 180), cy + r * Math.sin((deg * Math.PI) / 180)];
+const arc = (cx, cy, v) => {
+  const [x0, y0] = polar(cx, cy, R, A0), [x1, y1] = polar(cx, cy, R, A0 + SWEEP * v);
+  return `M${x0} ${y0}A${R} ${R} 0 ${SWEEP * v > 180 ? 1 : 0} 1 ${x1} ${y1}`;
+};
+// decaying wobble that starts when a move ends
+const wobble = (t, at, amp) => (t < at ? 0 : Math.sin((t - at) * 16) * Math.exp(-(t - at) * 4) * amp);
+const DIAL1 = (t) => lerp(0.06, 0.84, prog(t, 2.3, 0.6, 'outBack')) + wobble(t, 2.9, 0.05);
+const DIAL2 = (t) => lerp(lerp(0.06, 0.58, prog(t, 3.7, 0.4, 'outCubic')), 0.16, prog(t, 4.3, 0.7, 'inOutCubic')) + wobble(t, 5.0, 0.04);
+MG.scene({
+  title: 'ui / gauges-upload',
+  duration: 7.2, ref: [101.3, 108.5],
+  setup(stage) {
+    const root = UI.root(stage);
+    const win = UI.window(root, 80, 175, 895, 640, '');
+    win.bar.querySelector('span').replaceWith(el('span', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: '#2a2a2a', font: '800 22px Pretendard' } }, UI.icon('play', 22), '동영상 업로드'));
+    win.el.style.transformOrigin = '0 50%';
+    const title = el('div', { class: 'field' }), send = el('div', { class: 'send', text: '업로드' });
+    win.body.append(el('div', { class: 'form' }, el('div', {}, '썸네일', el('div', { class: 'thumb' }, UI.icon('doc', 54))), el('div', {}, '제목', title, '설명', el('div', { class: 'field ph', text: '설명을 입력하세요' }))), el('div', { class: 'foot' }, send));
+    const mk = (x, label) => {
+      const svg = MG.svg('svg', { width: 340, height: 250, viewBox: '0 0 340 250' });
+      const track = MG.svg('path', { d: arc(170, 150, 1), fill: 'none', stroke: '#e1e1e1', 'stroke-width': 16, 'stroke-linecap': 'round' });
+      const fill = MG.svg('path', { fill: 'none', stroke: '#2a2a2a', 'stroke-width': 16, 'stroke-linecap': 'round' });
+      const needle = MG.svg('line', { x1: 170, y1: 150, stroke: '#2a2a2a', 'stroke-width': 8, 'stroke-linecap': 'round' });
+      svg.append(track, fill, needle, MG.svg('circle', { cx: 170, cy: 150, r: 13, fill: '#fff', stroke: '#2a2a2a', 'stroke-width': 6 }));
+      const card = UI.card(root, x, 300, 385, 375, svg, el('small', { style: { left: '52px' }, text: '낮음' }), el('small', { style: { right: '52px' }, text: '높음' }), el('div', { text: label }));
+      card.classList.add('gauge');
+      return { card, fill, needle };
+    };
+    const g1 = mk(1050, '조회수'), g2 = mk(1460, '실무에 와닿음');
+    const folder = el('div', { class: 'abs', style: { left: '1480px', top: '370px', textAlign: 'center', font: '800 32px Pretendard' } }, el('div', { style: { color: '#2a2a2a' } }, UI.icon('folder', 250)), '임시 보관함');
+    folder.querySelector('svg').style.strokeWidth = 0.9;
+    root.append(folder);
+    const cursor = el('div', { class: 'abs', html: '<svg width="44" height="52" viewBox="0 0 22 26"><path d="M2 2v19l5-4.5 3.5 7.5 3-1.4-3.4-7.3H17z" fill="#fff" stroke="#2a2a2a" stroke-width="2" stroke-linejoin="round"/></svg>' });
+    root.append(cursor);
+    return { win, title, send, g1, g2, folder, cursor };
+  },
+  render(t, r) {
+    const away = prog(t, 5.6, 0.6, 'inOutCubic');   // dials clear, form is set aside
+    MG.show(r.win.el, prog(t, 0.1, 0.45, 'outBack'), { scale: 0.92, keep: `translateX(${away * 250}px) scale(${lerp(1, 1.14, away)})` });
+    UI.type(r.title, '○○stack 리뷰', prog(t, 0.9, 0.8), true);
+    r.title.classList.toggle('on', t > 0.8);
+    // pointer heads for the button and clicks
+    const go = prog(t, 1.4, 0.7, 'inOutCubic');
+    r.cursor.style.opacity = prog(t, 1.3, 0.2);
+    r.cursor.style.left = lerp(820, 842, go) + away * 290 + 'px';
+    r.cursor.style.top = lerp(940, 762, go) + away * 12 + 'px';
+    const click = t > 2.15 && t < 2.27;
+    r.send.style.transform = `scale(${click ? 0.94 : 1})`;
+    // dials
+    const dial = (g, v, appear, live) => {
+      v = clamp(v, 0, 1);
+      MG.show(g.card, prog(t, appear, 0.4, 'outBack') * (1 - away), { scale: 0.9 });
+      g.card.style.opacity = clamp(prog(t, appear, 0.2)) * (1 - away) * (t < live ? 0.4 : 1);   // waits at 40% until its turn
+      g.fill.setAttribute('d', arc(170, 150, v));
+      const [nx, ny] = polar(170, 150, R - 30, A0 + SWEEP * v);
+      g.needle.setAttribute('x2', nx);
+      g.needle.setAttribute('y2', ny);
+    };
+    dial(r.g1, DIAL1(t), 0.6, 0);
+    dial(r.g2, DIAL2(t), 0.7, 3.5);
+    MG.show(r.folder, prog(t, 6.1, 0.4, 'outBack'), { scale: 0.8 });
+  },
+});
+</script>

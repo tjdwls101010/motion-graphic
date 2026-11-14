@@ -33,7 +33,7 @@ def main():
     if any(a in ('-h', '--help') for a in sys.argv[1:]):
         print(__doc__)
         return 0
-    paths = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / 'scenes').rglob('*.html'))
+    paths = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / 'pstack' / 'scenes').rglob('*.html'))
     failed = []
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chrome', headless=True)

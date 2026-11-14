@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>overlay / tape-label</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<link rel="stylesheet" href="../../kit/overlay.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/overlay.js"></script>
+<script>
+/* Two taped notes contrast planning and coding; the first wins a check before the second takes priority. Motion notes: the first paper lands at 0.1 s over 0.2 s and types over 0.75 s; its highlight sweeps at 1.6 s and the two check strokes follow at 1.7 s. The second lands at 4.8 s as the first dims, types for 0.9 s, then gets a 0.3 s highlight at 6.3 s; both leave at 7.1 s. */
+const BEATS = { first: .1, firstHighlight: 1.6, check: 1.7, second: 4.8, secondHighlight: 6.3, exit: 7.1 };
+const POS = { left: [175, 110, 460], right: [1280, 110, 510], check: [640, 105] };
+const CAMERA = [[0, [1, 0, 0]], [8, [1, 0, 0]]];
+
+MG.scene({
+  title: 'overlay / tape-label',
+  duration: 8,
+  ref: [247, 255],
+  setup(stage) {
+    const world = OV.root(stage);
+    const first = OV.label(world, ...POS.left);
+    const second = OV.label(world, ...POS.right);
+    const check = OV.check(world, ...POS.check);
+    const sparks = [OV.spark(world, 150, 70), OV.spark(world, 1750, 70)];
+    return { world, first, second, check, sparks };
+  },
+  render(t, r) {
+    const p = MG.prog;
+    OV.camera(r.world, t, CAMERA);
+    // The first paper lands, then its handwriting and yellow swipe appear.
+    const firstPop = p(t, BEATS.first, .2, 'outBack');
+    const dim = 1 - .55 * p(t, BEATS.second, .2);
+    const exit = 1 - p(t, BEATS.exit, .5);
+    r.first.el.style.opacity = String(MG.clamp(firstPop * 3) * dim * exit);
+    r.first.el.style.transform = `rotate(-1deg) scale(${.9 + .1 * firstPop})`;
+    r.first.text.textContent = MG.typed('기획용으론 ', p(t, BEATS.first, .65));
+    r.first.hi.textContent = MG.typed('OK', p(t, .5, .25));
+    r.first.hi.style.setProperty('--p', p(t, BEATS.firstHighlight, .3));
+    // The check is drawn as a short downstroke followed by a long upstroke.
+    MG.draw(r.check.first, p(t, BEATS.check, .12));
+    MG.draw(r.check.second, p(t, BEATS.check + .12, .2));
+    r.check.el.style.opacity = String(dim * exit);
+    // The new note replaces the visual emphasis and receives its own swipe.
+    const secondPop = p(t, BEATS.second, .2, 'outBack');
+    r.second.el.style.opacity = String(MG.clamp(secondPop * 3) * exit);
+    r.second.el.style.transform = `rotate(-1deg) scale(${.9 + .1 * secondPop})`;
+    r.second.text.textContent = MG.typed('코딩용으론 ', p(t, BEATS.second, .6));
+    r.second.hi.textContent = MG.typed('딱히', p(t, BEATS.second + .5, .3));
+    r.second.hi.style.setProperty('--p', p(t, BEATS.secondHighlight, .3));
+    // Brief pen ticks flick out at each landing.
+    [BEATS.first, BEATS.second].forEach((start, i) => {
+      const q = p(t, start, .15, 'outBack');
+      r.sparks[i].style.opacity = String(MG.clamp(q) * (1 - p(t, start + .2, .2)));
+      r.sparks[i].style.transform = `scale(${q})`;
+    });
+  },
+});
+</script>

@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-THUMBS = ROOT / 'thumbs'
+THUMBS = ROOT / 'pstack' / 'thumbs'
 THUMB_SIZE = (640, 360)
 THUMB_AT = 0.72   # fraction of the duration the poster is taken at: late enough that most of a scene has arrived
 FAMILIES = [
@@ -41,8 +41,8 @@ def read_scene(path):
     text = ' '.join(comment.group(1).split()) if comment else ''
     summary = re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0] if text else ''
     return {
-        'path': path, 'family': path.parent.name, 'slug': path.stem, 'href': f'scenes/{path.parent.name}/{path.name}',
-        'thumb': f'thumbs/{path.parent.name}-{path.stem}.jpg',
+        'path': path, 'family': path.parent.name, 'slug': path.stem, 'href': f'pstack/scenes/{path.parent.name}/{path.name}',
+        'thumb': f'pstack/thumbs/{path.parent.name}-{path.stem}.jpg',
         'duration': float(dur.group(1)) if dur else None,
         'ref': (float(ref.group(1)), float(ref.group(2))) if ref else None,
         'summary': summary, 'has_notes': 'Motion notes:' in text,
@@ -126,7 +126,7 @@ def main():
     ap.add_argument('--check', action='store_true', help='only report scenes missing duration, ref, Motion notes or a poster; writes nothing')
     ap.add_argument('--thumbs', action='store_true', help='re-render every poster in thumbs/ before writing index.html')
     args = ap.parse_args()
-    scenes = [read_scene(p) for p in sorted((ROOT / 'scenes').rglob('*.html'))]
+    scenes = [read_scene(p) for p in sorted((ROOT / 'pstack' / 'scenes').rglob('*.html'))]
     if args.check:
         bad = [s['href'] for s in scenes if s['duration'] is None or s['ref'] is None or not s['has_notes']]
         bad += [f"{s['thumb']} (run build_index.py --thumbs)" for s in scenes if not (ROOT / s['thumb']).exists()]

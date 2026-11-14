@@ -3,10 +3,10 @@
 
 A scene exposes window.__mg = {duration, fps, ref, seek(t)} when opened with ?capture (see core/stage.js); this tool seeks to exact times and screenshots the 1920x1080 stage in headless Chrome.
 
-  capture.py pstack/scenes/ui/flip-counters.html --at 0.5,2,6 --out out/stills     PNG stills at those seconds
-  capture.py pstack/scenes/ui/flip-counters.html --sheet out/flip.jpg --n 12       n evenly spaced frames tiled into one image
-  capture.py pstack/scenes/ui/flip-counters.html --mp4 out/flip.mp4                the whole clip
-  capture.py pstack/scenes/ui/flip-counters.html --compare out/flip-cmp.jpg --n 6  reference frame above the render at the same moments
+  capture.py pstack/scenes/sketch/balance-scale.html --at 0.5,2,6 --out out/stills     PNG stills at those seconds
+  capture.py pstack/scenes/sketch/balance-scale.html --sheet out/scale.jpg --n 12       n evenly spaced frames tiled into one image
+  capture.py pstack/scenes/sketch/balance-scale.html --mp4 out/scale.mp4                the whole clip
+  capture.py pstack/scenes/sketch/balance-scale.html --compare out/scale-cmp.jpg --n 6  reference frame above the render at the same moments
   capture.py --all --sheet-dir out/sheets                                          one contact sheet per scene of every reference
 
 --compare needs the scene's `ref: [start, end]` seconds and its reference video, by default references/<ref>/<ref>.mp4 for a scene under <ref>/scenes/ (local only, not in the repository).

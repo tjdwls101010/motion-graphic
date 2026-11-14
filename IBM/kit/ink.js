@@ -32,26 +32,29 @@
   /* ---------- dust ---------- */
   /* Every grain of dust (edge dust, graphite shading, chalk) goes through here, for two reasons found the hard way with tools/check_pure.py.
      1. Chrome draws canvas paths with 4x MSAA, so an edge pixel has only five possible values and one sample flipping is a 62-level jump; which draws get MSAA depends on how the frame's operations are batched, and a frame with tens of thousands of operations is split into batches at points that vary from one capture to the next. Specks drawn one fillRect at a time (10,000 for one end-card smear) made a dense frame differ from itself by up to 63 pixels over the check's 40-level threshold (it allows 30).
-     2. So dust is collected and filled as a handful of paths per call (five alpha levels), and every speck is a whole-pixel square at an integer device position: it has no partial coverage, so it comes out the same under any anti-aliasing.
+     2. So dust is collected and filled as five paths per call, and every speck is a whole-pixel square at an integer device position: it has no partial coverage, so it comes out the same under any anti-aliasing.
+     Tone comes from density, not from per-speck opacity: put()'s `alpha` is the chance the speck is kept, kept specks are dealt round-robin into five layers, and each layer is one fill at the same low opacity, so where specks crowd the layers stack up (1, 2 ... 5 deep) and where they thin out the paper shows through. Filling each speck at its own alpha in one union per level made a smear read as flat pixel blocks.
      put() takes stage coordinates under the current transform. */
-  function dust(ctx) {
-    const m = ctx.getTransform(), k = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1, a0 = ctx.globalAlpha, LEVELS = 5;
-    const bins = Array.from({ length: LEVELS }, () => []);
+  function dust(ctx, layerAlpha = 0.42) {
+    const m = ctx.getTransform(), k = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1, a0 = ctx.globalAlpha, LAYERS = 5;
+    const bins = Array.from({ length: LAYERS }, () => []);
+    let n = 0;
     return {
       put(x, y, w, h, alpha) {
-        if (alpha <= 0) return;
-        bins[Math.min(LEVELS - 1, Math.floor(alpha * LEVELS))].push(Math.round(m.a * x + m.c * y + m.e), Math.round(m.b * x + m.d * y + m.f), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+        n++;
+        if (alpha < 1 && MG.hash(n, 977) >= alpha) return;
+        bins[n % LAYERS].push(Math.round(m.a * x + m.c * y + m.e), Math.round(m.b * x + m.d * y + m.f), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
       },
       done() {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        bins.forEach((r, i) => {
-          if (!r.length) return;
+        ctx.globalAlpha = a0 * layerAlpha;
+        for (const r of bins) {
+          if (!r.length) continue;
           ctx.beginPath();
           for (let j = 0; j < r.length; j += 4) ctx.rect(r[j], r[j + 1], r[j + 2], r[j + 3]);
-          ctx.globalAlpha = (a0 * (i + 0.5)) / LEVELS;
           ctx.fill();
-        });
+        }
         ctx.restore();
       },
     };
@@ -146,11 +149,11 @@
     ctx.stroke();
     if (rough) {
       // dry-brush dust: specks straddling both edges, so the line reads as charcoal on paper rather than vector
-      const r = MG.rng(seed * 7 + 11), d0 = dust(ctx);
+      const r = MG.rng(seed * 7 + 11), d0 = dust(ctx, 0.5);
       ctx.fillStyle = color;
       for (let i = 0; i < m - 1; i++) {
         const [x0, y0] = pick[i], [x1, y1] = pick[i + 1], d = dist(pick[i], pick[i + 1]) || 1, nx = -(y1 - y0) / d, ny = (x1 - x0) / d;
-        for (let k = Math.max(1, Math.round(d * 0.55 * grain)); k > 0; k--) {
+        for (let k = Math.max(1, Math.round(d * 0.9 * grain)); k > 0; k--) {
           const u = r(), off = (r() < 0.5 ? -1 : 1) * (w / 2 - 0.7 + r() * 1.8), sz = 0.7 + r() * 1.1;   // a 1.8 px band on the edge, whatever the width
           d0.put(x0 + (x1 - x0) * u + nx * off - sz / 2, y0 + (y1 - y0) * u + ny * off - sz / 2, sz, sz, 0.25 + 0.5 * r());
         }
@@ -186,22 +189,21 @@
   /* smear(ctx, cx, y, w, opts) — the blue chalk floor mark under feet and under the end-card line: a crisp top edge at y, a dense core, dust falling away below and thinning toward both ends. w is the width of the dense core (dust feathers out ~15% further on each side); the end-card smear is w=1000, h=34, a foot smear w≈110, h≈10. */
   IB.smear = (ctx, cx, y, w, o = {}) => {
     const { h = Math.max(6, w * 0.034), color = IB.C.smear, seed = 5, alpha = 1 } = o;
-    const r = MG.rng(seed), d0 = dust(ctx);
+    const r = MG.rng(seed), d0 = dust(ctx, 0.4 * alpha);
     ctx.fillStyle = color;
-    // core: stacked 1 px slabs, ragged at both ends, each shorter and fainter than the one above
-    const rows = Math.max(3, Math.round(h * 0.42));
-    for (let i = 0; i < rows; i++) {
-      const u = i / rows, half = (w / 2) * (0.92 - 0.3 * u);
-      d0.put(cx - half * (0.94 + 0.12 * r()), y + i, half * (1.88 + 0.24 * r()), 1.3, alpha * (0.95 - 0.5 * u));
+    // core: short 1 px dashes packed against the top edge, thinning with depth and toward both ends
+    const rows = Math.max(3, h * 0.5);
+    for (let i = Math.round(w * rows * 0.45); i > 0; i--) {
+      const v = Math.pow(r(), 1.5), u = (r() + r()) / 2 - 0.5, len = 5 + r() * 14;
+      const reach = (w / 2) * (0.98 - 0.4 * v);
+      d0.put(cx + u * 2 * reach - len / 2, y + v * rows, len, 1, (0.95 - 0.55 * v) * (1 - Math.pow(Math.abs(u) * 2, 3)));
     }
-    // dust: specks crowded against the top edge, falling away below and feathering out past both ends
-    const n = Math.round(w * h * 0.3);
-    for (let i = 0; i < n; i++) {
+    // dust: 1-2 px specks falling away below the core and feathering out past both ends
+    for (let i = Math.round(w * h * 1.7); i > 0; i--) {
       const u = (r() + r() + r()) / 3 - 0.5;             // bell around the centre
-      const v = Math.pow(r(), 1.7);                       // crowded toward the top edge
+      const v = Math.pow(r(), 1.35);                      // crowded toward the top edge
       const edge = Math.max(0, 1 - Math.pow(Math.abs(u) * 2, 2));
-      const a = alpha * (0.25 + 0.55 * r()) * (1 - v * 0.8) * (0.25 + 0.75 * edge), s = 1.2 + r() * 2;
-      d0.put(cx + u * w * 1.38, y - 2 + v * h * (0.35 + 0.75 * edge), s * 1.6, s, a);
+      d0.put(cx + u * w * 1.38, y - 2 + v * h * (0.5 + 0.9 * edge), 1 + r() * 1.2, 1, (0.3 + 0.6 * r()) * (1 - v * 0.85) * (0.25 + 0.75 * edge));
     }
     d0.done();
   };
@@ -209,13 +211,13 @@
   /* shade(ctx, x, y, w, h, opts) — soft graphite shading, the only tone the reference adds to its flat fills: densest along one edge of the w x h box and fading to nothing at the opposite one. `from` names the dense edge ('top' | 'bottom' | 'left' | 'right'). Legs get it under the body, arms where they leave it, objects where they meet the floor. Stippled, so it sits on any fill colour. */
   IB.shade = (ctx, x, y, w, h, o = {}) => {
     const { from = 'top', color = IB.C.ink, alpha = 0.55, seed = 9, reach = 1.6 } = o;
-    const r = MG.rng(seed * 3 + 1), n = Math.round(w * h * 0.5), d0 = dust(ctx);
+    const r = MG.rng(seed * 3 + 1), n = Math.round(w * h * 1.1), d0 = dust(ctx, 0.5);
     ctx.fillStyle = color;
     for (let i = 0; i < n; i++) {
       const u = r(), v = Math.pow(r(), reach), s = 0.8 + r() * 1.2;   // v crowds toward the dense edge
       const px = from === 'left' ? x + v * w : from === 'right' ? x + w - v * w : x + u * w;
       const py = from === 'top' ? y + v * h : from === 'bottom' ? y + h - v * h : y + u * h;
-      d0.put(px, py, s, s, alpha * (0.3 + 0.7 * r()) * (1 - v));
+      d0.put(px, py, s, s, alpha * 1.4 * (0.3 + 0.7 * r()) * (1 - v));
     }
     d0.done();
   };
@@ -290,11 +292,11 @@
     // chalk bands first: wide, grainy, pale
     for (let i = 0; i < Math.round(9 * density); i++) {
       const y = 60 + r() * (H - 120), h = 14 + r() * 10, len = 300 + r() * 700, x = r() * (W - len * 0.5);
-      const d0 = dust(ctx);
+      const d0 = dust(ctx, 0.3 * alpha);
       ctx.fillStyle = IB.C.blue;
-      for (let k = 0; k < len * h * 0.05; k++) {
-        const a = (0.12 + 0.3 * r()) * alpha, s = 2 + r() * 3;
-        d0.put(x + r() * len, y + (r() + r() - 1) * h * 0.5, s * 2.4, s, a);
+      for (let k = 0; k < len * h * 0.12; k++) {
+        const s = 1.5 + r() * 2.5;
+        d0.put(x + r() * len, y + (r() + r() - 1) * h * 0.5, s * 2.4, s, 0.75);
       }
       d0.done();
     }

@@ -6,11 +6,11 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script>
-/* 검은 화면에 흰 카피와 초록 눈 한 쌍이 떠서 좌우를 살피고 깜빡이다가, 눈이 작아지는 순간 밝은 화면으로 컷하면 그 눈은 건물 창가에서 쌍안경을 든 사람이었다. 카피는 셋째 줄이 붙고 한 번 바뀌며, 끝에 쌍안경을 내린다. 전달하는 생각: 누군가는 이미 지켜보고 있다.
-   Motion notes: the only black (#000) shot in the set, 3.33 s, white copy. Eyes are 283 x 124 almonds 468 px apart; only the irises move, on twos, and a look is a jump held 0.5-0.6 s: centre, 85 px left, up 27 px, down-right (46, 26). A blink is one 2-frame hold of total black, with one half-open 2-frame pose after the first. The reveal is a match cut on a zoom: over the last 5 drawings the pair shrinks to 0.9, 0.8, 0.65, 0.46 toward (1193, 438), hard cut, and the lit scene continues the pull-back on ones from 1.98x, settling exponentially (tau 0.16 s, still after 0.63 s) so the eyes land on the binocular lenses. At the cut the two existing copy lines slide up 59 px to make room and the third arrives from below. Copy swap at 6.33 s arrives a line every 4 frames. In the window only small things move, on twos (shapes there are traced from a 2.5x crop of the reference: sleeves run out to the window's edges while the arms are up, the lower sash rail crosses in front of the figure): head and binoculars shift 8 px to scan, the cat's ears flick, binoculars come down at 9.5 s and the pose holds to the end. */
+/* 검은 화면에 초록 눈 한 쌍이 떠서 좌우를 살피고 깜빡이다가, 눈이 작아지는 순간 밝은 화면으로 컷하면 그 눈은 건물 창가에서 쌍안경을 든 사람이었고, 끝에 쌍안경을 내린다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 전달하는 생각: 누군가는 이미 지켜보고 있다.
+   Motion notes: shows the reference frame's region x 700-1920, y 180-866 (CROP) enlarged 1.57x; coordinates in the code are the reference's. The only black (#000) shot in the set, 3.33 s. Eyes are 283 x 124 almonds 468 px apart; only the irises move, on twos, and a look is a jump held 0.5-0.6 s: centre, 85 px left, up 27 px, down-right (46, 26). A blink is one 2-frame hold of total black, with one half-open 2-frame pose after the first. The reveal is a match cut on a zoom: over the last 5 drawings the pair shrinks to 0.9, 0.8, 0.65, 0.46 toward (1193, 438), hard cut, and the lit scene continues the pull-back on ones from 1.98x, settling exponentially (tau 0.16 s, still after 0.63 s) so the eyes land on the binocular lenses. The reference's copy (white on the black, gaining a third line at the cut, swapped at 6.33 s) is not drawn here. In the window only small things move, on twos (shapes there are traced from a 2.5x crop of the reference: sleeves run out to the window's edges while the arms are up, the lower sash rail crosses in front of the figure): head and binoculars shift 8 px to scan, the cat's ears flick, binoculars come down at 9.5 s and the pose holds to the end. */
 const { prog, kf, lerp, rng, clamp } = MG;
 const C = IB.C, GREEN = '#4ca757', SKIRT = '#7cc47a';
-const DARK = ['어둠 속에서 먼저', '두 줄이 뜬다.'], LIT = ['어둠 속에서 먼저', '두 줄이 뜬다.', '셋째 줄이 붙고'], SWAP = ['컷 없이', '문구만', '바뀐다.'];
+const CROP = [700, 180, 1220, 686];   // the region of the reference frame this scene shows, enlarged 1.57x: the copy on the left is left out
 const CUT = 3.333, FOCUS = [1193, 438];
 
 // irises: [from frame (24 fps, even: the eyes are drawn on twos), dx, dy, lid] held until the next entry; lid 0 = shut, 0.8 = half, 1 = open
@@ -173,21 +173,17 @@ MG.scene({
   render(t, ctx) {
     if (t < CUT) {
       IB.bg(ctx, '#000000');
+      IB.crop(ctx, CROP);
       const f2 = Math.floor(IB.frame(t) / 2) * 2, [, dx, dy, lid] = held(LOOK, f2, LOOK[0]), s = held(ZOOM, f2, [0, 1])[1];
       if (lid > 0) for (const [ex, ey] of [[1100, 541], [1568, 543]]) eye(ctx, FOCUS[0] + (ex - FOCUS[0]) * s, FOCUS[1] + (ey - FOCUS[1]) * s, s, dx, dy, lid);
-      IB.copy(ctx, DARK, t, 2 / 24, { top: 446, from: 41, color: '#ffffff' });
       return;
     }
     IB.bg(ctx);
     const z = 1 + 0.98 * (1 - IB.settle(t - CUT, 0.158));
-    ctx.setTransform(z, 0, 0, z, FOCUS[0] * (1 - z), FOCUS[1] * (1 - z));
+    IB.crop(ctx, CROP);
+    ctx.translate(FOCUS[0] * (1 - z), FOCUS[1] * (1 - z));
+    ctx.scale(z, z);
     building(ctx, t);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (t < 6.333) {
-      const up = 59 * (1 - IB.settle(t - CUT, 0.12));
-      IB.copy(ctx, LIT.slice(0, 2), t, 0, { top: 387 + up, from: 0 });
-      ctx.save(); ctx.translate(0, up * 0.7); IB.copy(ctx, ['', '', LIT[2]], t, CUT - 2 / 24, { top: 387, from: 0 }); ctx.restore();
-    } else IB.copy(ctx, SWAP, t, 6.333, { top: 387, stagger: 4 });
   },
 });
 </script>

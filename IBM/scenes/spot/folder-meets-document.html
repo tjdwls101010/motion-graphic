@@ -6,11 +6,11 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script>
-/* 미러볼 아래 다리 달린 파란 폴더가 풍선을 차자 화면이 옆으로 밀려 서류가 드러나고, 둘이 따로 춤추다 다가가 손을 잡으면 하트 풍선이 떠오른다. 왼쪽 카피는 사건마다 한 줄씩 붙다가 마지막에 통째로 바뀐다. 전달하는 생각: 따로 놀던 두 가지가 마침내 한자리에 선다.
-   Motion notes: one locked shot, no cuts, 11.6 s. Copy is pinned to the screen (x 90, top 351, pitch 95) and only the stage pans: 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s. Copy beats: line 1 at 1.0 s, line 2 at 1.92 s (the whole block snaps back 37 px and re-settles, tau 0.21 s, still after 0.7 s), full swap at 8.67 s. Characters act on twos and hold dead still between poses; a body never deforms, it tilts or turns as one rigid shape on two thin legs, and arms exist only while they are used (drawn on in 0.25 s). The only tone is stippled graphite where a limb leaves its body (IB.shade). The kicked balloon rises fast then drifts down left for 2 s and stays as a prop. Last second: pose held, only the heart balloon moves, easing up exponentially (tau 0.3 s). Floor is nothing but a blue chalk smear under each pair of feet plus flat confetti ovals. Disco ball tiles re-roll every 4 frames. */
+/* 미러볼 아래 다리 달린 파란 폴더가 풍선을 차자 화면이 옆으로 밀려 서류가 드러나고, 둘이 따로 춤추다 다가가 손을 잡으면 하트 풍선이 떠오른다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 전달하는 생각: 따로 놀던 두 가지가 마침내 한자리에 선다.
+   Motion notes: one locked shot, no cuts, 11.6 s. Shows the reference frame's region x 356-1920, y 60-940 (CROP) enlarged 1.23x; coordinates in the code are the reference's. The stage pans 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s. In the reference a copy block sits left of the stage and gains a line at 1.0 s and 1.92 s and swaps at 8.67 s, on the kick, the pan and the hand-hold; the copy is not drawn here (its motion is IB.copy in the kit). Characters act on twos and hold dead still between poses; a body never deforms, it tilts or turns as one rigid shape on two thin legs, and arms exist only while they are used (drawn on in 0.25 s). The only tone is stippled graphite where a limb leaves its body (IB.shade). The kicked balloon rises fast then drifts down left for 2 s and stays as a prop. Last second: pose held, only the heart balloon moves, easing up exponentially (tau 0.3 s). Floor is nothing but a blue chalk puddle around each pair of shoes plus flat confetti ovals. Disco ball tiles re-roll every 4 frames. */
 const { prog, kf, lerp, rng, hash, clamp } = MG;
 const C = IB.C, FLOOR = 893;
-const COPY_A = ['첫 줄이 먼저 오고', '둘째 줄이 붙는다.'], COPY_B = ['마지막에는 통째로', '새 문장이 된다.'];
+const CROP = [356, 60, 1564, 880];   // the region of the reference frame this scene shows, enlarged 1.23x: the copy on the left is left out
 
 // stage pan, px left to travel, per 24 fps frame (measured on the disco ball; it steps on twos)
 const PAN = [[42, 282], [44, 270], [46, 258], [48, 145], [50, 28], [52, 15], [54, 6], [56, 0]];
@@ -162,7 +162,8 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t);
-    ctx.setTransform(1, 0, 0, 1, pan(f), 0);
+    IB.crop(ctx, CROP);
+    ctx.translate(pan(f), 0);
 
     for (const [x, y, rx, col] of CONFETTI) { ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, rx, 5, 0, 0, 7); ctx.fill(); }
     discoBall(ctx, 1302, 215, 105, f);
@@ -193,9 +194,6 @@ MG.scene({
       IB.ink(ctx, [[hx, hy + 24], [hx - 22, hy - 2], [hx - 12, hy - 20], [hx, hy - 8], [hx + 12, hy - 20], [hx + 22, hy - 2]], { closed: true, fill: C.yellow, w: 2.6, seed: 411 });
     }
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (t < 8.667) IB.copy(ctx, t >= 1.917 ? COPY_A : COPY_A.slice(0, 1), t, t >= 1.917 ? 1.917 : 1.0);
-    else IB.copy(ctx, COPY_B, t, 8.667, { from: 47 });
   },
 });
 </script>

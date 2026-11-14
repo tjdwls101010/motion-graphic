@@ -7,18 +7,18 @@
 <script src="../../kit/ink.js"></script>
 <script>
 /* 혼자 달리던 자전거에 한 명씩 끼어들 때마다 자전거가 한 칸씩 길어져 5인승 탠덤이 되고, 카피가 한 줄로 바뀌는 순간 다 같이 손을 든다. 전달하는 생각: 따로 있던 것들이 한 대에 올라 같은 방향으로 간다.
-   Motion notes: the only spot that runs on ones for its whole length, because it is a travelling shot. Nothing pans: the ground props (grass tufts, stones) scroll left at a constant 332 px/s (13.8 px per frame), clouds drift 3 px/s, and the bike itself creeps right 34.6 px/s so it ends a third of a screen further on. Each new rider is inserted between riders already seated and the wheelbase grows by 120 px about its own centre (rear -57, front +60) in 0.25 s; joins at 1.4, 3.9, 5.7, 6.7 s. Wheelbase = 180 + 120 px per extra rider, wheel radius 50. Legs pedal continuously at about 1 rev/s (6.6 rad/s, estimated by eye, not measured) with each rider a third of a turn out of phase. Copy: three lines, the next line 2 frames after the one before; at 9.25 s it cuts to one line on the middle row and every arm goes up; a cap blows off backwards at 10 s. Lines are 2-2.5 px because the figures are small (head radius 20). */
+   Motion notes: the only spot that runs on ones for its whole length, because it is a travelling shot. Nothing pans: the ground props (grass tufts, stones) scroll left at a constant 332 px/s (13.8 px per frame), clouds drift 3 px/s, and the bike itself creeps right 34.6 px/s so it ends a third of a screen further on. Each new rider is inserted between riders already seated and the wheelbase grows by 120 px about its own centre (rear -57, front +60) in 0.25 s; joins at 1.4, 3.9, 5.7, 6.7 s. Wheelbase = 180 + 120 px per extra rider, wheel radius 50. Legs pedal continuously at about 1 rev/s (6.6 rad/s, estimated by eye, not measured) with each rider a third of a turn out of phase. Copy: three lines, the next line 2 frames after the one before; at 9.25 s it cuts to one line on the middle row and every arm goes up; a cap blows off backwards at 10 s. Lines are 2-2.5 px because the figures are small (head radius 20). Riders are rigs, not drawings: joints are placed from the reference (hip 20 px behind and 127 px above the crank, shoulder 186, head 219, hands 66 px ahead), the back stays upright and the arms straight, and each rider is told apart by garment shape and headgear rather than by face. */
 const { prog, kf, lerp, rng, clamp } = MG;
-const C = IB.C, AXLE = 748, R = 50;
+const C = IB.C, AXLE = 748, R = 50, CRANK = 16;   // crank arm length: short, so the legs stay nearly straight as in the reference
 const COPY_A = ['줄 수가 많아도 한꺼번에', '왼쪽에서 밀려 들어와', '같은 자리에 선다.'], COPY_B = ['한 줄로 줄어든다.'];
 
-// rear to front. `at` = when the rider drops in.
+// rear to front. `at` = when the rider drops in. top/sleeve/leg are garment colours; `shorts` leaves the shin bare; `fore` colours the forearm.
 const RIDERS = [
-  { at: 1.4, skin: C.skin[4], top: C.paper, leg: C.navy, head: 'long' },
-  { at: 5.7, skin: C.skin[1], top: C.paper, leg: C.paper, head: 'helmet', hat: C.sky },
-  { at: 6.7, skin: C.skin[2], top: C.paper, leg: C.navy, shin: C.skin[2], head: 'wisps' },
-  { at: 3.9, skin: C.skin[1], top: C.sky, leg: C.sky, head: 'bun' },
-  { at: -1, skin: C.skin[4], top: C.navy, leg: C.paper, head: 'helmet', hat: C.paper },
+  { at: 1.4, skin: C.skin[4], top: C.paper, leg: C.navy, shoe: C.paper, head: 'long', lean: 10 },
+  { at: 5.7, skin: C.skin[1], top: C.paper, leg: C.paper, shoe: C.navy, head: 'helmet', hat: C.sky, fore: 'stripes' },
+  { at: 6.7, skin: C.skin[2], top: C.paper, leg: C.navy, shoe: C.skin[2], shorts: true, fore: 'skin', head: 'cap' },
+  { at: 3.9, skin: C.skin[1], top: C.sky, leg: C.sky, shoe: C.paper, fore: 'skin', sleeve: C.paper, head: 'bun' },
+  { at: -1, skin: C.skin[4], top: C.navy, leg: C.paper, shoe: C.paper, head: 'helmet', hat: C.paper, dots: true },
 ];
 const here = (r, t) => (r.at < 0 ? 1 : prog(IB.twos(t), r.at, 0.25, 'outQuad'));
 
@@ -30,44 +30,69 @@ function ik(H, P, a, b) {
   return [H[0] + a * Math.cos(base - A), H[1] + a * Math.sin(base - A)];
 }
 
+/* One rider, placed from joint positions read off the reference (relative to the bottom bracket bb they pedal): hip 20 px behind and 127 above it, shoulder 186 above, head centre 219 above, hands on a bar 66 px ahead. Upright back, straight arms, wide trousers. */
 function rider(ctx, r, sx, drop, crank, wave, seed) {
-  const seatY = AXLE - 108 - drop, hip = [sx, seatY - 12], sh = [sx + 38, seatY - 72], head = [sx + 54, seatY - 100];
-  const bb = [sx + 34, AXLE - 2];                                 // bottom bracket this rider pedals
-  const pedal = (a) => [bb[0] + 24 * Math.cos(a), bb[1] + 24 * Math.sin(a) - drop * 0.4];
-  const limb = (pts, fill, w, sd) => IB.tube(ctx, pts, { w, edge: 2.2, fill, seed: sd });
+  const bb = [sx + 34, AXLE - 1], lean = r.lean || 0;
+  const hip = [bb[0] - 20, AXLE - 127 - drop], sh = [bb[0] - 9 + lean, AXLE - 184 - drop], head = [bb[0] + 9 + lean * 1.6, AXLE - 219 - drop];
+  const pedal = (a) => [bb[0] + CRANK * Math.cos(a), bb[1] + CRANK * Math.sin(a) - drop * 0.4];
+  const limb = (pts, fill, w, sd, smooth = false) => IB.tube(ctx, pts, { w, edge: 2.1, fill, seed: sd, smooth });
+  const shoe = (P, sd) => IB.ink(ctx, [[P[0] - 13, P[1] - 9], [P[0] + 5, P[1] - 10], [P[0] + 15, P[1] - 4], [P[0] + 25, P[1] - 1], [P[0] + 25, P[1] + 5], [P[0] - 13, P[1] + 5]], { closed: true, fill: r.shoe, w: 2, seed: sd });
   const legAt = (a, sd) => {
-    const P = pedal(a), K = ik(hip, P, 78, 76);
-    if (r.shin) { limb([hip, K], r.leg, 18, sd); limb([K, P], r.shin, 12, sd + 1); } else limb([hip, K, P], r.leg, 16, sd);
-    IB.oval(ctx, P[0] + 7, P[1] + 3, 13, 6, { fill: C.paper, w: 2, seed: sd + 2, n: 8 });
+    const P = pedal(a), K = ik(hip, [P[0] - 4, P[1] - 10], 70, 67), ankle = [P[0] - 4, P[1] - 10];
+    if (r.shorts) { limb([K, ankle], r.skin, 15, sd + 1); limb([hip, [lerp(hip[0], K[0], 0.86), lerp(hip[1], K[1], 0.86)]], r.leg, 31, sd); }
+    else limb([hip, K, ankle], r.leg, 27, sd);
+    shoe(P, sd + 2);
   };
-  legAt(crank + Math.PI, seed);                                    // far leg
-  const hand = wave ? [sh[0] + wave[0], sh[1] - 62 + wave[1]] : [sx + 92, seatY - 14];
-  const elbow = wave ? [sh[0] + wave[0] * 0.3 - 8, sh[1] - 28] : [sx + 70, seatY - 40];
-  limb([[hip[0] + 4, hip[1] - 6], sh], r.top, 38, seed + 5);                           // torso
-  legAt(crank, seed + 8);                                          // near leg
-  limb([sh, elbow, hand], r.top === C.paper || r.top === C.sky || r.top === C.navy ? r.top : C.paper, 10, seed + 12);
-  IB.oval(ctx, hand[0] + 2, hand[1] - 2, 6, 6, { fill: r.skin, w: 2, seed: seed + 13, n: 8 });
-  // head
-  if (r.head === 'long') IB.ink(ctx, [[head[0] + 6, head[1] - 24], [head[0] - 30, head[1] - 22], [head[0] - 78, head[1] - 2], [head[0] - 84, head[1] + 16], [head[0] - 40, head[1] + 14], [head[0] - 8, head[1] + 18]], { closed: true, fill: C.ink, w: 2, seed: seed + 20 });
-  IB.oval(ctx, head[0], head[1], 20, 21, { fill: r.skin, w: 2.2, seed: seed + 21, n: 12 });
-  if (r.head === 'helmet') {
-    IB.ink(ctx, IB.ellipse(head[0] - 2, head[1] - 4, 24, 22, 8, Math.PI * 0.95, Math.PI * 2.05).concat([[head[0] + 34, head[1] - 2]]), { closed: true, fill: r.hat, w: 2.2, seed: seed + 22 });
+  legAt(crank + Math.PI, seed);                                                // far leg
+  // torso: one garment shape from the shoulders to a hem that sits on the saddle
+  IB.ink(ctx, [[sh[0] - 15, sh[1] + 4], [sh[0] + 2, sh[1] - 9], [sh[0] + 17, sh[1] + 2], [hip[0] + 22, hip[1] - 20], [hip[0] + 22, hip[1] + 4], [hip[0] - 18, hip[1] + 6], [hip[0] - 21, hip[1] - 26]], { closed: true, fill: r.top, w: 2.2, seed: seed + 5 });
+  legAt(crank, seed + 8);                                                      // near leg
+  // arm: sleeve to the elbow, forearm to the grip; straight when riding, up when waving
+  const hand = wave ? [sh[0] + wave[0], sh[1] - 66 + wave[1]] : [bb[0] + 66, AXLE - 121 - drop * 0.6];
+  const elbow = wave ? [sh[0] + wave[0] * 0.45 + 10, sh[1] - 30] : [lerp(sh[0], hand[0], 0.52) + 2, lerp(sh[1], hand[1], 0.52) + 7];
+  const foreFill = r.fore === 'skin' ? r.skin : r.sleeve || r.top;
+  limb([elbow, hand], foreFill, 12, seed + 12);
+  if (r.fore === 'stripes') for (let k = 1; k < 5; k++) { const u = k / 5, x = lerp(elbow[0], hand[0], u), y = lerp(elbow[1], hand[1], u); IB.seg(ctx, x - 3, y - 5, x + 3, y + 5, { w: 1.6, seed: seed + 13 + k }); }
+  limb([[sh[0] + 2, sh[1] + 8], elbow], r.sleeve || r.top, 17, seed + 11);
+  IB.oval(ctx, hand[0] + 2, hand[1] - 1, 8, 7, { fill: r.skin, w: 2, seed: seed + 14, n: 8 });
+  // head: a profile with a nose, one eye and a smile, then hair or hat
+  const hx = head[0], hy = head[1];
+  if (r.head === 'long') IB.ink(ctx, [[hx + 2, hy - 24], [hx - 26, hy - 30], [hx - 52, hy - 22], [hx - 82, hy - 26], [hx - 104, hy - 6], [hx - 112, hy + 22], [hx - 90, hy + 34], [hx - 62, hy + 22], [hx - 40, hy + 26], [hx - 14, hy + 14]], { closed: true, fill: C.ink, w: 2, seed: seed + 20 });
+  if (r.head === 'cap') for (let i = 0; i < 6; i++) IB.ink(ctx, [[hx - 2, hy - 8 + i * 6], [hx - 30, hy - 4 + i * 7], [hx - 58 - (i % 2) * 10, hy + 4 + i * 5]], { w: 1.7, seed: seed + 30 + i });   // hair streaming back
+  IB.ink(ctx, [[hx - 2, hy - 21], [hx + 14, hy - 15], [hx + 19, hy - 3], [hx + 26, hy + 3], [hx + 19, hy + 7], [hx + 16, hy + 17], [hx + 2, hy + 22], [hx - 15, hy + 14], [hx - 20, hy - 4]], { closed: true, fill: r.skin, w: 2.1, seed: seed + 21 });
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(hx + 12, hy - 4, 1.9, 0, 7); ctx.fill();
+  IB.ink(ctx, [[hx + 9, hy + 10], [hx + 14, hy + 12], [hx + 18, hy + 9]], { w: 1.6, seed: seed + 22 });
+  if (r.head === 'cap') IB.ink(ctx, [[hx + 6, hy + 8], [hx + 20, hy + 12], [hx + 16, hy + 26], [hx + 2, hy + 30], [hx - 8, hy + 20]], { closed: true, fill: C.paper, w: 1.8, seed: seed + 36 });   // beard
+  if (r.head === 'helmet' || r.head === 'cap') {
+    const dome = IB.ellipse(hx - 3, hy - 5, 23, 22, 9, Math.PI * 0.97, Math.PI * 2.02);
+    IB.ink(ctx, dome.concat(r.head === 'cap' ? [[hx + 40, hy - 4], [hx + 20, hy - 2]] : [[hx + 30, hy - 2]]), { closed: true, fill: r.hat || C.paper, w: 2.2, seed: seed + 23 });
+    if (r.head === 'helmet') { IB.ink(ctx, [[hx - 12, hy - 4], [hx - 6, hy + 14], [hx + 4, hy + 22]], { w: 1.8, seed: seed + 24 }); IB.ink(ctx, [[hx - 24, hy - 2], [hx - 22, hy + 10], [hx - 12, hy + 6]], { closed: true, fill: C.ink, w: 0 }); }
+    if (r.dots) for (const [dx, dy] of [[-12, -16], [0, -20], [10, -14], [-6, -8], [6, -6]]) { ctx.beginPath(); ctx.arc(hx + dx, hy + dy, 2.4, 0, 7); ctx.fill(); }
+    else if (r.head === 'helmet') IB.oval(ctx, hx - 8, hy - 12, 7, 7, { w: 1.6, seed: seed + 25, n: 8 });
   } else if (r.head === 'bun') {
-    IB.oval(ctx, head[0] - 22, head[1] - 20, 12, 12, { fill: C.skin[4], w: 2, seed: seed + 23, n: 8 });
-    IB.ink(ctx, IB.ellipse(head[0] - 3, head[1] - 4, 21, 20, 8, Math.PI * 0.75, Math.PI * 1.8), { closed: true, fill: C.skin[4], w: 2, seed: seed + 24 });
-  } else if (r.head === 'wisps') {
-    for (let i = 0; i < 5; i++) IB.ink(ctx, [[head[0] + 4 - i * 4, head[1] - 20 + i * 5], [head[0] - 24 - i * 3, head[1] - 22 + i * 7], [head[0] - 46, head[1] - 12 + i * 8]], { w: 1.8, seed: seed + 25 + i });
+    IB.oval(ctx, hx - 22, hy - 24, 13, 12, { fill: C.skin[4], w: 2, seed: seed + 26, n: 8 });
+    IB.ink(ctx, [[hx + 10, hy - 18], [hx - 4, hy - 26], [hx - 22, hy - 16], [hx - 24, hy + 6], [hx - 12, hy + 2], [hx - 8, hy - 10]], { closed: true, fill: C.skin[4], w: 2, seed: seed + 27 });
   } else if (r.head === 'long') {
-    IB.ink(ctx, IB.ellipse(head[0] - 2, head[1] - 3, 21, 21, 8, Math.PI * 0.8, Math.PI * 1.85), { closed: true, fill: C.ink, w: 2, seed: seed + 26 });
+    IB.ink(ctx, [[hx + 12, hy - 17], [hx - 2, hy - 26], [hx - 22, hy - 14], [hx - 22, hy + 10], [hx - 10, hy + 2], [hx - 4, hy - 12]], { closed: true, fill: C.ink, w: 2, seed: seed + 28 });
   }
-  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(head[0] + 11, head[1] - 1, 2, 0, 7); ctx.fill();
 }
 
 function wheel(ctx, x, spin, seed) {
-  IB.smear(ctx, x, AXLE + R + 1, 84, { h: 8, color: C.blue, seed });
-  IB.oval(ctx, x, AXLE, R, R, { fill: C.paper, w: 7, seed, n: 20, wob: 0.4 });
-  for (let i = 0; i < 3; i++) { const a = spin + i * 2.09; IB.ink(ctx, IB.ellipse(x, AXLE, 30, 30, 5, a, a + 0.9), { w: 1.6, color: '#b9b9b9', seed: seed + i }); }
+  // the floor under a wheel is a few blue scribbles, not the chalk smear the standing figures get
+  for (let k = 0; k < 4; k++) { const y = AXLE + R + 2 + k * 5, half = 44 - k * 7, pts = []; for (let i = 0; i <= 6; i++) pts.push([x - half + (i / 6) * half * 2 + (k % 2) * 6, y + (i % 2 ? -1.6 : 1.6)]); IB.ink(ctx, pts, { w: 2, color: C.blue, seed: seed + 20 + k, grain: 0 }); }
+  IB.oval(ctx, x, AXLE, R - 3, R - 3, { fill: C.paper, w: 8, seed, n: 22, wob: 0.4 });
+  for (let i = 0; i < 4; i++) { const a = spin + i * 1.57; IB.ink(ctx, IB.ellipse(x, AXLE, 22 + (i % 2) * 12, 22 + (i % 2) * 12, 5, a, a + 0.8), { w: 1.5, color: '#b0b0b0', seed: seed + i }); }
   IB.oval(ctx, x, AXLE, 5, 5, { fill: C.ink, w: 0, n: 8 });
+}
+
+function crankset(ctx, bb, a, seed, f) {
+  for (const s of [0, Math.PI]) { const p = [bb[0] + CRANK * Math.cos(a + s), bb[1] + CRANK * Math.sin(a + s)]; IB.seg(ctx, bb[0], bb[1], p[0], p[1], { w: 3, seed: seed + s }); IB.seg(ctx, p[0] - 9, p[1], p[0] + 11, p[1], { w: 3, seed: seed + 1 + s }); }
+  IB.oval(ctx, bb[0], bb[1], 13, 13, { fill: C.paper, w: 2.2, seed, n: 12 });
+  ctx.fillStyle = C.ink;
+  for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(bb[0] + 7.5 * Math.cos(a + i * 1.257), bb[1] + 7.5 * Math.sin(a + i * 1.257), 1.7, 0, 7); ctx.fill(); }
+  // spin marks, re-drawn on twos
+  const k = Math.floor(f / 2) % 2;
+  for (const s of [-1, 1]) IB.ink(ctx, IB.ellipse(bb[0], bb[1] + 4, 24 + k * 5, 26 + k * 5, 4, s > 0 ? 0.2 : 2.4, s > 0 ? 0.75 : 2.95), { w: 1.4, color: '#8a8a8a', seed: seed + 5 + k + s });
 }
 
 MG.scene({
@@ -96,31 +121,38 @@ MG.scene({
     wheel(ctx, rx, spin, 70);
     wheel(ctx, fx, spin, 80);
     for (let k = 0; k < 2; k++) IB.oval(ctx, rx - 78 - k * 30 - (IB.frame(t) % 3) * 6, AXLE + 26 + k * 8, 13 - k * 6, 8 - k * 4, { w: 1.8, seed: 90 + k, n: 7, fill: C.bg });   // dust
-    const frame = (pts, seed) => IB.tube(ctx, pts, { w: 8, edge: 2, fill: C.blue, seed });
-    const last = seats[seats.length - 1];
-    frame([[rx, AXLE], [fx - 78, AXLE - 2]], 100);
-    frame([[rx, AXLE], [seats[0] + 8, AXLE - 76], [fx - 46, AXLE - 82]], 101);
-    frame([[last + 34, AXLE - 2], [fx - 46, AXLE - 82]], 102);
-    frame([[fx - 50, AXLE - 100], [fx - 42, AXLE - 78], [fx, AXLE]], 103);
-    IB.ink(ctx, [[fx - 78, AXLE - 124], [fx - 54, AXLE - 124], [fx - 50, AXLE - 100]], { w: 5, seed: 104 });
+    const f = IB.frame(t), frame = (pts, seed) => IB.tube(ctx, pts, { w: 8, edge: 2, fill: C.blue, seed });
+    const bbs = seats.map((sx) => [sx + 34, AXLE - 1]), topY = AXLE - 76, first = bbs[0], last = bbs[bbs.length - 1];
+    frame([[rx, AXLE], last], 100);                                             // chain stay and bottom tube
+    frame([[rx, AXLE], [first[0] - 26, topY]], 101);                            // seat stay
+    frame([[first[0] - 26, topY], [fx - 52, topY]], 102);                       // top tube
+    frame([last, [fx - 50, topY + 6]], 103);                                    // down tube
+    frame([[fx - 56, topY - 22], [fx - 48, topY + 8], [fx, AXLE]], 104);        // head tube and fork
+    // front bar: a white stem curving back to a blue grip under the front rider's hands
+    IB.tube(ctx, [[fx - 54, topY - 20], [fx - 62, topY - 52], [fx - 80, topY - 60]], { w: 8, edge: 2, fill: C.paper, smooth: true, seed: 105 });
+    IB.ink(ctx, [[fx - 80, topY - 60], [fx - 100, topY - 58]], { w: 8, color: C.blue, seed: 106, taper: false });
     RIDERS.forEach((r, i) => {
       if (pres[i] <= 0) return;
-      const sx = seats[i];
-      frame([[sx + 34, AXLE - 2], [sx - 2, AXLE - 104]], 110 + i);
-      IB.ink(ctx, [[sx - 16, AXLE - 108], [sx + 14, AXLE - 108]], { w: 6, seed: 120 + i });                                  // saddle
-      if (i < RIDERS.length - 1) IB.ink(ctx, [[sx + 76, AXLE - 78], [sx + 86, AXLE - 120], [sx + 100, AXLE - 124]], { w: 4, seed: 130 + i });   // stoker bar
-      IB.oval(ctx, sx + 34, AXLE - 2, 12, 12, { fill: C.paper, w: 2.2, seed: 140 + i, n: 10 });
+      const bb = bbs[i];
+      frame([bb, [bb[0] - 24, topY - 8]], 110 + i);                             // seat tube
+      IB.ink(ctx, [[bb[0] - 40, topY - 12], [bb[0] - 10, topY - 14], [bb[0] - 8, topY - 8], [bb[0] - 38, topY - 6]], { closed: true, fill: C.paper, w: 2, seed: 120 + i });   // saddle
+      if (i > 0 && pres[i - 1] > 0) {                                            // stoker bar for the rider behind, bracketed off this seat tube
+        const g = [bbs[i - 1][0] + 66, AXLE - 121];
+        IB.tube(ctx, [[bb[0] - 22, topY - 4], [bb[0] - 36, topY - 30], [g[0] + 12, g[1] + 2]], { w: 7, edge: 1.9, fill: C.paper, smooth: true, seed: 130 + i });
+        IB.ink(ctx, [[g[0] + 12, g[1] + 2], [g[0] - 10, g[1] + 2]], { w: 8, color: C.blue, seed: 135 + i, taper: false });
+      }
+      crankset(ctx, bb, spin + i * 2.09, 140 + i * 9, f);
     });
     // riders, rear first so the one in front overlaps
     const tw = IB.twos(t), waving = t >= 9.25;
     RIDERS.forEach((r, i) => {
       if (pres[i] <= 0) return;
-      const sway = waving ? [(i % 2 ? 1 : -1) * (18 + 10 * Math.sin(tw * 9 + i)), 6 * Math.cos(tw * 9 + i * 2)] : null;
+      const sway = waving ? [(i % 2 ? 26 : -14) + 10 * Math.sin(tw * 9 + i), 6 * Math.cos(tw * 9 + i * 2)] : null;
       rider(ctx, r, seats[i], (1 - pres[i]) * 90, spin + i * 2.09, sway, 200 + i * 40);
     });
     // the cap that blows off at 10 s
     if (t >= 10) {
-      const u = (t - 10) / 1.75, x = lerp(seats[4] + 30, 700, u), y = AXLE - 250 - 140 * Math.sin(u * 2.4) + 40 * u;
+      const u = (t - 10) / 1.75, x = lerp(seats[2] + 40, 700, u), y = AXLE - 250 - 140 * Math.sin(u * 2.4) + 40 * u;
       ctx.save(); ctx.translate(x, y); ctx.rotate(-u * 5);
       IB.ink(ctx, IB.ellipse(0, 0, 20, 16, 8, Math.PI, Math.PI * 2).concat([[32, 2]]), { closed: true, fill: C.paper, w: 2.2, seed: 500 });
       ctx.restore();

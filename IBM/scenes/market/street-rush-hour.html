@@ -8,7 +8,7 @@
 <script src="../../kit/figure.js"></script>
 <script>
 /* 기둥 늘어선 거래소 건물과 고층 빌딩 선화 앞 인도를 사람들이 양쪽으로 바삐 지나가고 노란 택시가 가로지르는데, 연보라 옷 한 사람만 휴대폰을 보고 멈춰 서서 "올랐다!" 하고는 다시 인파에 섞인다. 원본에 없는 창작 장면으로, 원본의 설정 샷(빽빽한 흑백 선화에 색 한두 군데)에 멈춘 무대를 가로지르는 걷기를 여럿 겹쳐 금융가의 출근길을 그렸다. 전달하는 생각: 모두가 바삐 움직이는 거리에서 숫자 하나가 한 사람을 멈춰 세운다.
-   Motion notes: one locked shot, 7 s. Three layers, three clocks. The street is an establishing drawing that never moves: 1.5-4 px lines, no fills, windows as texture; only the flag on the roof flips between two drawings on threes. The cab is a machine and runs on ones, 520 px/s, crossing from 1.0 s with its spokes turning. The crowd walks on twos across the still pavement: every walker advances IB.walkLen / 12 per drawing (0.07 h: 16-19 px for these heights), so every planted foot stays put; thirteen walkers in two rows (floor y 930 and 985, heights 228-270), five of them a second wave that is still off-screen at the start, begin zero to five drawings out of phase so the crowd never steps in unison. The walker in lavender stops at 2.83 s on a drawing with one foot planted and one in the air (phase 5/6), brings the phone up in one in-between, the phone buzzes (shake marks, 4 drawings); bubble 3.5-4.75 s over a held pose while the crowd keeps passing in front and behind; walks on at 4.83 s from the same phase. Colour: yellow (the cab, one coat), lavender (the one who stops), blue for the small rising arrow on the phone; everyone else is white, charcoal or black. */
+   Motion notes: one locked shot, 7 s. Three layers, three clocks. The street is an establishing drawing that never moves: 1.5-4 px lines, no fills, windows as texture; only the flag on the roof flips between two drawings on threes. The cab is a machine and runs on ones, 520 px/s, crossing from 1.0 s with its spokes turning. The crowd walks on twos across the still pavement: every walker advances IB.walkLen / 12 per drawing (0.07 h: 16-19 px for these heights), so every planted foot stays put; thirteen walkers in two rows (floor y 930 and 985, heights 228-270; those heading left walk 14 px nearer than those heading right, so walkers who cross pass in front of one another), five of them a second wave that is still off-screen at the start, begin zero to five drawings out of phase so the crowd never steps in unison. The walker in lavender stops at 2.83 s on a drawing with one foot planted and one in the air (phase 5/6), brings the phone up in one in-between, the phone buzzes (shake marks, 4 drawings); bubble 3.5-4.75 s over a held pose while the crowd keeps passing in front and behind; walks on at 4.83 s from the same phase. Colour: yellow (the cab, one coat), lavender (the one who stops), blue for the small rising arrow on the phone; everyone else is white, charcoal or black. */
 const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, ROAD = 856, T = (n) => n / 12;
 
@@ -55,7 +55,7 @@ function street(ctx, f) {
 }
 
 function cab(ctx, x, spin) {
-  const y = ROAD - 14;
+  const y = ROAD - 34;   // the wheels stand on the road, inside its near edge
   IB.ink(ctx, [[x - 190, y], [x - 196, y - 50], [x - 150, y - 62], [x - 104, y - 112], [x + 56, y - 112], [x + 110, y - 62], [x + 178, y - 54], [x + 192, y - 30], [x + 190, y]], { closed: true, smooth: false, fill: C.yellow, w: 3.4, seed: 700, wob: 0.5 });
   IB.ink(ctx, [[x - 134, y - 64], [x - 96, y - 102], [x - 28, y - 102], [x - 28, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 701 });
   IB.ink(ctx, [[x - 14, y - 64], [x - 14, y - 102], [x + 50, y - 102], [x + 92, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 702 });
@@ -86,6 +86,8 @@ const CROWD = [
   { x0: 3250, dir: -1, h: 238, floor: 930, off: 1, top: C.bg, topKind: 'long', bottom: C.ink, hair: 'pony', skin: C.skin[1], prop: 'cup' },
   { x0: -420, dir: 1, h: 230, floor: 930, off: 5, ...suit(C.ink), hair: 'cap', hat: C.paper, skin: C.skin[4], prop: 'case' },
 ].map((w, i) => ({ ...w, shoe: w.bottom === C.ink ? C.paper : C.ink, seed: 800 + i * 30 }));
+// those walking left keep 14 px nearer the viewer than those walking right, so two who cross pass in front of one another instead of merging
+const ROWS = CROWD.map((w) => ({ ...w, floor: w.floor + (w.dir < 0 ? 14 : 0) })).sort((a, b) => a.floor - b.floor);
 const STOP = 34, GO = 58, PH_STOP = (STOP / 12) % 1;   // the hero stops on drawing 34 (2.83 s) and walks on at drawing 58 (4.83 s)
 
 function walker(ctx, w, k) {
@@ -101,13 +103,13 @@ function walker(ctx, w, k) {
   const sh = [p.hip[0], p.hip[1] - F.torso * w.h], prop = phone ? 'look' : w.prop;
   // what the hands are busy with, each target inside the arm's reach
   if (prop === 'cup') p.hands = [p.hands[0], [sh[0] + 0.15 * w.h * d, sh[1] + 0.13 * w.h]];
-  if (prop === 'phone') p.hands = [p.hands[0], [sh[0] + 0.06 * w.h * d, sh[1] - 0.09 * w.h]];
+  if (prop === 'phone') p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]];   // at the ear, behind the face
   if (prop === 'look') { const base = IB.stand(x, w.floor, w).hands[1]; p.hands = [p.hands[0], [lerp(base[0], sh[0] + 0.17 * w.h * d, phone), lerp(base[1], sh[1] - 0.02 * w.h, phone)]]; p.nod = 0.2 * phone; }
   const face = phone === 1 ? { eye: 'wide', mouth: k >= STOP + 6 ? 'smile' : 'flat' } : { mouth: 'flat' };
   const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
   if (prop === 'case') { const [hx, hy] = j.hands[0]; IB.seg(ctx, hx, hy + 6, hx, hy + 16, { w: lw, seed: w.seed + 20 }); IB.box(ctx, hx - 0.09 * w.h, hy + 16, 0.18 * w.h, 0.12 * w.h, { fill: w.bottom === C.ink ? C.charcoal : C.paper, w: lw, seed: w.seed + 21 }); }
   if (prop === 'cup') { const [hx, hy] = j.hands[1]; IB.ink(ctx, [[hx - 9 + 8 * d, hy - 30], [hx + 9 + 8 * d, hy - 30], [hx + 6 + 8 * d, hy + 6], [hx - 6 + 8 * d, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.85, seed: w.seed + 22 }); }
-  if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1], px = hx + 6 * d, py = hy - (prop === 'look' ? 30 : 22); IB.box(ctx, px - 9, py, 18, 32, { fill: C.paper, w: lw * 0.85, seed: w.seed + 23 }); if (phone === 1) IB.ink(ctx, [[px - 5, py + 20], [px, py + 9], [px + 5, py + 20]], { closed: true, smooth: false, fill: C.blue, w: 1.2, seed: w.seed + 24 }); }
+  if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1], px = hx + (prop === 'look' ? 6 : -2) * d, py = hy - (prop === 'look' ? 30 : 26); IB.box(ctx, px - 9, py, 18, 32, { fill: C.paper, w: lw * 0.85, seed: w.seed + 23 }); if (phone === 1) IB.ink(ctx, [[px - 5, py + 20], [px, py + 9], [px + 5, py + 20]], { closed: true, smooth: false, fill: C.blue, w: 1.2, seed: w.seed + 24 }); }
   return { x, j, phone };
 }
 
@@ -120,11 +122,13 @@ MG.scene({
     const f = IB.frame(t), k = Math.round(IB.twos(t) * 12);
     street(ctx, f);
     if (t >= 1) cab(ctx, -260 + 520 * (t - 1), (t - 1) * 520 / 34);
-    IB.smear(ctx, 960, 992, 1900, { h: 16, seed: 9 });
+    // the pavement: a chalk line 11 px above each row's soles
+    IB.smear(ctx, 960, 923, 1900, { h: 12, seed: 8, alpha: 0.45 });
+    IB.smear(ctx, 960, 978, 1900, { h: 16, seed: 9 });
     let hero = null;
-    for (const row of [930, 985]) for (const w of CROWD) if (w.floor === row) { const r = walker(ctx, w, k); if (w.hero) hero = r; }
+    for (const w of ROWS) { const r = walker(ctx, w, k); if (w.hero) hero = r; }
     if (hero) {
-      const w = CROWD[0], s = k - (STOP + 1), [hx, hy] = hero.j.hands[1];
+      const w = ROWS.find((r) => r.hero), s = k - (STOP + 1), [hx, hy] = hero.j.hands[1];
       if (s >= 0 && s < 4) { IB.shake(ctx, hx + 26, hy - 16, 16, { a: -0.3, n: 2, seed: 900 + s, w: 2.4 }); IB.shake(ctx, hx - 14, hy - 22, 14, { a: Math.PI + 0.3, n: 2, seed: 910 + s, w: 2.4 }); }
       IB.bubble(ctx, ['올랐다!'], t, T(42), { tip: [hero.x + 40, w.floor - 1.0 * w.h], x: hero.x + 170, y: w.floor - 1.34 * w.h, until: T(57), seed: 500 });
     }

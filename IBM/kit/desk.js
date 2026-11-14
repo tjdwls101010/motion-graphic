@@ -2,7 +2,7 @@
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C, F = IB.FIG;
 
-  /* How high a seat holds the hip joint, as a fraction of the sitter's height: the shin and ankle plus half a thigh's thickness. */
+  /* How high a seat holds the hip joint, as a fraction of the sitter's height: 0.05 h (half a thigh's thickness) above a seat whose top is 0.285 h off the floor. */
   IB.SEAT = 0.335;
 
   /* sit(x, floor, look) — the pose of a figure sitting with its hip joint at x: thighs level, shins down, hands out in front at keyboard height (0.25 h ahead, 0.11 h above the hip, inside the arm's reach). Move the hands and the lean from here; the feet stay where they are while the sitter acts. */
@@ -45,16 +45,16 @@
   };
   IB.clipRect = (ctx, [x, y, w, h]) => { ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); };
 
-  /* candles(ctx, rect, data, n, opts) — a candlestick chart in `rect`. data is [[open, close, high, low], ...] in price units, scaled so opts.min..opts.max fills the rect's height. n is how many candles are there: a whole number draws that many, and a half more draws the next one's wick only, so stepping n by 0.5 per drawing puts each candle on in two drawings, wick then body. A rising candle is filled (opts.up, green), a falling one is hollow. Returns { x(i), y(price) } for whatever the scene draws over it. */
+  /* candles(ctx, rect, data, n, opts) — a candlestick chart in `rect`. data is [[open, close, high, low], ...] in price units, scaled so opts.min..opts.max fills the rect's height. n is how many candles are there: a whole number draws that many, and a half more draws the next one's wick only, so stepping n by 0.5 per drawing puts each candle on in two drawings, wick then body. A rising candle is opts.up (blue) and a falling one opts.down (red), the market scenes' convention; a candle that closes where it opened counts as rising, and a body thinner than 1.5 line widths is drawn that thick, centred on its price. Returns { x(i), y(price) } for whatever the scene draws over it. */
   IB.candles = (ctx, [rx, ry, rw, rh], data, n, o = {}) => {
-    const { min = 0, max = 1, lw = 3, up = C.green, down = C.paper, seed = 760, slot = rw / data.length } = o;
+    const { min = 0, max = 1, lw = 3, up = C.blue, down = C.red, seed = 760, slot = rw / data.length } = o;
     const X = (i) => rx + slot * (i + 0.5), Y = (v) => ry + rh - ((v - min) / (max - min)) * rh;
     data.forEach(([op, cl, hi, lo], i) => {
       if (i >= n) return;
       IB.seg(ctx, X(i), Y(hi), X(i), Y(lo), { w: lw * 0.8, seed: seed + i * 3, wob: 0.3 });
       if (i + 0.5 >= n) return;
-      const a = Y(Math.max(op, cl)), b = Y(Math.min(op, cl));
-      IB.box(ctx, X(i) - slot * 0.28, a, slot * 0.56, Math.max(lw * 1.5, b - a), { fill: cl >= op ? up : down, w: lw, seed: seed + i * 3 + 1, wob: 0.4 });
+      const a = Y(Math.max(op, cl)), b = Y(Math.min(op, cl)), tall = Math.max(lw * 1.5, b - a);
+      IB.box(ctx, X(i) - slot * 0.28, (a + b) / 2 - tall / 2, slot * 0.56, tall, { fill: cl >= op ? up : down, w: lw, seed: seed + i * 3 + 1, wob: 0.4 });
     });
     return { x: X, y: Y };
   };

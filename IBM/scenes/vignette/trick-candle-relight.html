@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>vignette / trick-candle-relight</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script>
+/* 아이가 케이크의 촛불을 훅 불어 끄고 뿌듯해하는데 불이 하나씩 도로 켜지고, 더 크게 숨을 들이켜 다시 불어 꺼도 이번엔 한꺼번에 켜져서 "어?" 한다. 원본에 없는 창작 장면으로, 원본 3편의 촛불 부는 아이에서 "준비-동작-정지"와 얼굴만 바뀌는 연기를 가져왔다. 전달하는 생각: 껐다고 생각한 문제가 다시 살아난다.
+   Motion notes: one locked shot, 7 s, figure 440 px tall. Two rounds of the same four beats, the second bigger: inhale (lean back 0.1 rad, then 0.2), a hold (0.25 s, then 0.42 s), blow (lean forward 0.35, then 0.5; the pose arrives in one drawing), result held. The body only tips at the hip; between poses there are one or two in-betweens on twos and no easing. Blow: three puff lines travel from the mouth for 3 drawings; the flames lie over to the right for one drawing (a smear, 2.2x long) and are gone on the next; a wisp of smoke climbs 14 px per drawing for 6 drawings above each wick. Relight round one: one flame per drawing-pair, left to right, 2 drawings apart (2.5, 2.67, 2.83 s), each with a four-point spark for one drawing. Relight round two: all three on the same drawing at 5.0 s, then the bubble at 5.25 s. A lit flame is two drawings alternating on threes (8 fps) and that is the only thing moving while a pose holds, including the whole last second. The face changes with the beat, not between: eyes shut for the blow, a smile when the flames are out, wide when they return. Three colours: lavender cake, yellow flames, the sky top. */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, FLOOR = 930, TABLE = 690, X0 = 700;
+const WHO = { h: 440, dir: 1, skin: C.skin[4], top: C.sky, bottom: C.ink, shoe: C.paper, hair: 'curly', seed: 60 };
+const H = WHO.h, CANDLES = [1010, 1062, 1114], WICK = TABLE - 8 - 112 - 72;
+const kid = (lean, face) => { const p = IB.stand(X0, FLOOR, WHO); p.lean = lean; p.hip[0] += -lean * 30; p.hands = [[X0 + 96, TABLE - 8], [X0 + 70, TABLE - 6]]; p.face = face; return p; };
+const SMILE = { mouth: 'smile' }, FLAT = { mouth: 'flat' }, PUFF = { eye: 'closed', mouth: 'open' }, WIDE = { eye: 'wide', mouth: 'flat', brow: -1 }, IN = { eye: 'closed', mouth: 'flat', brow: 1 };
+const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), face: (u < 0.5 ? a : b).face });
+
+// the two rounds: [inhale at, blow at, relight at, lean back, lean forward, relight stagger in drawings]
+const ROUNDS = [{ inhale: 0.75, blow: 1.25, back: 0.5 + 18 / 12, relight: 2.5, away: -0.1, into: 0.35, stagger: 2 }, { inhale: 3.25, blow: 4, back: 99, relight: 5, away: -0.2, into: 0.5, stagger: 0 }];
+function poseAt(tt) {
+  const n = (t0) => Math.round((tt - t0) * 12), rest = kid(0.06, SMILE);
+  let p = kid(0.06, FLAT);
+  for (const r of ROUNDS) {
+    const lit = (i) => tt >= r.relight + (i * r.stagger) / 12 - 1e-6;
+    if (tt < r.inhale - 1e-6) break;
+    if (tt < r.blow - 1e-6) { const k = n(r.inhale); p = k === 0 ? mix(kid(0.06, FLAT), kid(r.away, IN), 0.6) : kid(r.away, IN); continue; }
+    p = n(r.blow) < 5 ? kid(r.into, PUFF) : tt >= r.back - 1e-6 ? rest : kid(r.into * 0.7, SMILE);
+    if (lit(0)) p = kid(lit(2) ? 0.02 : p.lean, WIDE);
+  }
+  return p;
+}
+// 0 = out, 1 = burning, 2 = blown flat for one drawing, 3 = the drawing it catches again
+function flame(i, tt) {
+  let s = 1;
+  for (const r of ROUNDS) {
+    const b = Math.round((tt - r.blow) * 12), l = Math.round((tt - (r.relight + (i * r.stagger) / 12)) * 12);
+    if (b === 1) s = 2; else if (b >= 2) s = 0;
+    if (l === 0) s = 3; else if (l > 0) s = 1;
+  }
+  return s;
+}
+
+function table(ctx) {
+  IB.smear(ctx, 1060, FLOOR - 4, 620, { h: 12, seed: 9 });
+  for (const x of [830, 1290]) IB.box(ctx, x - 13, TABLE + 22, 26, FLOOR - TABLE - 22, { fill: C.bg, w: 3.2, seed: 100 + x });
+  IB.shade(ctx, 800, TABLE + 24, 520, 34, { from: 'top', seed: 11, alpha: 0.5 });
+  IB.box(ctx, 770, TABLE, 580, 24, { fill: C.paper, w: 3.6, seed: 102 });
+  // plate and cake: two tiers of lavender with a white drip between and on top
+  IB.oval(ctx, 1062, TABLE - 4, 170, 12, { fill: C.paper, w: 3, seed: 110, n: 16 });
+  IB.box(ctx, 942, TABLE - 8 - 112, 240, 112, { fill: C.lavender, w: 3.6, seed: 111 });
+  const drip = (y, seed) => IB.ink(ctx, [[942, y], [962, y + 14], [984, y + 2], [1010, y + 16], [1034, y + 3], [1062, y + 15], [1090, y + 2], [1116, y + 16], [1140, y + 3], [1162, y + 14], [1182, y]], { w: 3, seed, color: C.ink });
+  IB.box(ctx, 942, TABLE - 8 - 112, 240, 14, { fill: C.paper, w: 3, seed: 112 });
+  drip(TABLE - 8 - 98, 113); drip(TABLE - 8 - 52, 114);
+  for (let i = 0; i < 7; i++) IB.seg(ctx, 958 + i * 34, TABLE - 8 - 26 + (i % 2) * 8, 966 + i * 34, TABLE - 8 - 20 + (i % 2) * 8, { w: 2.2, seed: 120 + i });
+}
+function candle(ctx, x, state, f, tt) {
+  IB.box(ctx, x - 8, WICK + 6, 16, 66, { fill: C.paper, w: 2.6, seed: 200 + x });
+  for (let k = 0; k < 3; k++) IB.seg(ctx, x - 8, WICK + 22 + k * 16, x + 8, WICK + 14 + k * 16, { w: 1.8, seed: 201 + x + k });
+  IB.seg(ctx, x, WICK + 6, x + 1, WICK - 4, { w: 2, seed: 205 + x });
+  if (state === 0) return;
+  const flick = Math.floor(f / 3) % 2 ? 1 : -1;
+  ctx.save(); ctx.translate(x, WICK - 4);
+  if (state === 2) { ctx.rotate(1.25); ctx.scale(0.75, 2.2); } else ctx.rotate(flick * 0.12);
+  IB.ink(ctx, [[0, 2], [-11, -12], [-7, -30], [0, -46], [8, -28], [11, -12]], { closed: true, fill: C.yellow, w: 2.6, seed: 210 + x + (flick > 0 ? 1 : 0) });
+  ctx.restore();
+  if (state === 3) for (let i = 0; i < 4; i++) { const a = -Math.PI / 2 + (i - 1.5) * 0.7; IB.seg(ctx, x + Math.cos(a) * 62, WICK - 26 + Math.sin(a) * 62, x + Math.cos(a) * 86, WICK - 26 + Math.sin(a) * 86, { w: 2.6, seed: 220 + x + i }); }
+}
+
+MG.scene({
+  title: 'vignette / trick-candle-relight',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(t), p = poseAt(tt);
+    IB.smear(ctx, X0, FLOOR - 9, 290, { h: 13, seed: 8 });
+    table(ctx);
+    CANDLES.forEach((x, i) => candle(ctx, x, flame(i, tt), f, tt));
+    const j = IB.figure(ctx, p, { ...WHO, face: p.face });
+    for (const r of ROUNDS) {
+      const b = Math.round((tt - r.blow) * 12), big = r.into > 0.4 ? 1.35 : 1;
+      // breath: three lines leave the mouth and travel toward the candles for three drawings
+      if (b >= 0 && b < 3) for (let i = -1; i <= 1; i++) { const x0 = j.headAt[0] + 44 + b * 70 * big, y0 = j.headAt[1] + 12 + i * 15 * big; IB.ink(ctx, [[x0, y0], [x0 + 46 * big, y0 - 4 + i * 5], [x0 + 92 * big, y0 - 12 + i * 12]], { w: 2.8, seed: 300 + i + b * 5 }); }
+      // smoke: a thin wisp climbing from each wick for six drawings
+      if (b >= 2 && b < 8) CANDLES.forEach((x, i) => { if (flame(i, tt) !== 0) return; const y = WICK - 12 - (b - 2) * 14; IB.ink(ctx, [[x + 2, y], [x + 9, y - 12], [x - 3, y - 26], [x + 6, y - 40]], { w: 1.8, color: '#8a8a8a', seed: 320 + i + b }); });
+    }
+    IB.bubble(ctx, ['어?'], t, 63 / 12, { tip: [X0 - 16, FLOOR - 0.98 * H], x: X0 - 150, y: FLOOR - 1.2 * H, seed: 500 });
+  },
+});
+</script>

@@ -1,0 +1,90 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>acting / lift-heavy-box</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script>
+/* 큰 상자를 끌어안고 용을 써 보지만 꿈쩍도 않자 한숨 쉬고 다시 자세를 잡아, 한 번에 들어 올려 세 걸음 휘청이며 옮겨 놓고 "휴." 한다. 원본에 없는 창작 장면으로, 원본의 느린 연기(3프레임에 한 장)를 무게를 보여 주는 데 썼다. 전달하는 생각: 무거운 것은 느리게, 끊어서 움직인다.
+   Motion notes: one locked shot, 8 s, figure 540 px tall. The rule here is that weight is frame rate: everything light is on twos (12 fps), everything that fights the box is on threes (8 fps). Timeline in seconds: stand 0-1; bend to the box in 3 drawings on twos (poseMix 0.4, 0.8, 1); strain 1.5-2.5 on threes, 8 drawings alternating two poses 16 px apart while the box does not move and shake marks re-roll each drawing; slump held 0.5 s; deeper grip held dead still 0.5 s (the anticipation); lift at 3.5 in 3 drawings on twos, box up 60, 200, 256 px, body leaning back 0.2 rad; three staggering steps 4.0-5.5 on threes, 4 drawings per step, 110 px per step (stride 0.1 h, a quarter of the unloaded walk's), the box sagging 10 px on each passing drawing; set down in 2 drawings with a four-line burst and two dust puffs for 2 drawings; rest on the box 0.83 s; stand and wipe the brow at 6.5, bubble at 6.83. The box is rigid throughout: it tilts 0.02 rad under strain and never squashes. The figure is drawn in two passes with the box between its arms (IB.figure `only`). */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 760, STEPX = 110, BW = 230, BH = 210;
+const WHO = { h: 540, dir: 1, skin: C.skin[1], top: C.mint, tuck: true, bottom: C.navy, shoe: C.paper, hair: 'bun', seed: 20 };
+const H = WHO.h, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, AY = FLOOR - F.ankle * H, RISE = FLOOR - (HIPY + 50);
+const feet = (X, far, near) => [[X + far[0], AY - IB.footLift(far[1] || 0, H) + (far[2] || 0), far[1] || 0], [X + near[0], AY - IB.footLift(near[1] || 0, H) + (near[2] || 0), near[1] || 0]];
+
+// poses, all for a figure whose place on the floor is X; the box stands 225 px ahead of it
+const P = {
+  stand: (X) => ({ ...IB.stand(X, FLOOR, WHO), face: { mouth: 'flat' } }),
+  grip: (X, deep = 0) => ({ hip: [X - 40, HIPY + 110 + deep], lean: 0.68, nod: -0.2, feet: feet(X, [44], [-30]), hands: [[X + 190, FLOOR - BH - 4], [X + 114, FLOOR - BH + 46]], face: { mouth: 'flat', brow: 1 } }),
+  strain: (X) => ({ hip: [X - 44, HIPY + 94], lean: 0.58, nod: -0.5, feet: feet(X, [44], [-30]), hands: [[X + 190, FLOOR - BH - 6], [X + 114, FLOOR - BH + 44]], face: { eye: 'closed', mouth: 'open', brow: 1 } }),
+  slump: (X) => ({ hip: [X - 34, HIPY + 64], lean: 0.9, nod: 0.5, feet: feet(X, [44], [-30]), hands: [[X + 168, FLOOR - BH - 8], [X + 128, FLOOR - BH - 4]], face: { eye: 'closed', mouth: 'frown' } }),
+  held: (X, sag = 0) => ({ hip: [X - 10, HIPY + 14 + sag * 0.6], lean: -0.2, nod: -0.1, feet: feet(X, [60], [-50]), hands: [[X + 150, HIPY + 30 + sag], [X + 62, HIPY + 44 + sag]], face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
+  wipe: (X) => { const p = IB.stand(X, FLOOR, WHO); p.hands = [[X + 30, HIPY - F.torso * H - 0.1 * H], p.hands[1]]; p.nod = -0.15; p.face = { eye: 'closed', mouth: 'open' }; return p; },
+};
+const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), face: (u < 0.5 ? a : b).face });
+
+/* The whole scene as a function of time: the pose, the box (centre x, bottom y, tilt) and what is trembling. */
+function state(t) {
+  const t2 = IB.twos(t), t3 = IB.threes(t), n2 = (t0) => Math.round((t2 - t0) * 12), n3 = (t0) => Math.round((t3 - t0) * 8);
+  const box = (X, up = 0, tilt = 0) => [X + 225, FLOOR - up, tilt], X1 = X0 + 3 * STEPX;
+  if (t2 < 1) return { pose: P.stand(X0), box: box(X0) };
+  if (t2 < 1.5) return { pose: mix(P.stand(X0), P.grip(X0), [0.4, 0.8, 1][Math.min(2, n2(1))]), box: box(X0) };
+  if (t3 < 2.5) { const k = n3(1.5); return { pose: k % 2 ? P.strain(X0) : P.grip(X0), box: box(X0, 0, k % 2 ? -0.02 : 0), shake: 300 + k }; }
+  if (t2 < 3) return { pose: P.slump(X0), box: box(X0) };
+  if (t2 < 3.5) return { pose: n2(3) === 0 ? mix(P.slump(X0), P.grip(X0, 22), 0.5) : P.grip(X0, 22), box: box(X0) };
+  if (t2 < 4) { const k = Math.min(2, n2(3.5)), u = [0.35, 0.8, 1][k]; return { pose: mix(P.grip(X0, 22), P.held(X0), u), box: [X0 + lerp(225, 150, u), FLOOR - [60, 200, RISE][k], 0], carried: true }; }
+  if (t3 < 5.5) {
+    // staggering forward: a small-stride walk on threes, the box sagging on every passing drawing
+    const k = n3(4), ph = (k / 8) % 1, X = X0 + STEPX * (k / 4), S = STEPX / 2, sag = k % 2 ? 10 : 0, p = P.held(X, sag);
+    const foot = (u) => (u < 0.5 ? [S * (1 - 4 * u), 0, 0] : [S * (-1 + 4 * (u - 0.5)), 0.25, -0.05 * H * Math.sin((u - 0.5) * 2 * Math.PI)]);
+    const near = foot(ph), far = foot((ph + 0.5) % 1);
+    p.feet = feet(X, [far[0] + 30, far[1], far[2]], [near[0] - 20, near[1], near[2]]);
+    return { pose: p, box: [X + 150, FLOOR - RISE + sag, 0], carried: true };
+  }
+  if (t2 < 68 / 12 - 1e-6) { const k = n2(5.5); return k === 0 ? { pose: mix(P.held(X1), P.grip(X1), 0.5), box: [X1 + 190, FLOOR - 110, 0], carried: true } : { pose: P.grip(X1), box: box(X1), thud: 0 }; }
+  if (t2 < 6.5) return { pose: P.slump(X1), box: box(X1), thud: n2(68 / 12) + 1 };
+  return { pose: n2(6.5) === 0 ? mix(P.slump(X1), P.wipe(X1), 0.5) : P.wipe(X1), box: box(X1) };
+}
+
+function crate(ctx, [x, y, tilt]) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(tilt);
+  IB.box(ctx, -BW / 2, -BH, BW, BH, { fill: C.paper, w: 3.8, seed: 100 });
+  IB.box(ctx, -18, -BH, 36, 70, { w: 2.2, seed: 101 });
+  IB.box(ctx, -BW * 0.36, -92, 84, 58, { fill: C.bg, w: 2.2, seed: 102 });
+  for (let i = 0; i < 3; i++) IB.seg(ctx, -BW * 0.32, -78 + i * 15, -BW * 0.32 + 52 - i * 10, -78 + i * 15, { w: 1.8, seed: 103 + i });
+  for (const s of [-1, 1]) IB.ink(ctx, [[s * 58, -28], [s * 44, -44], [s * 30, -28]], { w: 2.4, smooth: false, seed: 106 + s });   // this-way-up arrows
+  IB.shade(ctx, -BW / 2 + 3, -40, BW - 6, 38, { from: 'bottom', seed: 12, alpha: 0.45 });
+  ctx.restore();
+}
+
+MG.scene({
+  title: 'acting / lift-heavy-box',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const s = state(t), look = { ...WHO, face: s.pose.face }, [bx, by] = s.box, X = s.pose.feet[1][0];
+    IB.smear(ctx, (s.pose.feet[0][0] + s.pose.feet[1][0]) / 2 + 20, FLOOR - 9, 330, { h: 14, seed: 9 });
+    if (!s.carried) IB.smear(ctx, bx, FLOOR - 4, BW * 1.2, { h: 11, seed: 10 });
+    IB.figure(ctx, s.pose, look, 'far');
+    crate(ctx, s.box);
+    IB.figure(ctx, s.pose, look, 'near');
+    if (s.shake != null) {   // strain: the box and her back tremble, re-rolled on every drawing
+      IB.shake(ctx, bx + BW / 2 + 8, by - BH + 10, 18, { a: -0.7, n: 2, seed: s.shake, w: 2.8 });
+      IB.shake(ctx, bx - BW / 2 - 6, by - 20, 16, { a: 2.5, n: 2, seed: s.shake + 50, w: 2.8 });
+      IB.shake(ctx, s.pose.hip[0] - 40, s.pose.hip[1] - 70, 22, { a: Math.PI * 1.15, n: 3, seed: s.shake + 90, w: 2.8 });
+    }
+    if (s.thud != null && s.thud < 2) {   // set down: a burst along the floor and two dust puffs, two drawings
+      for (const d of [-1, 1]) {
+        for (let i = 0; i < 2; i++) IB.seg(ctx, bx + d * (BW / 2 + 22 + s.thud * 16), FLOOR - 14 - i * 26, bx + d * (BW / 2 + 62 + s.thud * 22), FLOOR - 26 - i * 44, { w: 3, seed: 400 + i + d + s.thud * 7 });
+        IB.oval(ctx, bx + d * (BW / 2 + 50 + s.thud * 30), FLOOR - 8, 20 - s.thud * 6, 12 - s.thud * 4, { w: 2.2, seed: 410 + d + s.thud, n: 8, fill: C.bg });
+      }
+    }
+    const X1 = X0 + 3 * STEPX;
+    IB.bubble(ctx, ['휴.'], t, 82 / 12, { tip: [X1 + 62, HIPY - F.torso * H - 0.1 * H], x: X1 - 96, y: HIPY - F.torso * H - 0.3 * H, seed: 500 });
+  },
+});
+</script>

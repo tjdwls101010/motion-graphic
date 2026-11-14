@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>variation / hose-wipe-endcard</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script>
+/* 호스를 잡고 버틴 사람 손에서 물줄기가 터져 나와 점점 퍼지더니 화면을 통째로 덮고, 그대로 하드 컷으로 엔드카드가 되어 파란 분필 스미어와 마무리 한 줄이 밀려와 멈추고 남은 물방울이 떨어진다. 원본에 없는 창작 장면으로, 원본 3편의 "본편의 마지막 소품이 엔드카드로 넘어가는 전환"과 엔드카드의 정착을 다른 상황에 썼다. 전달하는 생각: 본편의 마지막 동작이 그대로 끝맺음이 된다.
+   Motion notes: two shots, 6 s. Shot A (0-2.5 s), on twos: braced pose held 0.75 s; a bulge runs up the hose to the nozzle in 6 drawings; the water bursts at 1.25 s and she is thrown back in the same drawing (spine from 0.12 to -0.14 rad, shake marks 4 drawings). The stream is a flat blue wedge with an ink edge from the nozzle to past the frame, its white streaks re-rolled on every drawing; half-angle 3 to 8 degrees over 6 drawings, then it opens 12, 18, 26, 38, 55, 80 degrees and the last two drawings are the whole frame in blue: the prop becomes the wipe. Shot B from 2.5 s is the end card and uses the reference's measured numbers (STYLE.md endcard, IB.TYPE.tag): hard cut, the line (64 px, royal, centred, glyph top y=508) and the chalk smear (1000 x 34 at y=910) arrive together 39 px left of their place and settle on ones in 0.5 s (IB.settle tau 0.152). The line is a placeholder for a closing line. What carries over the cut is the water: five drops fall on twos, 260 px per drawing, from 2.75 s at 0.25 s intervals, each ending in a three-line splash on the smear for 2 drawings; from 4.5 s the card is dead still. Royal blue appears only in the smear and the line, the water is the lighter blue. */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 560, DEG = Math.PI / 180, CUT = 2.5, BURST = 15 / 12;
+const WHO = { h: 520, dir: 1, skin: C.skin[3], top: C.bg, bottom: C.bg, shoe: C.ink, hair: 'curly', seed: 10 };
+const H = WHO.h, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, AY = FLOOR - F.ankle * H;
+const SPREAD = [3, 4, 5, 6, 7, 8, 8, 12, 18, 26, 38, 55, 80];   // half-angle of the stream per drawing after the burst; then full frame
+
+function pose(tt) {
+  const k = Math.round((tt - BURST) * 12), back = k < 0 ? 0 : k === 0 ? 1 : 0.7;
+  const hip = [X0 - 0.04 * H * back, HIPY + 0.06 * H], lean = lerp(0.12, -0.14, back);
+  return { hip, lean, nod: -0.1 * back, feet: [[X0 + 0.17 * H, AY, 0], [X0 - 0.15 * H, AY - IB.footLift(0.3 * back, H), 0.3 * back]], hands: [[hip[0] + 0.4 * H, hip[1] - 0.07 * H - 16 * back], [hip[0] + 0.27 * H, hip[1] - 0.05 * H - 14 * back]], grip: [true, true], face: k < 0 ? { mouth: 'smile' } : k < 3 ? { eye: 'wide', mouth: 'open' } : { mouth: 'smile', brow: 1 } };
+}
+// the hose from off-screen left up to the hands, and the nozzle's tip and angle
+function hose(p) {
+  const far = p.hands[0], near = p.hands[1], a = Math.atan2(far[1] - near[1], far[0] - near[0]), u = [Math.cos(a), Math.sin(a)];
+  return { path: [[-60, FLOOR - 18], [X0 - 0.62 * H, FLOOR - 18], [X0 - 0.36 * H, FLOOR - 70], [X0 - 0.12 * H, p.hip[1] + 0.2 * H], [near[0] - u[0] * 50, near[1] - u[1] * 50 + 16], near], a, tip: [far[0] + u[0] * 96, far[1] + u[1] * 96], near, far };
+}
+const along = (path, u) => { const x = clamp(u) * (path.length - 1), i = Math.min(path.length - 2, Math.floor(x)), v = x - i; return [lerp(path[i][0], path[i + 1][0], v), lerp(path[i][1], path[i + 1][1], v)]; };
+
+function water(ctx, tip, a, k) {
+  const r = MG.rng(900 + k), half = SPREAD[k] * DEG, far = 2600;
+  const edge = (s, d) => [tip[0] + Math.cos(a + s * half) * d, tip[1] + Math.sin(a + s * half) * d];
+  const fan = [tip]; for (let i = -6; i <= 6; i++) fan.push(edge(i / 6, far));   // a fan, not a triangle: a wide stream must not be cut off by the chord between its edges
+  IB.ink(ctx, fan, { closed: true, smooth: false, fill: C.blue, w: 3.4, seed: 600 + k, wob: 1.2 });
+  // streaks along the flow and loose drops beside it, different on every drawing
+  for (let i = 0; i < 5 + k; i++) { const s = (r() * 2 - 1) * 0.8, d0 = 120 + r() * 900, d1 = d0 + 140 + r() * 380; IB.ink(ctx, [edge(s, d0), edge(s, d1)], { w: 3 + r() * 3, color: C.paper, smooth: false, seed: 610 + i, grain: 0 }); }
+  for (let i = 0; i < 9; i++) { const s = (r() < 0.5 ? -1 : 1) * (1.15 + r() * 0.5), d = 90 + r() * 700, q = edge(s, d); IB.oval(ctx, q[0], q[1], 5 + r() * 6, 4 + r() * 4, { fill: C.blue, w: 2, seed: 640 + i, n: 7 }); }
+}
+
+function shotA(ctx, t) {
+  const tt = IB.twos(t), p = pose(tt), hz = hose(p), k = Math.round((tt - BURST) * 12);
+  if (k >= SPREAD.length) { ctx.fillStyle = C.blue; ctx.fillRect(0, 0, MG.W, MG.H); return; }
+  IB.smear(ctx, X0 + 10, FLOOR - 9, 430, { h: 14, seed: 9 });
+  IB.tube(ctx, hz.path, { w: 30, edge: 3.4, fill: C.paper, smooth: true, seed: 300 });
+  const b = Math.round((tt - 0.75) * 12);   // the bulge on its way to the nozzle
+  if (b >= 0 && b < 6) { const q = along(hz.path, 0.12 + b * 0.16); IB.oval(ctx, q[0], q[1], 32, 25, { fill: C.paper, w: 3.4, seed: 310 + b, n: 12 }); }
+  IB.figure(ctx, p, { ...WHO, face: p.face }, 'far');
+  if (k >= 0) water(ctx, hz.tip, hz.a, k);
+  ctx.save(); ctx.translate(hz.near[0], hz.near[1]); ctx.rotate(hz.a);
+  IB.box(ctx, -40, -15, 150, 30, { fill: C.paper, w: 3.4, seed: 320 });
+  IB.ink(ctx, [[110, -15], [150, -22], [176, -22], [176, 22], [150, 22], [110, 15]], { closed: true, smooth: false, fill: '#d9d9d9', w: 3.4, seed: 321 });
+  for (const x of [118, 130]) IB.seg(ctx, x, -17, x, 17, { w: 2.2, seed: 322 + x });
+  ctx.restore();
+  IB.figure(ctx, p, { ...WHO, face: p.face }, 'near');
+  if (k >= 0 && k < 4) { IB.shake(ctx, p.hip[0] - 0.12 * H, p.hip[1] - 0.14 * H, 26, { a: Math.PI, n: 3, seed: 330 + k, w: 3 }); IB.shake(ctx, p.feet[1][0] - 30, FLOOR - 24, 18, { a: Math.PI * 0.9, n: 2, seed: 340 + k, w: 3 }); }
+}
+
+const DROPS = [[760, 0], [1130, 3], [930, 6], [1290, 9], [1010, 12]];   // x, and the drawing (after 2.75 s) it enters on
+function shotB(ctx, t) {
+  const tt = IB.twos(t), slide = -39 * (1 - IB.settle(t - CUT, IB.TYPE.tag.tau, IB.TYPE.tag.stop));
+  IB.smear(ctx, 960 + slide, 910, 1000, { h: 34, seed: 5 });
+  IB.copy(ctx, ['마지막 한 줄은 여기에.'], t, CUT, { size: 'tag', color: C.royal });
+  for (const [x, at] of DROPS) {
+    const k = Math.round((tt - 2.75) * 12) - at, y = -60 + k * 260;
+    if (k < 0) continue;
+    if (y < 900) IB.ink(ctx, [[x, y - 34], [x - 13, y - 4], [x - 9, y + 12], [x, y + 17], [x + 9, y + 12], [x + 13, y - 4]], { closed: true, fill: C.blue, w: 2.8, seed: 700 + x });
+    else { const s = k - Math.ceil(960 / 260); if (s < 2) for (let i = -1; i <= 1; i++) IB.seg(ctx, x + i * (16 + s * 10), 902 - s * 6, x + i * (34 + s * 18), 876 - s * 16 - (i === 0 ? 14 : 0), { w: 2.8, color: C.blue, seed: 710 + x + i + s * 5 }); }
+  }
+}
+
+MG.scene({
+  title: 'variation / hose-wipe-endcard',
+  duration: 6, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    if (t < CUT) shotA(ctx, t); else shotB(ctx, t);
+  },
+});
+</script>

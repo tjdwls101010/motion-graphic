@@ -56,7 +56,7 @@ function arm(ctx, root, hand, p, seed, sag = 6) {
 
 /* A rigid body on two legs. p: { x, tilt, lift, feet: [[dx, dy], [dx, dy]], sx } — x is the hip centre on the floor line, feet are offsets from it. */
 function actor(ctx, p, body, legFill, hipY, seed) {
-  IB.smear(ctx, p.x + (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR, 104, { h: 9, seed });
+  IB.smear(ctx, p.x + (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 11, 118, { h: 14, seed });   // a puddle around the shoes, not a line under them: it starts above the soles
   const hy = FLOOR - 12 - hipY - (p.lift || 0);
   ctx.save();
   ctx.translate(p.x, hy);

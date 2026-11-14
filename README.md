@@ -64,7 +64,7 @@ python3 tools/capture.py pstack/scenes/ui/flip-counters.html --compare out/flip-
 
 1. **`render(t)`는 시간의 순수 함수다.** 어떤 t가 어떤 순서로 들어와도 그 순간의 화면을 처음부터 그린다. 호출 사이에 상태를 두지 않고, `Math.random`·`Date`·CSS 애니메이션과 트랜지션·`requestAnimationFrame`을 쓰지 않는다. 무작위는 `MG.rng`와 `MG.hash`로만. 이 조건이 깨지면 스크럽과 프레임 캡처가 틀린 화면을 낸다.
 2. **`ref: [시작초, 끝초]`와 `duration`을 맞춘다.** 장면 시간이 원본 시간과 1:1로 대응해야 `--compare`가 같은 순간을 비교한다.
-3. **스크립트 첫 주석에 "무슨 일이 일어나고 어떤 생각을 전달하는가" 2~4문장과 `Motion notes:`를 쓴다.** Motion notes에는 재사용할 기법과 실제로 쓴 수치(이징, 간격, 길이)를 적는다. 나중에 이 주석을 grep해서 장면을 찾는다.
+3. **스크립트 첫 주석에 "무슨 일이 일어나고 어떤 생각을 전달하는가" 2~4문장과 `Motion notes:`를 쓴다.** 설명 문단은 한국어로 쓰고, 첫 문장이 시트 카드에 그대로 나가므로 그 문장만 읽어도 장면이 무엇인지 알 수 있게 쓴다. Motion notes에는 재사용할 기법과 실제로 쓴 수치(이징, 간격, 길이)를 적고, 이징 이름 같은 기술 용어는 영어 그대로 둔다. 나중에 이 주석을 grep해서 장면을 찾는다.
 4. **빌드와 네트워크 없이 열려야 한다.** `file://`에서는 ES 모듈이 막히므로 일반 `<script src>`만 쓰고, CDN과 새 의존성을 들이지 않는다.
 5. **DOM·SVG 장면은 구조를 `setup`에서 한 번 만들고 `render`에서는 글자·스타일·속성만 갱신한다.** canvas 장면은 매 프레임 전체를 다시 그린다.
 6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만들고, `--compare`로 원본과 대조한다.

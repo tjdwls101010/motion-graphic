@@ -21,7 +21,7 @@
   .ask { position: absolute; left: 1322px; top: 362px; width: 86px; height: 86px; border-radius: 50%; background: #bcb8f8; border: 4px solid #2a2a2a; display: grid; place-items: center; font: 800 48px 'JetBrains Mono', monospace; box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3); }
 </style>
 <script>
-/* Reading one sentence out of a web page. The window frame never moves; the page inside it is zoomed in three steps (whole page -> the README block -> one sentence), with a highlighter pass at each stop, the rest of the text removed before the last push, and a "?" badge left on the sentence to be answered later. Idea carried: guide the eye from "here is the source" to "this exact phrase".
+/* 웹 페이지의 README에서 문장 하나로 시선을 좁혀 가며 세 번 확대하고 형광펜을 긋는다. 창 테두리는 움직이지 않고 안의 페이지만 세 단계(페이지 전체 -> README 블록 -> 한 문장)로 확대되며, 멈출 때마다 형광펜이 지나가고, 마지막으로 밀고 들어가기 전에 나머지 글이 사라지고, 나중에 답할 "?" 배지가 그 문장에 남는다. 전달하는 생각: 시선을 "출처는 여기"에서 "바로 이 구절"로 이끈다.
    Motion notes: the frame is the constant, only its contents scale (transform on an inner page with overflow hidden), so the viewer keeps their bearings; each zoom is 0.6-0.9 s inOutCubic and nothing else starts until it has landed (the highlighter begins 0.1 s after the second zoom ends); the highlighter sweeps left to right in 0.5 s, and a second phrase is marked 2.2 s after the first; before the final push everything that is not the paragraph fades (0.5 s) so the big zoom lands on a clean field; at full zoom the unmarked words drop to light grey and only one highlight remains; the badge pops (outBack 0.35 s) 0.6 s after the zoom settles. */
 const { prog, kf, lerp, el } = MG;
 MG.scene({

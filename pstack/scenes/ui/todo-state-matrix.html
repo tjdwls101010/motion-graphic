@@ -27,7 +27,7 @@
   .seg span { padding: 6px 22px; border-radius: 999px; }
 </style>
 <script>
-/* A data-modelling argument told with one todo card. On the left the card is the "live preview"; on the right the code that shapes it is typed. Each boolean typed into the type adds a switch row to the card; flipping the switches walks a 2x2 truth table until the impossible corner ("done and overdue") lights up, and the fix replaces the two booleans with one status field. Idea carried: every flag doubles the states, so prefer one status over two booleans.
+/* 할 일 카드 하나로, 불리언 둘 대신 status 필드 하나를 써야 하는 이유를 보여 주는 데이터 모델링 논증이다. 왼쪽 카드는 "실시간 미리보기"이고 오른쪽에는 그 모양을 정하는 코드가 타이핑된다. 타입에 불리언을 하나 칠 때마다 카드에 스위치 줄이 하나 생기고, 스위치를 켜고 끄며 2x2 진리표를 돌다가 불가능한 칸("완료인데 기한 지남")에 불이 들어오고, 수정안이 불리언 둘을 status 필드 하나로 바꾼다. 전달하는 생각: 플래그 하나마다 상태가 두 배가 되니, 불리언 둘보다 status 하나가 낫다.
    Motion notes: cause on the right, effect on the left, always within 0.2 s of each other (a typed line -> a new row; a flipped switch -> the highlighted matrix cell moves); switches are flipped on, off, on again before the point is made so the viewer learns the control first; the wrong cell is first only outlined like any other, then 0.7 s later turns lavender and gets a dark tag (the "stamp" beat); panels swap by the old one fading and sliding out 40 px as the new one pops (0.4 s, outBack); code types at ~25 characters a second with the current line tinted grey. */
 const { prog, lerp, el } = MG;
 const CODE = [

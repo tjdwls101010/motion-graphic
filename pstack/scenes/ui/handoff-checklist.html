@@ -26,7 +26,7 @@
   .item .file { border: 2.5px solid #2a2a2a; border-radius: 8px; padding: 2px 12px; margin-right: 12px; background: #fff; font-size: 20px; }
 </style>
 <script>
-/* "Think of it as the handoff note you would give a new tester." A person card with a question badge appears, a document slides in beside it and its path types into the title bar, a dashed arrow hands the document to the person, then the camera commits to the document: it grows to fill the frame and its grey skeleton lines turn into five real checklist rows, each typed and then ticked. Idea carried: a skill file is a handoff document; show the reader first, then fill the page for them.
+/* "새 테스터에게 건네는 인수인계 메모라고 생각하면 된다." 물음표 배지가 달린 인물 카드가 나타나고, 옆으로 문서가 미끄러져 들어와 제목 표시줄에 경로가 타이핑되고, 점선 화살표가 문서를 인물에게 건넨 뒤, 카메라가 문서로 들어간다: 문서가 화면을 채울 만큼 커지고 회색 뼈대 줄이 실제 체크리스트 다섯 줄로 바뀌며 한 줄씩 타이핑되고 체크된다. 전달하는 생각: 스킬 파일은 인수인계 문서다. 읽는 사람을 먼저 보여 주고, 그 사람을 위해 페이지를 채운다.
    Motion notes: skeleton first, content second (grey bars hold the layout so nothing jumps when rows arrive); each row follows the same 4-step micro-sequence over ~1.4 s, a new row every ~1.5 s: bar fades to row (0.25 s) -> name and caption appear -> command types at ~30 chars/s with a caret -> result text fades in and the checkbox fills lavender with a 0.2 s pop; the row being written carries a grey tint that moves down the list; the hand-off arrow is dashed and draws right-to-left (toward the receiver) in 0.45 s; the document then widens leftwards over the fading person card in one 0.7 s inOutCubic move (width changes, scale does not, so text size is constant). */
 const { prog, lerp, el } = MG;
 const ROWS = [

@@ -69,15 +69,16 @@
      smooth  true: curve through the points; false: straight sides with crisp corners
      wob     how far the hand drifts off the true line, px
      seed    fixes the drift; give every stroke its own
+     grain   0 = clean edge; 1 (default) = rough edge and dry-brush dust, applied to strokes 2.2 px and wider
      from,to draw only this fraction of the stroke (0..1), for a line that is drawn on. They cut the outline only: a fill is always painted whole, even when from >= to leaves no outline */
   IB.ink = (ctx, pts, o = {}) => {
-    const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1 } = o;
+    const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1, grain = 1 } = o;
     if (pts.length < 2) return;
-    const step = Math.max(3, w * 1.6);
+    const step = Math.max(2.4, w);
     let p = smooth ? spline(pts, closed, step) : resample(pts, closed, step);
     const n = p.length;
     // drift each point off its place, slowly along the stroke
-    const q = p.map(([x, y], i) => [x + drift(seed, i * 0.16) * wob, y + drift(seed + 7, i * 0.16) * wob]);
+    const q = p.map(([x, y], i) => [x + drift(seed, i * step * 0.033) * wob, y + drift(seed + 7, i * step * 0.033) * wob]);
     if (fill) {
       ctx.beginPath();
       q.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
@@ -93,12 +94,13 @@
     const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : [at(from), ...ring.slice(a, b + 1), at(to)];
     const m = pick.length;
     if (m < 2) return;
-    const L = [], R = [];
+    const L = [], R = [], rough = grain > 0 && w >= 2.2;
     for (let i = 0; i < m; i++) {
       const p0 = pick[Math.max(0, i - 1)], p1 = pick[Math.min(m - 1, i + 1)];
       const d = dist(p0, p1) || 1, nx = -(p1[1] - p0[1]) / d, ny = (p1[0] - p0[0]) / d;
       // pressure: the width breathes by ±18%, and an open stroke thins toward both ends like a lifted brush
-      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * last + i) * 0.11));
+      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * last + i) * step * 0.023));
+      if (rough) half *= 0.9 + 0.22 * MG.hash(seed + 29, a + i);   // tooth of the paper: the edge is never a clean curve
       if (taper) half *= 0.45 + 0.55 * Math.min(1, Math.min(i, m - 1 - i) / 3);
       L.push([pick[i][0] + nx * half, pick[i][1] + ny * half]);
       R.push([pick[i][0] - nx * half, pick[i][1] - ny * half]);
@@ -114,6 +116,19 @@
     ctx.lineWidth = Math.min(1, w * 0.3);
     ctx.strokeStyle = color;
     ctx.stroke();
+    if (rough) {
+      // dry-brush dust: specks straddling both edges, so the line reads as charcoal on paper rather than vector
+      const r = MG.rng(seed * 7 + 11), alpha = ctx.globalAlpha;
+      for (let i = 0; i < m - 1; i++) {
+        const [x0, y0] = pick[i], [x1, y1] = pick[i + 1], d = dist(pick[i], pick[i + 1]) || 1, nx = -(y1 - y0) / d, ny = (x1 - x0) / d;
+        for (let k = Math.max(1, Math.round(d * 0.55 * grain)); k > 0; k--) {
+          const u = r(), off = (r() < 0.5 ? -1 : 1) * (w / 2 - 0.7 + r() * 1.8), sz = 0.7 + r() * 1.1;   // a 1.8 px band on the edge, whatever the width
+          ctx.globalAlpha = alpha * (0.25 + 0.5 * r());
+          ctx.fillRect(x0 + (x1 - x0) * u + nx * off - sz / 2, y0 + (y1 - y0) * u + ny * off - sz / 2, sz, sz);
+        }
+      }
+      ctx.globalAlpha = alpha;
+    }
   };
 
   /* Point lists for the common shapes, ready for IB.ink. */
@@ -164,6 +179,21 @@
       ctx.fillRect(cx + u * w * 1.38, y - 2 + v * h * (0.35 + 0.75 * edge), s * 1.6, s);
     }
     ctx.restore();
+  };
+
+  /* shade(ctx, x, y, w, h, opts) — soft graphite shading, the only tone the reference adds to its flat fills: densest along one edge of the w x h box and fading to nothing at the opposite one. `from` names the dense edge ('top' | 'bottom' | 'left' | 'right'). Legs get it under the body, arms where they leave it, objects where they meet the floor. Stippled, so it sits on any fill colour. */
+  IB.shade = (ctx, x, y, w, h, o = {}) => {
+    const { from = 'top', color = IB.C.ink, alpha = 0.55, seed = 9, reach = 1.6 } = o;
+    const r = MG.rng(seed * 3 + 1), a0 = ctx.globalAlpha, n = Math.round(w * h * 0.5);
+    ctx.fillStyle = color;
+    for (let i = 0; i < n; i++) {
+      const u = r(), v = Math.pow(r(), reach), s = 0.8 + r() * 1.2;   // v crowds toward the dense edge
+      const px = from === 'left' ? x + v * w : from === 'right' ? x + w - v * w : x + u * w;
+      const py = from === 'top' ? y + v * h : from === 'bottom' ? y + h - v * h : y + u * h;
+      ctx.globalAlpha = a0 * alpha * (0.3 + 0.7 * r()) * (1 - v);
+      ctx.fillRect(px, py, s, s);
+    }
+    ctx.globalAlpha = a0;
   };
 
   /* ---------- copy ---------- */

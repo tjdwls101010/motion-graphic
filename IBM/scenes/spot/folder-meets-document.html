@@ -7,7 +7,7 @@
 <script src="../../kit/ink.js"></script>
 <script>
 /* 미러볼 아래 다리 달린 파란 폴더가 풍선을 차자 화면이 옆으로 밀려 서류가 드러나고, 둘이 따로 춤추다 다가가 손을 잡으면 하트 풍선이 떠오른다. 왼쪽 카피는 사건마다 한 줄씩 붙다가 마지막에 통째로 바뀐다. 전달하는 생각: 따로 놀던 두 가지가 마침내 한자리에 선다.
-   Motion notes: one locked shot, no cuts, 11.6 s. Copy is pinned to the screen (x 90, top 351, pitch 95) and only the stage pans: 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s. Copy beats: line 1 at 1.0 s, line 2 at 1.92 s (the whole block snaps back 37 px and re-settles, tau 0.21 s, still after 0.7 s), full swap at 8.67 s. Characters act on twos and hold dead still between poses; a body never deforms, it tilts or turns as one rigid shape on two thin legs, and arms exist only while they are used (drawn on in 0.25 s). The kicked balloon rises fast then drifts down left for 2 s and stays as a prop. Last second: pose held, only the heart balloon moves, easing up exponentially (tau 0.3 s). Floor is nothing but a blue chalk smear under each pair of feet plus flat confetti ovals. Disco ball tiles re-roll every 4 frames. */
+   Motion notes: one locked shot, no cuts, 11.6 s. Copy is pinned to the screen (x 90, top 351, pitch 95) and only the stage pans: 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s. Copy beats: line 1 at 1.0 s, line 2 at 1.92 s (the whole block snaps back 37 px and re-settles, tau 0.21 s, still after 0.7 s), full swap at 8.67 s. Characters act on twos and hold dead still between poses; a body never deforms, it tilts or turns as one rigid shape on two thin legs, and arms exist only while they are used (drawn on in 0.25 s). The only tone is stippled graphite where a limb leaves its body (IB.shade). The kicked balloon rises fast then drifts down left for 2 s and stays as a prop. Last second: pose held, only the heart balloon moves, easing up exponentially (tau 0.3 s). Floor is nothing but a blue chalk smear under each pair of feet plus flat confetti ovals. Disco ball tiles re-roll every 4 frames. */
 const { prog, kf, lerp, rng, hash, clamp } = MG;
 const C = IB.C, FLOOR = 893;
 const COPY_A = ['첫 줄이 먼저 오고', '둘째 줄이 붙는다.'], COPY_B = ['마지막에는 통째로', '새 문장이 된다.'];
@@ -19,11 +19,39 @@ const pan = (f) => { let v = 291; for (const [k, x] of PAN) if (f >= k) v = x; r
 const CONFETTI = (() => { const r = rng(12), out = []; for (let i = 0; i < 46; i++) out.push([720 + r() * 1230, 812 + r() * 150, 26 + r() * 16, r() < 0.5 ? '#d1e2ee' : '#eadeac']); return out; })();
 
 function leg(ctx, hx, hy, fx, fy, fill, seed, knee = 0) {
-  // a thin trouser leg from hip to foot, optionally bent, with a small shoe
+  // a thin trouser leg from hip to foot, optionally bent, shaded where it leaves the body, ending in a small boot
   const mx = (hx + fx) / 2 + knee, my = (hy + fy) / 2;
   const dx = fx - hx, dy = fy - hy, d = Math.hypot(dx, dy) || 1, nx = (-dy / d) * 7, ny = (dx / d) * 7;
-  IB.ink(ctx, [[hx - nx, hy - ny], [mx - nx, my - ny], [fx - nx, fy - ny], [fx + nx, fy + ny], [mx + nx, my + ny], [hx + nx, hy + ny]], { closed: true, smooth: knee !== 0, fill, w: 2.5, seed });
-  IB.oval(ctx, fx + 3, fy + 4, 13, 7, { fill: C.paper, w: 2.5, seed: seed + 1, n: 8 });
+  const outline = [[hx - nx, hy - ny], [mx - nx, my - ny], [fx - nx, fy - ny], [fx + nx, fy + ny], [mx + nx, my + ny], [hx + nx, hy + ny]];
+  IB.ink(ctx, outline, { closed: true, smooth: knee !== 0, fill, w: 0, seed });
+  ctx.save(); ctx.translate(hx, hy); ctx.rotate(Math.atan2(dy, dx) - Math.PI / 2);
+  IB.shade(ctx, -6, 0, 12, 42, { from: 'top', seed: seed + 2 });
+  ctx.restore();
+  IB.ink(ctx, outline, { closed: true, smooth: knee !== 0, w: 2.8, seed });
+  IB.ink(ctx, [[fx - 8, fy - 5], [fx + 8, fy - 5], [fx + 9, fy + 2], [fx + 17, fy + 8], [fx + 14, fy + 12], [fx - 9, fy + 12]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: seed + 1 });
+  IB.seg(ctx, fx - 7, fy + 2, fx + 8, fy + 2, { w: 1.8, seed: seed + 3 });
+}
+
+/* A thin arm from a root on the body's edge to a hand: tapered, shaded at the root, drawn on by p (0..1), with a small mitten hand once it has arrived. */
+function arm(ctx, root, hand, p, seed, sag = 6) {
+  if (p <= 0) return;
+  const tip = [lerp(root[0], hand[0], p), lerp(root[1], hand[1], p)];
+  const dx = tip[0] - root[0], dy = tip[1] - root[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d, s = Math.sign(dx) * sag * p;
+  const mid = [(root[0] + tip[0]) / 2 - nx * s, (root[1] + tip[1]) / 2 - ny * s];
+  const shape = [[root[0] + nx * 6.5, root[1] + ny * 6.5], [mid[0] + nx * 4.5, mid[1] + ny * 4.5], [tip[0] + nx * 3.5, tip[1] + ny * 3.5], [tip[0] - nx * 3.5, tip[1] - ny * 3.5], [mid[0] - nx * 4.5, mid[1] - ny * 4.5], [root[0] - nx * 6.5, root[1] - ny * 6.5]];
+  IB.ink(ctx, shape, { closed: true, fill: C.paper, w: 0, seed });
+  ctx.save(); ctx.translate(root[0], root[1]); ctx.rotate(Math.atan2(dy, dx));
+  IB.shade(ctx, 0, -6, 46, 12, { from: 'left', seed: seed + 1, alpha: 0.5 });
+  ctx.restore();
+  IB.ink(ctx, shape.slice(0, 3), { w: 2.8, seed: seed + 2, taper: false });
+  IB.ink(ctx, shape.slice(3), { w: 2.8, seed: seed + 3, taper: false });
+  if (p < 1) return;
+  // mitten: a palm and three finger strokes pointing along the arm
+  const a = Math.atan2(dy, dx);
+  ctx.save(); ctx.translate(tip[0], tip[1]); ctx.rotate(a);
+  IB.ink(ctx, [[-2, -6], [10, -9], [20, -5], [22, 3], [12, 8], [-2, 6]], { closed: true, fill: C.paper, w: 2.6, seed: seed + 4 });
+  for (const y of [-3, 1, 5]) IB.seg(ctx, 12, y, 21, y + 1, { w: 1.6, seed: seed + 5 + y });
+  ctx.restore();
 }
 
 /* A rigid body on two legs. p: { x, tilt, lift, feet: [[dx, dy], [dx, dy]], sx } — x is the hip centre on the floor line, feet are offsets from it. */
@@ -44,11 +72,11 @@ function actor(ctx, p, body, legFill, hipY, seed) {
   ctx.restore();
 }
 const folderBody = (ctx) => {
-  IB.ink(ctx, [[-100, -190], [-28, -190], [-10, -167], [100, -167], [100, 0], [-100, 0]], { closed: true, smooth: false, fill: C.blue, w: 3.2, seed: 21 });
-  IB.seg(ctx, -100, -167, -12, -167, { w: 2.5, seed: 22 });
+  IB.ink(ctx, [[-100, -190], [-28, -190], [-10, -167], [100, -167], [100, 0], [-100, 0]], { closed: true, smooth: false, fill: C.blue, w: 4, seed: 21 });
+  IB.seg(ctx, -100, -167, -12, -167, { w: 3, seed: 22 });
 };
 const docBody = (ctx) => {
-  IB.box(ctx, -86, -238, 173, 238, { fill: C.paper, w: 3.2, seed: 31 });
+  IB.box(ctx, -86, -238, 173, 238, { fill: C.paper, w: 3.6, seed: 31 });
   IB.box(ctx, -71, -227, 95, 114, { fill: C.lavender, w: 2, seed: 32 });
   IB.box(ctx, -58, -227, 57, 52, { fill: C.yellow, w: 2, seed: 33 });
   IB.box(ctx, -60, -110, 82, 32, { fill: C.mint, w: 2, seed: 34 });
@@ -146,19 +174,18 @@ MG.scene({
     IB.ink(ctx, [[bx + 38, by - 2], [bx + 47, by - 7], [bx + 46, by + 4]], { closed: true, fill: C.lavender, w: 2.4, seed: 17 });
 
     const fp = folderPose(t), dp = docPose(t);
-    actor(ctx, dp, docBody, '#d9d9d9', 106, 300);
-    if (dp.akimbo) for (const s of [-1, 1]) IB.ink(ctx, [[dp.x + s * 86, 650], [dp.x + s * 112, 690], [dp.x + s * 88, 720]], { w: 2.8, seed: 320 + s });
-    actor(ctx, fp, folderBody, C.sky, 106, 200);
-
-    // arms appear only to hold hands: the folder reaches at 9.25 s, the document answers at 9.5 s, one swing at 10 s
     const tt = IB.twos(t);
+    // arms appear only to hold hands, from behind each body's edge: the folder reaches at 9.25 s, the document answers at 9.5 s, one swing at 10 s
     if (tt >= 9.25) {
       const sw = kf(tt, [[10.0, 0], [10.17, 1, 'outQuad'], [10.5, 0, 'inOutQuad']]);
-      const H = [1457, 738 - sw * 52];
-      IB.ink(ctx, [[1415, 650], [1432, 700 - sw * 20], H], { w: 3, seed: 400, to: prog(tt, 9.25, 0.25) });
-      IB.ink(ctx, [[1512, 655], [1490, 702 - sw * 20], [H[0] + 8, H[1] - 2]], { w: 3, seed: 401, to: prog(tt, 9.5, 0.25) });
-      if (tt >= 9.75) IB.oval(ctx, H[0] + 4, H[1] + 2, 10, 9, { fill: C.paper, w: 2.4, seed: 402, n: 8 });
+      const H = [1458, 734 - sw * 52];
+      arm(ctx, [1524, 652], [H[0] + 12, H[1]], prog(tt, 9.5, 0.25), 420, -8);
+      arm(ctx, [1403, 648], [H[0] - 12, H[1]], prog(tt, 9.25, 0.25), 400, 8);
     }
+    actor(ctx, dp, docBody, '#d9d9d9', 106, 300);
+    if (dp.akimbo) for (const s of [-1, 1]) { IB.tube(ctx, [[dp.x + s * 86, 648], [dp.x + s * 114, 688], [dp.x + s * 90, 718]], { w: 11, edge: 2.6, fill: C.paper, smooth: true, seed: 320 + s }); IB.oval(ctx, dp.x + s * 88, 720, 8, 7, { fill: C.paper, w: 2.4, seed: 324 + s, n: 8 }); }
+    actor(ctx, fp, folderBody, C.sky, 106, 200);
+
     // heart balloon: the only thing moving in the last second
     if (tt >= 10.6) {
       const hy = lerp(720, 415, IB.settle(tt - 10.6, 0.3)), hx = 1456;

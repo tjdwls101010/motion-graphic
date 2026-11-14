@@ -15,7 +15,7 @@ const WHO = { h: 210, dir: 1, skin: C.skin[2], top: C.yellow, topKind: 'long', b
 const H = WHO.h;
 const BARS = [90, 185, 290, 405, 530].map((h, k) => ({ x: 560 + k * 240, h, at: 0.5 + k, hop: 1.0 + k, seed: 200 + k * 10 }));
 const BW = 170, START = [330, FLOOR];
-const risen = (b, t) => IB.settle(IB.twos(t) - b.at, 0.1, 0.42);
+const risen = (b, t) => IB.settle(IB.twos(t) - b.at + 1e-6, 0.1, 5 / 12);
 const spot = (k) => (k < 0 ? START : [BARS[k].x, FLOOR - BARS[k].h]);   // where the climber stands after hop k
 
 function pose(kind, x, y) {
@@ -38,7 +38,7 @@ function poseAt(t) {
 }
 
 function bar(ctx, b, u) {
-  if (u <= 0) return;
+  if (u < 0.01) return;   // the beat's own drawing shows nothing yet: the bar is first seen one drawing later, already 57% up
   const h = b.h * u, last = b === BARS[BARS.length - 1];
   IB.smear(ctx, b.x, FLOOR - 4, BW * 1.25, { h: 10, seed: b.seed + 5, alpha: clamp(u * 2) });
   IB.box(ctx, b.x - BW / 2, FLOOR - h, BW, h, { fill: last ? C.blue : C.paper, w: 3.4, seed: b.seed });
@@ -59,7 +59,7 @@ MG.scene({
     if (tt >= 5.5) {
       const grown = [0.5, 1][Math.min(1, Math.round((tt - 5.5) * 12))];
       IB.seg(ctx, px, top[1], px, top[1] - 250 * grown, { w: 3.4, seed: 300 });
-      if (tt >= 5.667 - 1e-6) { const flap = Math.floor(IB.frame(t) / 3) % 2; IB.ink(ctx, [[px, top[1] - 248], [px + 64, top[1] - 232 + flap * 8], [px + 118 - flap * 10, top[1] - 208 - flap * 6], [px + 60, top[1] - 190 + flap * 6], [px, top[1] - 172]], { closed: true, fill: C.green, w: 3, seed: 301 + flap }); }
+      if (tt >= 68 / 12 - 1e-6) { const flap = Math.floor(IB.frame(t) / 3) % 2; IB.ink(ctx, [[px, top[1] - 248], [px + 64, top[1] - 232 + flap * 8], [px + 118 - flap * 10, top[1] - 208 - flap * 6], [px + 60, top[1] - 190 + flap * 6], [px, top[1] - 172]], { closed: true, fill: C.green, w: 3, seed: 301 + flap }); }
     }
     IB.figure(ctx, poseAt(t), { ...WHO, face: { mouth: tt >= 5.5 ? 'open' : 'smile' } });
     IB.bubble(ctx, ['다 왔다!'], t, 6.0, { tip: [top[0] - 36, top[1] - 0.93 * H], x: top[0] - 210, y: top[1] - 1.2 * H, seed: 500 });

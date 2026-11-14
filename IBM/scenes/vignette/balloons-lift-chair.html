@@ -94,13 +94,13 @@ MG.scene({
       balloon(ctx, lerp(held[0], K[0] + b.to[0], u), lerp(held[1], K[1] + b.to[1], u), b, K);
     });
     chair(ctx, y0);
-    const eyes = tt >= 4 && tt < 6.667 - 1e-6 ? 'wide' : 'shut', tail = t >= 7 ? Math.floor(IB.frame(t) / 3) % 2 : 0;
+    const eyes = tt >= 4 && tt < 80 / 12 - 1e-6 ? 'wide' : 'shut', tail = t >= 7 ? Math.floor(IB.frame(t) / 3) % 2 : 0;
     const mouth = cat(ctx, y0, eyes, tail);
     if (hand) {
       if (carried >= 0) balloon(ctx, hand[0] - 30, hand[1] - 190, BALLOONS[carried], [hand[0] - 6, hand[1] + 2]);
       arm(ctx, hand[0], hand[1]);
     }
-    IB.bubble(ctx, ['야옹?'], t, 4.1667, { tip: [mouth[0] - 104, mouth[1] - 4], x: mouth[0] - 262, y: mouth[1] - 80, until: 5.4167, seed: 500 });
+    IB.bubble(ctx, ['야옹?'], t, 50 / 12, { tip: [mouth[0] - 104, mouth[1] - 4], x: mouth[0] - 262, y: mouth[1] - 80, until: 65 / 12, seed: 500 });
   },
 });
 </script>

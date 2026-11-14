@@ -1,0 +1,81 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>copy / copy-cards-flashlight</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script>
+/* 연기 샷을 끊고 들어오는 카피 카드 두 장이다. 첫 장은 큰 질문 두 줄 옆에서 샌드위치를 든 손이 올리브를 떨어뜨리고, 둘째 장은 작은 본문 두 줄 쪽으로 손전등을 든 선수가 뛰어들어 빛을 깜빡이며 비춘다. 전달하는 생각: 엉뚱한 도구로는 원하는 결과가 안 나온다.
+   Motion notes: cards are joined by hard cuts and each new card restarts the copy slide: 71 px from the left, tau 0.2 s, still after 0.79 s, second line one frame late, no fade. Card 1 (0-2.04 s): head type (glyph height 116, pitch 128, x 200, top 412); the hand only bobs a few px on threes while two olives fall (from 0.25 s and 1.58 s), each drawn at only three heights and held 2-4 frames at each. Card 2 (2.04-4.33 s): body type (78, pitch 108, top 447); the figure waits cropped at the right edge for 0.75 s, lunges in over two drawings, then holds. The light cone is a flat #f6f6f6 wedge from the lens to the left edge, drawn under the copy; it stutters on for 3 frames, off, on for 2, off, then stays on 0.54 s: on/off by frame, never faded. The fencer is simplified to tubes and ovals; the reference draws it by hand. */
+const { lerp, clamp } = MG;
+const C = IB.C, CUT = 49 / 24;
+const HEAD = ['큰 질문 두 줄이', '먼저 화면을 채운다?'], BODY = ['다음 장은 작은 글씨로', '설명을 잇는다'];
+// light cone lit during these 24 fps frames after the scene start
+const LIT = [[69, 72], [75, 77], [85, 98]];
+// each olive: the frames it is visible and its y in each
+const OLIVES = [[[6, 680], [8, 680], [10, 774], [12, 976], [14, 976]], [[38, 676], [40, 789], [42, 789], [44, 937]]];
+
+function sandwichHand(ctx, t) {
+  const bob = [0, 3, 5, 2][Math.floor(IB.frame(t) / 3) % 4];
+  ctx.save();
+  ctx.translate(1660, 520 + bob);
+  ctx.rotate(0.44);
+  // sleeve and glove coming in from the right edge
+  IB.tube(ctx, [[70, 20], [330, 20]], { w: 120, edge: 3.5, fill: C.paper, seed: 20 });
+  IB.oval(ctx, 20, 16, 80, 58, { fill: C.paper, w: 3.5, seed: 21, n: 12 });
+  // baguette: two long halves with the filling showing between them
+  IB.ink(ctx, [[-500, -40], [-400, -74], [-140, -70], [30, -46], [20, -6], [-150, -14], [-420, -18]], { closed: true, fill: C.paper, w: 3.5, seed: 22 });
+  for (const x of [-430, -250, -80]) IB.ink(ctx, [[x, -18], [x + 70, -14], [x + 30, 22]], { closed: true, smooth: false, fill: C.mustard, w: 2.5, seed: 30 + x });
+  IB.ink(ctx, [[-480, 10], [-380, 2], [-120, 10], [40, 30], [20, 72], [-150, 58], [-410, 44]], { closed: true, fill: C.paper, w: 3.5, seed: 23 });
+  for (let i = 0; i < 4; i++) IB.oval(ctx, -70 + i * 34, 72, 18, 20, { fill: C.paper, w: 3, seed: 40 + i, n: 8 });   // fingers
+  ctx.restore();
+}
+
+function fencer(ctx, t) {
+  // waits cropped at the right edge (only a knee and an elbow in frame), then lunges in over two drawings
+  const f = IB.frame(t), inPose = f >= 70, mid = f >= 67 && f < 70;
+  const dx = inPose ? 0 : mid ? 70 : 190 + [0, 25, 31, 32, 35, 29][clamp(Math.floor((f - 49) / 3), 0, 5)];
+  ctx.save();
+  ctx.translate(dx, inPose ? 0 : mid ? 30 : 170);
+  const limb = (pts, w, seed) => IB.tube(ctx, pts, { w, edge: 3.5, fill: C.paper, seed, smooth: true });
+  limb([[1880, 800], [1960, 960], [2040, 1100]], 110, 60);                               // back leg, off frame
+  IB.ink(ctx, [[1880, 900], [1935, 1010]], { w: 14, color: C.yellow, seed: 61 });         // the suit's one stripe
+  limb([[1760, 880], [1640, 960], [1690, 1100]], 104, 62);                               // front leg, bent
+  limb([[1930, 620], [1990, 520]], 60, 63);                                              // back arm
+  IB.ink(ctx, [[1690, 560], [1820, 540], [1880, 700], [1860, 900], [1720, 930], [1690, 760]], { closed: true, fill: C.paper, w: 3.5, seed: 64 });   // torso
+  IB.oval(ctx, 1832, 478, 62, 56, { fill: C.lavender, w: 3.5, seed: 65, n: 10 });         // hair behind the mask
+  IB.oval(ctx, 1740, 458, 66, 74, { fill: C.paper, w: 3.5, seed: 66, n: 14 });            // mask
+  for (let i = 0; i < 5; i++) { IB.seg(ctx, 1688 + i * 12, 420 - i * 3, 1688 + i * 12, 500 + i * 3, { w: 1.6, seed: 70 + i }); IB.seg(ctx, 1684, 428 + i * 16, 1742, 428 + i * 16, { w: 1.6, seed: 76 + i }); }
+  IB.ink(ctx, [[1744, 386], [1748, 470], [1700, 540]], { w: 3.5, seed: 67 });
+  if (!inPose && !mid) { ctx.restore(); return; }
+  limb([[1740, 590], [1600, 606], [1452, 622]], 54, 68);                                 // the arm that points the torch
+  // torch
+  IB.tube(ctx, [[1372, 628], [1470, 626]], { w: 34, edge: 3, fill: '#c9c9c9', seed: 80 });
+  IB.box(ctx, 1338, 606, 34, 44, { fill: '#c9c9c9', w: 3, seed: 81 });
+  for (let i = 0; i < 4; i++) IB.oval(ctx, 1412 + i * 18, 646, 10, 12, { fill: C.paper, w: 3, seed: 82 + i, n: 8 });
+  ctx.restore();
+}
+
+MG.scene({
+  title: 'copy / copy-cards-flashlight',
+  duration: 4.333, ref: [13.708, 18.042], fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t);
+    if (t < CUT) {
+      sandwichHand(ctx, t);
+      for (const drops of OLIVES) { const k = drops.filter((d) => d[0] <= f).pop(); if (k && f < drops[drops.length - 1][0] + 2) IB.oval(ctx, 1300, k[1] - 22, 11, 20, { fill: C.bg, w: 3, seed: 50, n: 8 }); }
+      IB.copy(ctx, HEAD, t, 0, { size: 'head' });
+      return;
+    }
+    if (LIT.some(([a, b]) => f >= a && f < b)) {
+      ctx.fillStyle = '#f6f6f6';
+      ctx.beginPath(); ctx.moveTo(1338, 628); ctx.lineTo(0, 50); ctx.lineTo(0, 1080); ctx.lineTo(220, 1080); ctx.closePath(); ctx.fill();
+    }
+    fencer(ctx, t);
+    IB.copy(ctx, BODY, t, CUT, { size: 'body' });
+  },
+});
+</script>

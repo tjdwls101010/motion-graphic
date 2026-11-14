@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>insert / mesh-eyes-whip</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script>
+/* 마스크 철망 너머로 화면을 가득 채운 두 눈이 노려보다가, 스피드라인 휩이 화면을 쓸고 지나가면 맞은편 사람의 긴장한 눈과 땀방울이 나온다. 전달하는 생각: 대결 직전, 한쪽은 자신 있고 한쪽은 불안하다.
+   Motion notes: extreme close-up, lines 10-12 px. The mesh is a fixed overlay (#d9d7d6 lines 11 px wide, cells ~125 px, bowed like a lens) and the skin above the eye line is darkened to #867968; the face moves under it. Face A holds three drawings: neutral 0.5 s, brows drop 22 px for 0.33 s, then a 4% push-in for 0.29 s. Whip = 6 frames on ones (0.25 s): 2 frames of the leaving face shoved left and breaking into streaks tinted with its skin colours, 2 frames of streaks alone on #f0f0f0, 2 frames of the arriving face coming in from the right. Face B lands low, jumps up 40 px after 3 frames and holds; the only later movement is a sweat drop sliding 60 px over the last 0.5 s. Both faces are generic stand-ins. */
+const { lerp, prog, clamp } = MG;
+const C = IB.C, SKIN = '#cfbba0', SHADE = '#867968', MESH = '#d9d7d6';
+const WHIP = 27, B_IN = 33;   // 24 fps frames after the scene start
+
+function mesh(ctx) {
+  const bow = (v, o) => 1 + 0.07 * (1 - Math.pow(o / 760, 2)) * (Math.abs(v) / 960);
+  for (let i = -8; i <= 8; i++) {
+    const x0 = i * 125 + 40, pts = [];
+    for (let y = -40; y <= 1120; y += 80) pts.push([960 + x0 * bow(x0, y - 540), y]);
+    IB.ink(ctx, pts, { w: 11, color: MESH, seed: 900 + i, taper: false, wob: 0.5 });
+  }
+  for (let j = -5; j <= 5; j++) {
+    const y0 = j * 122 + 30, pts = [];
+    for (let x = -40; x <= 1960; x += 120) pts.push([x, 540 + y0 * bow(y0 * 1.6, x - 960)]);
+    IB.ink(ctx, pts, { w: 11, color: MESH, seed: 930 + j, taper: false, wob: 0.5 });
+  }
+}
+
+function face(ctx, who, pose) {
+  ctx.fillStyle = SHADE; ctx.fillRect(-2200, -200, 6400, 1500);
+  // lit skin below the visor line, corners clipped by the mask's edge
+  const top = who === 'A' ? 462 : 500;
+  ctx.fillStyle = SKIN;
+  ctx.beginPath(); ctx.moveTo(40, top); ctx.lineTo(1880, top); ctx.lineTo(1900, 980); ctx.lineTo(1800, 1100); ctx.lineTo(120, 1100); ctx.lineTo(20, 980); ctx.closePath(); ctx.fill();
+  for (const side of [-1, 1]) {
+    const ex = 960 + side * 448;
+    if (who === 'A') {
+      const drop = pose >= 1 ? 22 : 0;
+      IB.ink(ctx, [[ex - side * 230, 372], [ex - side * 60, 380 + (pose >= 1 ? 16 : 0)], [ex + side * 120, 372], [ex + side * 200, 430], [ex, 468], [ex - side * 200, 440]], { closed: true, fill: '#a9a9a9', w: 0 });   // sclera in shadow
+      IB.oval(ctx, ex + 4, 420, 84, 70, { fill: C.ink, w: 0, n: 14 });
+      IB.oval(ctx, ex - 30, 388, 17, 15, { fill: '#e9e9e9', w: 0, n: 8 });
+      IB.ink(ctx, [[ex - side * 270, 330], [ex + side * 100, 352 + drop], [ex + side * 240, 372 + drop]], { w: 11, seed: 10 + side });   // lid line
+      // brow: low at the nose, high at the temple
+      IB.ink(ctx, [[ex - side * 250, 330 + drop * 1.6], [ex - side * 40, 250 + drop], [ex + side * 280, 208 + drop * 0.4], [ex + side * 290, 240 + drop * 0.4], [ex - side * 20, 318 + drop], [ex - side * 230, 372 + drop * 1.6]], { closed: true, fill: C.ink, w: 4, seed: 20 + side });
+    } else {
+      IB.ink(ctx, [[ex - 190, 452], [ex - 20, 404], [ex + 190, 446], [ex + 10, 500]], { closed: true, fill: C.paper, w: 0 });
+      IB.oval(ctx, ex - side * 20, 448, 74, 50, { fill: C.ink, w: 0, n: 14 });
+      IB.ink(ctx, [[ex - 210, 448], [ex - 20, 398], [ex + 210, 444]], { w: 10, seed: 30 + side });
+      IB.ink(ctx, [[ex - side * 280, 250], [ex, 196], [ex + side * 270, 218], [ex + side * 260, 252], [ex, 232], [ex - side * 270, 282]], { closed: true, fill: '#8f8aa8', w: 7, seed: 40 + side });   // pale raised brow
+      for (let k = 0; k < 6; k++) { ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(ex - side * 60 + ((k * 97) % 230) - 115, 640 + ((k * 61) % 150), 8, 0, 7); ctx.fill(); }   // freckles
+    }
+  }
+  // nose: one open stroke with a soft shadow under it
+  ctx.fillStyle = 'rgba(134, 121, 104, 0.45)';
+  ctx.beginPath(); ctx.ellipse(960, who === 'A' ? 968 : 990, 150, 34, 0, 0, 7); ctx.fill();
+  if (who === 'A') IB.ink(ctx, [[826, 600], [760, 700], [742, 850], [820, 950], [960, 968], [1090, 940], [1124, 850]], { w: 11, seed: 50 });
+  else { IB.ink(ctx, [[820, 560], [790, 760], [800, 900], [900, 986], [1030, 986], [1120, 900], [1128, 760]], { w: 11, seed: 51 }); IB.ink(ctx, [[1150, 520], [1160, 700]], { w: 9, seed: 52 }); }
+}
+
+MG.scene({
+  title: 'insert / mesh-eyes-whip',
+  duration: 2.292, ref: [6.542, 8.833], fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t);
+    const shot = (who, pose, zoom, dx, dy) => {
+      ctx.save();
+      ctx.translate(960 + dx, 540 + dy); ctx.scale(zoom, zoom); ctx.translate(-960, -540);
+      face(ctx, who, pose);
+      if (who === 'B' && pose >= 2) { const y = 420 + 60 * prog(IB.twos(t), 1.79, 0.5); IB.ink(ctx, [[1832, y], [1818, y + 44], [1832, y + 64], [1848, y + 44]], { closed: true, fill: '#e8f0f6', w: 6, seed: 60 }); }
+      mesh(ctx);
+      ctx.restore();
+    };
+    if (f < WHIP) return shot('A', f < 12 ? 0 : 1, f < 20 ? 1 : 1.04, 0, 0);
+    if (f >= B_IN) return shot('B', f < B_IN + 3 ? 1 : 2, f < B_IN + 3 ? 1 : 1.03, 0, f < B_IN + 3 ? 40 : 0);
+    // the whip itself: leaving shot shoved left, streaks alone, arriving shot from the right
+    const k = f - WHIP;
+    if (k < 2 || k >= 4) {
+      const leaving = k < 2, off = leaving ? [-1150, -1500][k] : [1500, 1150][k - 4];
+      shot(leaving ? 'A' : 'B', 1, 1, off, leaving ? 0 : 40);
+      // the face breaks up: bars of bare stage eat into it from the open side
+      const r = MG.rng(700 + f);
+      ctx.fillStyle = C.bg;
+      for (let i = 0; i < 46; i++) { const y = r() * 1080, h = 6 + r() * 30, w = 500 + r() * 1100; ctx.fillRect(leaving ? 1920 - w - 260 * r() : 0, y, w + 400, h); }
+      ctx.fillRect(leaving ? 1000 : 0, 0, 920, 1080);
+      for (let i = 0; i < 30; i++) { const y = r() * 1080, h = 5 + r() * 26, w = 200 + r() * 700; ctx.fillStyle = r() < 0.5 ? SKIN : SHADE; ctx.globalAlpha = 0.85; ctx.fillRect(leaving ? 1000 - w * 0.4 : 920 - w * 0.6, y, w, h); }
+      ctx.globalAlpha = 1;
+    }
+    IB.whip(ctx, f, { seed: 4, tint: k < 2 || k >= 4 ? [SKIN] : [] });
+  },
+});
+</script>

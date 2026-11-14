@@ -1,0 +1,47 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>endcard / flyby-dot-settle</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script>
+/* 하드 컷으로 들어온 파란 태그라인과 분필 스미어가 살짝 밀려와 멈추는 사이 큰 날벌레가 화면 앞을 가로질러 멀어지고, 작은 날벌레가 다시 날아와 글자 위에 강세 부호처럼 내려앉은 뒤 로고로 컷한다. 전달하는 생각: 여섯 편이 모두 같은 서명으로 끝난다.
+   Motion notes: frame 0 is the bare #f0f0f0 stage, the line and the smear cut in on frame 1 already at full opacity, 39 px left of rest, and settle exponentially (tau 0.15 s, ~24% of the remaining distance per frame, still 0.5 s after they appear, i.e. at 0.54 s). Foreground flyby on ones, frames 3-10: enters top right 330 px long and shrinks to 44 px as it crosses to bottom left, ~230 px per frame. Small flyer on ones, frames 20-35 (0.83-1.46 s): in from the left above the line, dips through the first word, rises and hovers down onto one glyph; wings alternate every frame in flight and freeze on landing. Hold 0.4 s, hard cut to the logo at 1.875 s, logo dead still for 1.58 s. Tagline, logo and insect are placeholders. */
+const { W, H } = MG;
+const TAG = '마지막에 놓이는 태그라인 한 줄이다.';
+// measured from the reference, one entry per 24 fps frame after the cut: [frame, x, y, body length]
+const FLYBY = [[3, 1455, 135, 330], [4, 1305, 330, 210], [5, 1080, 540, 150], [6, 936, 714, 90], [7, 750, 825, 80], [8, 594, 870, 60], [9, 430, 905, 50], [10, 250, 935, 44]];
+const LAND = [[20, 414, 433], [21, 461, 468], [22, 501, 502], [23, 535, 531], [24, 569, 544], [25, 604, 548], [26, 631, 535], [27, 634, 516], [28, 637, 502], [29, 645, 493], [30, 645, 492], [31, 648, 490], [32, 653, 485], [33, 658, 485], [34, 662, 493], [35, 667, 500]];
+const CUT_IN = 1 / 24, LOGO = 45 / 24;
+
+MG.scene({
+  title: 'endcard / flyby-dot-settle',
+  duration: 3.458, ref: [26.625, 30.083], fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t);
+    if (f < 1) return;
+    if (t >= LOGO) {
+      // placeholder for the brand mark: same box as the reference logo (371 x 139, centred)
+      IB.box(ctx, 786, 470, 371, 139, { w: 5, color: IB.C.royal, seed: 40 });
+      ctx.font = `600 54px ${IB.FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = IB.C.royal;
+      ctx.fillText('LOGO', 971, 559);
+      return;
+    }
+    const dx = IB.copy(ctx, [TAG], t, CUT_IN, { size: 'tag', color: IB.C.royal });
+    IB.smear(ctx, 935 + dx, 910, 1000, { h: 34, seed: 9 });
+
+    const fly = FLYBY.find((k) => k[0] === f);
+    if (fly) IB.flyer(ctx, fly[1], fly[2], fly[3], { rot: 2.2, flap: f % 2 });
+    if (f >= LAND[0][0]) {
+      const k = LAND[Math.min(f - LAND[0][0], LAND.length - 1)];
+      const landed = f >= LAND[LAND.length - 1][0];
+      IB.flyer(ctx, k[1] + (landed ? dx : 0), k[2], 22, { rot: landed ? -0.5 : 0.3, flap: landed ? 1 : f % 2 });
+    }
+  },
+});
+</script>

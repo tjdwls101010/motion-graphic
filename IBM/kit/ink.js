@@ -151,7 +151,7 @@
   IB.tube = (ctx, pts, o = {}) => {
     const { w = 12, edge = 2.5, fill = IB.C.paper, smooth = false, seed = 1, wob = 0.4 } = o;
     IB.ink(ctx, pts, { w, smooth, seed, wob, taper: false });
-    IB.ink(ctx, pts, { w: Math.max(0.5, w - edge * 2), color: fill, smooth, seed, wob, taper: false });
+    IB.ink(ctx, pts, { w: Math.max(0.5, w - edge * 2), color: fill, smooth, seed, wob, taper: false, grain: 0 });   // no dust from the fill: it would eat the ink edge
   };
 
   /* ---------- chalk ---------- */

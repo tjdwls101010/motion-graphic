@@ -29,7 +29,7 @@
   .pill .tag { margin-left: auto; background: #fff; color: #2a2a2a; border-radius: 12px; padding: 6px 14px; font: 800 24px Pretendard, sans-serif; }
 </style>
 <script>
-/* A structure is revealed top-down: four unknown "?" slots, then the router pill that owns them, then connector lines, and then each slot in turn opens like an accordion, takes a title and a count that runs up from zero, shows a few sample children, and folds back to a compact list when the next slot opens. Idea carried: "one router, then 23 + 24 + 32 + 2 things beneath it" without ever showing everything at once.
+/* 구조가 위에서 아래로 드러난다: 정체 모를 "?" 칸 넷, 그것들을 거느린 라우터 알약, 연결선이 차례로 나오고, 칸이 하나씩 아코디언처럼 열려 제목과 0부터 올라가는 개수를 받고 하위 예시 몇 개를 보인 뒤 다음 칸이 열릴 때 짧은 목록으로 접힌다. 전달하는 생각: 전부를 한꺼번에 보여 주지 않고 "라우터 하나, 그 아래 23 + 24 + 32 + 2개"를 전한다.
    Motion notes: placeholders first, so the viewer knows how many parts are coming; the accordion is a single 0.7 s inOutCubic in which the outgoing slot narrows exactly as the incoming one widens (total width constant, nothing else moves); counts start 0.5 s after their slot opens and ease out over 1.3 s (1.8 s for the largest); children pop one at a time (scale 0.85 -> 1, outBack, 0.3 s) roughly every 0.8 s (every 0.3 s in the third slot, where they are only name chips), and only the newest carries the lavender ring; a folded slot keeps its count and a small list so progress stays visible. */
 const { prog, ease, lerp, clamp, el } = MG;
 const X0 = 90, GAP = 35, EQUAL = 420, NARROW = 285, WIDE = 760, BUS_Y = 218, TOP = 255;

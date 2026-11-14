@@ -6,7 +6,7 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/terminal.js"></script>
 <script>
-/* A prompt is typed and submitted, then a todo list streams in and skipped steps are called out. The annotations make the agent's order of work visible. Motion notes: typing ends at 2 s, Enter pops at 2.1 s, output begins at 3 s, todos stagger by 0.35 s from 6 s, strikes sweep at 10 s and an arrow draws at 11 s. */
+/* 프롬프트가 타이핑되어 제출되고, 할 일 목록이 흘러나온 뒤 건너뛴 단계가 지적된다. 주석이 에이전트의 작업 순서를 눈에 보이게 한다. Motion notes: typing ends at 2 s, Enter pops at 2.1 s, output begins at 3 s, todos stagger by 0.35 s from 6 s, strikes sweep at 10 s and an arrow draws at 11 s. */
 const BEATS = { type: 0, enter: 2.1, output: 3, todos: 6, strike: 10, arrow: 11 };
 const FRAME = { keyX: 1250, keyY: 550, arrowX: 640, arrowY: 450 };
 const CAMERA = [[0, [1, 0, 0]], [16, [1, 0, 0]]];

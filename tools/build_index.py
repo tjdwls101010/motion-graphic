@@ -160,11 +160,12 @@ def main():
             cards.append('</div>')
 
     page = f"""<!doctype html>
+<html lang="ko">
 <meta charset="utf-8">
-<title>motion graphic reference scenes</title>
+<title>모션그래픽 레퍼런스 장면</title>
 <style>{STYLE}</style>
-<h1>motion graphic reference scenes</h1>
-<p class="lead">{len(scenes)} scenes · hover a card to play it · click to open it with the player (space = play/pause, ←/→ = one frame, ?t=3.2 opens at a time)</p>
+<h1>모션그래픽 레퍼런스 장면</h1>
+<p class="lead">장면 {len(scenes)}개 · 카드에 마우스를 올리면 재생 · 클릭하면 재생 막대와 함께 열림 (스페이스 = 재생/정지, ←/→ = 한 프레임, 주소에 ?t=3.2 = 그 시각에서 열기)</p>
 {''.join(cards)}
 <script>{SCRIPT}</script>
 """

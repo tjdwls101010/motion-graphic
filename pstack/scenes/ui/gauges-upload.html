@@ -18,7 +18,7 @@
   .gauge small { position: absolute; top: 250px; font: 600 19px Pretendard; color: #a8a8a8; }
 </style>
 <script>
-/* "I was going to upload a review for the views": an upload form fills in, the pointer goes for the button, and two dials answer what would happen. The "views" dial swings high; the "useful at work" dial rises, hesitates and falls back. The dials then clear and the form is set aside into a drafts folder. Idea carried: two measures of the same act pointing in opposite directions.
+/* "조회수 때문에 리뷰를 올리려던 참이었다": 업로드 폼이 채워지고 포인터가 버튼으로 가면, 다이얼 둘이 그 결과를 답한다. "조회수" 다이얼은 높이 치솟고, "실무에 와닿음" 다이얼은 올라가다 머뭇거리고 다시 떨어진다. 이어서 다이얼이 사라지고 폼은 임시 저장 폴더로 치워진다. 전달하는 생각: 같은 행동의 두 척도가 반대 방향을 가리킨다.
    Motion notes: dial needles never ease in a straight line: they rise with an overshoot and then settle with a decaying wobble (sin * exp falloff, ~1 s), which reads as a physical instrument; the dark arc fills together with the needle; the second dial starts 1.4 s after the first so the two verdicts are read one at a time, and its fall is slower (0.7 s) than its rise (0.4 s); the unanswered dial sits at 40% opacity until its turn; the pointer travels on an eased diagonal and the button dips to 0.94 scale for 0.12 s as the click. */
 const { prog, lerp, clamp, el } = MG;
 const A0 = 160, SWEEP = 220, R = 118;

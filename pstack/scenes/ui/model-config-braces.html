@@ -17,7 +17,7 @@
   .model small { display: block; font: 600 22px Pretendard; color: #666; }
 </style>
 <script>
-/* A config file is read aloud. The browser window snaps in close on the text, the lines that belong together get a lavender highlighter, a brace gathers them and a chip names the group ("Grok"); a second group gets its own brace and chip ("Claude Opus 5.5"). Then the document steps aside (the window narrows) and the two chips become full cards with an arrow carrying a "hard work" token from one to the other. Idea carried: turn a wall of config into "these go to A, these go to B, and the hard ones are handed over".
+/* 설정 파일에서 함께 묶이는 줄을 형광펜과 중괄호로 모아 모델 칩에 배정하고, 어려운 일이 한 모델에서 다른 모델로 넘어가는 것을 보여 준다. 브라우저 창이 글자 쪽으로 바짝 당겨지고, 같은 묶음의 줄에 라벤더 형광펜이 칠해지고, 중괄호가 그것을 모으고 칩이 묶음의 이름을 붙인다("Grok"). 두 번째 묶음도 제 중괄호와 칩("Claude Opus 5.5")을 받는다. 이어서 문서가 비켜서고(창이 좁아짐) 두 칩이 온전한 카드가 되며, 화살표가 "hard work" 토큰을 한쪽에서 다른 쪽으로 나른다. 전달하는 생각: 설정 덩어리를 "이건 A로, 이건 B로, 어려운 건 넘긴다"로 바꾼다.
    Motion notes: highlighter bars sweep left to right, one line after another (0.14 s apart, 0.35 s each); the brace is drawn top to bottom in 0.3 s only after the last bar lands, and the chip pops (outBack, 0.3 s) from the brace's point 0.15 s later, so the eye goes lines -> brace -> name; the second group waits ~3 s while the first is discussed; when the window narrows its text keeps its size and is simply cropped; the token on the arrow travels with inOutCubic and the arrow line draws first. */
 const { prog, lerp, el } = MG;
 const LINES = [

@@ -6,7 +6,7 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/sketch.js"></script>
 <script>
-/* A red "pstack" tag is pulled in on a string, a stick figure walks up to it, then look-alike grey "stack" tags rain down and bury it while the camera pulls back to show the notebook binding. Idea carried: "yet another stack".
+/* 빨간 "pstack" 태그가 실에 끌려 들어오고 스틱맨이 다가가자, 비슷하게 생긴 회색 "stack" 태그들이 쏟아져 그것을 묻고 카메라가 물러나며 공책 제본이 드러난다. 전달하는 생각: "또 하나의 stack".
    Motion notes: everything moves on twos (15 fps); the one coloured object arrives first and alone; falling tags accelerate (ease-in), land with a small rotation settle, and their spawn rate ramps up so the pile reads as an avalanche; named tags (gstack, superpowers) are inked black so they stand out from the grey pencil crowd. */
 const { prog, kf, ease, rng, clamp, lerp } = MG;
 const GROUND = 800;

@@ -7,7 +7,7 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ui.js"></script>
 <script>
-/* Two stat cards state a claim each ("10,000 uses a week", "2,000 PRs a month") on odometer tiles, a tilted sticker then marks both as self-reported, and finally the pair shrinks aside to make room for a third card of evidence while the second number corrects itself. Idea carried: big numbers first, the caveat stamped on top.
+/* 숫자 카드 둘이 오도미터 타일로 각자 주장("주 10,000회 사용", "월 2,000개 PR")을 내세우고, 기울어진 스티커가 둘 다 본인 주장이라고 찍은 뒤, 두 카드가 옆으로 줄어들어 세 번째 증거 카드에 자리를 내주는 동안 두 번째 숫자가 스스로 고쳐진다. 전달하는 생각: 큰 숫자를 먼저 보이고, 단서는 그 위에 도장으로 찍는다.
    Motion notes: cards pop empty first (scale 0.9 -> 1, outBack, 0.45 s, second card 0.15 s later) and are filled in afterwards in reading order: header types on, chip pops, then the number; a number never appears already set, its tiles roll from zeros, left tile first with 0.12 stagger over ~1.1 s, and on the first card the grey unit fades in only once the tiles land (on the second card the unit ghosts in at 40% half a second before the roll, as the question the number then answers); the sticker arrives last, oversized (1.5 -> 1) with outBack and a tilt, like a stamp; "make room" is one 0.7 s inOutCubic scale-and-slide of the existing group while the new card slides in from the right. */
 const { prog, ease, lerp, el } = MG;
 MG.scene({

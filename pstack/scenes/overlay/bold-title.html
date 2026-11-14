@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>overlay / bold-title</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<link rel="stylesheet" href="../../kit/overlay.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/overlay.js"></script>
+<script>
+/* A large yellow outlined title announces the pstack deep dive over the camera backdrop. Motion notes: the first line pops over 0.3 s at 0.18 s, the second follows at 0.72 s with overshoot, and both hold until a 0.25 s scale-down at 1.6 s. */
+const BEATS = { first: .18, second: .72, exit: 1.6 };
+const POS = { secondTop: 250 };
+const CAMERA = [[0, [1, 0, 0]], [2, [1, 0, 0]]];
+
+MG.scene({
+  title: 'overlay / bold-title',
+  duration: 2,
+  ref: [24.8, 26.8],
+  setup(stage) {
+    const world = OV.root(stage);
+    const first = MG.el('div', { class: 'ov-title', text: 'pstack' });
+    const second = MG.el('div', { class: 'ov-title', style: { top: POS.secondTop + 'px' }, text: '딥다이브' });
+    world.append(first, second);
+    return { world, first, second };
+  },
+  render(t, r) {
+    OV.camera(r.world, t, CAMERA);
+    // Each line stamps on with overshoot and both shrink away together.
+    const exit = 1 - MG.prog(t, BEATS.exit, .25, 'inCubic');
+    [r.first, r.second].forEach((line, i) => {
+      const pop = MG.prog(t, i ? BEATS.second : BEATS.first, .3, 'outBack');
+      line.style.opacity = String(MG.clamp(pop * 3) * exit);
+      line.style.transform = `scale(${(.65 + .35 * pop) * (.7 + .3 * exit)})`;
+    });
+  },
+});
+</script>

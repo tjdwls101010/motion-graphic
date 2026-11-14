@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>felt / corkboard-intro</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<link rel="stylesheet" href="../../kit/felt.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/felt.js"></script>
+<script>
+/* A pinned portrait anchors a corkboard as paper cards, a view-count strip and a person with a phone arrive around it; red strings then tie the cards to the portrait, the camera drops down to the portrait and a handle tag, and orange letter tiles stamp the word pstack. Motion notes: camera starts at 1.34× on the portrait, pulls back to the full board at 1.1–1.6 s, pushes to 1.4× at 3.2–3.6 s and 1.35× by 4.2 s, then closes to 1.74× at 5.1–5.6 s; the tweet-style card slides in at 0.8 s, the person pops up at 1.1 s, the view-count strip at 1.2 s, the pstack card at 1.6 s, the README path card at 1.75 s, a "?" note at 2.3 s, the three strings draw from 2.1 s with 0.3 s stagger, the handle tag pops at 3.7 s, its short string draws at 5.5 s and six tiles drop in from 5.8 s with 0.12 s stagger. */
+const BEATS = { tweet: .8, person: 1.1, stat: 1.2, card: 1.6, readme: 1.75, question: 2.3, strings: 2.1, handle: 3.7, handleString: 5.5, tiles: 5.8 };
+// Camera keyframes: time, world centre x, y, zoom.
+const CAMERA = [
+  [0, 781, 430, 1.34], [.5, 775, 435, 1.4], [1.1, 790, 430, 1.34], [1.6, 960, 540, 1], [3.2, 960, 540, 1],
+  [3.6, 900, 470, 1.4], [4.2, 938, 515, 1.35], [5.1, 938, 515, 1.35], [5.6, 1093, 559, 1.74],
+];
+const TILE_X = 1042, TILE_PITCH = 93, TILE_Y = 640;
+
+MG.scene({
+  title: "felt / corkboard-intro",
+  duration: 7.2,
+  ref: [0, 7.2],
+  setup(stage) {
+    let s = Felt.root(stage);
+    Felt.wall(s);
+    let g = Felt.add(s, "g", {});
+    Felt.board(g);
+    Felt.clock(g);
+    Felt.shelf(g);
+    Felt.photo(g, 522, 170, 475, 462);
+    // Tweet-style card: a dark paper strip with neutral placeholder avatar and text bars (the original shows a site screenshot).
+    let tweet = Felt.tag(g, 968, 112, 652, 140, "", 30, { rot: 1.4, seed: 5 });
+    Felt.add(tweet.inner, "rect", { x: 9, y: 9, width: 634, height: 122, fill: "#101112" });
+    Felt.add(tweet.inner, "circle", { cx: 52, cy: 44, r: 26, fill: "#4a4d52" });
+    Felt.add(tweet.inner, "rect", { x: 92, y: 26, width: 120, height: 14, rx: 7, fill: "#e4e4e4" });
+    Felt.add(tweet.inner, "rect", { x: 92, y: 50, width: 90, height: 12, rx: 6, fill: "#6a6d72" });
+    Felt.add(tweet.inner, "rect", { x: 28, y: 92, width: 430, height: 12, rx: 6, fill: "#c4c4c4" });
+    Felt.add(tweet.inner, "rect", { x: 28, y: 114, width: 300, height: 12, rx: 6, fill: "#8d9095" });
+    Felt.pin(tweet.inner, 324, 12);
+    // pstack card: white paper with a bold heading, a rule and grey text bars.
+    let card = Felt.tag(g, 990, 335, 620, 125, "", 30, { fill: "#fcfbf7", rot: -.8, seed: 8 });
+    Felt.add(card.inner, "text", { x: 24, y: 56, "font-family": "Pretendard", "font-weight": 800, "font-size": 38, fill: "#1f2328", text: "pstack" });
+    Felt.add(card.inner, "path", { d: "M18 78 H602", stroke: "#e2e0da", "stroke-width": 2 });
+    Felt.add(card.inner, "rect", { x: 24, y: 96, width: 380, height: 10, rx: 5, fill: "#cfd1d4" });
+    Felt.pin(card.inner, 308, 13);
+    // README path card with the path segments in the reference's colours.
+    let readme = Felt.tag(g, 1194, 516, 404, 72, "", 30, { fill: "#fcfbf7", rot: 1, seed: 12 });
+    let path = Felt.add(readme.inner, "text", { x: 26, y: 46, "font-family": "Pretendard", "font-weight": 700, "font-size": 22, fill: "#1f2328" });
+    [["plugins", "#2a6fd6"], [" / ", "#6a6e73"], ["pstack", "#2a6fd6"], [" / ", "#6a6e73"], ["README.md", "#1f2328"]].forEach(([word, fill]) => {
+      Felt.add(path, "tspan", { fill, text: word });
+    });
+    Felt.add(readme.inner, "rect", { x: 362, y: 28, width: 22, height: 22, rx: 4, fill: "none", stroke: "#6a6e73", "stroke-width": 2.4 });
+    Felt.pin(readme.inner, 201, 12);
+    // View-count strip: black paper with white and grey lettering.
+    let stat = Felt.tag(g, 205, 245, 320, 112, "", 30, { rot: -3, seed: 4 });
+    Felt.add(stat.inner, "rect", { x: 8, y: 8, width: 304, height: 96, fill: "#141516" });
+    Felt.add(stat.inner, "text", { x: 24, y: 76, "font-family": "Pretendard", "font-weight": 800, "font-size": 50, fill: "#f4f4f4", text: "38.2만" });
+    Felt.add(stat.inner, "text", { x: 188, y: 74, "font-family": "Pretendard", "font-weight": 600, "font-size": 40, fill: "#8d9095", text: "조회수" });
+    Felt.pin(stat.inner, 160, 10);
+    let question = Felt.tag(g, 158, 640, 58, 66, "?", 44, { rot: -5, tape: true, tapeAt: .5, spacing: 0, seed: 21 });
+    let person = Felt.person(g, 300, 835, .95, { kind: "phone", shirt: "stripePurple", hair: "#5d4034", mouth: "o" });
+    let handle = Felt.tag(g, 619, 640, 273, 95, "@poteto", 56, { tape: true, pin: "right", spacing: 3, rot: -1.5 });
+    let dotPin = Felt.add(g, "g", {});
+    Felt.pin(dotPin, 1002, 659);
+    let handleString = Felt.string(g, "M888 681 Q945 696 1002 659");
+    let tiles = "pstack".split("").map((ch, i) => Felt.tag(g, 0, 0, 84, 96, ch, 84, { fill: "#e8825f", rot: i % 2 ? 3 : -3, spacing: 0, seed: 30 + i }));
+    let lines = [
+      Felt.string(g, "M759 185 Q900 150 1292 121"),
+      Felt.string(g, "M759 185 Q900 240 1298 348"),
+      Felt.string(g, "M759 185 Q1000 330 1395 529"),
+    ];
+    return { g, tweet, card, readme, stat, question, person, handle, dotPin, handleString, tiles, lines };
+  },
+  render(t, r) {
+    // Camera framing is applied to the whole paper world.
+    let z = MG.kf(t, CAMERA.map((k) => [k[0], k[3]]));
+    let cx = MG.kf(t, CAMERA.map((k) => [k[0], k[1]]));
+    let cy = MG.kf(t, CAMERA.map((k) => [k[0], k[2]]));
+    r.g.setAttribute("transform", `translate(${960 - cx * z} ${540 - cy * z}) scale(${z})`);
+    // The tweet card slides in from the right; the person rises from below the floor.
+    let slide = MG.prog(t, BEATS.tweet, .5, "outCubic");
+    r.tweet.setAttribute("transform", `translate(${968 + (1 - slide) * 700} 112)`);
+    r.tweet.style.opacity = slide > 0 ? 1 : 0;
+    r.person.setAttribute("transform", `translate(300 ${835 + (1 - MG.prog(t, BEATS.person, .5, "outBack")) * 260}) scale(.95)`);
+    r.person.style.opacity = t >= BEATS.person ? 1 : 0;
+    // Paper cards pop in place; the view-count strip and the "?" note too.
+    Felt.pop(r.stat, MG.prog(t, BEATS.stat, .35), 205, 245, 1, 160, 56);
+    Felt.pop(r.card, MG.prog(t, BEATS.card, .35), 990, 335, 1, 310, 62);
+    Felt.pop(r.readme, MG.prog(t, BEATS.readme, .35), 1194, 516, 1, 202, 36);
+    Felt.pop(r.question, MG.prog(t, BEATS.question, .3), 158, 640, 1, 29, 33);
+    r.lines.forEach((e, i) => MG.draw(e, MG.prog(t, BEATS.strings + i * .3, .6)));
+    Felt.pop(r.handle, MG.prog(t, BEATS.handle, .35), 619, 640, 1, 136, 47);
+    MG.draw(r.handleString, MG.prog(t, BEATS.handleString, .4));
+    Felt.visible(r.dotPin, MG.prog(t, BEATS.handleString + .3, .2));
+    // Stamp the letter tiles: each drops from above, bounces and settles tilted.
+    r.tiles.forEach((e, i) => {
+      let p = MG.prog(t, BEATS.tiles + i * .12, .4, "outBounce");
+      e.style.opacity = p > 0 ? 1 : 0;
+      e.setAttribute("transform", `translate(${TILE_X + i * TILE_PITCH} ${TILE_Y - (1 - p) * 420})`);
+    });
+  },
+});
+</script>

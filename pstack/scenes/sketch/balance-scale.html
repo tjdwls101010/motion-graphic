@@ -1,0 +1,156 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* A robot with a clipboard stands by a box of coins while two alarm clocks compare "without pstack" and "pstack" under a quoted note (30 minutes vs one hour). Then the robot's claims ("확인했어요", "테스트 통과") are caught in a red-ringed net and crossed out, and a balance scale weighs time and money (clock and coins in the left pan) against being less wrong (checked sheets in the right pan).
+Motion notes: on twos (15 fps). Coins stack every 0.5 s to 2 s, the clocks pop at 1.8 and 2.3 s, the note at 3 s and the green check at 4.2 s; at 6.5 s the claims pop in 0.3 s apart, the net arrives 7.8 s and the claims fly into it at 8.3 s, the cross-outs draw at 8.8 s and the robot leaves at 9 s; the scale draws 9 to 9.8 s, the left pan fills at 10.2 s and the beam tips left with a damped swing, the sheets pop in at 11.2 s and the beam swings back to level (damped, 6.5 rad/s), labels pop at 12 s. The pans stay level and hang on three strings. */
+
+const P = MG.prog;
+const PIVOT = [970, 400];
+const BEAM = 450;                             // half beam length
+const TIP = -0.17;                            // beam angle with only the left pan loaded (negative = left end down)
+const BEATS = {
+  camera: [[0, [1.5, 520, 640]], [1.5, [1, 960, 540]], [9, [1, 960, 540]], [10.5, [1.08, 1000, 570]]],
+  clocksAt: [1.8, 2.3], noteAt: 3, checkAt: 4.2, cutAt: 6.5, netAt: 7.8, caughtAt: 8.3, crossAt: 8.8,
+  scaleAt: 9, leftAt: 10.2, rightAt: 11.2, labelsAt: 12,
+};
+
+function clock(p, x, y, s, seed) {
+  p.circle(x, y, 80 * s, { fill: SK.WHITE, w: 4.5, seed });
+  p.circle(x, y, 66 * s, { w: 2.5, color: SK.GREY, seed: seed + 1 });
+  p.line(x, y, x, y - 50 * s, { w: 4.5, seed: seed + 2 });
+  p.line(x, y, x + 40 * s, y + 22 * s, { w: 4.5, seed: seed + 3 });
+  p.circle(x, y, 5 * s, { fill: SK.INK, seed: seed + 4 });
+  p.line(x - 52 * s, y - 68 * s, x - 76 * s, y - 92 * s, { w: 4.5, seed: seed + 5 });
+  p.line(x + 52 * s, y - 68 * s, x + 76 * s, y - 92 * s, { w: 4.5, seed: seed + 6 });
+}
+
+function bubble(p, x, y, label, size) {
+  p.rect(-size * 2.6, -size * 0.8, size * 5.2, size * 1.6, { r: 22, fill: SK.WHITE, w: 4.5, seed: Math.round(x + y) });
+  p.text(label, 0, 2, { size, align: 'center' });
+}
+
+MG.scene({
+  title: 'sketch / balance-scale',
+  duration: 14,
+  ref: [1120, 1134],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    SK.paper(ctx, { spiral: true });
+    // camera over the whole illustrated world
+    const [zoom, cx, cy] = MG.kf(t, BEATS.camera);
+    ctx.setTransform(zoom, 0, 0, zoom, 960 - cx * zoom, 540 - cy * zoom);
+    const p = SK.pen(ctx, t);
+    for (const [sx, sy, r] of [[160, 320, 24], [1770, 220, 22], [1830, 560, 18], [250, 700, 16]]) p.star(sx, sy, r, { seed: 100 + r });
+    SK.ground(p, 890, { w: 3, x1: -300, x2: 2300 });
+
+    if (t < BEATS.cutAt) {
+      // robot with a clipboard beside a box of coins
+      SK.robot(p, 350, 880, { s: 1.0, w: 6, seed: 10, armR: 'hold', armL: 'down' });
+      p.with(470, 690, { rot: -6 }, () => {
+        p.rect(-44, -56, 88, 112, { fill: '#f1d9ad', w: 4.5, seed: 12 });
+        for (let i = 0; i < 3; i++) p.line(-26, -26 + i * 24, 26, -26 + i * 24, { w: 3, seed: 13 + i });
+      });
+      p.rect(600, 750, 190, 130, { fill: '#dbb988', w: 5, seed: 18 });
+      p.hatch([[600, 750], [790, 750], [790, 880], [600, 880]], { color: '#b99a6a', gap: 11, w: 2.2, seed: 19 });
+      const coins = Math.min(4, Math.floor(t * 2));
+      for (let i = 0; i < coins; i++) p.ellipse(695, 738 - i * 26, 78, 20, { fill: '#e7bb3d', w: 4.5, seed: 20 + i });
+      if (t > BEATS.clocksAt[0]) {
+        p.with(1090, 600, { scale: P(t, BEATS.clocksAt[0], 0.4, 'outBack') }, () => clock(p, 0, 0, 1.1, 70));
+        p.text('pstack 없이', 1090, 745, { size: 46, align: 'center', p: P(t, BEATS.clocksAt[0] + 0.3, 0.5) });
+      }
+      if (t > BEATS.clocksAt[1]) {
+        p.with(1500, 600, { scale: P(t, BEATS.clocksAt[1], 0.4, 'outBack') }, () => clock(p, 0, 0, 1.1, 80));
+        p.with(1500, 745, { scale: P(t, BEATS.clocksAt[1] + 0.2, 0.3, 'outBack') }, () => {
+          p.rect(-100, -36, 200, 72, { fill: SK.RED, w: 4.5, seed: 90 });
+          p.text('pstack', 0, 2, { size: 46, align: 'center', color: SK.WHITE });
+        });
+      }
+      if (t > BEATS.noteAt) {
+        p.with(1260, 215, { scale: P(t, BEATS.noteAt, 0.35, 'outBack') }, () => {
+          p.rect(-440, -105, 880, 210, { fill: SK.WHITE, w: 4.5, seed: 91 });
+          p.text('His baseline run took about 30 minutes.', -400, -42, { size: 50, hl: P(t, BEATS.noteAt + 0.4, 0.5) });
+          p.text('The pstack run took about one hour.', -400, 28, { size: 50, p: P(t, BEATS.noteAt + 0.9, 0.6) });
+        });
+      }
+      if (t > BEATS.checkAt) p.poly([[1000, 470], [1036, 506], [1110, 420]], { w: 11, color: '#5f9a63', p: P(t, BEATS.checkAt, 0.4), seed: 92 });
+    } else {
+      // the robot's claims, caught in a net and crossed out
+      const leave = P(t, 9, 0.5, 'inQuad');
+      SK.robot(p, 330 - leave * 400, 880, { s: 1.0, w: 6, seed: 30, face: 'worried', armL: 'hold', armR: 'hold' });
+      const claims = [['다 됐습니다', 170, 410, -4], ['확인했어요', 350, 330, 0], ['테스트 통과', 530, 400, 4]];
+      const fly = P(t, BEATS.caughtAt, 0.5, 'inOutCubic');
+      claims.forEach(([label, x, y, rot], i) => {
+        const pop = P(t, BEATS.cutAt + 0.3 * i, 0.3, 'outBack');
+        if (pop <= 0) return;
+        const nx = MG.lerp(x, 380 + i * 90, fly), ny = MG.lerp(y, 245 + i * 18, fly);
+        p.with(nx, ny, { scale: pop * MG.lerp(1, 0.62, fly), rot: MG.lerp(rot, -16 + i * 8, fly) }, () => bubble(p, x, y, label, 38));
+      });
+      if (t > BEATS.netAt) {
+        const slide = P(t, BEATS.netAt, 0.5, 'outCubic');
+        p.with(0, -(1 - slide) * 300, {}, () => {
+          p.curve([[200, 240], [250, 400], [400, 440], [540, 390], [590, 240]], { color: SK.GREY, w: 3, seed: 401, p: slide });
+          for (let k = 0; k < 3; k++) p.line(260 + k * 90, 250, 300 + k * 60, 420, { color: SK.GREY, w: 2, seed: 410 + k });
+          p.ellipse(400, 240, 195, 70, { color: SK.RED_LINE, w: 9, seed: 400 });
+          p.line(560, 200, 1240, 60, { w: 6, seed: 420 });
+          p.with(1060, 100, { rot: -12 }, () => {
+            p.rect(-62, -24, 124, 48, { fill: SK.RED, w: 4, seed: 421 });
+            p.text('pstack', 0, 2, { size: 32, align: 'center', color: SK.WHITE });
+          });
+        });
+      }
+      if (t > BEATS.crossAt) {
+        p.line(300, 300, 520, 400, { w: 14, color: SK.RED_LINE, p: P(t, BEATS.crossAt, 0.25), seed: 402 });
+        p.line(520, 300, 300, 400, { w: 14, color: SK.RED_LINE, p: P(t, BEATS.crossAt + 0.25, 0.25), seed: 403 });
+      }
+
+      // the balance scale
+      const q = P(t, BEATS.scaleAt, 0.8);
+      p.line(PIVOT[0], 850, PIVOT[0], PIVOT[1], { p: q, w: 8, seed: 100 });
+      p.poly([[850, 850], [1090, 850], [1124, 884], [816, 884], [850, 850]], { closed: true, fill: '#e7bc7e', w: 4.5, p: q, seed: 101 });
+      // beam: tips left when the left pan fills, then swings level with a damped swing when the sheets arrive
+      const s1 = Math.max(0, t - BEATS.leftAt), s2 = Math.max(0, t - BEATS.rightAt);
+      const tipped = TIP * (1 - Math.exp(-5 * s1) * Math.cos(8 * s1));
+      const angle = t < BEATS.rightAt ? tipped : TIP * Math.exp(-2.2 * s2) * Math.cos(6.5 * s2);
+      p.with(PIVOT[0], PIVOT[1], { rot: (angle * 180) / Math.PI }, () => p.line(-BEAM, 0, BEAM, 0, { p: q, w: 9, seed: 102 }));
+      p.circle(PIVOT[0], PIVOT[1], 14, { fill: SK.INK, w: 3, seed: 103, p: q });
+      for (const side of [-1, 1]) {
+        const x = PIVOT[0] + side * BEAM * Math.cos(angle);
+        const top = PIVOT[1] + side * BEAM * Math.sin(angle);
+        const bottom = top + 290;
+        // three strings from the beam end to the left, middle and right of the pan
+        for (const [k, dx] of [[0, -150], [1, 0], [2, 150]]) p.line(x, top, x + dx, bottom, { p: q, w: 3.5, seed: 120 + k + (side > 0 ? 10 : 0), step: 120 });
+        p.circle(x, top, 8, { fill: SK.INK, w: 3, p: q, seed: 130 + side });
+        p.curve([[x - 160, bottom], [x - 100, bottom + 36], [x, bottom + 48], [x + 100, bottom + 36], [x + 160, bottom]], { closed: true, fill: SK.WHITE, w: 5.5, p: q, seed: 140 + side });
+        const load = side < 0 ? t > BEATS.leftAt : t > BEATS.rightAt;
+        if (!load) continue;
+        const pop = P(t, side < 0 ? BEATS.leftAt : BEATS.rightAt, 0.4, 'outBack');
+        p.with(x, bottom + 10, { scale: Math.max(0.01, pop) }, () => {
+          if (side < 0) {
+            clock(p, -62, -76, 0.9, 150);
+            for (let i = 0; i < 3; i++) p.ellipse(78, -14 - i * 22, 54, 15, { fill: '#e7bb3d', w: 4.5, seed: 160 + i });
+          } else {
+            p.with(-20, -92, { rot: -8 }, () => p.rect(-70, -90, 140, 180, { fill: SK.WHITE, w: 4.5, seed: 170 }));
+            p.with(18, -96, { rot: 6 }, () => {
+              p.rect(-70, -90, 140, 180, { fill: SK.WHITE, w: 4.5, seed: 171 });
+              for (let i = 0; i < 4; i++) p.line(-46, -52 + i * 28, 46 - (i % 2) * 20, -52 + i * 28, { w: 3, seed: 172 + i });
+            });
+          }
+        });
+        if (side > 0 && t > BEATS.rightAt + 0.5) p.poly([[x - 20, bottom - 130], [x + 4, bottom - 100], [x + 56, bottom - 176]], { w: 11, color: '#5f9a63', p: P(t, BEATS.rightAt + 0.5, 0.35), seed: 180 });
+        if (t > BEATS.labelsAt) {
+          const lp = P(t, BEATS.labelsAt + (side > 0 ? 0.2 : 0), 0.3, 'outBack');
+          p.with(x, bottom + 118, { scale: Math.max(0.01, lp) }, () => {
+            p.rect(-95, -30, 190, 60, { fill: SK.WHITE, w: 4, seed: 190 + side });
+            p.text(side < 0 ? '시간 · 비용' : '덜 틀림', 0, 2, { size: 38, align: 'center' });
+          });
+        }
+      }
+    }
+  },
+});
+</script>

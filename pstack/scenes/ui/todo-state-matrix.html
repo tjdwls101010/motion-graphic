@@ -1,0 +1,141 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>ui / todo-state-matrix</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<link rel="stylesheet" href="../../kit/ui.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ui.js"></script>
+<style>
+  .todo .tiny { font: 700 20px Pretendard; color: #9b9b9b; }
+  .todo .title { display: flex; align-items: center; gap: 16px; font: 800 46px/1 Pretendard; margin-top: 22px; }
+  .todo .ring { width: 44px; height: 44px; border-radius: 50%; border: 4px solid #2a2a2a; display: grid; place-items: center; color: #fff; flex: none; }
+  .todo .due { display: flex; align-items: center; gap: 12px; font: 700 28px Pretendard; margin-top: 18px; padding-bottom: 26px; border-bottom: 2px solid #e6e6e6; height: 66px; }
+  .todo .late { background: #2a2a2a; color: #fff; border-radius: 999px; font-size: 20px; padding: 3px 14px; }
+  .row { display: flex; align-items: center; gap: 14px; height: 78px; margin-top: 18px; padding: 0 22px; border: 2.5px solid #dcdcdc; border-radius: 16px; font: 700 30px 'JetBrains Mono', monospace; }
+  .row .val { margin-left: auto; font: 700 22px Pretendard; color: #9b9b9b; width: 44px; text-align: right; }
+  .code { padding: 34px 0; font: 600 34px/1.75 'JetBrains Mono', monospace; counter-reset: ln; }
+  .code div { padding-left: 110px; position: relative; white-space: pre; height: 60px; }
+  .code div::before { counter-increment: ln; content: counter(ln); position: absolute; left: 40px; color: #c9c9c9; font-weight: 500; }
+  .code .k { color: #3b6fd4; } .code .n { color: #2f8f83; } .code .t { color: #3b6fd4; }
+  .cell { position: absolute; width: 335px; height: 225px; border-radius: 22px; background: #fff; border: 3px solid transparent; box-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.16); display: grid; place-items: center; font: 800 38px Pretendard; }
+  .axis { position: absolute; text-align: center; font: 800 26px Pretendard; width: 335px; }
+  .axis small { display: block; font: 600 17px 'JetBrains Mono', monospace; color: #b0b0b0; }
+  .big { flex: 1; height: 170px; border-radius: 20px; border: 3px solid #2a2a2a; display: grid; place-items: center; font: 800 54px Pretendard; }
+  .big small { display: block; font: 600 20px 'JetBrains Mono', monospace; opacity: 0.6; text-align: center; margin-top: -30px; }
+  .seg { margin-left: auto; display: flex; padding: 5px; border-radius: 999px; background: #ededed; font: 800 21px Pretendard; }
+  .seg span { padding: 6px 22px; border-radius: 999px; }
+</style>
+<script>
+/* A data-modelling argument told with one todo card. On the left the card is the "live preview"; on the right the code that shapes it is typed. Each boolean typed into the type adds a switch row to the card; flipping the switches walks a 2x2 truth table until the impossible corner ("done and overdue") lights up, and the fix replaces the two booleans with one status field. Idea carried: every flag doubles the states, so prefer one status over two booleans.
+   Motion notes: cause on the right, effect on the left, always within 0.2 s of each other (a typed line -> a new row; a flipped switch -> the highlighted matrix cell moves); switches are flipped on, off, on again before the point is made so the viewer learns the control first; the wrong cell is first only outlined like any other, then 0.7 s later turns lavender and gets a dark tag (the "stamp" beat); panels swap by the old one fading and sliding out 40 px as the new one pops (0.4 s, outBack); code types at ~25 characters a second with the current line tinted grey. */
+const { prog, lerp, el } = MG;
+const CODE = [
+  { html: '<span class="k">type</span> <span class="n">Todo</span> = {', at: 2.1, dur: 0.7 },
+  { html: '  title: <span class="t">string</span>', at: 2.9, dur: 0.5 },
+  { html: '  due: <span class="t">string</span>', at: 3.4, dur: 0.4 },
+  { html: '  done: <span class="t">boolean</span>', at: 3.9, dur: 0.5, hot: true },
+  { html: '  overdue: <span class="t">boolean</span>', at: 6.0, dur: 0.6, hot: true },
+  { html: '}', at: 2.7, dur: 0.1 },
+];
+// when each switch is on
+const DONE_ON = (t) => (t >= 4.6 && t < 5.5) || (t >= 7.0 && t < 7.9) || t >= 9.0;
+const OVER_ON = (t) => (t >= 7.1 && t < 7.9) || t >= 9.7;
+const CELLS = [['진행 중', 0, 0], ['기한 지남', 1, 0], ['완료', 0, 1], ['모순', 1, 1]];
+MG.scene({
+  title: 'ui / todo-state-matrix',
+  duration: 19, ref: [622.2, 641.2],
+  setup(stage) {
+    const root = UI.root(stage);
+    // left: the todo card
+    const ring = el('span', { class: 'ring' }, UI.icon('check', 28));
+    const late = el('span', { class: 'late', text: '지남' });
+    const mkRow = (name) => {
+      const val = el('span', { class: 'val' }), knob = el('b'), tg = el('span', { class: 'toggle' }, knob);
+      return { el: el('div', { class: 'row' }, name, val, tg), val, knob, tg };
+    };
+    const rDone = mkRow('done'), rOver = mkRow('overdue');
+    const segA = el('span', { text: '열림' }), segB = el('span', { text: '완료' });
+    const rStatus = el('div', { class: 'row', style: { position: 'absolute', left: '44px', right: '44px', top: '236px' } }, 'status', el('span', { class: 'seg' }, segA, segB));
+    const card = UI.card(root, 110, 205, 665, 515, el('div', { class: 'todo' }, el('div', { class: 'tiny', text: '할 일' }), el('div', { class: 'title' }, ring, '우유 사기'), el('div', { class: 'due' }, UI.icon('cal', 30), '마감 10월 20일', late), rDone.el, rOver.el));
+    card.append(rStatus);
+    // right 1: the code window
+    const win = UI.window(root, 860, 250, 950, 440, 'todo.ts');
+    win.bar.append(el('span', { class: 'chip dark sm', style: { marginLeft: 'auto', height: '34px', fontSize: '17px' }, text: 'AI가 쓴 코드' }));
+    const lines = CODE.map((c) => el('div', { html: c.html }));
+    const order = [0, 1, 2, 3, 4, 5].map((i) => lines[i]);
+    win.body.append(el('div', { class: 'code' }, ...order));
+    const twice = el('div', { class: 'sticker', style: { left: '1560px', top: '650px', fontSize: '30px', background: '#2a2a2a', color: '#fff' }, text: '참거짓 × 2' });
+    root.append(twice);
+    // right 2: the 2x2 truth table
+    const grid = el('div', { class: 'abs', style: { left: 0, top: 0 } });
+    root.append(grid);
+    const X = [1110, 1480], Y = [290, 555];
+    grid.append(el('div', { class: 'abs', style: { left: '905px', top: '176px', font: '700 22px Pretendard', color: '#9b9b9b' }, text: '네 가지 조합' }));
+    X.forEach((x, i) => grid.append(el('div', { class: 'axis', style: { left: x + 'px', top: '176px' } }, el('small', { text: 'overdue' }), i ? '참' : '거짓')));
+    Y.forEach((y, i) => grid.append(el('div', { class: 'axis', style: { left: '840px', top: y + 80 + 'px' } }, el('small', { text: 'done' }), i ? '참' : '거짓')));
+    const cells = CELLS.map(([label, cx, cy]) => { const c = el('div', { class: 'cell', style: { left: X[cx] + 'px', top: Y[cy] + 'px' }, text: label }); grid.append(c); return c; });
+    const bad = el('div', { class: 'chip dark sm', style: { position: 'absolute', left: X[1] + 62 + 'px', top: Y[1] + 204 + 'px' }, text: '있을 수 없는 상태' });
+    grid.append(bad);
+    // right 3: the fix
+    const bigA = el('div', { class: 'big' }, el('div', {}, '열림', el('small', { text: 'open' }))), bigB = el('div', { class: 'big' }, el('div', {}, '완료', el('small', { text: 'done' })));
+    const fix = UI.card(root, 860, 200, 950, 470,
+      el('div', { class: 'mono', style: { fontSize: '38px', fontWeight: 700, background: '#f1f1f1', borderRadius: '12px', padding: '12px 22px' }, html: 'status: <span style="color:#c2571a">"open"</span> | <span style="color:#c2571a">"done"</span>' }),
+      el('div', { style: { display: 'flex', gap: '24px', marginTop: '30px' } }, bigA, bigB),
+      el('div', { style: { textAlign: 'center', marginTop: '26px', font: '600 22px Pretendard', color: '#9b9b9b' }, text: '칸이 둘뿐 — "모순" 칸이 생길 자리가 없다' }));
+    return { card, ring, late, rDone, rOver, rStatus, segA, segB, win, lines, twice, grid, cells, bad, fix, bigA, bigB };
+  },
+  render(t, r) {
+    const done = DONE_ON(t), over = OVER_ON(t);
+    const swap2 = prog(t, 8.5, 0.4, 'inOutCubic');   // code -> matrix
+    const swap3 = prog(t, 15.4, 0.4, 'inOutCubic');  // matrix -> fix
+    MG.show(r.card, prog(t, 0.2, 0.45, 'outBack'), { scale: 0.9 });
+    // the card reacts to the switches
+    const finalDone = t >= 17.0;
+    const checked = swap3 >= 1 ? finalDone : done;
+    r.ring.style.background = checked ? '#2a2a2a' : '#fff';
+    MG.show(r.late, prog(t, 10.4, 0.3, 'outBack') * (1 - swap3), { scale: 0.5 });
+    const setRow = (row, on, appear) => {
+      MG.show(row.el, prog(t, appear, 0.3, 'outCubic') * (1 - swap3), { dy: 14 });
+      row.val.textContent = on ? '참' : '거짓';
+      row.knob.style.left = (on ? 38 : 4) + 'px';
+      row.knob.style.background = on ? '#fff' : '#2a2a2a';
+      row.tg.style.background = on ? '#2a2a2a' : '#fff';
+    };
+    setRow(r.rDone, done, 3.9);
+    setRow(r.rOver, over, 6.0);
+    MG.show(r.rStatus, prog(t, 16.2, 0.35, 'outCubic'), { dy: 14 });
+    const pick = (a, on) => { a.style.background = on ? '#2a2a2a' : 'transparent'; a.style.color = on ? '#fff' : '#9b9b9b'; };
+    pick(r.segA, !finalDone); pick(r.segB, finalDone);
+    // code window: lines type on, the line being typed is tinted
+    r.win.el.style.opacity = prog(t, 1.8, 0.3) * (1 - swap2);
+    r.win.el.style.transform = `translateX(${swap2 * 40}px) scale(${lerp(0.94, 1, prog(t, 1.8, 0.4, 'outBack'))})`;
+    r.lines.forEach((ln, i) => {
+      const c = CODE[i], p = prog(t, c.at, c.dur);
+      ln.style.clipPath = `inset(0 ${100 - p * 100}% 0 0)`;
+      ln.style.visibility = p > 0 ? 'visible' : 'hidden';
+      ln.style.display = p > 0 || i < 3 || i === 5 ? 'block' : 'none';
+      ln.style.background = c.hot && t >= c.at && t < c.at + 2.0 ? '#f1f1f1' : 'transparent';
+    });
+    const st = prog(t, 8.0, 0.35, 'outBack') * (1 - swap2);
+    r.twice.style.opacity = prog(t, 8.0, 0.1) * (1 - swap2);
+    r.twice.style.transform = `rotate(-5deg) scale(${lerp(1.5, 1, st)})`;
+    // truth table: cells pop in a quick stagger; the outline follows the two switches
+    r.grid.style.opacity = prog(t, 8.7, 0.2) * (1 - swap3);
+    r.grid.style.transform = `translateX(${swap3 * 40}px)`;
+    const active = (over ? 1 : 0) + (done ? 2 : 0);
+    const wrong = prog(t, 10.4, 0.3);
+    r.cells.forEach((c, i) => {
+      MG.show(c, prog(t, 8.7 + i * 0.07, 0.35, 'outBack'), { scale: 0.8 });
+      const on = i === active && t >= 9.0;
+      c.style.borderColor = on ? '#2a2a2a' : 'transparent';
+      if (i === 3) { c.style.background = wrong > 0 && on ? '#bcb8f8' : '#fff'; c.textContent = wrong > 0 && on ? '× 모순' : '모순'; }
+    });
+    MG.show(r.bad, prog(t, 10.6, 0.3, 'outBack'), { scale: 0.5 });
+    // the fix
+    MG.show(r.fix, prog(t, 15.7, 0.45, 'outBack'), { scale: 0.92 });
+    const big = (b, on) => { b.style.background = on ? '#2a2a2a' : '#fff'; b.style.color = on ? '#fff' : '#2a2a2a'; };
+    big(r.bigA, !finalDone); big(r.bigB, finalDone);
+  },
+});
+</script>

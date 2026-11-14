@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/* Contract of kit/motion.js that scenes rely on. Run: node tools/test_motion.js (exit 1 on failure).
+/* Contract of core/motion.js that scenes rely on. Run: node tools/test_motion.js (exit 1 on failure).
    Scenes test `p > 0` for "has this beat started" and `p >= 1` for "has it finished", and re-render any t in any order, so: every ease must be exactly 0 at 0 and exactly 1 at 1, prog must clamp outside its beat and never return NaN, keyframes must hold their end values, and the random helpers must repeat. */
 global.window = global;
-require('../kit/motion.js');
+require('../core/motion.js');
 const { ease, prog, kf, rng, hash, onTwos, typed } = MG;
 let failed = 0;
 const check = (name, got, want) => {

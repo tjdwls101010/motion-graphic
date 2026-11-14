@@ -5,8 +5,8 @@ For each scene the same three moments are captured twice: once seeking forward (
 
 Chrome does not rasterise the same frame bit-identically twice (gradients and antialiased edges move by 1-3 levels, up to ~16 on a pixel or two), so two captures count as different only when more than LIMIT pixels differ by more than LEVEL.
 
-  check_pure.py                         every scene under scenes/
-  check_pure.py scenes/ui/*.html        only these
+  check_pure.py                         every scene of every reference
+  check_pure.py pstack/scenes/ui/*.html only these
 
 Exit 0 when all scenes pass, 1 otherwise. Requires: pip install playwright pillow, Google Chrome.
 """
@@ -18,8 +18,8 @@ from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import capture  # noqa: E402
+import library  # noqa: E402
 
-ROOT = capture.ROOT
 LEVEL, LIMIT = 40, 30
 
 
@@ -33,7 +33,7 @@ def main():
     if any(a in ('-h', '--help') for a in sys.argv[1:]):
         print(__doc__)
         return 0
-    paths = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / 'scenes').rglob('*.html'))
+    paths = [Path(a) for a in sys.argv[1:]] or library.scenes()
     failed = []
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chrome', headless=True)
@@ -55,7 +55,7 @@ def main():
             except Exception as e:  # a scene that never becomes ready is a failure, not a crash of the check
                 errors.append(f'{type(e).__name__}: {e}'.splitlines()[0])
             page.close()
-            name = f'{path.parent.name}/{path.name}'
+            name = '/'.join(library.parts(path))
             print(('FAIL ' if errors else 'ok   ') + name + ''.join(f'\n       {e}' for e in errors))
             if errors:
                 failed.append(name)

@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>set / desk-phone-pen-route</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script src="../../kit/set.js"></script>
+<script>
+/* A checklist on a desk becomes a route from an empty phone to a completed one, first planned in red and then inked by a tagged fountain pen. A small blue-clad walker follows the finished line. Motion notes: the paper slides for 0.6 s, phone draws at 0.6 s and checklist writes at 1.1 s, the dashed route starts at 1.8 s, the camera pushes toward the pen at 3 s, ink travels for 2 s from 3.6 s, and the camera pulls back at 5.5 s; the walker follows the finished line from 6.2 s for 2.2 s, the camera closes in on it from 7 s and it waves from 8.4 s; motion updates on twos. */
+const BEATS = { paper: 0, phone: 0.6, list: 1.1, route: 1.8, destination: 2.6, push: 3, ink: 3.6, pull: 5.5, walker: 6.2, follow: 7, wave: 8.4 };
+const PHONE = [400, 500];
+const DESTINATION = [1510, 500];
+MG.scene({
+  title: 'set / desk-phone-pen-route',
+  duration: 9,
+  ref: [152.5, 161.5],
+  setup: stage => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    const p = SK.pen(ctx, t);
+    const q = MG.prog;
+    // Camera follows the initial phone, then the working nib, then the full route.
+    const camera = MG.kf(t, [[0, [1, 960, 540]], [0.8, [2, 480, 500]], [1.7, [2, 480, 500]], [2.2, [1, 960, 540]], [BEATS.push, [1, 960, 540]], [3.5, [1.8, 640, 600]], [4.8, [1.8, 950, 610]], [BEATS.pull, [1.8, 1220, 530]], [6.2, [1, 960, 540]]]);
+    // From 7 s the camera comes back in on the walker so its arrival and wave read close up.
+    const walk = q(t, BEATS.walker, 2.2);
+    const spot = SK.pointAt(SK.spline(SET.route, false), walk);
+    const follow = q(t, BEATS.follow, 0.9, 'inOutCubic');
+    SET.camera(ctx, MG.lerp(camera[0], 1.8, follow), MG.lerp(camera[1], spot.x - 80, follow), MG.lerp(camera[2], spot.y - 120, follow));
+    // Paper slides onto the desk.
+    SET.desk(ctx, p, MG.lerp(-1000, 0, q(t, BEATS.paper, 0.6, 'outCubic')));
+    if (t < BEATS.phone) return;
+    // The phone outline is drawn and the checklist writes line by line.
+    SET.phone(p, ...PHONE, false, 0.8, q(t, BEATS.phone, 0.45), q(t, BEATS.list, 0.75));
+    // The red planning route and destination checklist draw on.
+    p.curve(SET.route, { color: '#d9685a', w: 4, dash: [12, 10], p: q(t, BEATS.route, 1.2), seed: 100 });
+    p.rect(1390, 255, 260, 460, { r: 30, color: '#d9685a', w: 3, dash: [10, 9], p: q(t, BEATS.destination, 0.5), seed: 101 });
+    for (let i = 0; i < 4; i++) {
+      const progress = q(t, 2.8 + i * 0.12, 0.2);
+      p.rect(1430, 320 + i * 70, 30, 30, { color: '#d9685a', w: 2, p: progress, seed: 110 + i });
+      p.poly([[1432, 335 + i * 70], [1442, 348 + i * 70], [1466, 316 + i * 70]], { color: '#d9685a', w: 2, p: progress, seed: 120 + i });
+    }
+    // The fountain pen traces the plan in black.
+    const ink = q(t, BEATS.ink, 2, 'inOutQuad');
+    p.curve(SET.route, { w: 6, p: ink, seed: 130 });
+    if (t >= BEATS.push) {
+      const point = SK.pointAt(SK.spline(SET.route, false), ink);
+      SET.fountain(p, point.x, point.y, 1.6, 20);
+    }
+    // The completed phone and walker appear on the finished route.
+    if (t >= 6) SET.phone(p, ...DESTINATION, true, 0.8, q(t, 6, 0.45), q(t, 6.3, 0.7));
+    if (t >= BEATS.walker) {
+      const walking = walk < 1;
+      SET.walker(p, spot.x, spot.y - 6, 0.5, { stride: walking ? Math.sin(t * 8) * 0.7 : 0, wave: t >= BEATS.wave ? (t - BEATS.wave) * 9 : undefined, seed: 300 });
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  },
+});
+</script>

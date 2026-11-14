@@ -1,0 +1,222 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>set / megaphone-machine</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script src="../../kit/set.js"></script>
+<script>
+/* A slate-blue felt machine with a hopper, three brass gears and a brass megaphone receives bug reports from hanging Slack and Sentry boxes and sends out checked reports. After a close-up of the horn the camera pulls back to the left, where a PR page sits on a shelf next to a red dashed staircase that draws step by step. Motion notes: the gears turn on twos throughout and smoke puffs rise on a loop; the cables draw at 0.8 s and a bug report slides from Sentry into the hopper from 1.5 to 3.6 s; a checked report leaves the horn at 3.8 s; the camera pushes into the horn from 4.4 to 5.1 s with sparkles pulsing from 5.4 s, a second report leaves the rim at 6 s, and the camera pulls back at 7.3-8 s; the PR page and shelf pop at 7.9 s, the stairs draw at 0.5 s intervals from 8.3 s, then the dashed circle at 10.4 s and its arrow at 10.9 s while the camera drifts in to the stairs by 11.4 s. */
+const BEATS = { cables: 0.8, report: 1.5, intake: 3.6, doc1: 3.8, push: 4.4, sparkle: 5.4, doc2: 6.0, pull: 7.3, pr: 7.9, stairs: 8.3, ring: 10.4, arrow: 10.9 };
+const RED = '#d6453a';
+const NAVY = '#1c2540';
+// Camera keys as [time, [zoom, centre x, centre y]]; zoom is interpolated on a log scale.
+const CAMERA = [
+  [0, [1, 960, 540]], [BEATS.push, [1, 960, 540]], [5.1, [1.87, 1194, 495]], [BEATS.pull, [1.87, 1194, 495]],
+  [8, [0.72, 343, 367]], [10.4, [0.72, 343, 367]], [11.4, [0.87, 131, 390]], [12, [0.87, 131, 390]],
+];
+// The staircase and shelf live left of the machine; the machine keeps its first-frame screen coordinates.
+const STEPS = [
+  { left: -789, right: -215, top: 346, label: '1' },
+  { left: -215, right: 26, top: 217, label: '2' },
+  { left: 26, right: 267, top: 90, label: '3' },
+  { left: 267, right: 508, top: -41, label: '4' },
+];
+const STAIR_BASE = 530;
+function camera(t) {
+  const logZoom = MG.kf(t, CAMERA.map(([time, [z]]) => [time, Math.log(z)]));
+  const cx = MG.kf(t, CAMERA.map(([time, [, x]]) => [time, x]));
+  const cy = MG.kf(t, CAMERA.map(([time, [, , y]]) => [time, y]));
+  return [Math.exp(logZoom), cx, cy];
+}
+
+/** Soft smoke puff drifting up and fading; phase 0..1 loops. */
+function puff(ctx, x, y, r, phase) {
+  ctx.save();
+  ctx.globalAlpha = 0.75 * Math.sin(phase * Math.PI);
+  ctx.fillStyle = 'rgba(255,252,240,.7)';
+  ctx.strokeStyle = 'rgba(120,112,100,.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(x, y - phase * 110, r * (0.6 + phase * 0.5), r * (0.55 + phase * 0.45), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A small paper report at x,y turned by rot degrees; kind is 'bug' (a beetle icon) or 'check' (a green tick). */
+function report(p, x, y, rot, kind, scale = 1, seed = 1) {
+  p.with(x, y, { rot, scale }, () => {
+    p.rect(-38, -28, 76, 56, { fill: '#f8f2de', w: 3, seed });
+    p.line(-28, -12, 6, -12, { w: 2, color: '#4a4036', seed: seed + 1 });
+    p.line(-28, 2, -2, 2, { w: 2, color: '#4a4036', seed: seed + 2 });
+    if (kind === 'bug') {
+      p.circle(20, -4, 8, { fill: '#2b2723', w: 2, seed: seed + 3 });
+      p.line(10, -12, 30, 4, { w: 1.5, seed: seed + 4 });
+      p.line(10, 4, 30, -12, { w: 1.5, seed: seed + 5 });
+    } else {
+      p.poly([[-6, 12], [4, 22], [26, -4]], { color: '#3f9a58', w: 5, seed: seed + 3 });
+    }
+  });
+}
+
+/** Hanging signal box: two strings, a steel box with rivets, a cream label and a brass bell on top. */
+function signalBox(p, x, name, bell, seed, flash = 0) {
+  p.line(x + 22, -450, x + 22, 72, { w: 3, seed });
+  p.line(x + 182, -450, x + 182, 72, { w: 3, seed: seed + 1 });
+  p.ellipse(x + 152, 62, 28, 24, { fill: '#e0a93a', w: 4, seed: seed + 2 });
+  p.rect(x, 70, 204, 124, { r: 8, fill: SET.slate(p.ctx), w: 5, seed: seed + 3 });
+  p.hatch([[x + 6, 76], [x + 198, 76], [x + 198, 188], [x + 6, 188]], { color: 'rgba(26,44,74,.3)', gap: 11, w: 1.2, angle: -50, seed: seed + 4 });
+  for (const dx of [16, 188]) p.circle(x + dx, 90, 5, { fill: '#33455f', w: 1.5, seed: seed + 5 + dx });
+  p.rect(x + 28, 114, 150, 52, { r: 6, fill: '#f6efd9', w: 3.5, seed: seed + 6 });
+  p.text(name, x + 103, 140, { size: 36, align: 'center' });
+  if (flash > 0) {
+    for (let k = 0; k < 5; k++) {
+      const a = -Math.PI + 0.35 + k * 0.62;
+      p.line(x + 152 + Math.cos(a) * 36, 55 + Math.sin(a) * 36, x + 152 + Math.cos(a) * (36 + 26 * flash), 55 + Math.sin(a) * (36 + 26 * flash), { color: '#d8962b', w: 3, seed: seed + 20 + k });
+    }
+  }
+}
+
+/** The machine: slate felt body, hopper, chimney, label and the window with three turning brass gears. */
+function machine(p, ctx, t, spin) {
+  const slate = SET.slate(ctx);
+  // Hopper and chimney sit behind the body.
+  const hopper = [[592, 340], [888, 340], [812, 508], [678, 508]];
+  p.poly(hopper, { closed: true, fill: slate, w: 5, seed: 300 });
+  p.hatch(hopper, { color: 'rgba(26,44,74,.3)', gap: 10, w: 1.2, angle: -55, seed: 301 });
+  p.ellipse(740, 340, 150, 36, { fill: NAVY, w: 5, seed: 302 });
+  p.rect(922, 438, 40, 76, { fill: slate, w: 4.5, seed: 303 });
+  p.rect(510, 505, 495, 535, { fill: slate, w: 5, seed: 304, wob: 2.2 });
+  p.hatch([[512, 507], [1003, 507], [1003, 1038], [512, 1038]], { color: 'rgba(26,44,74,.32)', gap: 12, w: 1.3, angle: -48, seed: 305 });
+  p.hatch([[512, 507], [1003, 507], [1003, 1038], [512, 1038]], { color: 'rgba(245,250,255,.18)', gap: 17, w: 1.3, angle: 38, seed: 306 });
+  for (const [x, y] of [[532, 530], [982, 530], [532, 1015], [982, 1015]]) p.circle(x, y, 7, { fill: '#2b3d58', w: 2, seed: x + y });
+  // Label plaque and the gear window.
+  p.rect(648, 532, 217, 58, { r: 6, fill: '#f6efd9', w: 3.5, seed: 307 });
+  p.text('자동화', 756, 562, { size: 38, align: 'center' });
+  p.rect(557, 597, 396, 358, { r: 20, fill: NAVY, w: 5, seed: 308 });
+  SET.gear(p, 683, 752, 125, spin, 320);
+  SET.gear(p, 858, 660, 72, -spin * 1.7 + 12, 340);
+  SET.gear(p, 864, 877, 60, -spin * 2 + 20, 360);
+  // Light motion arcs beside the gears sweep with the rotation.
+  ctx.save();
+  ctx.strokeStyle = 'rgba(230,236,246,.7)';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  for (const [x, y, r, a0] of [[683, 752, 150, 3.5], [858, 660, 92, 0.2], [864, 877, 80, 0.4]]) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, a0 + (spin * Math.PI) / 360, a0 + 0.8 + (spin * Math.PI) / 360);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** The brass horn: a nozzle block, a hatched cone and a dark open mouth with a rim. */
+function horn(p, ctx) {
+  const slate = SET.slate(ctx);
+  p.poly([[1005, 668], [1062, 668], [1062, 748], [1005, 748]], { closed: true, fill: slate, w: 4.5, seed: 400 });
+  const cone = [[1040, 676], [1270, 262], [1578, 622], [1075, 736]];
+  p.poly(cone, { closed: true, fill: SET.gold(ctx), w: 5, seed: 401, wob: 2 });
+  p.hatch(cone, { color: 'rgba(130,75,15,.38)', gap: 9, w: 1.3, angle: -52, seed: 402 });
+  p.hatch(cone, { color: 'rgba(255,236,160,.28)', gap: 15, w: 1.4, angle: 40, seed: 403 });
+  // A faint fold crease runs along the cone.
+  p.line(1240, 405, 1110, 600, { color: 'rgba(120,70,15,.45)', w: 2, seed: 404 });
+  p.with(1425, 442, { rot: 51 }, () => {
+    p.ellipse(0, 0, 232, 82, { fill: '#dfae45', w: 5, seed: 405 });
+    p.ellipse(4, 0, 218, 66, { fill: '#2e1d12', w: 3.5, seed: 406 });
+    p.hatch(p.ellipse(4, 0, 214, 62, { color: null, seed: 406 }), { color: 'rgba(120,80,40,.35)', gap: 7, w: 1.2, angle: 30, seed: 407 });
+  });
+}
+
+/** Floor, the PR page on its shelf and the red dashed staircase. */
+function stairs(p, ctx, t) {
+  const pr = MG.prog(t, BEATS.pr, 0.45, 'outBack');
+  if (pr > 0) {
+    p.with(-528, 353, { scale: pr, scaleY: pr }, () => {
+      p.poly([[-142, -350], [112, -350], [142, -320], [142, 0], [-142, 0]], { closed: true, fill: '#f6efdb', w: 4, seed: 500 });
+      p.hatch([[-138, -346], [138, -346], [138, -4], [-138, -4]], { color: 'rgba(150,125,85,.3)', gap: 6, w: 1, angle: -50, seed: 501 });
+      p.poly([[112, -350], [112, -320], [142, -320]], { closed: true, fill: '#d9cfb4', w: 3, seed: 502 });
+      p.text('PR', -110, -300, { size: 74 });
+      for (let k = 0; k < 3; k++) p.line(-100, -230 + k * 40, -10 - k * 20, -232 + k * 40, { color: '#4a4036', w: 2.5, seed: 503 + k });
+      p.poly([[-10, -245], [40, -270], [100, -235], [112, -190], [60, -150], [10, -170], [-8, -210]], { closed: true, fill: '#9bb540', w: 3, seed: 510 });
+      p.ellipse(-70, -85, 52, 34, { color: '#7a8f40', w: 2.5, seed: 511 });
+      p.poly([[-110, -88], [-95, -70], [-82, -92], [-68, -70], [-54, -92], [-40, -70], [-28, -90]], { color: '#4a4036', w: 2.5, seed: 512 });
+      p.rect(88, -90, 16, 64, { r: 7, fill: '#8db048', w: 2.5, seed: 513 });
+    });
+    p.rect(-777, 355, 552, 28, { fill: SET.wood(ctx), w: 4, seed: 520 });
+    for (const x of [-690, -330]) p.poly([[x, 383], [x, 445], [x + 62, 383]], { closed: true, fill: '#f0e6cf', w: 3, seed: 521 + x });
+  }
+  // Four steps in dashed red, each with its number.
+  STEPS.forEach((step, i) => {
+    const progress = MG.prog(t, BEATS.stairs + i * 0.5, 0.45);
+    p.poly([[step.left, STAIR_BASE], [step.left, step.top], [step.right, step.top], [step.right, STAIR_BASE]], { color: RED, w: 4, dash: [12, 9], p: progress, seed: 530 + i });
+    p.text(step.label, step.left + 26, step.top + (i ? 62 : 270), { size: 56, color: RED, p: MG.prog(t, BEATS.stairs + i * 0.5 + 0.3, 0.2) });
+  });
+  p.line(-789, STAIR_BASE, 508, STAIR_BASE, { color: RED, w: 4, dash: [12, 9], p: MG.prog(t, BEATS.stairs, 2.2), seed: 540 });
+  // A dashed ring with a sketched box, circle and wedge crowns the stairs, with an arrow back to the hopper.
+  const ring = MG.prog(t, BEATS.ring, 0.5);
+  p.ellipse(418, -127, 205, 105, { color: RED, w: 3.5, dash: [10, 9], p: ring, seed: 550 });
+  p.rect(314, -228, 150, 160, { color: RED, w: 3, dash: [9, 8], p: MG.prog(t, BEATS.ring + 0.2, 0.4), seed: 551 });
+  p.circle(358, -158, 32, { color: RED, w: 2.5, dash: [8, 7], p: MG.prog(t, BEATS.ring + 0.4, 0.3), seed: 552 });
+  p.poly([[480, -190], [560, -225], [575, -140], [490, -128]], { closed: true, color: RED, w: 3, dash: [9, 8], p: MG.prog(t, BEATS.ring + 0.4, 0.4), seed: 553 });
+  p.arrow([[757, 281], [790, 120], [720, -10], [680, -87]], { color: RED, w: 3.5, dash: [10, 9], p: MG.prog(t, BEATS.arrow, 0.6), head: 34, seed: 554 });
+}
+
+MG.scene({
+  title: 'set / megaphone-machine',
+  duration: 12,
+  ref: [1373, 1385],
+  setup: stage => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    const p = SK.pen(ctx, t);
+    const spin = t * 22;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#efe6d0';
+    ctx.fillRect(0, 0, 1920, 1080);
+    SET.camera(ctx, ...camera(t));
+    ctx.fillStyle = SET.cream(ctx);
+    ctx.fillRect(-3000, -1500, 6000, 3200);
+    // Wooden floor strip the machine stands on.
+    ctx.fillStyle = SET.wood(ctx);
+    ctx.fillRect(-3000, 1040, 6000, 500);
+    p.line(-3000, 1040, 3000, 1043, { w: 4.5, seed: 290, step: 80 });
+    stairs(p, ctx, t);
+    // Cables from the signal boxes run to the machine and to the horn.
+    const cable = MG.prog(t, BEATS.cables, 0.8, 'outCubic');
+    p.curve([[1175, 194], [1170, 290], [1085, 385], [985, 430], [965, 500]], { color: '#3a4152', w: 6, p: cable, seed: 280 });
+    p.curve([[1440, 194], [1440, 255], [1424, 335]], { color: '#3a4152', w: 6, p: cable, seed: 281 });
+    p.line(1010, 576, 1100, 580, { color: '#3a4152', w: 5, p: cable, seed: 282 });
+    machine(p, ctx, t, spin);
+    horn(p, ctx);
+    // Smoke puffs rise from the hopper on a loop.
+    for (let k = 0; k < 3; k++) puff(ctx, 925 + k * 12, 335 - k * 90, 46 + k * 22, (t * 0.22 + k / 3) % 1);
+    signalBox(p, 1073, 'Slack', 1225, 100);
+    signalBox(p, 1338, 'Sentry', 1495, 120, MG.prog(t, BEATS.report - 0.2, 0.5) * (1 - MG.prog(t, BEATS.report + 0.8, 0.5)));
+    // A bug report slides from Sentry down into the hopper.
+    const slide = MG.prog(t, BEATS.report, BEATS.intake - BEATS.report, 'inOutCubic');
+    if (slide > 0 && slide < 1) {
+      const spot = SK.pointAt([[1440, 200], [1380, 300], [1180, 340], [960, 310], [790, 335]], slide);
+      report(p, spot.x, spot.y, -15 + slide * 20, 'bug', 1 - slide * 0.4, 600);
+    }
+    // Checked reports leave the horn: one floats away to the right, one slides over the rim in the close-up.
+    const out1 = MG.prog(t, BEATS.doc1, 1.6, 'outCubic');
+    if (out1 > 0) {
+      const settle = MG.prog(t, BEATS.doc1 + 1.6, 1.2, 'inQuad');
+      report(p, MG.lerp(1450, 1640, out1), MG.lerp(430, 392, out1) + settle * 600, -18 + out1 * 4, 'check', 1, 620);
+    }
+    const out2 = MG.prog(t, BEATS.doc2, 1.3, 'inOutCubic');
+    if (out2 > 0) report(p, MG.lerp(1445, 1650, out2), MG.lerp(300, 330, out2), -20 + out2 * 40, 'check', MG.lerp(1.1, 1.7, out2), 640);
+    // Sparkles pulse around the horn during the close-up.
+    if (t > BEATS.sparkle && t < BEATS.pull + 0.4) {
+      [[1317, 244, 62], [1539, 613, 46], [988, 693, 44], [916, 332, 30]].forEach(([x, y, r], i) => {
+        const pulse = 0.65 + 0.35 * Math.sin((t - BEATS.sparkle) * 5 + i * 1.7);
+        const size = r * pulse * MG.prog(t, BEATS.sparkle + i * 0.12, 0.25, 'outBack');
+        if (size > 1) SET.sparkle(p, x, y, size, 660 + i);   // a sparkle that has not started yet draws nothing
+      });
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  },
+});
+</script>

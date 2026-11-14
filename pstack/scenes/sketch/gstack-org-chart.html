@@ -1,0 +1,91 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/sketch.js"></script>
+<script>
+/* A hierarchy is drawn as five cards, then AI takes on the roles represented by their hats. Motion notes: the chart outlines draw on over 1.5 s, portraits fill one at a time at roughly 0.6 s gaps, each portrait with its hat and label pops 0.3 s with outBack from 2.5 s, and the robot's red hat pops at 7 s while dashed lines draw from the chart; all marks boil on twos. */
+
+const P = MG.prog;
+const BEATS = {
+  camera: [
+    [0, [1.1, 900, 500]],
+    [7, [1.1, 900, 500]],
+    [8.5, [1.8, 1450, 530]],
+    [10, [1.8, 1450, 530]],
+  ],
+};
+
+function stars(p) {
+  [[160, 220, 24], [1570, 160, 22], [1790, 340, 18], [250, 650, 16]].forEach((
+    [x, y, r],
+    i,
+  ) => p.star(x, y, r, { seed: 100 + i }));
+}
+function box(p, x, y, w, h, fill = SK.WHITE) {
+  p.rect(x, y, w, h, { fill, w: 4, seed: Math.round(x + y) });
+}
+function title(p, s) {
+  p.text(s, 100, 95, { size: 48 });
+  p.line(100, 125, 100 + s.length * 24, 125, { color: SK.RED, w: 5, seed: 44 });
+}
+
+MG.scene({
+  title: "sketch / gstack-org-chart",
+  duration: 10.0,
+  ref: [172.33, 182.33],
+  setup: (stage) => MG.canvas(stage),
+  render(time, ctx) {
+    const t = MG.onTwos(time);
+    SK.paper(ctx, { spiral: true });
+    // Camera transforms the entire illustrated world, including its marks.
+    const [zoom, cx, cy] = MG.kf(t, BEATS.camera);
+    ctx.setTransform(zoom, 0, 0, zoom, 960 - cx * zoom, 540 - cy * zoom);
+    const p = SK.pen(ctx, t);
+    stars(p);
+    title(p, "gstack");
+    let q = P(t, .2, 1.5);
+    p.rect(480, 180, 270, 220, { fill: SK.WHITE, p: q, seed: 1 });
+    p.poly([[615, 400], [615, 450], [200, 450], [1030, 450]], {
+      p: q,
+      seed: 2,
+    });
+    for (let i = 0; i < 4; i++) {
+      let x = 90 + i * 270;
+      p.line(x + 110, 450, x + 110, 490, { p: q, seed: 10 + i });
+      p.rect(x, 490, 230, 220, { fill: SK.WHITE, p: q, seed: 20 + i });
+    }
+    if (t > 1.5) p.with(1500, 850, { scale: P(t, 1.5, .35, "outBack") }, () => SK.robot(p, 0, 0, { s: .95, w: 6, seed: 200, armL: t > 7 ? "up" : "down", armR: t > 7 ? "up" : "down", face: t > 7 ? "happy" : "neutral" }));
+    let labels = [
+      "CEO",
+      "엔지니어링 매니저",
+      "디자이너",
+      "QA 리드",
+      "보안 책임자",
+    ];
+    for (let i = 0; i < 5; i++) {
+      if (t < 2.5 + i * .65) continue;
+      let x = i === 0 ? 615 : 200 + (i - 1) * 270, y = i === 0 ? 350 : 660;
+      // portrait, hat and label pop together
+      p.with(x, y, { scale: P(t, 2.5 + i * .65, .3, "outBack") }, () => {
+        SK.robot(p, 0, 0, { s: .33, w: 7, seed: 300 + i * 20, badge: false });
+        p.rect(-26, -168, 52, 30, { fill: SK.RED, w: 4.5, seed: 400 + i });
+        p.text(labels[i], 0, 30, { size: 29, align: "center" });
+      });
+    }
+    if (t > 7) {
+      for (let i = 0; i < 4; i++) {
+        p.curve([[500 + i * 150, 450], [850 + i * 90, 180 - i * 35], [
+          1500,
+          390,
+        ]], { color: SK.GREY, w: 2, dash: [8, 12], seed: 500 + i, p: P(t, 7 + i * 0.08, 0.5, "outCubic") });
+      }
+      p.with(1500, 410, { rot: Math.sin(t * 4) * 5, scale: Math.max(0.01, P(t, 7, 0.35, "outBack")) }, () => {
+        p.rect(-60, -45, 120, 60, { fill: SK.RED, seed: 500 });
+        p.line(-80, 15, 80, 15, { w: 8, seed: 501 });
+      });
+    }
+  },
+});
+</script>

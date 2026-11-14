@@ -7,7 +7,7 @@
 <script src="../../kit/ink.js"></script>
 <script>
 /* 검은 화면에 흰 카피와 초록 눈 한 쌍이 떠서 좌우를 살피고 깜빡이다가, 눈이 작아지는 순간 밝은 화면으로 컷하면 그 눈은 건물 창가에서 쌍안경을 든 사람이었다. 카피는 셋째 줄이 붙고 한 번 바뀌며, 끝에 쌍안경을 내린다. 전달하는 생각: 누군가는 이미 지켜보고 있다.
-   Motion notes: the only black (#000) shot in the set, 3.33 s, white copy. Eyes are 283 x 124 almonds 468 px apart; only the irises move, on twos, and a look is a jump held 0.5-0.6 s: centre, 85 px left, up 27 px, down-right (46, 26). A blink is one 2-frame hold of total black, with one half-open 2-frame pose after the first. The reveal is a match cut on a zoom: over the last 5 drawings the pair shrinks to 0.9, 0.8, 0.65, 0.46 toward (1193, 438), hard cut, and the lit scene continues the pull-back on ones from 1.98x, settling exponentially (tau 0.16 s, still after 0.63 s) so the eyes land on the binocular lenses. At the cut the two existing copy lines slide up 59 px to make room and the third arrives from below. Copy swap at 6.33 s arrives a line every 4 frames. In the window only small things move, on twos: head and binoculars shift 8 px to scan, the cat's ears flick, binoculars come down at 9.5 s and the pose holds to the end. */
+   Motion notes: the only black (#000) shot in the set, 3.33 s, white copy. Eyes are 283 x 124 almonds 468 px apart; only the irises move, on twos, and a look is a jump held 0.5-0.6 s: centre, 85 px left, up 27 px, down-right (46, 26). A blink is one 2-frame hold of total black, with one half-open 2-frame pose after the first. The reveal is a match cut on a zoom: over the last 5 drawings the pair shrinks to 0.9, 0.8, 0.65, 0.46 toward (1193, 438), hard cut, and the lit scene continues the pull-back on ones from 1.98x, settling exponentially (tau 0.16 s, still after 0.63 s) so the eyes land on the binocular lenses. At the cut the two existing copy lines slide up 59 px to make room and the third arrives from below. Copy swap at 6.33 s arrives a line every 4 frames. In the window only small things move, on twos (shapes there are traced from a 2.5x crop of the reference: sleeves run out to the window's edges while the arms are up, the lower sash rail crosses in front of the figure): head and binoculars shift 8 px to scan, the cat's ears flick, binoculars come down at 9.5 s and the pose holds to the end. */
 const { prog, kf, lerp, rng, clamp } = MG;
 const C = IB.C, GREEN = '#4ca757', SKIRT = '#7cc47a';
 const DARK = ['어둠 속에서 먼저', '두 줄이 뜬다.'], LIT = ['어둠 속에서 먼저', '두 줄이 뜬다.', '셋째 줄이 붙고'], SWAP = ['컷 없이', '문구만', '바뀐다.'];
@@ -40,73 +40,107 @@ function eye(ctx, cx, cy, s, dx, dy, lid) {
 }
 
 function windowFrame(ctx, x, seed) {
-  IB.box(ctx, x, 283, 280, 507, { fill: C.paper, w: 3, seed });
+  IB.box(ctx, x, 283, 280, 507, { fill: C.paper, w: 2.8, seed });
   IB.box(ctx, x + 15, 297, 250, 478, { fill: C.paper, w: 2.5, seed: seed + 1 });
-  IB.seg(ctx, x + 15, 368, x + 265, 368, { w: 2.5, seed: seed + 2 });
+  IB.box(ctx, x + 15, 297, 250, 71, { fill: '#e9e9e9', w: 2.5, seed: seed + 2 });      // the upper pane is a drawn blind: flat grey
 }
 function sashAndSill(ctx, x, seed) {
-  IB.box(ctx, x + 15, 520, 250, 15, { fill: C.paper, w: 2.5, seed: seed + 3 });      // the lower sash rail passes in front of whoever is inside
+  IB.box(ctx, x + 15, 520, 250, 15, { fill: C.paper, w: 2.5, seed: seed + 3 });        // the lower sash rail passes in front of whoever is inside
   IB.box(ctx, x + 15, 750, 250, 25, { fill: C.paper, w: 2.5, seed: seed + 4 });
-  IB.box(ctx, x - 6, 793, 294, 52, { fill: C.paper, w: 3, seed: seed + 5 });
-  IB.smear(ctx, x + 140, 847, 270, { h: 5, seed: seed + 6 });
+  IB.box(ctx, x - 6, 791, 294, 55, { fill: C.paper, w: 2.8, seed: seed + 5 });
+  IB.smear(ctx, x + 140, 848, 270, { h: 5, seed: seed + 6 });
+}
+
+/* A binocular lens seen head-on: black barrel, white ring, dark glass with a white crescent on the side the light comes from. */
+function lens(ctx, x, y, r, seed, glint = 0) {
+  IB.oval(ctx, x, y, r, r, { fill: C.ink, w: 2.4, seed, n: 16 });
+  IB.oval(ctx, x, y, r * 0.8, r * 0.8, { fill: C.paper, w: 0, n: 16 });
+  IB.oval(ctx, x, y, r * 0.64, r * 0.64, { fill: C.ink, w: 0, n: 14 });
+  IB.oval(ctx, x + r * 0.2 + glint, y, r * 0.4, r * 0.5, { fill: C.paper, w: 0, n: 12 });
+  IB.oval(ctx, x - r * 0.02 + glint, y - r * 0.02, r * 0.4, r * 0.46, { fill: C.ink, w: 0, n: 12 });
+  IB.oval(ctx, x - r * 0.2 + glint * 0.5, y + r * 0.1, r * 0.1, r * 0.07, { fill: GREEN, w: 0, n: 6 });
 }
 
 function watcher(ctx, t) {
   const down = t >= 9.5;
   const scan = down ? 0 : held([[110, -8], [134, 7], [180, -8], [200, 0]], IB.frame(t), [0, 0])[1];   // 24 fps frames: 4.6, 5.6, 7.5, 8.3 s
-  IB.box(ctx, 1147, 686, 121, 64, { fill: SKIRT, w: 3, seed: 300 });
-  IB.box(ctx, 1140, 538, 136, 150, { fill: C.mint, w: 3, seed: 301 });
-  // curly hair, face, collar
-  const hair = []; for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, r = (i % 2 ? 78 : 69) * (Math.sin(a) > 0.3 ? 0.95 : 1); hair.push([1206 + scan * 0.5 + Math.cos(a) * r * 0.95, 448 + Math.sin(a) * r]); }
-  IB.ink(ctx, hair, { closed: true, fill: C.ink, w: 3, seed: 302 });
-  IB.oval(ctx, 1198 + scan, 462, 33, 42, { fill: C.skin[1], w: 3, seed: 303, n: 12 });
-  IB.box(ctx, 1176, 498, 58, 44, { fill: C.mint, w: 3, seed: 304 });
-  const arm = (pts, seed) => IB.tube(ctx, pts, { w: 44, edge: 3, fill: C.mint, seed });
-  const lens = (x, y, r, seed) => { IB.oval(ctx, x, y, r, r, { fill: C.ink, w: 3, seed, n: 14 }); IB.oval(ctx, x, y, r * 0.74, r * 0.74, { w: 2.6, color: C.paper, seed: seed + 50, n: 14 }); IB.oval(ctx, x - r * 0.25 + scan * 0.6, y - r * 0.2, r * 0.22, r * 0.16, { fill: C.paper, w: 0, n: 8 }); };
+  // below the rail: skirt, then the sweater body with its sleeves running out to the window's edges while the arms are up
+  IB.box(ctx, 1146, 684, 122, 66, { fill: SKIRT, w: 2.5, seed: 300 });
+  // arms down: the sweater is one bell with a sleeve hanging on each side
+  const body = down ? [[1142, 532], [1268, 532], [1316, 600], [1330, 672], [1300, 688], [1278, 640], [1274, 684], [1136, 684], [1132, 640], [1110, 688], [1080, 672], [1094, 600]] : [[1084, 536], [1330, 536], [1330, 564], [1316, 568], [1264, 564], [1274, 684], [1136, 684], [1140, 564], [1104, 566], [1084, 565]];
+  IB.ink(ctx, body, { closed: true, smooth: down, fill: C.mint, w: 2.5, seed: 301 });
+  if (!down) { IB.seg(ctx, 1102, 538, 1118, 552, { w: 2.4, seed: 302 }); IB.seg(ctx, 1272, 538, 1292, 556, { w: 2.4, seed: 303 }); }
+  // curls: a scalloped mass wider than it is tall
+  const hair = []; for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2; hair.push([1209 + scan * 0.4 + Math.cos(a) * 86 * (i % 2 ? 1 : 0.92), 450 + Math.sin(a) * 63 * (i % 2 ? 1 : 0.92)]); }
+  IB.ink(ctx, hair, { closed: true, fill: C.ink, w: 2, seed: 304 });
+  IB.ink(ctx, [[1172 + scan, 432], [1180 + scan, 412], [1226 + scan, 412], [1230 + scan, 442], [1226 + scan, 476], [1210 + scan, 496], [1190 + scan, 496], [1176 + scan, 476]], { closed: true, fill: C.skin[0], w: 2.4, seed: 305 });
+  // above the rail: turtleneck, shoulders, and (arms up) the forearms rising from elbows at the window's edges to the hands
+  const top = down ? [[1128, 522], [1172, 505], [1184, 500], [1184, 488], [1216, 488], [1220, 500], [1242, 506], [1286, 522]] : [[1084, 521], [1116, 492], [1138, 510], [1145, 514], [1172, 505], [1184, 500], [1184, 488], [1216, 488], [1220, 500], [1242, 510], [1248, 510], [1274, 492], [1310, 521]];
+  IB.ink(ctx, top, { closed: true, smooth: false, fill: C.mint, w: 2.5, seed: 306 });
+  IB.seg(ctx, 1184, 500, 1220, 500, { w: 2, seed: 307 });
+  for (let i = 0; i < 7; i++) { const u = i / 6; IB.oval(ctx, 1180 + u * 40, 506 + Math.sin(u * Math.PI) * 11, 3.4, 3.4, { fill: C.paper, w: 1.6, seed: 308 + i, n: 6 }); }   // necklace
+  const hand = (x, y, flip, seed) => { ctx.save(); ctx.translate(x, y); ctx.scale(flip * 0.78, 0.78); IB.ink(ctx, [[-14, 18], [-17, -4], [-8, -20], [4, -22], [13, -10], [12, 12], [2, 22]], { closed: true, fill: C.skin[0], w: 2.4, seed }); for (const yy of [-10, -2, 6]) IB.seg(ctx, 2, yy, 12, yy - 2, { w: 1.6, seed: seed + 5 + yy }); ctx.restore(); };
   if (!down) {
-    arm([[1150, 566], [1104, 524], [1132 + scan, 478]], 310);
-    arm([[1266, 566], [1306, 524], [1236 + scan, 478]], 311);
-    IB.oval(ctx, 1130 + scan, 468, 15, 20, { fill: C.skin[1], w: 3, seed: 312, n: 8 });
-    IB.oval(ctx, 1240 + scan, 468, 15, 20, { fill: C.skin[1], w: 3, seed: 313, n: 8 });
-    lens(1154 + scan, 447, 27, 314);
-    lens(1203 + scan, 447, 27, 315);
+    lens(ctx, 1156 + scan, 446, 23, 314, scan * 0.25);
+    lens(ctx, 1202 + scan, 445, 23, 315, scan * 0.25);
+    hand(1133 + scan, 482, 1, 316);
+    hand(1226 + scan, 480, -1, 317);
   } else {
     ctx.fillStyle = C.ink;
-    for (const x of [1186, 1211]) { ctx.beginPath(); ctx.arc(x, 456, 4, 0, 7); ctx.fill(); }
-    IB.ink(ctx, [[1190, 480], [1199, 484], [1208, 480]], { w: 2.5, seed: 320 });
-    arm([[1150, 566], [1118, 640], [1176, 628]], 321);
-    arm([[1266, 566], [1296, 640], [1236, 628]], 322);
-    lens(1184, 618, 23, 323);
-    lens(1228, 618, 23, 324);
-    IB.oval(ctx, 1160, 628, 14, 17, { fill: C.skin[1], w: 3, seed: 325, n: 8 });
-    IB.oval(ctx, 1252, 628, 14, 17, { fill: C.skin[1], w: 3, seed: 326, n: 8 });
+    for (const x of [1188, 1212]) { ctx.beginPath(); ctx.arc(x, 452, 3.6, 0, 7); ctx.fill(); }
+    IB.ink(ctx, [[1178, 440], [1188, 436], [1196, 440]], { w: 2.2, seed: 318 });
+    IB.ink(ctx, [[1204, 440], [1212, 436], [1222, 440]], { w: 2.2, seed: 319 });
+    IB.ink(ctx, [[1194, 478], [1200, 481], [1207, 478]], { w: 2.2, seed: 320 });
+    lens(ctx, 1186, 616, 22, 323);
+    lens(ctx, 1230, 616, 22, 324);
+    hand(1160, 628, 1, 325);
+    hand(1256, 628, -1, 326);
+    IB.ink(ctx, [[1118, 668], [1128, 640]], { w: 2.2, seed: 327 });
+    IB.ink(ctx, [[1292, 668], [1282, 640]], { w: 2.2, seed: 328 });
   }
 }
 
 function room(ctx, t) {
-  // lamp, picture, the room's far corner
-  IB.seg(ctx, 1562, 300, 1562, 396, { w: 2.5, seed: 400 });
-  IB.oval(ctx, 1565, 418, 56, 24, { fill: C.paper, w: 3, seed: 401, n: 12 });
-  IB.ink(ctx, [[1660, 372], [1735, 330]], { w: 2.5, seed: 402 });
-  IB.seg(ctx, 1660, 372, 1660, 640, { w: 2.5, seed: 403 });
-  IB.box(ctx, 1694, 420, 44, 240, { w: 2.5, seed: 404 });
-  IB.box(ctx, 1486, 470, 82, 160, { w: 2.5, seed: 405 });
+  // the far corner, a shelf unit on the right wall, a framed picture on the left
+  IB.seg(ctx, 1485, 368, 1662, 368, { w: 2.4, seed: 400 });
+  IB.seg(ctx, 1662, 368, 1734, 330, { w: 2.4, seed: 401 });
+  IB.seg(ctx, 1661, 368, 1661, 666, { w: 1.8, seed: 402 });
+  IB.ink(ctx, [[1692, 432], [1734, 408], [1734, 676], [1692, 660]], { closed: true, smooth: false, fill: '#e9e9e9', w: 2.6, seed: 403 });
+  IB.ink(ctx, [[1700, 442], [1734, 424], [1734, 664], [1700, 652]], { closed: true, smooth: false, fill: C.paper, w: 2.2, seed: 404 });
+  for (let i = 0; i < 6; i++) IB.box(ctx, 1714, 452 + i * 30 + (i > 2 ? 18 : 0), 18, 12, { w: 2, seed: 405 + i });
+  IB.box(ctx, 1488, 468, 80, 164, { fill: '#e6e6e6', w: 2.6, seed: 412 });
+  IB.oval(ctx, 1500, 508, 10, 10, { fill: C.paper, w: 2.2, seed: 413, n: 10 });
+  IB.ink(ctx, [[1514, 540], [1546, 590], [1532, 612], [1518, 590]], { closed: true, fill: C.paper, w: 2.2, seed: 414 });
+  for (let i = 0; i < 5; i++) IB.seg(ctx, 1490, 560 + i * 10, 1506, 562 + i * 10, { w: 1.8, seed: 415 + i });
+  // pendant lamp: ceiling rose, cord, a lens-shaped shade with a line across its widest point
+  IB.oval(ctx, 1564, 322, 21, 7, { fill: '#e9e9e9', w: 2.4, seed: 420, n: 12 });
+  IB.seg(ctx, 1564, 329, 1564, 392, { w: 2.2, seed: 421 });
+  IB.ink(ctx, [[1506, 424], [1530, 400], [1564, 392], [1598, 400], [1622, 424], [1598, 448], [1564, 456], [1530, 448]], { closed: true, fill: C.paper, w: 2.6, seed: 422 });
+  IB.seg(ctx, 1508, 424, 1620, 424, { w: 2.2, seed: 423 });
+  IB.shade(ctx, 1532, 400, 44, 12, { from: 'top', seed: 424, alpha: 0.16 });
   // cat on the sill: ears flick at 8.75 s, then it settles a step to the left
-  const tw = IB.twos(t), cx = 1556 - 46 * prog(tw, 9.75, 1.0), ear = tw >= 8.75 && tw < 9.25 ? 5 : 0;
-  IB.ink(ctx, [[cx - 28, 748], [cx - 34, 700], [cx - 24, 670], [cx - 27, 654 - ear], [cx - 14, 664], [cx, 654 - ear], [cx + 4, 674], [cx + 2, 700], [cx + 26, 720], [cx + 30, 748]], { closed: true, fill: C.paper, w: 2.8, seed: 410 });
+  const tw = IB.twos(t), cx = 1549 - 30 * prog(tw, 9.75, 1.0), ear = tw >= 8.75 && tw < 9.25 ? 5 : 0;
+  IB.ink(ctx, [[cx - 9, 692], [cx - 21, 720], [cx - 22, 749], [cx - 8, 749], [cx - 8, 730], [cx + 2, 749], [cx + 36, 749], [cx + 39, 722], [cx + 27, 704], [cx + 10, 696]], { closed: true, fill: C.paper, w: 2.4, seed: 430 });
+  IB.shade(ctx, cx - 4, 724, 30, 24, { from: 'bottom', seed: 431, alpha: 0.28 });
+  IB.ink(ctx, [[cx - 16, 674], [cx - 14, 652 - ear], [cx - 7, 661], [cx + 4, 660], [cx + 12, 652 - ear], [cx + 15, 674], [cx + 11, 688], [cx - 2, 693], [cx - 13, 688]], { closed: true, fill: C.paper, w: 2.4, seed: 432 });
   ctx.fillStyle = C.ink;
-  for (const x of [cx - 19, cx - 6]) { ctx.beginPath(); ctx.arc(x, 682, 2.2, 0, 7); ctx.fill(); }
+  for (const x of [cx - 6, cx + 6]) { ctx.beginPath(); ctx.arc(x, 676, 2, 0, 7); ctx.fill(); }
+  IB.ink(ctx, [[cx - 4, 683], [cx, 686], [cx + 4, 683]], { w: 1.6, seed: 433 });
 }
 function plant(ctx) {
-  const r = rng(31);
-  IB.box(ctx, 1632, 738, 44, 40, { fill: C.paper, w: 2.5, seed: 500 });
-  const vine = [[1650, 700], [1690, 720], [1712, 800], [1700, 880], [1722, 960], [1730, 1040]];
-  IB.ink(ctx, vine, { w: 2, seed: 501 });
-  for (let i = 0; i < 34; i++) {
-    const u = r(), k = Math.min(vine.length - 2, Math.floor(u * (vine.length - 1))), v = u * (vine.length - 1) - k;
-    const x = lerp(vine[k][0], vine[k + 1][0], v) + (r() - 0.5) * 70 * (1 - u * 0.6), y = lerp(vine[k][1], vine[k + 1][1], v) + (r() - 0.5) * 30;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(r() * 6.3);
-    IB.oval(ctx, 0, 0, 13, 8, { fill: r() < 0.22 ? '#b9a2ee' : C.paper, w: 2, seed: 510 + i, n: 7 });
+  // a pot under a mound of pointed leaves that spills over the sill and trails down the wall, with a few purple blooms
+  const r = rng(31), leaves = [];
+  IB.box(ctx, 1640, 726, 42, 54, { fill: C.paper, w: 2.4, seed: 500 });
+  IB.shade(ctx, 1640, 726, 42, 26, { from: 'top', seed: 501, alpha: 0.4 });
+  for (let i = 0; i < 40; i++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()); leaves.push([1672 + Math.cos(a) * 62 * d, 720 + Math.sin(a) * 46 * d, a + (r() - 0.5), i]); }
+  const trail = [[1700, 766], [1716, 800], [1732, 836], [1722, 870], [1740, 900], [1734, 934]];
+  for (let i = 0; i < 26; i++) { const u = r() * (trail.length - 1), k = Math.min(trail.length - 2, Math.floor(u)), v = u - k; leaves.push([lerp(trail[k][0], trail[k + 1][0], v) + (r() - 0.5) * 44, lerp(trail[k][1], trail[k + 1][1], v) + (r() - 0.5) * 16, Math.PI * (0.2 + r() * 0.6), 100 + i]); }
+  leaves.sort((p, q) => p[1] - q[1]);
+  for (const [x, y, a, i] of leaves) {
+    const bloom = i % 6 === 0;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    if (bloom) IB.ink(ctx, [[-7, -3], [-9, -12], [-3, -8], [0, -14], [3, -8], [9, -12], [7, -3], [0, 6]], { closed: true, smooth: false, fill: '#a08ae8', w: 2, seed: 520 + i });
+    else { IB.ink(ctx, [[0, -15], [8, -3], [5, 9], [0, 13], [-5, 9], [-8, -3]], { closed: true, fill: C.paper, w: 2, seed: 520 + i }); IB.seg(ctx, 0, -9, 0, 9, { w: 1.3, seed: 620 + i }); }
     ctx.restore();
   }
 }

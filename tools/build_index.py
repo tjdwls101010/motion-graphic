@@ -28,6 +28,7 @@ def clock(sec):
 def read_scene(path):
     src = path.read_text()
     call = src[src.find('MG.scene('):] if 'MG.scene(' in src else ''   # the declaration; the comment above it is prose and may quote a duration or a ref
+    # 성진: 선언을 파싱하지 않고 첫 `MG.scene(` 뒤의 첫 `duration:`·`ref:`를 읽는다. 주석에 `MG.scene(`를 쓰거나 선언에서 이 둘보다 앞에 같은 키를 가진 코드를 두면 잘못 읽으니, 장면이 title·duration·ref를 선언 맨 앞에 두는 관례를 벗어나면 JS 파서로 바꾼다.
     dur = re.search(r'duration:\s*([\d.]+)', call)
     said = re.search(r'ref:\s*(?:(null)\b|\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\])', call)
     ref = said if said and not said.group(1) else None

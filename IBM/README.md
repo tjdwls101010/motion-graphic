@@ -2,7 +2,7 @@
 
 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)에 나오는 모션그래픽을 코드로 다시 만든 레퍼런스다.
 
-- 장면 6개, 4개 계열. 원본에는 약 50개 샷이 있다. 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치는 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 6개(4개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -23,7 +23,13 @@ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i 
 ink.js   팔레트(IB.C), 화면 자르기(IB.crop), 붓펜 선과 채움(IB.ink, IB.box, IB.oval, IB.tube), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
          12fps 양자화(IB.twos), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
          밀려 들어와 멈추는 카피(IB.copy, IB.TYPE: 지금 장면에서는 쓰지 않는다)
+figure.js 옆모습 인물 리그(IB.figure, IB.stand, IB.poseMix, IB.footLift, 비례는 IB.FIG), 다리 달린 사물의 다리(IB.peg),
+         말풍선(IB.bubble), 흔들림선(IB.shake). 창작 장면이 쓴다
 ```
+
+## 창작 장면
+
+`metaphor`, `acting`, `vignette`, `variation` 네 계열은 원본의 샷이 아니다. 원본의 룩과 모션 원칙을 지키면서 다른 상황을 새로 그렸고, 장면은 `ref: null`이라 시트에 "창작"으로 나오며 `tools/capture.py --compare`를 쓸 수 없다. 인물의 그림체는 `references/IBM/`에 둔 제작 스틸 7장(로컬에만 있다)도 참고했다. 원본에 없던 말풍선이 일부 장면에 있다: 한국어 한마디이고 규칙은 STYLE.md의 "말풍선"에 있다.
 
 ## 원본과 다른 점
 

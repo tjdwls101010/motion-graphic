@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Render scene HTML files to stills, contact sheets, mp4 clips, or a side-by-side with the reference video.
 
-A scene exposes window.__mg = {duration, fps, ref, seek(t)} when opened with ?capture (see kit/stage.js); this tool seeks to exact times and screenshots the 1920x1080 stage in headless Chrome.
+A scene exposes window.__mg = {duration, fps, ref, seek(t)} when opened with ?capture (see core/stage.js); this tool seeks to exact times and screenshots the 1920x1080 stage in headless Chrome.
 
-  capture.py scenes/ui/flip-counters.html --at 0.5,2,6 --out out/stills     PNG stills at those seconds
-  capture.py scenes/ui/flip-counters.html --sheet out/flip.jpg --n 12       n evenly spaced frames tiled into one image
-  capture.py scenes/ui/flip-counters.html --mp4 out/flip.mp4                the whole clip
-  capture.py scenes/ui/flip-counters.html --compare out/flip-cmp.jpg --n 6  reference frame above the render at the same moments
-  capture.py --all --sheet-dir out/sheets                                   one contact sheet per scene under scenes/
+  capture.py pstack/scenes/ui/flip-counters.html --at 0.5,2,6 --out out/stills     PNG stills at those seconds
+  capture.py pstack/scenes/ui/flip-counters.html --sheet out/flip.jpg --n 12       n evenly spaced frames tiled into one image
+  capture.py pstack/scenes/ui/flip-counters.html --mp4 out/flip.mp4                the whole clip
+  capture.py pstack/scenes/ui/flip-counters.html --compare out/flip-cmp.jpg --n 6  reference frame above the render at the same moments
+  capture.py --all --sheet-dir out/sheets                                          one contact sheet per scene of every reference
 
---compare needs the reference video (default references/pstack/pstack.mp4, not in the repository) and the scene's `ref: [start, end]` seconds.
+--compare needs the scene's `ref: [start, end]` seconds and its reference video, by default references/<ref>/<ref>.mp4 for a scene under <ref>/scenes/ (local only, not in the repository).
 Requires: pip install playwright pillow, Google Chrome, ffmpeg.
 """
 import argparse
@@ -21,7 +21,8 @@ from pathlib import Path
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-ROOT = Path(__file__).resolve().parent.parent
+import library
+
 W, H = 1920, 1080
 
 
@@ -67,7 +68,7 @@ def save(img, path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('scene', nargs='?', help='scene HTML file')
-    ap.add_argument('--all', action='store_true', help='every scene under scenes/ (use with --sheet-dir or --mp4-dir)')
+    ap.add_argument('--all', action='store_true', help='every scene of every reference (use with --sheet-dir or --mp4-dir)')
     ap.add_argument('--at', help='comma-separated seconds for stills')
     ap.add_argument('--out', default='out/stills', help='directory for --at stills')
     ap.add_argument('--sheet', help='contact sheet output path')
@@ -75,7 +76,7 @@ def main():
     ap.add_argument('--mp4', help='mp4 output path')
     ap.add_argument('--mp4-dir', help='with --all: directory for one mp4 per scene')
     ap.add_argument('--compare', help='reference-vs-render sheet output path')
-    ap.add_argument('--ref', default=str(ROOT / 'references' / 'pstack' / 'pstack.mp4'), help='reference video for --compare')
+    ap.add_argument('--ref', help='reference video for --compare (default: references/<ref>/<ref>.mp4 of the scene)')
     ap.add_argument('--n', type=int, default=10, help='frames in a sheet or comparison')
     ap.add_argument('--cols', type=int, default=5)
     args = ap.parse_args()
@@ -86,14 +87,14 @@ def main():
         ap.error('--all takes no scene and writes one file per scene: use --sheet-dir / --mp4-dir (--compare takes a single scene)')
     if not (args.at or args.sheet or args.sheet_dir or args.mp4 or args.mp4_dir or args.compare):
         ap.error('nothing to do: give --at, --sheet, --sheet-dir, --mp4, --mp4-dir or --compare')
-    scenes = sorted((ROOT / 'pstack' / 'scenes').rglob('*.html')) if args.all else [Path(args.scene)]
+    scenes = library.scenes() if args.all else [Path(args.scene)]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chrome', headless=True)
         for path in scenes:
             page, meta = open_scene(browser, path)
             dur, fps = meta['duration'], meta['fps']
-            name = f'{path.parent.name}-{path.stem}'
+            name = library.name(path)
             if args.at:
                 for t in [float(x) for x in args.at.split(',')]:
                     save(shot(page, t), Path(args.out) / f'{name}@{t:g}.png')
@@ -103,11 +104,12 @@ def main():
             if args.compare:
                 if not meta['ref']:
                     sys.exit(f'{path}: scene has no ref: [start, end]')
-                if not Path(args.ref).exists():
-                    sys.exit(f'reference video not found: {args.ref}')
+                video = Path(args.ref) if args.ref else library.video(library.parts(path)[0])
+                if not video.exists():
+                    sys.exit(f'reference video not found: {video}')
                 r0, r1 = meta['ref']
                 times = even_times(dur, args.n)
-                top = [ref_frame(args.ref, r0 + (r1 - r0) * t / dur) for t in times]
+                top = [ref_frame(video, r0 + (r1 - r0) * t / dur) for t in times]
                 save(tile(top + [shot(page, t) for t in times], args.n, 384), args.compare)
             mp4_path = args.mp4 or (Path(args.mp4_dir) / f'{name}.mp4' if args.mp4_dir else None)
             if mp4_path:

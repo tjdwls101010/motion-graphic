@@ -1,0 +1,117 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>metaphor / bridge-plank-cross</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script>
+/* 걸어오던 사람이 끊긴 틈 앞에서 휘청 멈춰 아래를 내려다보는데, 건너편에서 널빤지를 멘 사람이 와서 틈에 걸쳐 놓자 그 위를 건너가 손을 마주치며 "고마워!" 한다. 원본에 없는 창작 장면으로, 멈춘 무대를 가로지르는 원본의 걷기(2프레임에 한 장)와 스미어 한 장짜리 큰 동작을 두 인물에 나눠 썼다. 전달하는 생각: 혼자서는 못 건너는 틈을 다른 쪽에서 온 도움이 잇는다.
+   Motion notes: one locked shot, 9 s, figures 330 px tall (line 3 px). Walking across a still stage: the body moves 23.1 px per drawing (IB.walkLen / 12 = 0.84 h per 12-drawing cycle), so the planted foot stays where it was put. The same rule decides where a walk may stop and start: a walk is ended on a drawing where one foot is planted under the body and the other is in the air (phase 1/3 or 5/6), the foot in the air is put down where it is, and the walk starts again from that same phase, so no planted foot ever jumps. A walks in for 34 drawings and stops at the edge at 2.83 s: two drawings thrown forward on one leg with the arms back (the teeter), then upright, then the head tips down 3.25-4.5 s. B walks in from the right for 28 drawings from 2.17 s carrying the plank on a shoulder, stops at 4.5 s; both hold 0.25 s. The plank goes down in ONE drawing at 4.75 s: B is already in a deep squat with both hands on it, and the plank is drawn halfway through its swing and stretched (a wedge 22 degrees wide instead of an 18 px board) with two speed arcs; on the next drawing it lies across the gap with a burst at its far end for 2 drawings. B stays squatting 0.42 s, hands on the plank's end, then stands. A crosses 5.5-7.5 s (24 drawings): any foot whose shoe reaches over the plank stands the plank's 18 px higher, the hip and the hands rising 9 px per foot less half the dip. The plank rests on the two platform edges and dips in a V under a planted foot over the gap, up to 7 px in mid-span and less within 120 px of an edge; every foot on it rests on the highest point of the plank under its shoe (heel, ankle or toe), so no shoe sinks into the plank. Raised hands meet at 7.58 s (2 drawings up), shake marks for 2 drawings, bubble at 7.83 s, still to the end. Three colours: A's yellow top, B's lavender top, the mustard plank; the platforms are white. */
+const { lerp, clamp } = MG;
+const C = IB.C, F = IB.FIG, TOP = 700, LEFT = 700, RIGHT = 1220;
+const A = { h: 330, dir: 1, skin: C.skin[2], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'bun', seed: 20 };
+const B = { h: 330, dir: -1, skin: C.skin[4], top: C.lavender, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 60 };
+const H = 330, PACE = IB.walkLen(A) / 12, THICK = 18, AX = 620, BX = 1310, CROSS = 24, A_END = AX + CROSS * PACE;
+const T = (n) => n / 12;   // every beat is on the 12 fps grid
+const PLANK = [LEFT - 12, RIGHT + 24];   // where the plank lies once it is down; its left end stops short of the toes of whoever waits at the edge
+const A_IN = 34, B_IN = 28, PH_A = (A_IN / 12) % 1, PH_B = (B_IN / 12) % 1;   // drawings each walks in for, and the phase that leaves them stopped on
+const SH = (p) => [p.hip[0], p.hip[1] - F.torso * H];
+// a figure standing where a walk stopped: the planted foot where it is, the foot that was in the air put down where it was
+const stopped = (x, look, ph) => ({ ...IB.stand(x, TOP, look), feet: IB.walk(x, TOP, look, ph).feet.map((f) => [f[0], TOP - F.ankle * H, 0]) });
+const HIGH = (TOP - THICK) - (F.ankle + F.shin + F.thigh + F.torso) * H - 36, MEET = (A_END + BX) / 2;   // where the two raised hands meet
+
+/* The plank's dip at x when its lowest point is `depth` px down at vx: it rests on the two platform edges and hangs in a V between them. */
+const dipAt = (x, vx, depth) => (vx == null || x <= LEFT || x >= RIGHT ? 0 : x < vx ? (depth * (x - LEFT)) / (vx - LEFT) : (depth * (RIGHT - x)) / (RIGHT - vx));
+/* Put A on the plank. Any foot whose shoe reaches over the plank stands 18 px higher, and the hip and hands rise half of that per foot. The planted foot furthest from an edge sets the dip (7 px in mid-span, less within 120 px of an edge); every foot on the plank then sits at the plank's height at its own x. Records the dip on the pose as p.sag = [x, depth] for the plank to be drawn with. */
+function onPlank(p) {
+  const toe = 0.128 * H, on = p.feet.map((f) => f[0] + toe > PLANK[0]), planted = p.feet.map((f) => f[1] >= TOP - F.ankle * H - IB.footLift(f[2], H) - 0.5);
+  let sag = null;
+  p.feet.forEach((f, i) => { if (!on[i] || !planted[i] || f[0] <= LEFT || f[0] >= RIGHT) return; const d = 7 * Math.min(1, Math.min(f[0] - LEFT, RIGHT - f[0]) / 120); if (!sag || d > sag[1]) sag = [f[0], d]; });
+  const under = (x) => Math.min(dipAt(x - 0.046 * H, sag[0], sag[1]), dipAt(x, sag[0], sag[1]), dipAt(x + toe, sag[0], sag[1]));   // the plank is straight between its corners, so its highest point under a shoe is at the heel, the ankle or the toe
+  p.feet = p.feet.map((f, i) => (on[i] ? [f[0], f[1] - THICK + (planted[i] && sag ? under(f[0]) : 0), f[2]] : f));
+  const rise = (THICK * on.filter(Boolean).length) / 2 - (sag ? sag[1] / 2 : 0);
+  p.hip = [p.hip[0], p.hip[1] - rise];
+  p.hands = p.hands.map((w) => [w[0], w[1] - rise]);
+  p.sag = sag;
+  return p;
+}
+
+function poseA(tt) {
+  const n = (t0) => Math.round((tt - t0) * 12);
+  if (n(T(A_IN)) < 0) { const k = n(0); return { ...IB.walk(AX - (A_IN - k) * PACE, TOP, A, (k / 12) % 1), face: { mouth: 'smile' } }; }
+  const stand = stopped(AX, A, PH_A);
+  if (n(T(A_IN)) < 2) { const w = IB.walk(AX, TOP, A, PH_A); return { ...w, hip: [AX + 14, w.hip[1] + 6], lean: 0.34, hands: [[AX - 46, w.hip[1] - 86], [AX - 52, w.hip[1] - 60]], face: { eye: 'wide', mouth: 'open' } }; }
+  if (n(T(66)) < 0) return { ...stand, lean: -0.03, nod: tt >= T(39) - 1e-6 && tt < T(54) - 1e-6 ? 0.45 : 0, face: { eye: tt < T(54) - 1e-6 ? 'wide' : 'dot', mouth: tt < T(58) - 1e-6 ? 'flat' : 'smile' } };
+  if (n(T(66 + CROSS)) < 0) { const k = n(T(66)); return { ...onPlank(IB.walk(AX + k * PACE, TOP, A, ((A_IN + k) / 12) % 1)), face: { mouth: 'smile' } }; }
+  const done = onPlank(stopped(A_END, A, ((A_IN + CROSS) / 12) % 1)), up = n(T(91)) < 0 ? 0 : [0.5, 1][Math.min(1, n(T(91)))];
+  done.hands = [done.hands[0], [lerp(done.hands[1][0], MEET - 4, up), lerp(done.hands[1][1], HIGH, up)]];
+  return { ...done, face: { mouth: up ? 'open' : 'smile' } };
+}
+// B carries the plank on the near shoulder until it is laid; returns the pose and what the plank is doing
+function poseB(tt) {
+  const n = (t0) => Math.round((tt - t0) * 12);
+  const carry = (p) => { const s = SH(p); p.hands = [p.hands[0], [s[0] - 62, s[1] - 22]]; p.grip = [false, true]; return p; };
+  if (n(T(54 - B_IN)) < 0) return null;
+  if (n(T(54)) < 0) { const k = n(T(54 - B_IN)); return { ...carry(IB.walk(BX + (B_IN - k) * PACE, TOP, B, (k / 12) % 1, { swing: 0.06 })), plank: 'carried', face: { mouth: 'flat' } }; }
+  const stand = stopped(BX, B, PH_B);
+  if (n(T(57)) < 0) return { ...carry(stand), plank: 'carried', face: { mouth: 'smile' } };
+  // a deep squat that brings the shoulders within an arm's length of the plank's near end
+  const squat = { ...stand, hip: [BX + 10, stand.hip[1] + 133], lean: 0.7, grip: [true, true] };
+  if (n(T(57)) === 0) return { ...squat, hands: [[PLANK[1] - 34, TOP - 52], [PLANK[1] - 19, TOP - 33]], plank: 'swing', face: { mouth: 'open' } };
+  if (n(T(63)) < 0) return { ...squat, hands: [[PLANK[1] - 8, TOP - THICK - 8], [PLANK[1] + 6, TOP - THICK - 4]], plank: 'down', face: { eye: 'closed', mouth: 'flat' } };
+  const up = n(T(91)) < 0 ? 0 : [0.5, 1][Math.min(1, n(T(91)))];
+  stand.hands = [stand.hands[0], [lerp(stand.hands[1][0], MEET + 4, up), lerp(stand.hands[1][1], HIGH, up)]];
+  return { ...stand, plank: 'down', face: { mouth: up ? 'open' : 'smile' } };
+}
+
+function platforms(ctx) {
+  for (const [x0, x1, wall] of [[-40, LEFT, LEFT], [RIGHT, 1960, RIGHT]]) {
+    IB.ink(ctx, [[x0, TOP], [x1, TOP], [x1, 1120], [x0, 1120]], { closed: true, smooth: false, fill: C.paper, w: 3.8, seed: 100 + wall });
+    IB.shade(ctx, wall === LEFT ? LEFT - 70 : RIGHT + 4, TOP + 6, 66, 370, { from: wall === LEFT ? 'right' : 'left', seed: 11 + wall, alpha: 0.5 });
+    for (let i = 0; i < 4; i++) IB.seg(ctx, wall + (wall === LEFT ? -1 : 1) * (130 + i * 150), TOP + 60 + (i % 2) * 80, wall + (wall === LEFT ? -1 : 1) * (190 + i * 150), TOP + 60 + (i % 2) * 80, { w: 2, seed: 110 + i + wall });
+  }
+}
+function plankDown(ctx, sag) {
+  const top = [[PLANK[0], 0], [LEFT, 0], ...(sag ? [[sag[0], sag[1]]] : []), [RIGHT, 0], [PLANK[1], 0]];
+  IB.ink(ctx, top.map(([x, d]) => [x, TOP - THICK + d]).concat(top.slice().reverse().map(([x, d]) => [x, TOP + d])), { closed: true, smooth: false, fill: C.mustard, w: 3, seed: 200 });
+}
+function plankFree(ctx, at, rot) {
+  ctx.save(); ctx.translate(at[0], at[1]); ctx.rotate(rot);
+  IB.box(ctx, -300, -THICK / 2, PLANK[1] - PLANK[0], THICK, { fill: C.mustard, w: 3, seed: 200 });
+  ctx.restore();
+}
+
+MG.scene({
+  title: 'metaphor / bridge-plank-cross',
+  duration: 9, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), n = (t0) => Math.round((tt - t0) * 12), a = poseA(tt), b = poseB(tt);
+    platforms(ctx);
+    if (b && b.plank === 'down') plankDown(ctx, a.sag || null);
+    IB.smear(ctx, (a.feet[0][0] + a.feet[1][0]) / 2, TOP - 7, 190, { h: 10, seed: 9, alpha: a.hip[0] > PLANK[0] ? 0 : 1 });
+    IB.figure(ctx, a, { ...A, face: a.face });
+    if (b) {
+      IB.smear(ctx, (b.feet[0][0] + b.feet[1][0]) / 2, TOP - 7, 190, { h: 10, seed: 10 });
+      IB.figure(ctx, b, { ...B, face: b.face }, 'far');
+      const s = SH(b);
+      if (b.plank === 'carried') plankFree(ctx, [s[0] - 40, s[1] - 26], 0.07);
+      if (b.plank === 'swing') {
+        // one drawing: the plank halfway down and stretched along its swing, hinged where its near end will rest
+        const hinge = [PLANK[1], TOP - THICK / 2], len = PLANK[1] - PLANK[0], pt = (deg, r) => [hinge[0] - Math.cos(deg * Math.PI / 180) * r, hinge[1] - Math.sin(deg * Math.PI / 180) * r];
+        IB.ink(ctx, [pt(48, -8), pt(60, len * 0.5), pt(64, len), pt(42, len), pt(40, len * 0.5)], { closed: true, smooth: false, fill: C.mustard, w: 3, seed: 210 });
+        for (const r of [len * 0.9, len * 0.6]) IB.ink(ctx, IB.ellipse(hinge[0], hinge[1], r, r, 6, Math.PI + 1.2, Math.PI + 1.75), { w: 2.4, seed: 211 + Math.round(r) });
+      }
+      IB.figure(ctx, b, { ...B, face: b.face }, 'near');
+    }
+    const thud = n(T(58));
+    if (thud >= 0 && thud < 2) for (let i = 0; i < 4; i++) { const ang = -2.7 + i * 0.5, r0 = 40 + thud * 16, r1 = r0 + 40; IB.seg(ctx, PLANK[0] + 30 + Math.cos(ang) * r0, TOP - 20 + Math.sin(ang) * r0, PLANK[0] + 30 + Math.cos(ang) * r1, TOP - 20 + Math.sin(ang) * r1, { w: 2.8, seed: 300 + i + thud * 5 }); }
+    const clap = n(T(92));
+    if (clap >= 0 && clap < 2) IB.shake(ctx, MEET, HIGH - 22, 30, { a: -Math.PI / 2, n: 2, seed: 320 + clap, w: 2.6, span: 0.5 });
+    IB.bubble(ctx, ['고마워!'], t, T(94), { tip: [A_END - 30, TOP - THICK - 0.97 * H], x: A_END - 200, y: TOP - 1.32 * H, seed: 500 });
+  },
+});
+</script>

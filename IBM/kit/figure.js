@@ -13,10 +13,10 @@
   /* Outline width for a figure h px tall: 2.7 px at the 250 px of a wide shot, 4 px at 630 px, 6-7 px for a medium shot where the figure is taller than the screen (STYLE.md "선 굵기는 샷 크기를 따른다"). */
   IB.figLine = (h) => 1.8 + h / 280;
 
-  /* Two-bone IK: the middle joint of a limb from A that tries to reach T with bones a and b. `bend` (+1 / -1) picks the side the joint folds to. Returns [joint, end]; the end is pulled in if T is out of reach. */
+  /* Two-bone IK: the middle joint of a limb from A that tries to reach T with bones a and b. `bend` (+1 / -1) picks the side the joint folds to. Returns [joint, end]; the end is pulled in if T is out of reach, and pushed out (straight down when T sits on A itself) if it is closer than the bones can fold. */
   function ik(A, T, a, b, bend) {
     const dx = T[0] - A[0], dy = T[1] - A[1], D = Math.hypot(dx, dy) || 1e-6, d = clamp(D, Math.abs(a - b) + 0.5, a + b - 0.5);
-    const ux = dx / D, uy = dy / D, k = (a * a + d * d - b * b) / (2 * d), hgt = Math.sqrt(Math.max(0, a * a - k * k));
+    const ux = D > 1e-3 ? dx / D : 0, uy = D > 1e-3 ? dy / D : 1, k = (a * a + d * d - b * b) / (2 * d), hgt = Math.sqrt(Math.max(0, a * a - k * k));
     return [[A[0] + ux * k - uy * hgt * bend, A[1] + uy * k + ux * hgt * bend], [A[0] + ux * d, A[1] + uy * d]];
   }
   IB.ik = ik;

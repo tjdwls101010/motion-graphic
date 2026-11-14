@@ -7,7 +7,7 @@
 <script src="../../kit/ink.js"></script>
 <script>
 /* 화면을 가득 채운 흑백 선화 도시 한가운데 경기장이 있고, 노란 헬리콥터 한 대가 왼쪽에서 크게 휘어 들어와 경기장 옆에 멈춰 뜬다. 전달하는 생각: 이제 벌어질 일의 장소를 한 장으로 알린다.
-   Motion notes: 1.9 s, the drawing never moves and is far denser than any other family: line widths 1.5-5 px mixed, windows and trusses as texture, almost no fills. Colour only in two places, the yellow craft and the blue seating band (plus one blue strip at the stadium's foot). The craft is the one moving thing, on twos: nothing for the first 0.33 s, then it crosses right in front of the lens 4x too large (the first drawing stretched 1.4x as a smear), shrinks away, stands on its nose for one drawing as it turns, and is hovering by 0.83 s; after that only the rotor line flips each drawing and the body drifts 1 px per drawing. Buildings are generated from a seed, so the skyline is a stand-in for the reference's hand-drawn city, not a copy of it. */
+   Motion notes: 1.9 s, the drawing never moves and is far denser than any other family: line widths 1.5-5 px mixed, windows and trusses as texture, almost no fills. Colour only in two places, the yellow craft and the pale blue seating (plus one bright strip at the stadium's foot). The craft is the one moving thing, on twos: nothing for the first 0.33 s, then it crosses right in front of the lens 4x too large (the first drawing stretched 1.4x as a smear), shrinks away, stands on its nose for one drawing as it turns, and is hovering by 0.83 s; after that only the rotor line flips each drawing and the body drifts 1 px per drawing. The towers are generated from a seed, so the skyline is a stand-in for the reference's hand-drawn city, not a copy of it; the stadium, the foreground blocks, the treetop rows and the craft follow the reference's layout and shapes. The craft's painted brand mark and lettering are left out. */
 const { lerp, rng, kf } = MG;
 const C = IB.C;
 
@@ -33,48 +33,85 @@ function tower(ctx, b) {
 }
 
 function stadium(ctx) {
-  const cx = 955, top = 610, bot = 770, rx = 420, ry = 128;
+  // a squat bowl: roof ring on top, an upper band of big zigzags and a lower band of crosses, one bright strip at its foot
+  const cx = 955, top = 610, mid = 700, bot = 780, rx = 420, ry = 128;
   const arc = (y, a0, a1, n = 26) => IB.ellipse(cx, y, rx, ry, n, a0, a1);
-  // wall: the lower halves of the roof ellipse and the foot ellipse, joined
   IB.ink(ctx, arc(top, 0, Math.PI).concat(arc(bot, Math.PI, 0)), { closed: true, fill: C.paper, w: 4, seed: 300 });
-  const up = arc(top, 0.08, Math.PI - 0.08, 22), lo = arc(bot + 4, 0.08, Math.PI - 0.08, 22);
-  for (let i = 0; i < up.length - 1; i++) { IB.ink(ctx, [up[i], lo[i + 1]], { w: 2.4, seed: 310 + i, smooth: false }); IB.ink(ctx, [up[i + 1], lo[i]], { w: 2.4, seed: 340 + i, smooth: false }); }
-  IB.ink(ctx, arc(bot + 30, 0.5, 1.15, 8), { w: 26, color: C.royal, seed: 301, taper: false });          // blue strip at the foot
-  IB.ink(ctx, arc(bot + 4, 0.02, Math.PI - 0.02), { w: 4, seed: 302 });
-  // roof ring, seating band, the dark bowl
-  IB.oval(ctx, cx, top, rx, ry, { fill: C.paper, w: 5, seed: 303, n: 30 });
-  IB.oval(ctx, cx, top - 6, 338, 86, { fill: C.blue, w: 3.5, seed: 304, n: 26 });
-  for (const k of [0.9, 0.8]) IB.oval(ctx, cx, top - 6 + (1 - k) * 60, 338 * k, 86 * k, { w: 2, color: C.paper, seed: 305 + k, n: 24 });
-  IB.oval(ctx, cx, top + 6, 268, 54, { fill: C.ink, w: 0, n: 24 });
+  const up = arc(top, 0.1, Math.PI - 0.1, 14), md = arc(mid, 0.1, Math.PI - 0.1, 14), md2 = arc(mid, 0.1, Math.PI - 0.1, 22), lo = arc(bot + 2, 0.1, Math.PI - 0.1, 22);
+  for (let i = 0; i < up.length - 1; i++) { const m = [(md[i][0] + md[i + 1][0]) / 2, (md[i][1] + md[i + 1][1]) / 2]; IB.ink(ctx, [up[i], m, up[i + 1]], { w: 2.6, seed: 310 + i, smooth: false }); }
+  for (let i = 0; i < md2.length - 1; i++) { IB.ink(ctx, [md2[i], lo[i + 1]], { w: 2.2, seed: 330 + i, smooth: false }); IB.ink(ctx, [md2[i + 1], lo[i]], { w: 2.2, seed: 360 + i, smooth: false }); }
+  IB.ink(ctx, arc(mid, 0.04, Math.PI - 0.04), { w: 3.2, seed: 301 });
+  IB.ink(ctx, arc(bot + 26, 0.42, 1.12, 8), { w: 30, color: '#3b98e6', seed: 302, taper: false, grain: 0 });
+  for (let i = 0; i < 16; i++) { const a = 0.44 + (i / 15) * 0.66; IB.seg(ctx, cx + Math.cos(a) * rx, bot + 12 + Math.sin(a) * ry, cx + Math.cos(a) * rx, bot + 40 + Math.sin(a) * ry, { w: 1.5, wob: 0, seed: 380 + i }); }
+  IB.ink(ctx, arc(bot + 4, 0.02, Math.PI - 0.02), { w: 4, seed: 303 });
+  // roof ring, pale seating with ring lines, the dark bowl
+  IB.oval(ctx, cx, top, rx, ry, { fill: C.paper, w: 5, seed: 304, n: 30 });
+  IB.oval(ctx, cx, top - 6, 338, 86, { fill: C.sky, w: 3.5, seed: 305, n: 26 });
+  for (const k of [0.93, 0.86]) IB.oval(ctx, cx, top - 6 + (1 - k) * 70, 338 * k, 86 * k, { w: 2, color: C.blue, seed: 306 + k, n: 24, grain: 0 });
+  IB.oval(ctx, cx, top + 10, 262, 50, { fill: C.ink, w: 0, n: 24 });
   for (let i = 0; i < 20; i++) { const a = Math.PI + (i / 19) * Math.PI, p = [cx + Math.cos(a) * rx, top + Math.sin(a) * ry], q = [cx + Math.cos(a) * 344, top - 6 + Math.sin(a) * 90]; IB.ink(ctx, [p, q], { w: 2, seed: 370 + i, smooth: false }); }
 }
 
-function foreground(ctx) {
-  const roof = (x, y, w, h, d, seed) => {
-    IB.ink(ctx, [[x, y], [x + w, y - d], [x + w + d * 1.6, y + d * 0.4], [x + d * 1.6, y + d * 1.4]], { closed: true, smooth: false, fill: C.paper, w: 3.5, seed });
-    IB.ink(ctx, [[x, y], [x + d * 1.6, y + d * 1.4], [x + d * 1.6, y + d * 1.4 + h], [x, y + h]], { closed: true, smooth: false, fill: C.bg, w: 3.5, seed: seed + 1 });
-    IB.ink(ctx, [[x + d * 1.6, y + d * 1.4], [x + w + d * 1.6, y + d * 0.4], [x + w + d * 1.6, y + d * 0.4 + h], [x + d * 1.6, y + d * 1.4 + h]], { closed: true, smooth: false, fill: C.bg, w: 3.5, seed: seed + 2 });
-    for (let k = 14; k < w; k += 16) IB.seg(ctx, x + d * 1.6 + k, y + d * 1.4 - k * (d / w) + 12, x + d * 1.6 + k, y + d * 1.4 - k * (d / w) + h - 6, { w: 1.6, wob: 0.3, seed: seed + k });
-  };
-  const trees = (x0, x1, y, seed) => { const pts = []; for (let x = x0, i = 0; x <= x1; x += 26, i++) pts.push([x, y + (i % 2 ? -16 : 0) + Math.sin(x * 0.02) * 10]); IB.ink(ctx, pts, { w: 2.6, seed }); };
-  trees(40, 560, 800, 500); trees(1300, 1900, 790, 501); trees(60, 1900, 1010, 502);
-  roof(1420, 690, 300, 150, 60, 520);
-  roof(1380, 880, 260, 130, 50, 530);
-  roof(200, 920, 440, 140, 70, 540);
-  roof(1060, 990, 480, 120, 60, 550);
-  roof(60, 860, 170, 90, 30, 560);
+/* A row of treetops: a run of overlapping bumps with a curl at each join, the way the reference fills every gap between buildings. */
+function trees(ctx, x0, x1, y, seed, r0 = 22) {
+  const r = rng(seed), pts = [];
+  let x = x0;
+  while (x < x1) {
+    const rad = r0 * (0.7 + r() * 0.7), dy = (r() - 0.5) * r0 * 0.8;
+    pts.push([x, y + dy], [x + rad * 0.25, y + dy - rad * 0.9], [x + rad, y + dy - rad * 1.15], [x + rad * 1.75, y + dy - rad * 0.9], [x + rad * 2, y + dy], [x + rad * 1.7, y + dy + rad * 0.3]);
+    x += rad * 1.9;
+  }
+  IB.ink(ctx, pts, { w: 2.8, seed });
 }
 
-function heli(ctx, x, y, s, rot, facing, flip) {
+/* A flat-roofed block seen from above: the roof is the four points given (back-left, back-right, front-right, front-left), the two near faces drop h px and carry short vertical window dashes. */
+function block(ctx, q, h, seed, dots = false) {
+  const down = (p) => [p[0], p[1] + h];
+  IB.ink(ctx, [q[0], q[3], down(q[3]), down(q[0])], { closed: true, smooth: false, fill: C.bg, w: 3.2, seed: seed + 1 });
+  IB.ink(ctx, [q[3], q[2], down(q[2]), down(q[3])], { closed: true, smooth: false, fill: C.bg, w: 3.2, seed: seed + 2 });
+  IB.ink(ctx, q, { closed: true, smooth: false, fill: C.bg, w: 3.2, seed });
+  for (const [a, b] of [[q[0], q[3]], [q[3], q[2]]]) {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.floor(len / (dots ? 22 : 15));
+    for (let i = 1; i < n; i++) for (let row = 0; row < Math.floor(h / 34); row++) {
+      const u = i / n, x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u) + 14 + row * 34;
+      IB.seg(ctx, x, y, x, y + (dots ? 7 : 16), { w: dots ? 3 : 1.6, wob: 0, seed: seed + i * 7 + row });
+    }
+  }
+}
+
+function foreground(ctx) {
+  trees(ctx, 60, 540, 600, 500); trees(ctx, 1380, 1920, 640, 501); trees(ctx, 1560, 1920, 720, 502, 18);
+  block(ctx, [[1400, 735], [1540, 700], [1592, 716], [1452, 752]], 136, 510, true);
+  trees(ctx, 90, 300, 706, 503); trees(ctx, 120, 420, 770, 504);
+  block(ctx, [[205, 668], [520, 650], [528, 700], [370, 716]], 60, 520);
+  trees(ctx, 30, 230, 880, 505, 26); trees(ctx, 760, 1100, 868, 506); trees(ctx, 1560, 1920, 860, 507);
+  block(ctx, [[1690, 835], [1830, 810], [1904, 830], [1762, 860]], 100, 530);
+  block(ctx, [[200, 838], [432, 790], [756, 832], [410, 924]], 112, 540);
+  trees(ctx, 220, 520, 1004, 508, 24); trees(ctx, 980, 1100, 968, 509);
+  block(ctx, [[1060, 960], [1380, 880], [1640, 905], [1320, 1000]], 130, 550);
+  block(ctx, [[1222, 932], [1400, 905], [1420, 926], [1242, 954]], 26, 560);
+  block(ctx, [[510, 1010], [830, 925], [990, 950], [640, 1052]], 90, 570);
+  trees(ctx, 1640, 1920, 1010, 510, 24); trees(ctx, 40, 240, 1050, 511, 26);
+}
+
+/* The one coloured thing in the shot. Drawn nose-right about the cabin's centre; `facing` -1 flips it. The reference paints a brand mark and a word on the cabin: left out. */
+function heli(ctx, x, y, s, rot, facing, d) {
   ctx.save();
   ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s * facing, s);
-  IB.ink(ctx, [[-60, 46], [70, 46]], { w: 4, seed: 600 });
-  for (const lx of [-34, 40]) IB.seg(ctx, lx, 30, lx, 46, { w: 3, seed: 601 + lx });
-  IB.ink(ctx, [[-70, -18], [-150, -30], [-168, -58], [-150, -62], [-136, -34], [-66, -2]], { closed: true, smooth: false, fill: C.yellow, w: 3.5, seed: 602 });   // tail boom and fin
-  IB.oval(ctx, 0, 0, 78, 34, { fill: C.yellow, w: 3.5, seed: 603, n: 12 });
-  IB.ink(ctx, [[30, -24], [66, -6], [60, 16], [26, 18]], { closed: true, fill: C.paper, w: 3, seed: 604 });   // windscreen
-  IB.seg(ctx, 0, -34, 0, -48, { w: 4, seed: 605 });
-  IB.ink(ctx, [[-150 * (flip ? 1 : 0.35), -50], [150 * (flip ? 0.4 : 1), -48]], { w: 2.6, seed: 606 + flip });
+  const lw = 2.4 / Math.sqrt(s);
+  IB.tube(ctx, [[-55, 52], [76, 58]], { w: 9, edge: 2, fill: '#b9b9b9', seed: 600 });                      // skid
+  IB.tube(ctx, [[-30, 36], [-40, 52]], { w: 7, edge: 1.8, fill: '#b9b9b9', seed: 601 });
+  IB.tube(ctx, [[40, 38], [50, 56]], { w: 7, edge: 1.8, fill: '#b9b9b9', seed: 602 });
+  IB.ink(ctx, [[-216, -118], [-204, -116], [-196, -20], [-212, -12]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 603 });      // tail fin
+  IB.ink(ctx, [[-228, -64], [-186, -58], [-186, -49], [-228, -52]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 604 });        // stabiliser
+  IB.ink(ctx, [[-198, -61], [-75, -43], [10, -50], [22, -36], [50, -17], [83, 27], [74, 41], [-25, 36], [-75, -5], [-198, -43]], { closed: true, fill: C.yellow, w: lw, seed: 605 });   // boom and cabin in one shape
+  IB.ink(ctx, [[19, -13], [60, -9], [63, 17], [22, 14]], { closed: true, smooth: false, fill: C.paper, w: lw, seed: 606 });                    // side window, four panes
+  IB.seg(ctx, 40, -11, 42, 15, { w: lw * 0.8, seed: 607 }); IB.seg(ctx, 20, 0, 61, 4, { w: lw * 0.8, seed: 608 });
+  IB.ink(ctx, [[65, -5], [77, 12], [67, 15]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.8, seed: 609 });
+  IB.seg(ctx, 17, -50, 17, -60, { w: lw * 1.4, seed: 610 });
+  // rotor: a fan of thin straight strokes through the mast, re-rolled on every drawing
+  const r = rng(700 + d);
+  for (let i = 0; i < 9; i++) { const l = 170 + r() * 110, k = (r() - 0.5) * 0.16; IB.seg(ctx, 17 - l, -62 - l * k + (r() - 0.5) * 14, 17 + l * (0.5 + r() * 0.5), -62 + l * k * 0.6 + (r() - 0.5) * 14, { w: 1.6 / Math.sqrt(s), wob: 0, seed: 710 + i + d * 9 }); }
   ctx.restore();
 }
 
@@ -93,9 +130,9 @@ MG.scene({
     const f = IB.frame(t), d = Math.floor((f - 8) / 2);
     if (d >= 0) {
       // it passes right in front of the lens heading left, shrinks away, and has turned to face right by the time it hovers
-      const IN = [[1500, 520, 4.2, 0.3, -1.4], [1150, 640, 3.6, 0.2, -1], [760, 640, 2.4, 0.1, -1], [400, 560, 1.7, -1.4, -1], [360, 590, 1.3, -0.5, 1], [310, 588, 1.1, 0.1, 1], [300, 584, 1.0, 0.04, 1]];
+      const IN = [[1560, 520, 4.2, 0.3, -1.4], [1210, 640, 3.6, 0.2, -1], [820, 640, 2.4, 0.1, -1], [460, 560, 1.7, -1.4, -1], [420, 588, 1.3, -0.5, 1], [370, 580, 1.1, 0.1, 1], [360, 575, 1.0, 0, 1]];
       const k = IN[Math.min(d, IN.length - 1)];
-      heli(ctx, k[0] + Math.max(0, d - 6), k[1], k[2], k[3], k[4], d % 2);
+      heli(ctx, k[0] + Math.max(0, d - 6), k[1], k[2], k[3], k[4], d);
     }
   },
 });

@@ -32,18 +32,19 @@
   /* ---------- dust ---------- */
   /* Every grain of dust (edge dust, graphite shading, chalk) goes through here, for two reasons found the hard way with tools/check_pure.py.
      1. Chrome draws canvas paths with 4x MSAA, so an edge pixel has only five possible values and one sample flipping is a 62-level jump; which draws get MSAA depends on how the frame's operations are batched, and a frame with tens of thousands of operations is split into batches at points that vary from one capture to the next. Specks drawn one fillRect at a time (10,000 for one end-card smear) made a dense frame differ from itself by up to 63 pixels over the check's 40-level threshold (it allows 30).
-     2. So dust is collected and filled as five paths per call, and every speck is a whole-pixel square at an integer device position: it has no partial coverage, so it comes out the same under any anti-aliasing.
+     2. So dust is collected and filled as five paths per call, and every speck is a whole-pixel rectangle at an integer device position: it has no partial coverage, so it comes out the same under any anti-aliasing.
      Tone comes from density, not from per-speck opacity: put()'s `alpha` is the chance the speck is kept, kept specks are dealt round-robin into five layers, and each layer is one fill at the same low opacity, so where specks crowd the layers stack up (1, 2 ... 5 deep) and where they thin out the paper shows through. Filling each speck at its own alpha in one union per level made a smear read as flat pixel blocks.
-     put() takes stage coordinates under the current transform. */
+     put() takes stage coordinates under the current transform: the speck's centre is mapped (so a mirrored or rotated drawing keeps its dust where it belongs) and its size is scaled per axis; specks stay axis-aligned in device space. It honours the incoming ctx.globalAlpha and the fillStyle set before done(), like any canvas draw. */
   function dust(ctx, layerAlpha = 0.42) {
-    const m = ctx.getTransform(), k = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) || 1, a0 = ctx.globalAlpha, LAYERS = 5;
+    const m = ctx.getTransform(), kx = Math.hypot(m.a, m.b), ky = Math.hypot(m.c, m.d), a0 = ctx.globalAlpha, LAYERS = 5;
     const bins = Array.from({ length: LAYERS }, () => []);
     let n = 0;
     return {
       put(x, y, w, h, alpha) {
         n++;
-        if (alpha < 1 && MG.hash(n, 977) >= alpha) return;
-        bins[n % LAYERS].push(Math.round(m.a * x + m.c * y + m.e), Math.round(m.b * x + m.d * y + m.f), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+        if (!(w > 0 && h > 0 && kx > 0 && ky > 0) || (alpha < 1 && MG.hash(n, 977) >= alpha)) return;
+        const W = Math.max(1, Math.round(w * kx)), H = Math.max(1, Math.round(h * ky)), cx = x + w / 2, cy = y + h / 2;
+        bins[n % LAYERS].push(Math.round(m.a * cx + m.c * cy + m.e - W / 2), Math.round(m.b * cx + m.d * cy + m.f - H / 2), W, H);
       },
       done() {
         ctx.save();
@@ -105,7 +106,7 @@
   IB.ink = (ctx, pts, o = {}) => {
     const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1, grain = 1 } = o;
     if (pts.length < 2) return;
-    const step = Math.min(6, Math.max(2.4, w));   // sample spacing follows the width, but a wide band is still sampled finely
+    const step = o.step || Math.min(6, Math.max(2.4, w));   // sample spacing follows the width, but a wide band is still sampled finely
     let p = smooth ? spline(pts, closed, step) : resample(pts, closed, step);
     const n = p.length;
     // drift each point off its place, slowly along the stroke
@@ -122,16 +123,19 @@
     const ring = closed ? q.concat([q[0]]) : q, last = ring.length - 1;
     const at = (u) => { const x = Math.min(last, Math.max(0, u * last)), i = Math.min(last - 1, Math.floor(x)), v = x - i; return [ring[i][0] + (ring[i + 1][0] - ring[i][0]) * v, ring[i][1] + (ring[i + 1][1] - ring[i][1]) * v]; };
     const a = Math.ceil(from * last + 1e-9), b = Math.floor(to * last - 1e-9);
-    const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : [at(from), ...ring.slice(a, b + 1), at(to)];
+    const whole = closed && from === 0 && to === 1;   // a full closed outline: every point has a neighbour on both sides, the first segment is not drawn twice
+    const pick = whole ? ring : [at(from), ...ring.slice(a, b + 1), at(to)];
     const m = pick.length;
     if (m < 2) return;
     const L = [], R = [], rough = grain > 0 && w >= 2.2;
+    // each point's place along the whole stroke, in samples: pressure and roughness read from it, so they do not shift when from/to move
+    const idx = (i) => (whole ? i % n : i === 0 ? from * last : i === m - 1 ? to * last : a + i - 1);
     for (let i = 0; i < m; i++) {
-      const p0 = pick[Math.max(0, i - 1)], p1 = pick[Math.min(m - 1, i + 1)];
+      const p0 = whole ? q[(i - 1 + n) % n] : pick[Math.max(0, i - 1)], p1 = whole ? q[(i + 1) % n] : pick[Math.min(m - 1, i + 1)];
       const d = dist(p0, p1) || 1, nx = -(p1[1] - p0[1]) / d, ny = (p1[0] - p0[0]) / d;
       // pressure: the width breathes (±9% of the width, at most 1.2 px), and an open stroke thins toward both ends like a lifted brush
-      let half = w / 2 + Math.min(w * 0.09, 1.2) * drift(seed + 13, (from * last + i) * step * 0.023);
-      if (rough) half += (MG.hash(seed + 29, a + i) - 0.5) * 0.8;   // tooth of the paper: the edge is never a clean curve, by the same fraction of a pixel at any width
+      let half = w / 2 + Math.min(w * 0.09, 1.2) * drift(seed + 13, idx(i) * step * 0.023);
+      if (rough) half += (MG.hash(seed + 29, Math.round(idx(i))) - 0.5) * 0.8;   // tooth of the paper: the edge is never a clean curve, by the same fraction of a pixel at any width
       if (taper) half *= 0.45 + 0.55 * Math.min(1, Math.min(i, m - 1 - i) / 3);
       L.push([pick[i][0] + nx * half, pick[i][1] + ny * half]);
       R.push([pick[i][0] - nx * half, pick[i][1] - ny * half]);
@@ -181,19 +185,21 @@
   /* tube(ctx, pts, opts) — a coloured band with an ink edge on both sides: limbs, bike frames, pipes. Straight segments with round joints unless smooth. w is the full width including the edge. */
   IB.tube = (ctx, pts, o = {}) => {
     const { w = 12, edge = 2.5, fill = IB.C.paper, smooth = false, seed = 1, wob = 0.4 } = o;
-    IB.ink(ctx, pts, { w, smooth, seed, wob, taper: false });
-    IB.ink(ctx, pts, { w: Math.max(0.5, w - edge * 2), color: fill, smooth, seed, wob, taper: false, grain: 0 });   // no dust from the fill: it would eat the ink edge
+    const step = Math.min(6, Math.max(2.4, w));   // one sampling step for both strokes, so the fill follows exactly the centre line its edge does
+    IB.ink(ctx, pts, { w, smooth, seed, wob, taper: false, step });
+    IB.ink(ctx, pts, { w: Math.max(0.5, w - edge * 2), color: fill, smooth, seed, wob, taper: false, grain: 0, step });   // no dust from the fill: it would eat the ink edge
   };
 
   /* ---------- chalk ---------- */
   /* smear(ctx, cx, y, w, opts) — the blue chalk floor mark under feet and under the end-card line: a crisp top edge at y, a dense core, dust falling away below and thinning toward both ends. w is the width of the dense core (dust feathers out ~15% further on each side); the end-card smear is w=1000, h=34, a foot smear w≈110, h≈10. */
   IB.smear = (ctx, cx, y, w, o = {}) => {
     const { h = Math.max(6, w * 0.034), color = IB.C.smear, seed = 5, alpha = 1 } = o;
-    const r = MG.rng(seed), d0 = dust(ctx, 0.4 * alpha);
+    if (!(w > 0 && h > 0)) return;
+    const r = MG.rng(seed), d0 = dust(ctx, 0.5 * alpha);
     ctx.fillStyle = color;
     // core: short 1 px dashes packed against the top edge, thinning with depth and toward both ends
     const rows = Math.max(3, h * 0.5);
-    for (let i = Math.round(w * rows * 0.45); i > 0; i--) {
+    for (let i = Math.round(w * rows * 0.8); i > 0; i--) {
       const v = Math.pow(r(), 1.5), u = (r() + r()) / 2 - 0.5, len = 5 + r() * 14;
       const reach = (w / 2) * (0.98 - 0.4 * v);
       d0.put(cx + u * 2 * reach - len / 2, y + v * rows, len, 1, (0.95 - 0.55 * v) * (1 - Math.pow(Math.abs(u) * 2, 3)));
@@ -211,6 +217,7 @@
   /* shade(ctx, x, y, w, h, opts) — soft graphite shading, the only tone the reference adds to its flat fills: densest along one edge of the w x h box and fading to nothing at the opposite one. `from` names the dense edge ('top' | 'bottom' | 'left' | 'right'). Legs get it under the body, arms where they leave it, objects where they meet the floor. Stippled, so it sits on any fill colour. */
   IB.shade = (ctx, x, y, w, h, o = {}) => {
     const { from = 'top', color = IB.C.ink, alpha = 0.55, seed = 9, reach = 1.6 } = o;
+    if (!(w > 0 && h > 0)) return;
     const r = MG.rng(seed * 3 + 1), n = Math.round(w * h * 1.1), d0 = dust(ctx, 0.5);
     ctx.fillStyle = color;
     for (let i = 0; i < n; i++) {

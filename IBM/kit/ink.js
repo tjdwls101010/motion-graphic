@@ -18,8 +18,8 @@
   IB.twos = (t) => MG.onTwos(t, 12);
   IB.threes = (t) => MG.onTwos(t, 8);
   IB.frame = (t) => Math.floor(t * IB.FPS + 1e-6);
-  /* settle(dt, tau) — 0..1 exponential approach, the curve copy and the end card arrive on: each frame closes ~19% of the remaining distance at tau = 0.2 s. Snaps to exactly 1 after 5 tau so a held frame is truly still. */
-  IB.settle = (dt, tau = 0.2) => (dt <= 0 ? 0 : dt >= tau * 5 ? 1 : 1 - Math.exp(-dt / tau));
+  /* settle(dt, tau, stop) — 0..1, the curve copy and the end card arrive on: an exponential approach (time constant tau) rescaled so it lands exactly on 1 at `stop` seconds and is truly still afterwards. Fitted to the reference frame by frame: 71 px of head copy closes 60, 48, 38, 31, 25, 20, 16, 13, 10 ... px and is still after 0.79 s with tau 0.2. */
+  IB.settle = (dt, tau = 0.2, stop = tau * 4) => (dt <= 0 ? 0 : dt >= stop ? 1 : (1 - Math.exp(-dt / tau)) / (1 - Math.exp(-stop / tau)));
 
   /* ---------- stage ---------- */
   IB.bg = (ctx, color = IB.C.bg) => {
@@ -69,7 +69,7 @@
      smooth  true: curve through the points; false: straight sides with crisp corners
      wob     how far the hand drifts off the true line, px
      seed    fixes the drift; give every stroke its own
-     from,to draw only this fraction of the stroke (0..1), for a line that is drawn on */
+     from,to draw only this fraction of the stroke (0..1), for a line that is drawn on. They cut the outline only: a fill is always painted whole */
   IB.ink = (ctx, pts, o = {}) => {
     const { w = 3, color = IB.C.ink, closed = false, smooth = true, fill = null, seed = 1, wob = 0.7, taper = !closed, from = 0, to = 1 } = o;
     if (pts.length < 2 || to <= from) return;
@@ -86,8 +86,10 @@
       ctx.fill();
     }
     if (w <= 0) return;
-    const a = Math.floor(from * (n - 1)), b = Math.ceil(to * (n - 1));
-    const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : q.slice(a, b + 1);
+    // a partial stroke is cut at the exact fraction, not at the nearest sample
+    const at = (u) => { const x = Math.min(n - 1, Math.max(0, u * (n - 1))), i = Math.min(n - 2, Math.floor(x)), v = x - i; return [q[i][0] + (q[i + 1][0] - q[i][0]) * v, q[i][1] + (q[i + 1][1] - q[i][1]) * v]; };
+    const a = Math.ceil(from * (n - 1) + 1e-9), b = Math.floor(to * (n - 1) - 1e-9);
+    const pick = closed && from === 0 && to === 1 ? q.concat([q[0], q[1]]) : [at(from), ...q.slice(a, b + 1), at(to)];
     const m = pick.length;
     if (m < 2) return;
     const L = [], R = [];
@@ -95,7 +97,7 @@
       const p0 = pick[Math.max(0, i - 1)], p1 = pick[Math.min(m - 1, i + 1)];
       const d = dist(p0, p1) || 1, nx = -(p1[1] - p0[1]) / d, ny = (p1[0] - p0[0]) / d;
       // pressure: the width breathes by ±18%, and an open stroke thins toward both ends like a lifted brush
-      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (a + i) * 0.11));
+      let half = (w / 2) * (1 + 0.18 * drift(seed + 13, (from * (n - 1) + i) * 0.11));
       if (taper) half *= 0.45 + 0.55 * Math.min(1, Math.min(i, m - 1 - i) / 3);
       L.push([pick[i][0] + nx * half, pick[i][1] + ny * half]);
       R.push([pick[i][0] - nx * half, pick[i][1] - ny * half]);
@@ -166,18 +168,18 @@
   /* ---------- copy ---------- */
   /* Copy type sizes, measured as ascender-to-descender height / line pitch / left margin / first-line top (STYLE.md). `px` is the Pretendard size that gives that glyph height. */
   IB.TYPE = {
-    spot: { px: 80, pitch: 95, x: 90, top: 351, from: 37, tau: 0.25 },    // the 15 s single-shot spots
-    head: { px: 118, pitch: 128, x: 200, top: 412, from: 71, tau: 0.2 },  // first copy card: the big question
-    body: { px: 80, pitch: 108, x: 200, top: 447, from: 71, tau: 0.2 },   // following copy cards
-    tag: { px: 64, pitch: 0, x: 960, top: 508, from: 39, tau: 0.15 },     // end-card line, centred on x
+    spot: { px: 80, pitch: 95, x: 90, top: 351, from: 37, tau: 0.21, stop: 0.7 },    // the 15 s single-shot spots
+    head: { px: 118, pitch: 128, x: 200, top: 412, from: 71, tau: 0.2, stop: 0.79 },  // first copy card: the big question
+    body: { px: 80, pitch: 108, x: 200, top: 447, from: 71, tau: 0.2, stop: 0.79 },   // following copy cards
+    tag: { px: 64, pitch: 0, x: 960, top: 508, from: 39, tau: 0.152, stop: 0.5 },     // end-card line, centred on x
   };
   /* copy(ctx, lines, t, at, opts) — a block of copy that arrives at time `at`: fully opaque from its first frame, `from` px left of its place, sliding in on IB.settle; each further line shows one frame later than the one above. Never fades. Call it again with a new `at` when a line is added or the wording changes: the whole block re-enters.
      size   'spot' | 'head' | 'body' | 'tag', or an object like IB.TYPE's
-     color, x, top, align, from  overrides; stagger = frames between one line and the next (default 1) */
+     color, x, top, align, from, tau, stop  overrides; stagger = frames between one line and the next (default 1) */
   IB.copy = (ctx, lines, t, at, o = {}) => {
     const ty = { ...(typeof o.size === 'object' ? o.size : IB.TYPE[o.size || 'spot']), ...o };
     if (t < at) return 0;
-    const dx = -ty.from * (1 - IB.settle(t - at, ty.tau));
+    const dx = -ty.from * (1 - IB.settle(t - at, ty.tau, ty.stop));
     ctx.save();
     ctx.font = `${ty.weight || 300} ${ty.px}px ${IB.FONT}`;
     ctx.textBaseline = 'alphabetic';

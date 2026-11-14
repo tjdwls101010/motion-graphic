@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>spot / tandem-riders-join</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script>
+/* 혼자 달리던 자전거에 한 명씩 끼어들 때마다 자전거가 한 칸씩 길어져 5인승 탠덤이 되고, 카피가 한 줄로 바뀌는 순간 다 같이 손을 든다. 전달하는 생각: 따로 있던 것들이 한 대에 올라 같은 방향으로 간다.
+   Motion notes: the only spot that runs on ones for its whole length, because it is a travelling shot. Nothing pans: the ground props (grass tufts, stones) scroll left at a constant 332 px/s (13.8 px per frame), clouds drift 3 px/s, and the bike itself creeps right 34.6 px/s so it ends a third of a screen further on. Each new rider is inserted between riders already seated and the wheelbase grows by 120 px about its own centre (rear -57, front +60) in 0.25 s; joins at 1.4, 3.9, 5.7, 6.7 s. Wheelbase = 180 + 120 px per extra rider, wheel radius 50. Legs pedal continuously at 1.4 rev/s with each rider a third of a turn out of phase. Copy: three lines, the next line 2 frames after the one before; at 9.25 s it cuts to one line on the middle row and every arm goes up; a cap blows off backwards at 10 s. Lines are 2-2.5 px because the figures are small (head radius 20). */
+const { prog, kf, lerp, rng, clamp } = MG;
+const C = IB.C, AXLE = 748, R = 50;
+const COPY_A = ['줄 수가 많아도 한꺼번에', '왼쪽에서 밀려 들어와', '같은 자리에 선다.'], COPY_B = ['한 줄로 줄어든다.'];
+
+// rear to front. `at` = when the rider drops in.
+const RIDERS = [
+  { at: 1.4, skin: C.skin[4], top: C.paper, leg: C.navy, head: 'long' },
+  { at: 5.7, skin: C.skin[1], top: C.paper, leg: C.paper, head: 'helmet', hat: C.sky },
+  { at: 6.7, skin: C.skin[2], top: C.paper, leg: C.navy, shin: C.skin[2], head: 'wisps' },
+  { at: 3.9, skin: C.skin[1], top: C.sky, leg: C.sky, head: 'bun' },
+  { at: -1, skin: C.skin[4], top: C.navy, leg: C.paper, head: 'helmet', hat: C.paper },
+];
+const here = (r, t) => (r.at < 0 ? 1 : prog(IB.twos(t), r.at, 0.25, 'outQuad'));
+
+const PROPS = (() => { const r = rng(7), out = []; let x = 300; while (x < 332 * 12 + 2200) { out.push({ x, y: 812 + r() * 70, kind: r() < 0.5 ? 'tuft' : 'stones', seed: Math.floor(r() * 900) }); x += 260 + r() * 420; } return out; })();
+
+function ik(H, P, a, b) {
+  const dx = P[0] - H[0], dy = P[1] - H[1], d = clamp(Math.hypot(dx, dy), Math.abs(a - b) + 1, a + b - 1);
+  const A = Math.acos((a * a + d * d - b * b) / (2 * a * d)), base = Math.atan2(dy, dx);
+  return [H[0] + a * Math.cos(base - A), H[1] + a * Math.sin(base - A)];
+}
+
+function rider(ctx, r, sx, drop, crank, wave, seed) {
+  const seatY = AXLE - 108 - drop, hip = [sx, seatY - 12], sh = [sx + 38, seatY - 72], head = [sx + 54, seatY - 100];
+  const bb = [sx + 34, AXLE - 2];                                 // bottom bracket this rider pedals
+  const pedal = (a) => [bb[0] + 24 * Math.cos(a), bb[1] + 24 * Math.sin(a) - drop * 0.4];
+  const limb = (pts, fill, w, sd) => IB.tube(ctx, pts, { w, edge: 2.2, fill, seed: sd });
+  const legAt = (a, sd) => {
+    const P = pedal(a), K = ik(hip, P, 78, 76);
+    if (r.shin) { limb([hip, K], r.leg, 18, sd); limb([K, P], r.shin, 12, sd + 1); } else limb([hip, K, P], r.leg, 16, sd);
+    IB.oval(ctx, P[0] + 7, P[1] + 3, 13, 6, { fill: C.paper, w: 2, seed: sd + 2, n: 8 });
+  };
+  legAt(crank + Math.PI, seed);                                    // far leg
+  const hand = wave ? [sh[0] + wave[0], sh[1] - 62 + wave[1]] : [sx + 92, seatY - 14];
+  const elbow = wave ? [sh[0] + wave[0] * 0.3 - 8, sh[1] - 28] : [sx + 70, seatY - 40];
+  limb([[hip[0] + 4, hip[1] - 6], sh], r.top, 38, seed + 5);                           // torso
+  legAt(crank, seed + 8);                                          // near leg
+  limb([sh, elbow, hand], r.top === C.paper || r.top === C.sky || r.top === C.navy ? r.top : C.paper, 10, seed + 12);
+  IB.oval(ctx, hand[0] + 2, hand[1] - 2, 6, 6, { fill: r.skin, w: 2, seed: seed + 13, n: 8 });
+  // head
+  if (r.head === 'long') IB.ink(ctx, [[head[0] + 6, head[1] - 24], [head[0] - 30, head[1] - 22], [head[0] - 78, head[1] - 2], [head[0] - 84, head[1] + 16], [head[0] - 40, head[1] + 14], [head[0] - 8, head[1] + 18]], { closed: true, fill: C.ink, w: 2, seed: seed + 20 });
+  IB.oval(ctx, head[0], head[1], 20, 21, { fill: r.skin, w: 2.2, seed: seed + 21, n: 12 });
+  if (r.head === 'helmet') {
+    IB.ink(ctx, IB.ellipse(head[0] - 2, head[1] - 4, 24, 22, 8, Math.PI * 0.95, Math.PI * 2.05).concat([[head[0] + 34, head[1] - 2]]), { closed: true, fill: r.hat, w: 2.2, seed: seed + 22 });
+  } else if (r.head === 'bun') {
+    IB.oval(ctx, head[0] - 22, head[1] - 20, 12, 12, { fill: C.skin[4], w: 2, seed: seed + 23, n: 8 });
+    IB.ink(ctx, IB.ellipse(head[0] - 3, head[1] - 4, 21, 20, 8, Math.PI * 0.75, Math.PI * 1.8), { closed: true, fill: C.skin[4], w: 2, seed: seed + 24 });
+  } else if (r.head === 'wisps') {
+    for (let i = 0; i < 5; i++) IB.ink(ctx, [[head[0] + 4 - i * 4, head[1] - 20 + i * 5], [head[0] - 24 - i * 3, head[1] - 22 + i * 7], [head[0] - 46, head[1] - 12 + i * 8]], { w: 1.8, seed: seed + 25 + i });
+  } else if (r.head === 'long') {
+    IB.ink(ctx, IB.ellipse(head[0] - 2, head[1] - 3, 21, 21, 8, Math.PI * 0.8, Math.PI * 1.85), { closed: true, fill: C.ink, w: 2, seed: seed + 26 });
+  }
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(head[0] + 11, head[1] - 1, 2, 0, 7); ctx.fill();
+}
+
+function wheel(ctx, x, spin, seed) {
+  IB.smear(ctx, x, AXLE + R + 1, 84, { h: 8, color: C.blue, seed });
+  IB.oval(ctx, x, AXLE, R, R, { fill: C.paper, w: 7, seed, n: 20, wob: 0.4 });
+  for (let i = 0; i < 3; i++) { const a = spin + i * 2.09; IB.ink(ctx, IB.ellipse(x, AXLE, 30, 30, 5, a, a + 0.9), { w: 1.6, color: '#b9b9b9', seed: seed + i }); }
+  IB.oval(ctx, x, AXLE, 5, 5, { fill: C.ink, w: 0, n: 8 });
+}
+
+MG.scene({
+  title: 'spot / tandem-riders-join',
+  duration: 11.75, ref: [105.083, 116.833], fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    // clouds drift, ground props scroll (ones)
+    const cl = (x, y, w, seed) => IB.ink(ctx, [[x - w / 2, y], [x - w * 0.2, y - w * 0.12], [x + w * 0.05, y - w * 0.16], [x + w * 0.3, y - w * 0.08], [x + w / 2, y], [x, y + 3]], { closed: true, w: 2, seed, fill: C.bg });
+    cl(1372 - t * 3, 185, 150, 60);
+    cl(866 - t * 3, 306, 62, 61);
+    for (const p of PROPS) {
+      const x = p.x + 900 - t * 332;
+      if (x < -80 || x > 2000) continue;
+      if (p.kind === 'tuft') IB.ink(ctx, [[x - 26, p.y], [x - 20, p.y - 13], [x - 12, p.y], [x - 4, p.y - 18], [x + 4, p.y], [x + 14, p.y - 12], [x + 24, p.y]], { w: 2, smooth: false, seed: p.seed });
+      else { IB.oval(ctx, x, p.y, 19, 11, { w: 2, seed: p.seed, n: 8, fill: C.bg }); IB.oval(ctx, x + 32, p.y + 5, 8, 5, { w: 1.8, seed: p.seed + 1, n: 6 }); IB.oval(ctx, x - 24, p.y + 5, 4, 3, { w: 1.8, seed: p.seed + 2, n: 6 }); }
+    }
+
+    // bike: creeps right, grows about its centre as riders drop in
+    const pres = RIDERS.map((r) => here(r, t)), n = pres.reduce((a, b) => a + b, 0);
+    const wb = 180 + 120 * (n - 1), cx = 1006 + 34.6 * t, rx = cx - wb / 2, fx = cx + wb / 2;
+    const seats = []; let acc = 0;
+    RIDERS.forEach((r, i) => { seats.push(rx + 48 + 120 * acc + 60 * (pres[i] - 1)); acc += pres[i]; });
+    const spin = t * 6.6;
+    wheel(ctx, rx, spin, 70);
+    wheel(ctx, fx, spin, 80);
+    for (let k = 0; k < 2; k++) IB.oval(ctx, rx - 78 - k * 30 - (IB.frame(t) % 3) * 6, AXLE + 26 + k * 8, 13 - k * 6, 8 - k * 4, { w: 1.8, seed: 90 + k, n: 7, fill: C.bg });   // dust
+    const frame = (pts, seed) => IB.tube(ctx, pts, { w: 8, edge: 2, fill: C.blue, seed });
+    const last = seats[seats.length - 1];
+    frame([[rx, AXLE], [fx - 78, AXLE - 2]], 100);
+    frame([[rx, AXLE], [seats[0] + 8, AXLE - 76], [fx - 46, AXLE - 82]], 101);
+    frame([[last + 34, AXLE - 2], [fx - 46, AXLE - 82]], 102);
+    frame([[fx - 50, AXLE - 100], [fx - 42, AXLE - 78], [fx, AXLE]], 103);
+    IB.ink(ctx, [[fx - 78, AXLE - 124], [fx - 54, AXLE - 124], [fx - 50, AXLE - 100]], { w: 5, seed: 104 });
+    RIDERS.forEach((r, i) => {
+      if (pres[i] <= 0) return;
+      const sx = seats[i];
+      frame([[sx + 34, AXLE - 2], [sx - 2, AXLE - 104]], 110 + i);
+      IB.ink(ctx, [[sx - 16, AXLE - 108], [sx + 14, AXLE - 108]], { w: 6, seed: 120 + i });                                  // saddle
+      if (i < RIDERS.length - 1) IB.ink(ctx, [[sx + 76, AXLE - 78], [sx + 86, AXLE - 120], [sx + 100, AXLE - 124]], { w: 4, seed: 130 + i });   // stoker bar
+      IB.oval(ctx, sx + 34, AXLE - 2, 12, 12, { fill: C.paper, w: 2.2, seed: 140 + i, n: 10 });
+    });
+    // riders, rear first so the one in front overlaps
+    const tw = IB.twos(t), waving = t >= 9.25;
+    RIDERS.forEach((r, i) => {
+      if (pres[i] <= 0) return;
+      const sway = waving ? [(i % 2 ? 1 : -1) * (18 + 10 * Math.sin(tw * 9 + i)), 6 * Math.cos(tw * 9 + i * 2)] : null;
+      rider(ctx, r, seats[i], (1 - pres[i]) * 90, spin + i * 2.09, sway, 200 + i * 40);
+    });
+    // the cap that blows off at 10 s
+    if (t >= 10) {
+      const u = (t - 10) / 1.75, x = lerp(seats[4] + 30, 700, u), y = AXLE - 250 - 140 * Math.sin(u * 2.4) + 40 * u;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(-u * 5);
+      IB.ink(ctx, IB.ellipse(0, 0, 20, 16, 8, Math.PI, Math.PI * 2).concat([[32, 2]]), { closed: true, fill: C.paper, w: 2.2, seed: 500 });
+      ctx.restore();
+    }
+
+    if (t < 9.25) IB.copy(ctx, COPY_A, t, 1 / 24, { top: 387, stagger: 2 });
+    else IB.copy(ctx, COPY_B, t, 9.25, { top: 483, from: 45 });
+  },
+});
+</script>

@@ -5,11 +5,18 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
 <script>
-/* 미러볼 아래 다리 달린 파란 폴더가 풍선을 차자 화면이 옆으로 밀려 서류가 드러나고, 둘이 따로 춤추다 다가가 손을 잡으면 하트 풍선이 떠오른다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 전달하는 생각: 따로 놀던 두 가지가 마침내 한자리에 선다.
-   Motion notes: one locked shot, no cuts, 11.6 s. Shows the reference frame's region x 356-1920, y 60-940 (CROP) enlarged 1.23x; coordinates in the code are the reference's. The stage pans 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s. In the reference a copy block sits left of the stage and gains a line at 1.0 s and 1.92 s and swaps at 8.67 s, on the kick, the pan and the hand-hold; the copy is not drawn here (its motion is IB.copy in the kit). Characters act on twos and hold dead still between poses; a body never deforms, it tilts or turns as one rigid shape on two thin legs, and arms exist only while they are used (drawn on in 0.25 s). The only tone is stippled graphite where a limb leaves its body (IB.shade). The kicked balloon rises fast then drifts down left for 2 s and stays as a prop. Last second: pose held, only the heart balloon moves, easing up exponentially (tau 0.3 s). Floor is nothing but a blue chalk puddle around each pair of shoes plus flat confetti ovals. Disco ball tiles re-roll every 4 frames. */
-const { prog, kf, lerp, rng, hash, clamp } = MG;
-const C = IB.C, FLOOR = 893;
+/* 미러볼 아래 다리 달린 파란 폴더가 풍선을 차자 화면이 옆으로 밀려 서류가 드러나고, 둘이 따로 춤추다 다가가 손을 잡으면 하트 풍선이 떠오른다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 폴더는 빳빳해서 책처럼 벌어지고 통째로 돌며, 종이는 낭창해서 휘고 클립에 물린 메모지가 늦게 따라온다. 전달하는 생각: 따로 놀던 두 가지가 마침내 한자리에 선다.
+   Motion notes: one locked shot, no cuts, 11.6 s. Shows the reference frame's region x 356-1920, y 60-940 (CROP) enlarged 1.23x; coordinates in the code are the reference's. The stage pans 291 px on twos with per-step travel 9, 12, 12, 113, 117, 13, 9, 6 px (slow out, two big steps, three to settle), starting 1.75 s; the reference's copy is not drawn.
+   Acting is a list of drawings, not a curve: FOLDER and DOC are tables of [frame, pose] at 24 fps, each pose held dead still until the next key, keys two frames apart while something moves (twos). Nothing is interpolated between keys: a move is 2-4 hand-placed drawings (anticipation, extreme, overshoot, rest) and a hold is the absence of keys. Feet are stage coordinates, not offsets from the body: a planted foot keeps its x from key to key while the body moves over it, and a foot changes place only through a drawing where it is off the floor. The one exception is the 191 px gather out of the lunge at 6.58 s, which the reference also pops in a single drawing. The reference has about 60 folder drawings and 55 document drawings in this shot; the tables have about 50 each. The two take turns: while one acts the other holds (the folder holds 4.4-5.9 s under the document's arm dance; the document leans in to watch the folder wind up and rears back two frames after its lunge lands).
+   Depth (kit/solid.js): bodies stand in a small 3-D space and are projected into the ink pen. Folder = two stiff covers hinged at the bottom (`open`, rad) that turn as one (`yaw`), with graphite in the gap. It faces about with a hop: crouch -5 and -11 px, one airborne drawing seen nearly edge-on (yaw 1.25, +16 px), landing squash -8, rebound +3. Its spin kick is a crouch held 4 frames, two drawings whirled 0.85-0.92 rad on one foot with the other leg thrown up in an arc, a reach, a landing 36 px low with the covers 0.62 rad apart, a slide of the weight onto the front foot (covers 0.82 rad, the widest they get), and a pop up 7 px before it settles.
+   Document = one bendable sheet (IB.bend: sway, sag, wave in the picture plane; arch, twist in depth) whose space can also pitch. Its whirl is 9 drawings (3.46-4.2 s): dip, lean with a leg crossing over, lean back the other way, two extremes where the sheet is tipped 0.9 rad away and then 0.8 rad toward us (its centre line reads 0.66 and 0.64 of its height) with its top and bottom edges in an S (wave 5 and -9 px), then recoveries with sway 18, 9 and -3 px. It never shows a blank back. The papers under its clip swing and lift by their own share (yellow 0.5, lavender 1, green 1.3), go opposite ways on the two extremes and come to rest one key after the sheet (sheet at 4.12 s, papers at 4.29 s); a lifted paper bellies and throws graphite on the sheet under its free edge.
+   Limbs (kit/figure.js): rubber-hose legs with a `bow` or a knee (`via`), boots seen from the front at rest and from the side in a step or kick. Arms exist only while used and grow from behind the body edge over 3-4 drawings; a hand on the hip is a ring that leaves the edge and returns to it. Hands change shape with the acting: rest -> reach -> open -> clasp. Line: bodies 3.3-3.7 px, limbs 2.4, hands 2.2.
+   Props: the kicked balloon leaves as one stretched smear drawing (2.5:1 along its path), turns one full revolution knot-last to knot-first while it drifts down for 2 s, squashes on landing (44 x 29 against 40 x 33), bounces 8 px and rocks twice. Mirror ball: a sphere of 24 x 10 tiles seen from 3 radii away; tile colours are fixed to the ball and travel across it 0.05 rad per drawing on threes (8 fps); two glints grow and die over 4 drawings each. The ball is the one thing that never holds: the reference's ball also changes every 3 frames through its last frame. Last second: both characters held, and apart from the ball only the heart balloon moves: one narrow drawing as it turns into view, then easing up exponentially (tau 0.45 s) with its string flicking side to side on twos. Floor: a blue chalk puddle with a solid core that stretches to span the feet, plus flat confetti ovals. */
+const { lerp, rng, hash, clamp } = MG;
+const C = IB.C, PI = Math.PI, FLOOR = 893, ANKLE = FLOOR - 12, HIP = 106;
 const CROP = [356, 60, 1564, 880];   // the region of the reference frame this scene shows, enlarged 1.23x: the copy on the left is left out
 
 // stage pan, px left to travel, per 24 fps frame (measured on the disco ball; it steps on twos)
@@ -18,113 +25,289 @@ const pan = (f) => { let v = 291; for (const [k, x] of PAN) if (f >= k) v = x; r
 
 const CONFETTI = (() => { const r = rng(12), out = []; for (let i = 0; i < 46; i++) out.push([720 + r() * 1230, 812 + r() * 150, 26 + r() * 16, r() < 0.5 ? '#d1e2ee' : '#eadeac']); return out; })();
 
-function leg(ctx, hx, hy, fx, fy, fill, seed, knee = 0) {
-  // a thin trouser leg from hip to foot, optionally bent, shaded where it leaves the body, ending in a small boot
-  const mx = (hx + fx) / 2 + knee, my = (hy + fy) / 2;
-  const dx = fx - hx, dy = fy - hy, d = Math.hypot(dx, dy) || 1, nx = (-dy / d) * 7, ny = (dx / d) * 7;
-  const outline = [[hx - nx, hy - ny], [mx - nx, my - ny], [fx - nx, fy - ny], [fx + nx, fy + ny], [mx + nx, my + ny], [hx + nx, hy + ny]];
-  IB.ink(ctx, outline, { closed: true, smooth: knee !== 0, fill, w: 0, seed });
-  ctx.save(); ctx.translate(hx, hy); ctx.rotate(Math.atan2(dy, dx) - Math.PI / 2);
-  IB.shade(ctx, -6, 0, 12, 42, { from: 'top', seed: seed + 2 });
-  ctx.restore();
-  IB.ink(ctx, outline, { closed: true, smooth: knee !== 0, w: 2.8, seed });
-  IB.ink(ctx, [[fx - 8, fy - 5], [fx + 8, fy - 5], [fx + 9, fy + 2], [fx + 17, fy + 8], [fx + 14, fy + 12], [fx - 9, fy + 12]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: seed + 1 });
-  IB.seg(ctx, fx - 7, fy + 2, fx + 8, fy + 2, { w: 1.8, seed: seed + 3 });
+/* held(keys, f) — the drawing on screen at frame f: the last key at or before it. */
+const held = (keys, f) => { let v = keys[0][1]; for (const [k, p] of keys) { if (f < k) break; v = p; } return v; };
+
+/* The chalk under a character's shoes: the reference packs it solid in the middle, so a flat ragged core goes under the kit's dusty smear. */
+function puddle(ctx, cx, w, seed) {
+  IB.ink(ctx, IB.ellipse(cx, FLOOR - 3, w * 0.4, 5.5, 14), { closed: true, fill: C.smear, w: 0, wob: 2.4, seed });
+  IB.smear(ctx, cx, FLOOR - 11, w, { h: 14, seed });
 }
 
-/* A thin arm from a root on the body's edge to a hand: tapered, shaded at the root, drawn on by p (0..1), with a small mitten hand once it has arrived. */
-function arm(ctx, root, hand, p, seed, sag = 6) {
-  if (p <= 0) return;
-  const tip = [lerp(root[0], hand[0], p), lerp(root[1], hand[1], p)];
-  const dx = tip[0] - root[0], dy = tip[1] - root[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d, s = Math.sign(dx) * sag * p;
-  const mid = [(root[0] + tip[0]) / 2 - nx * s, (root[1] + tip[1]) / 2 - ny * s];
-  const shape = [[root[0] + nx * 6.5, root[1] + ny * 6.5], [mid[0] + nx * 4.5, mid[1] + ny * 4.5], [tip[0] + nx * 3.5, tip[1] + ny * 3.5], [tip[0] - nx * 3.5, tip[1] - ny * 3.5], [mid[0] - nx * 4.5, mid[1] - ny * 4.5], [root[0] - nx * 6.5, root[1] - ny * 6.5]];
-  IB.ink(ctx, shape, { closed: true, fill: C.paper, w: 0, seed });
-  ctx.save(); ctx.translate(root[0], root[1]); ctx.rotate(Math.atan2(dy, dx));
-  IB.shade(ctx, 0, -6, 46, 12, { from: 'left', seed: seed + 1, alpha: 0.5 });
-  ctx.restore();
-  IB.ink(ctx, shape.slice(0, 3), { w: 2.8, seed: seed + 2, taper: false });
-  IB.ink(ctx, shape.slice(3), { w: 2.8, seed: seed + 3, taper: false });
-  if (p < 1) return;
-  // mitten: a palm and three finger strokes pointing along the arm
-  const a = Math.atan2(dy, dx);
-  ctx.save(); ctx.translate(tip[0], tip[1]); ctx.rotate(a);
-  IB.ink(ctx, [[-2, -6], [10, -9], [20, -5], [22, 3], [12, 8], [-2, 6]], { closed: true, fill: C.paper, w: 2.6, seed: seed + 4 });
-  for (const y of [-3, 1, 5]) IB.seg(ctx, 12, y, 21, y + 1, { w: 1.6, seed: seed + 5 + y });
-  ctx.restore();
+/* ---------- limbs shared by both characters ---------- */
+/* Two legs from the hips (stage px, wherever the body's turn has put them) to the feet. p.feet are [x on the stage, height above the floor line (negative = up)] per ankle, not offsets from the body: a planted foot keeps the same x from key to key while the body's x moves over it, which is what stops it skating. via is a knee, also [stage x, height]; bow / toe / frot are per leg. The foot listed first always takes the hip that is on the left of the screen, so a body that turns round does not cross its legs. */
+function legs(ctx, p, hips, fill, seed, shoe) {
+  const hs = hips.slice().sort((a, b) => a[0] - b[0]);
+  const feet = p.feet.map(([x, dy]) => [x, ANKLE + dy]);
+  const down = feet.filter((q) => q[1] > ANKLE - 9);
+  if (down.length) {   // a puddle around the shoes, not a line under them: it starts above the soles and stretches to span a wide stance
+    const x0 = Math.min(...down.map((q) => q[0])), x1 = Math.max(...down.map((q) => q[0]));
+    puddle(ctx, (x0 + x1) / 2, 84 + (x1 - x0), seed);
+  }
+  feet.forEach((foot, i) => {
+    const via = p.via && p.via[i] ? [p.via[i][0], ANKLE + p.via[i][1]] : null;
+    IB.hose(ctx, [hs[i][0], hs[i][1] - 10], foot, { bow: p.bow[i], via, w: 18, w1: 14.5, fill, lw: 2.4, seed: seed + 3 + i * 5, shade: 18 });
+    IB.boot(ctx, foot, { dir: p.toe[i], rot: p.frot[i], lw: 2.6, seed: seed + 9 + i * 5, ...shoe });
+  });
+}
+/* An arm from a root behind the body's edge to a wrist, with a hand once it is long enough to have one. */
+function arm(ctx, root, to, o) {
+  const ang = IB.hose(ctx, root, to, { bow: o.bow || 0, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: o.seed, shade: 34 });
+  if (o.hand) IB.mitt(ctx, to, o.aim == null ? ang : o.aim, { kind: o.hand, flip: o.flip || 1, s: 1.25, seed: o.seed + 9 });
 }
 
-/* A rigid body on two legs. p: { x, tilt, lift, feet: [[dx, dy], [dx, dy]], sx } — x is the hip centre on the floor line, feet are offsets from it. */
-function actor(ctx, p, body, legFill, hipY, seed) {
-  IB.smear(ctx, p.x + (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 11, 118, { h: 14, seed });   // a puddle around the shoes, not a line under them: it starts above the soles
-  const hy = FLOOR - 12 - hipY - (p.lift || 0);
-  ctx.save();
-  ctx.translate(p.x, hy);
-  ctx.rotate(p.tilt || 0);
-  const hips = [[-17, 0], [17, 0]].map(([x, y]) => { const c = Math.cos(p.tilt || 0), s = Math.sin(p.tilt || 0); return [p.x + x * c - y * s, hy + x * s + y * c]; });
-  ctx.restore();
-  p.feet.forEach(([dx, dy], i) => leg(ctx, hips[i][0], hips[i][1] - 4, p.x + dx, FLOOR - 12 + dy - (p.air || 0), legFill, seed + 3 + i * 5, p.knee ? p.knee[i] : 0));
-  ctx.save();
-  ctx.translate(p.x, hy);
-  ctx.rotate(p.tilt || 0);
-  ctx.scale(p.sx == null ? 1 : p.sx, 1);
-  body(ctx);
-  ctx.restore();
-}
-const folderBody = (ctx) => {
-  IB.ink(ctx, [[-100, -190], [-28, -190], [-10, -167], [100, -167], [100, 0], [-100, 0]], { closed: true, smooth: false, fill: C.blue, w: 4, seed: 21 });
-  IB.seg(ctx, -100, -167, -12, -167, { w: 3, seed: 22 });
-};
-const docBody = (ctx) => {
-  IB.box(ctx, -86, -238, 173, 238, { fill: C.paper, w: 3.6, seed: 31 });
-  IB.box(ctx, -71, -227, 95, 114, { fill: C.lavender, w: 2, seed: 32 });
-  IB.box(ctx, -58, -227, 57, 52, { fill: C.yellow, w: 2, seed: 33 });
-  IB.box(ctx, -60, -110, 82, 32, { fill: C.mint, w: 2, seed: 34 });
-  for (let i = 0; i < 5; i++) IB.seg(ctx, 28, -176 + i * 15, 58, -176 + i * 15, { w: 2.2, seed: 35 + i });
-  IB.ink(ctx, [[-28, -200], [-28, -248], [-38, -252], [-40, -214]], { w: 2.5, seed: 41 });   // paper clip
-};
+/* ---------- folder ---------- */
+const FW = 200, FH = 167, TAB = 23;
+const F0 = { x: 1093, lift: 0, roll: 0, yaw: 0, open: 0, feet: [[1076, 0], [1110, 0]], bow: [0, 0], toe: [0, 0], frot: [0, 0] };
+const fo = (o, base = F0) => ({ ...base, ...o });
+const FT = fo({ yaw: PI });                 // turned to face the other way: the tab is now on the left
+const FC = fo({ x: 1268, feet: [[1251, 0], [1285, 0]] }, FT), FD = fo({ x: 1315, feet: [[1298, 0], [1332, 0]] }, FT);
+const FOLDER = [
+  [0, F0],
+  // kick: the near leg curls back for two drawings, snaps straight through the balloon, hangs for three, comes home
+  [18, fo({ roll: -0.02, feet: [[1095, -10], [1110, 0]], bow: [-12, 0], toe: [-1, 0], frot: [-0.5, 0] })],
+  [20, fo({ roll: -0.04, feet: [[1101, -17], [1110, 0]], bow: [-17, 0], toe: [-1, 0], frot: [-0.8, 0] })],
+  [22, fo({ x: 1096, roll: 0.05, feet: [[1032, -20], [1110, 0]], toe: [-1, 0], frot: [0.55, 0] })],
+  [24, fo({ x: 1097, roll: 0.07, feet: [[1024, -27], [1110, 0]], toe: [-1, 0], frot: [0.7, 0] })],
+  [26, fo({ x: 1097, roll: 0.06, feet: [[1027, -23], [1110, 0]], toe: [-1, 0], frot: [0.6, 0] })],
+  [30, fo({ x: 1094, roll: 0.02, feet: [[1060, -3], [1110, 0]], bow: [5, 0], toe: [-1, 0], frot: [0.15, 0] })],
+  [32, F0],
+  // faces about with a hop: crouch, deeper, one drawing in the air seen nearly edge-on, squash, rebound
+  [60, fo({ lift: -5, bow: [-5, 5] })],
+  [62, fo({ lift: -11, bow: [-10, 10] })],
+  [64, fo({ lift: 16, yaw: 1.25, open: 0.14, feet: [[1084, -15], [1103, -11]], bow: [4, -4], toe: [1, 1], frot: [0.5, 0.35] })],
+  [66, fo({ lift: -8, bow: [-9, 9] }, FT)],
+  [68, fo({ lift: 3 }, FT)],
+  [70, FT],
+  // step-touch groove, a drawing every 2 or 4 frames, 12 frames a bar: the hips swing over planted feet, then the free foot crosses in front
+  ...[75, 87].flatMap((f) => [
+    [f, fo({ x: 1098, lift: -4, roll: 0.03, bow: [7, 7] }, FT)],
+    [f + 2, fo({ x: 1099, lift: 2, roll: 0.045, feet: [[1126, -2], [1110, 0]], via: [[1078, -54], null], toe: [1, 0] }, FT)],
+    [f + 6, fo({ x: 1088, lift: -4, roll: -0.03, bow: [-7, -7] }, FT)],
+    [f + 8, fo({ x: 1087, lift: 2, roll: -0.045, feet: [[1076, 0], [1060, -2]], via: [null, [1108, -54]], toe: [0, -1] }, FT)],
+  ]),
+  // hip out, covers apart: settles past the pose and back, then holds while the document has the floor
+  [99, fo({ x: 1100, roll: -0.05, yaw: PI + 0.22, open: 0.14, feet: [[1065, -6], [1100, 0]], toe: [-1, 0], frot: [0.2, 0] })],
+  [101, fo({ x: 1108, roll: -0.15, yaw: PI + 0.46, open: 0.36, feet: [[1060, 0], [1100, 0]], toe: [-1, -1] })],
+  [103, fo({ x: 1108, roll: -0.11, yaw: PI + 0.4, open: 0.28, feet: [[1060, 0], [1100, 0]], toe: [-1, -1] })],
+  [105, fo({ x: 1108, roll: -0.125, yaw: PI + 0.42, open: 0.31, feet: [[1060, 0], [1100, 0]], toe: [-1, -1] })],
+  // spin kick into a lunge: gather, crouch (held 4 frames), whirl on one foot, reach, land low and wide, slide the weight over, pop up
+  [142, fo({ x: 1100, roll: -0.04, yaw: PI + 0.25, open: 0.2, lift: -5, feet: [[1060, 0], [1116, -6]], toe: [-1, 1], frot: [0, -0.2] })],
+  [144, fo({ x: 1092, yaw: PI + 0.3, open: 0.4, lift: -18, feet: [[1060, 0], [1123, 0]], bow: [-13, 13] })],
+  [148, fo({ x: 1079, lift: 10, roll: -0.85, yaw: PI + 0.3, open: 0.22, feet: [[1060, 0], [1179, -116]], bow: [-9, -24], toe: [0, 1], frot: [0, -0.5] })],
+  [150, fo({ x: 1079, lift: 12, roll: -0.92, yaw: PI + 0.3, open: 0.26, feet: [[1060, 0], [1186, -121]], bow: [-10, -26], toe: [0, 1], frot: [0, -0.65] })],
+  [152, fo({ x: 1104, lift: -14, roll: -0.5, yaw: PI + 0.45, open: 0.3, feet: [[1060, 0], [1285, 0]], bow: [-9, 0], toe: [0, 1], frot: [0, -0.2] })],
+  [154, fo({ x: 1150, lift: -36, roll: -0.03, yaw: PI + 0.5, open: 0.62, feet: [[1060, 0], [1285, 0]], bow: [-16, 16], toe: [-1, 1] })],
+  [156, fo({ x: 1228, lift: -30, roll: 0.05, yaw: PI + 0.62, open: 0.82, feet: [[1060, 0], [1285, 0]], bow: [0, 18], toe: [-1, 1] })],
+  [158, fo({ x: 1262, lift: 7, yaw: PI + 0.25, open: 0.16 }, FC)],
+  [160, fo({ x: 1266, lift: -2, yaw: PI + 0.1, open: 0.06 }, FC)],
+  [162, FC],
+  // shifts its weight, half turned toward the document, and back
+  [173, fo({ roll: 0.02, yaw: PI + 0.2, open: 0.1, feet: [[1251, 0], [1292, -5]], toe: [0, 1] }, FC)],
+  [175, fo({ x: 1272, roll: 0.035, yaw: PI + 0.26, open: 0.13, feet: [[1251, 0], [1297, 0]], toe: [0, 1] }, FC)],
+  [179, fo({ x: 1272, yaw: PI + 0.08, feet: [[1251, 0], [1290, -4]] }, FC)],
+  [183, fo({ x: 1272 }, FC)],
+  // three steps over to the document
+  [195, fo({ x: 1273, lift: -4, roll: 0.03, yaw: PI + 0.15, open: 0.08, bow: [5, 5] }, FC)],
+  [197, fo({ x: 1281, lift: 2, roll: 0.05, yaw: PI + 0.22, open: 0.12, feet: [[1251, 0], [1315, -5]], toe: [1, 1], frot: [0, -0.25] }, FC)],
+  [199, fo({ x: 1292, roll: 0.02, yaw: PI + 0.3, open: 0.18, feet: [[1284, -8], [1316, 0]], bow: [6, 0], toe: [1, 1], frot: [0.3, 0] }, FC)],
+  [203, fo({ x: 1304, roll: -0.05, yaw: PI + 0.42, open: 0.27, feet: [[1298, 0], [1316, 0]], toe: [1, 1] }, FC)],
+  [205, fo({ x: 1311, roll: -0.03, yaw: PI + 0.3, open: 0.16, feet: [[1298, 0], [1327, -5]], toe: [0, 1], frot: [0, -0.2] }, FC)],
+  [207, fo({ x: 1315, yaw: PI + 0.1, open: 0.05 }, FD)],
+  [209, FD],
+  // the hands meet: both start back, lean in, and stand straight once they hold
+  [246, fo({ x: 1312, roll: -0.06 }, FD)],
+  [248, fo({ x: 1311, roll: -0.075 }, FD)],
+  [252, fo({ x: 1314, roll: -0.02 }, FD)],
+  [254, fo({ x: 1318, roll: 0.05 }, FD)],
+  [256, fo({ x: 1318, roll: 0.035 }, FD)],
+  [258, FD],
+];
 
-function folderPose(t) {
-  const f = IB.frame(t), step = Math.floor(f / 6) % 2;   // a dance step every 6 frames
-  const stand = { x: 1093, feet: [[-17, 0], [17, 0]] };
-  if (t < 0.75) return stand;
-  if (t < 0.96) return { x: 1093, tilt: -0.05, feet: [[2, -26], [17, 0]], knee: [16, 0] };            // wind-up
-  if (t < 1.25) return { x: 1093, tilt: 0.17, feet: [[-64, -22], [20, 0]] };                            // kick
-  if (t < 3.25) return stand;
-  if (t < 4.25) return { x: 1093, feet: step ? [[10, 0], [-10, 0]] : [[-22, 0], [22, 0]], knee: step ? [-8, 8] : [0, 0] };   // shuffle
-  if (t < 6.0) return { x: 1100, tilt: -0.15, feet: step ? [[4, 0], [44, -6]] : [[22, -6], [32, 0]], knee: [6, 6] };          // leaning groove
-  if (t < 6.25) return { x: 1100, lift: -14, feet: [[-22, 0], [22, 0]], knee: [-10, 10] };              // crouch
-  if (t < 6.42) return { x: 1150, tilt: 0.8, lift: 70, air: 60, feet: [[30, 0], [62, -18]] };           // spins through the air
-  if (t < 6.58) return { x: 1130, tilt: -0.45, lift: -30, feet: [[-40, 0], [150, 0]] };                 // lands in a long lunge
-  if (t < 8.33) return { x: 1268, feet: [[-17, 0], [17, 0]] };
-  if (t < 8.67) return { x: lerp(1268, 1315, (IB.twos(t) - 8.33) / 0.34), tilt: -0.07, feet: step ? [[-20, 0], [10, -8]] : [[-6, -8], [22, 0]] };
-  return { x: 1315, feet: [[-17, 0], [17, 0]] };
-}
-function docPose(t) {
-  const f = IB.frame(t), step = Math.floor(f / 8) % 2;
-  const twirl = (t0, x0, x1) => { const u = clamp((IB.twos(t) - t0) / 0.5); return { x: lerp(x0, x1, u), sx: Math.max(0.22, Math.abs(Math.cos(u * Math.PI))), tilt: Math.sin(u * Math.PI) * 0.16, feet: [[-10, 0], [12, -4]] }; };
-  if (t < 3.7) return { x: 1700, feet: [[-16, 0], [16, 0]] };
-  if (t < 4.2) return twirl(3.7, 1700, 1700);
-  if (t < 4.5) return { x: 1700, feet: [[-16, 0], [16, 0]] };
-  if (t < 6.2) return { x: 1700, tilt: step ? 0.05 : -0.05, feet: [[-26, 0], [26, 0]], akimbo: true };   // hands on hips, swaying
-  if (t < 7.75) return { x: 1700, feet: [[-16, 0], [16, 0]] };
-  if (t < 8.25) return twirl(7.75, 1700, 1598);
-  return { x: 1598, feet: [[-16, 0], [16, 0]] };
+const folderSpace = (p) => IB.space({ at: [p.x, ANKLE - HIP - p.lift], yaw: p.yaw, roll: p.roll, look: 0.22 });
+function drawFolder(ctx, p, seed) {
+  const S = folderSpace(p);
+  const h = p.open / 2, cs = Math.cos(h), sn = Math.sin(h);
+  // a cover leaning `side` of the hinge; the tab belongs to whichever cover is behind, which is what the reference draws from either side
+  const cover = (side, tab) => {
+    const P = (x, up) => [x, -up * cs, side * (up * sn + 2)];
+    return tab ? [P(-100, FH), P(10, FH), P(28, FH + TAB), P(100, FH + TAB), P(100, 0), P(-100, 0)] : [P(-100, FH), P(100, FH), P(100, 0), P(-100, 0)];
+  };
+  const a = IB.cast(S, cover(1)), b = IB.cast(S, cover(-1)), side = a.z >= b.z ? 1 : -1;
+  const far = IB.cast(S, cover(side, true)), near = side === 1 ? b : a;
+  legs(ctx, p, [S([-17, 0, 0]), S([17, 0, 0])], C.sky, seed, {});
+  IB.ink(ctx, far.pts, { closed: true, smooth: false, fill: C.blue, w: 3.7, seed: 21 });
+  if (p.open > 0.07) {
+    // graphite inside the gap, along whichever side edge of the near cover the far one shows beyond
+    const cx = (q) => q.reduce((s, v) => s + v[0], 0) / q.length, left = cx(far.pts) < cx(near.pts);
+    const e0 = near.pts[0][0] < near.pts[1][0] ? (left ? [3, 0] : [2, 1]) : (left ? [2, 1] : [3, 0]);
+    ctx.save();
+    IB.clip(ctx, far.pts);
+    IB.crease(ctx, near.pts[e0[0]], near.pts[e0[1]], 18 + 70 * p.open, { side: left ? 1 : -1, seed: 23, alpha: 0.75 });
+    ctx.restore();
+  }
+  IB.ink(ctx, near.pts, { closed: true, smooth: false, fill: C.blue, w: 3.7, seed: 22 });
 }
 
+/* ---------- document ---------- */
+const DW = 173, DH = 238, PIN = [-30, -222];
+const D0 = { x: 1700, lift: 0, roll: 0, yaw: 0, pitch: 0, sway: 0, sag: 0, wave: 0, arch: 0, curl: 0, twist: 0, feet: [[1682, 0], [1718, 0]], bow: [0, 0], toe: [0, 0], frot: [0, 0], n: [0, 0], arms: null };
+const dc = (o, base = D0) => ({ ...base, ...o });
+const DD = dc({ x: 1598, feet: [[1580, 0], [1616, 0]] });
+const DOC = [
+  [0, D0],
+  // spin on the spot: winds up against the turn, then the feet lead and the top edge follows up to 1 rad behind; the notes fly out, overshoot the other way and settle last
+  [83, dc({ lift: -4, roll: 0.02, bow: [-4, 4], n: [0.05, 0] })],
+  [85, dc({ lift: 3, roll: 0.035, sway: -7, feet: [[1682, 0], [1696, -13]], bow: [0, 6], toe: [0, -1], frot: [0, 0.4], n: [0.1, 0.12] })],
+  [87, dc({ x: 1697, lift: 6, roll: -0.075, sway: 12, sag: 3, feet: [[1682, 0], [1666, 0]], via: [null, [1703, -54]], toe: [0, -1], n: [-0.18, 0.35] })],
+  [89, dc({ x: 1703, lift: 11, roll: 0.18, yaw: 0.4, pitch: 0.9, sway: 15, sag: -5, wave: 5, feet: [[1682, 0], [1666, 0]], via: [[1690, -58], [1706, -52]], toe: [0, -1], n: [-0.36, 0.8] })],
+  [91, dc({ x: 1699, lift: 5, roll: -0.04, pitch: -0.8, sway: -12, sag: 6, wave: -9, feet: [[1682, 0], [1704, -9]], bow: [-4, 4], toe: [0, 1], frot: [0, -0.4], n: [0.32, 0.22] })],
+  [93, dc({ lift: 2, roll: -0.13, sway: 18, sag: -3, n: [0.5, 0.75] })],
+  [95, dc({ roll: -0.05, sway: 9, n: [0.3, 0.5] })],
+  [97, dc({ lift: -2, roll: 0.012, sway: -3, n: [-0.1, 0.18] })],
+  [99, dc({ n: [0.04, 0.05] })],
+  [103, D0],
+  // arms: out of both edges at once, onto the hips, then one hand and the other thrown open on the beat; the body dips a little into each
+  [110, dc({ arms: ['short', 'short'] })],
+  [112, dc({ lift: -3, arms: ['hip', 'hip'] })],
+  [116, dc({ roll: 0.025, arms: ['hip', 'hip'] })],
+  [118, dc({ lift: -3, roll: -0.03, sway: -4, arms: ['out', 'hip'] })],
+  [120, dc({ lift: 3, arms: ['up', 'up'] })],
+  [122, dc({ lift: -3, arms: ['hip', 'hip'] })],
+  [124, dc({ roll: -0.025, arms: ['hip', 'hip'] })],
+  [126, dc({ lift: -3, roll: 0.03, sway: 4, arms: ['hip', 'out'] })],
+  [128, dc({ lift: 3, arms: ['up', 'up'] })],
+  [130, dc({ arms: ['out', 'out'] })],
+  [132, dc({ arms: ['low', 'low'] })],
+  [134, dc({ arms: ['short', 'short'] })],
+  // turns to watch the folder wind up, leaning in; rears back when the lunge lands at its feet; straightens
+  [136, dc({ lift: -7, bow: [-5, 5] })],
+  [138, dc({ lift: 3, yaw: -0.5, sway: -6 })],
+  [140, dc({ yaw: -0.62, sway: -17, twist: -0.1 })],
+  [142, dc({ yaw: -0.6, sway: -13, twist: -0.06 })],
+  [156, dc({ lift: 3, yaw: -0.5, sway: 16, arch: 12, twist: 0.12, n: [-0.12, 0.25] })],
+  [158, dc({ lift: 1, yaw: -0.46, sway: 27, arch: 18, twist: 0.16, roll: 0.03, n: [-0.2, 0.4] })],
+  [160, dc({ yaw: -0.3, sway: 17, arch: 9, n: [0.1, 0.2] })],
+  [162, dc({ yaw: -0.15, sway: 7, n: [0.05, 0.08] })],
+  [164, dc({ sway: -3 })],
+  [172, D0],
+  // crosses to the folder in two steps: dips, kicks a leg up and leans into it, strides, and brakes with the top and the notes carrying on
+  [186, dc({ lift: -8, roll: 0.02, bow: [-7, 7] })],
+  [188, dc({ x: 1682, lift: 5, roll: -0.11, sway: -8, feet: [[1648, -24], [1718, 0]], bow: [-14, 0], toe: [-1, -1], frot: [0.7, 0], n: [-0.2, 0.3] })],
+  [190, dc({ x: 1652, lift: -3, roll: -0.06, yaw: -0.25, feet: [[1580, 0], [1692, -5]], toe: [-1, -1], frot: [0, 0.4], n: [-0.3, 0.5] })],
+  [192, dc({ x: 1622, lift: 2, yaw: -0.42, sway: -5, feet: [[1580, 0], [1642, -14]], bow: [0, 8], toe: [-1, -1], frot: [0, 0.5], n: [0.2, 0.55] })],
+  [194, dc({ x: 1603, yaw: -0.2, sway: -15, twist: -0.1, n: [0.27, 0.5] }, DD)],
+  [196, dc({ x: 1598, sway: 6, n: [0.14, 0.3] }, DD)],
+  [198, dc({ x: 1598, sway: -2, n: [-0.08, 0.12] }, DD)],
+  [200, DD],
+  [246, dc({ x: 1601, roll: 0.035 }, DD)],
+  [248, dc({ x: 1602, roll: 0.05, sway: 3 }, DD)],
+  [252, dc({ x: 1599, roll: 0.01 }, DD)],
+  [254, dc({ x: 1595, roll: -0.045, sway: -4, n: [0.1, 0.15] }, DD)],
+  [256, dc({ x: 1595, roll: -0.03, n: [-0.05, 0.05] }, DD)],
+  [258, DD],
+];
+
+/* One of the papers under the clip. It hangs from the clip (PIN), swings about it in the plane of the sheet and lifts off it like a flap, each paper by its own share `k` of the pose's [swing, lift]; z < 0 is toward the viewer. A lifted paper also bellies: the middle of its free edge hangs lower than its corners, and it throws graphite onto the sheet below that edge (pass the sheet's outline to keep the tone on the sheet). */
+function note(ctx, M, [x, y, w, h], n, k, fill, seed, sheet) {
+  const N = 6;   // samples per side of the paper's outline
+  const sw = n[0] * k, lf = n[1] * k, c = Math.cos(sw), s = Math.sin(sw), cl = Math.cos(lf), sl = Math.sin(lf);
+  const q = IB.cast(M, IB.rim(x, y, w, h, N).map(([px, py]) => {
+    const dx = px - PIN[0], dy = py - PIN[1], rx = dx * c - dy * s, ry = dx * s + dy * c, d = Math.max(0, ry), e = (2 * (px - x)) / w - 1;
+    const belly = sl * 0.16 * d * (1 - e * e), flick = sl * 0.1 * d * e * Math.sign(sw || 1);
+    return [PIN[0] + rx + flick, PIN[1] + (ry > 0 ? d * cl : ry) + belly, -1.5 - d * sl];
+  }));
+  if (lf > 0.12 && sheet) {
+    const e = q.pts.slice(2 * N, 3 * N + 1);   // the free (bottom) edge, right to left: IB.rim lists the sides top, right, bottom, left
+    ctx.save();
+    IB.clip(ctx, sheet);
+    for (let i = 0; i < e.length - 1; i++) IB.crease(ctx, e[i + 1], e[i], 5 + 13 * lf, { side: -1, seed: seed + 50 + i, alpha: 0.5 });
+    ctx.restore();
+  }
+  IB.ink(ctx, q.pts, { closed: true, smooth: false, fill, w: 2, seed });
+}
+
+const docSpace = (p) => IB.space({ at: [p.x, ANKLE - HIP - p.lift], yaw: p.yaw, pitch: p.pitch, roll: p.roll, look: 0.18 });
+function drawDoc(ctx, p, seed) {
+  const S = docSpace(p);
+  const B = IB.bend({ w: DW, h: DH, sway: p.sway, sag: p.sag, wave: p.wave, arch: p.arch, curl: p.curl, twist: p.twist });
+  const M = (q) => S(B(q));
+  const sheet = IB.cast(M, IB.rim(-DW / 2, -DH, DW, DH, 10));
+  legs(ctx, p, [S([-18, 0, 0]), S([18, 0, 0])], '#d4d4d4', seed, { s: 1.2, laces: true });
+  if (p.arms) [-1, 1].forEach((s, i) => {
+    const kind = p.arms[i], root = M([s * 78, -118, 0]);
+    if (kind === 'hip') {   // hand on the hip: a ring that leaves the edge and comes back to it, the hand itself behind the sheet
+      const ring = Array.from({ length: 9 }, (_, k) => { const a = -PI / 2 + (PI * k) / 8; return M([s * (76 + Math.cos(a) * 30), -76 + Math.sin(a) * 40, 0]); });
+      IB.limb(ctx, ring, ring.map(() => 12.5), { fill: C.bg, lw: 2.4, seed: seed + 40 + i, shade: 24 });
+    }
+    else {
+      const to = { short: [s * 10, 50], low: [s * 14, 126], out: [s * 34, 118], up: [s * 58, 102] }[kind];
+      arm(ctx, root, [root[0] + to[0], root[1] + to[1]], { bow: kind === 'up' ? s * 11 : kind === 'out' ? s * 8 : s * 4, hand: kind === 'out' || kind === 'up' ? 'open' : 'rest', flip: s, seed: seed + 50 + i * 20 });
+    }
+  });
+  IB.ink(ctx, sheet.pts, { closed: true, smooth: false, fill: C.paper, w: 3.3, seed: 31 });
+  const clip = [[-23, -DH - 16], [-23, -DH + 30], [-27, -DH + 38], [-33, -DH + 33], [-33, -DH + 8]];
+  // the sheet has no back side: nothing here asks cast() which face is showing, so a pose turned past edge-on (|yaw| > PI / 2) would show the face mirrored, which is how the reference draws the document when it turns round. No key in DOC goes that far
+  for (let i = 0; i < 6; i++) IB.ink(ctx, [[20, -182 + i * 15, 0], [42, -182 + i * 15, 0], [64, -182 + i * 15, 0]].map(M), { w: 2.4, seed: 35 + i });
+  note(ctx, M, [-60, -227, 82, 149], p.n, 1.3, C.mint, 34, sheet.pts);
+  note(ctx, M, [-71, -227, 95, 114], p.n, 1, C.lavender, 32, sheet.pts);
+  note(ctx, M, [-58, -227, 57, 52], p.n, 0.5, C.yellow, 33, sheet.pts);
+  IB.ink(ctx, clip.map((q) => M([...q, -3])), { w: 2.5, seed: 41 });
+}
+
+/* ---------- arms that find each other (stage px relative to each arm's root; keys as for the bodies) ---------- */
+const FARM = [
+  [214, { to: [8, 28] }], [216, { to: [16, 54], bow: -3 }], [218, { to: [24, 74], bow: -5, hand: 'rest' }], [220, { to: [30, 86], bow: -6, hand: 'rest', aim: 1.35 }],
+  [224, { to: [32, 84], bow: -7, hand: 'rest', aim: 1.1 }],
+  [228, { to: [40, 86], bow: -7, hand: 'reach', aim: 0.95 }], [230, { to: [46, 86], bow: -8, hand: 'reach', aim: 0.8 }], [232, { to: [52, 86], bow: -8, hand: 'open', aim: 0.7 }], [234, { to: [56, 86], bow: -8, hand: 'open', aim: 0.6 }],
+  [244, { to: [34, 88], bow: -6, hand: 'rest', aim: 1.3 }],
+  [246, { to: [52, -22], bow: 13, hand: 'open', aim: 0.75 }], [248, { to: [60, -30], bow: 15, hand: 'open', aim: 0.5 }],
+  [252, { to: [54, 52], bow: -4, hand: 'reach', aim: 0.7 }],
+  [254, 'clasp'],
+];
+const DARM = [
+  [216, { to: [-8, 28] }], [218, { to: [-20, 56], bow: 4, hand: 'rest' }], [220, { to: [-32, 76], bow: 6, hand: 'rest', aim: 1.85 }], [222, { to: [-36, 78], bow: 7, hand: 'rest', aim: 2.05 }],
+  [230, { to: [-42, 80], bow: 8, hand: 'reach', aim: 2.25 }], [232, { to: [-48, 80], bow: 8, hand: 'reach', aim: 2.4 }], [234, { to: [-54, 80], bow: 8, hand: 'open', aim: 2.5 }],
+  [244, { to: [-36, 82], bow: 6, hand: 'rest', aim: 1.9 }],
+  [246, { to: [-72, 30], bow: 10, hand: 'open', aim: 2.95 }], [248, { to: [-82, 26], bow: 12, hand: 'open', aim: 3.05 }],
+  [252, { to: [-56, 60], bow: 8, hand: 'reach', aim: 2.6 }],
+  [254, 'clasp'],
+];
+
+/* ---------- props ---------- */
 function discoBall(ctx, cx, cy, R, f) {
   IB.seg(ctx, cx, -10, cx, cy - R, { w: 3, seed: 50 });
-  const roll = Math.floor(f / 4), N = 8, pt = (i, j) => { const lon = (i / N - 0.5) * 2.9, lat = (j / N - 0.5) * 2.9; return [cx + R * Math.cos(lat) * Math.sin(lon), cy + R * Math.sin(lat)]; };
-  IB.oval(ctx, cx, cy, R, R, { fill: '#e2e2e2', w: 0, n: 20 });
-  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
-    const h = hash(i * 31 + j, roll + (i + j) % 3), col = h < 0.16 ? C.yellow : h < 0.3 ? C.blue : h < 0.38 ? C.lavender : h < 0.62 ? C.paper : null;
-    if (col) IB.ink(ctx, [pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)], { closed: true, smooth: false, fill: col, w: 0, wob: 0 });
+  // a real sphere seen from 3 radii away, so the rows bow the way the reference draws them; the tiles keep their colours and ride round with it on threes
+  const D = 3, r = R * Math.sqrt(D * D - 1) / D, S = IB.space({ at: [cx, cy], f: r * D, look: 0 });
+  const d3 = Math.floor(f / 3), turn = d3 * 0.05, NL = 24, NR = 10, dl = (PI * 2) / NL, top = 1.2, dr = (2 * top) / NR, edge = Math.acos(1 / D) - 0.14;
+  const lim = (lat) => Math.acos(Math.min(1, 1 / D / Math.cos(lat))) - 0.004;   // the furthest longitude still on the near side at this latitude
+  const pt = (lon, lat) => { const m = lim(lat), l = clamp(lon, -m, m); return S([r * Math.cos(lat) * Math.sin(l), r * Math.sin(lat), -r * Math.cos(lat) * Math.cos(l)]); };
+  IB.oval(ctx, cx, cy, R, R, { fill: '#dcdcdc', w: 0, n: 24 });
+  const i0 = Math.ceil((-PI / 2 - turn) / dl) - 1;
+  for (let k = 0; k <= NL / 2 + 1; k++) for (let j = 0; j < NR; j++) {
+    const i = i0 + k, l0 = i * dl + turn, a0 = -top + j * dr, id = ((i % NL) + NL) % NL;
+    const h = hash(id * 31 + j, 7), low = j / (NR - 1);   // warm and white tiles up where the light is, blues underneath
+    const y = 0.16 + 0.04 * (1 - low), b = y + 0.1 + 0.3 * low, l = b + 0.04 + 0.12 * low;
+    const col = h < y ? C.yellow : h < b ? C.blue : h < l ? C.lavender : h < l + 0.3 - 0.12 * low ? C.paper : null;
+    if (!col) continue;
+    const q = [pt(l0, a0), pt(l0 + dl / 2, a0), pt(l0 + dl, a0), pt(l0 + dl, a0 + dr / 2), pt(l0 + dl, a0 + dr), pt(l0 + dl / 2, a0 + dr), pt(l0, a0 + dr), pt(l0, a0 + dr / 2)];
+    IB.ink(ctx, q, { closed: true, smooth: false, fill: col, w: 0, wob: 0 });
   }
-  for (let i = 1; i < N; i++) {
-    IB.ink(ctx, Array.from({ length: N + 1 }, (_, j) => pt(i, j)), { w: 2.4, seed: 60 + i, taper: false });
-    IB.ink(ctx, Array.from({ length: N + 1 }, (_, j) => pt(j, i)), { w: 2.4, seed: 70 + i, taper: false });
+  for (let k = 0; k <= NL / 2 + 1; k++) {
+    const lon = (i0 + k) * dl + turn, line = [];
+    if (Math.abs(lon) > edge) continue;   // a meridian this close to the rim would read as a second outline
+    for (let s = 0; s <= 14; s++) { const lat = -top + (2 * top * s) / 14; if (Math.abs(lon) < lim(lat)) line.push(pt(lon, lat)); }
+    if (line.length > 2) IB.ink(ctx, line, { w: 2.2, seed: 60 + (((i0 + k) % NL) + NL) % NL, taper: false });
   }
-  IB.oval(ctx, cx, cy, R, R, { w: 3.4, seed: 51, n: 20 });
+  for (let j = 0; j <= NR; j++) { const lat = -top + j * dr, m = lim(lat); if (m > 0.1) IB.ink(ctx, Array.from({ length: 11 }, (_, s) => pt(-m + (2 * m * s) / 10, lat)), { w: 2.2, seed: 70 + j, taper: false }); }
+  IB.oval(ctx, cx, cy, R, R, { w: 3.4, seed: 51, n: 24 });
+  // glints: each lives four drawings (small, big, turned, gone) and then jumps to another tile corner
+  for (const s of [0, 1]) {
+    const life = d3 + s * 2, born = Math.floor(life / 4), age = life % 4, len = [7, 15, 10, 0][age];
+    if (!len) continue;
+    const a = hash(born, 90 + s) * PI * 2, d = R * (0.35 + 0.6 * hash(born, 95 + s)), gx = cx + Math.cos(a) * d, gy = cy + Math.sin(a) * d, tilt = age === 2 ? PI / 4 : 0;
+    for (const b of [0, PI / 2]) IB.seg(ctx, gx - Math.cos(b + tilt) * len, gy - Math.sin(b + tilt) * len, gx + Math.cos(b + tilt) * len, gy + Math.sin(b + tilt) * len, { w: 2.6, color: C.paper, seed: 97 + s, grain: 0 });
+  }
 }
 
 function party(ctx) {
@@ -149,10 +332,29 @@ function party(ctx) {
   });
 }
 
-function balloonAt(t) {
-  // on the floor by the folder, kicked at 0.96 s, up fast then a slow drift down to rest (stage coordinates)
-  if (t < 0.96) return [960, 855];
-  return kf(IB.twos(t), [[0.96, [960, 855]], [1.0, [874, 722], 'outQuad'], [1.25, [764, 623], 'outQuad'], [1.5, [706, 618], 'linear'], [2.0, [622, 687], 'linear'], [2.5, [560, 820], 'linear'], [3.0, [530, 872], 'outQuad'], [3.6, [485, 872], 'outCubic']]);
+/* The kicked balloon, one drawing per key: [frame, x, y, rx, ry, turn of the long axis, where the knot sits (rad round the body)]. It leaves as a single stretched smear, turns once as it sinks, and comes to rest with a squash and two small rocks. */
+const BALLOON = [
+  [0, 960, 855, 40, 33, 0, -0.45],
+  [22, 953, 851, 33, 37, 0, -0.5],
+  [24, 874, 722, 61, 24, 0.99, 0.9],
+  [26, 812, 646, 34, 41, 0.3, 1.25], [28, 778, 624, 36, 39, 0.1, 1.5], [30, 758, 618, 39, 35, 0, 1.6], [32, 742, 616, 40, 33, 0, 1.75],
+  [34, 727, 617, 40, 33, 0, 2.0], [36, 712, 620, 40, 33, 0, 2.3], [38, 698, 626, 40, 33, 0, 2.6], [40, 685, 634, 40, 33, 0, 2.95], [42, 672, 644, 40, 33, 0, 3.3],
+  [44, 660, 656, 40, 33, 0, 3.65], [46, 648, 670, 40, 33, 0, 4.0], [48, 636, 686, 40, 33, 0, 4.35], [50, 624, 704, 40, 33, 0, 4.7], [52, 612, 723, 40, 33, 0, 5.0],
+  [54, 600, 744, 40, 33, 0, 5.3], [56, 588, 766, 40, 33, 0, 5.55], [58, 576, 789, 40, 33, 0, 5.75], [60, 565, 812, 40, 33, 0, 5.9], [62, 555, 834, 40, 33, 0, 6.02],
+  [64, 546, 854, 40, 33, 0, 6.1], [66, 538, 868, 41, 32, 0, 6.15],
+  [68, 532, 876, 44, 29, 0, 6.18], [70, 527, 868, 39, 34, 0, 6.12], [72, 522, 864, 40, 33, 0, 6.05], [74, 517, 868, 40, 33, 0, 5.98], [76, 512, 872, 42, 31, 0, 5.94], [78, 508, 872, 40, 33, 0, 5.9],
+  [82, 502, 872, 40, 33, 0, 5.82], [86, 497, 872, 40, 33, 0, 5.9], [92, 494, 872, 40, 33, 0, 5.84], [100, 492, 872, 40, 33, 0, 5.87],
+].map((row) => [row[0], row]);
+function balloon(ctx, f) {
+  const [, x, y, rx, ry, turn, knot] = held(BALLOON, f);
+  if (y > 836) { const k = clamp((y - 836) / 30); IB.ink(ctx, IB.ellipse(x, 906, 30 * k, 3.2, 10), { closed: true, fill: C.smear, w: 0, wob: 1.2, seed: 15 }); IB.smear(ctx, x, 903, 70 * k, { h: 7, seed: 15 }); }
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(turn);
+  const a = knot - turn, kx = Math.cos(a) * rx, ky = Math.sin(a) * ry, ux = Math.cos(a), uy = Math.sin(a);
+  IB.ink(ctx, [[kx - uy * 6 + ux * 9, ky + ux * 6 + uy * 9], [kx - ux * 2, ky - uy * 2], [kx + uy * 6 + ux * 9, ky - ux * 6 + uy * 9]], { closed: true, fill: C.lavender, w: 2.4, seed: 17 });
+  IB.oval(ctx, 0, 0, rx, ry, { fill: C.lavender, w: 3, seed: 16, n: 12 });
+  ctx.restore();
 }
 
 MG.scene({
@@ -161,39 +363,46 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const f = IB.frame(t);
+    const f = IB.frame(t), tt = IB.twos(t);
     IB.crop(ctx, CROP);
     ctx.translate(pan(f), 0);
 
     for (const [x, y, rx, col] of CONFETTI) { ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, rx, 5, 0, 0, 7); ctx.fill(); }
     discoBall(ctx, 1302, 215, 105, f);
     party(ctx);
+    balloon(ctx, f);
+    // impact: two arcs off the toe for the two drawings of the kick
+    if (f >= 22 && f < 26) IB.shake(ctx, 1010, 846, 20, { a: PI * 0.92, n: 2, w: 2.2, gap: 8, seed: 18 + Math.floor(f / 2) });
 
-    const [bx, by] = balloonAt(t);
-    if (by > 840) IB.smear(ctx, bx, 903, 70, { h: 7, seed: 15, alpha: clamp((by - 840) / 30) });
-    IB.oval(ctx, bx, by, 40, 33, { fill: C.lavender, w: 3, seed: 16, n: 12 });
-    IB.ink(ctx, [[bx + 38, by - 2], [bx + 47, by - 7], [bx + 46, by + 4]], { closed: true, fill: C.lavender, w: 2.4, seed: 17 });
-
-    const fp = folderPose(t), dp = docPose(t);
-    const tt = IB.twos(t);
-    // arms appear only to hold hands, from behind each body's edge: the folder reaches at 9.25 s, the document answers at 9.5 s, one swing at 10 s
-    if (tt >= 9.25) {
-      const sw = kf(tt, [[10.0, 0], [10.17, 1, 'outQuad'], [10.5, 0, 'inOutQuad']]);
-      const H = [1458, 734 - sw * 52];
-      arm(ctx, [1524, 652], [H[0] + 12, H[1]], prog(tt, 9.5, 0.25), 420, -8);
-      arm(ctx, [1403, 648], [H[0] - 12, H[1]], prog(tt, 9.25, 0.25), 400, 8);
+    const fp = held(FOLDER, f), dp = held(DOC, f);
+    // the arms that reach for each other are drawn first, so that each one's root is behind its body's edge
+    const fa = f >= FARM[0][0] ? held(FARM, f) : null, da = f >= DARM[0][0] ? held(DARM, f) : null;
+    const fS = folderSpace(fp), dS = docSpace(dp);
+    const fRoot = fS([-(FW / 2 - 8), -112, 0]), dRoot = dS([-(DW / 2 - 8), -122, 0]);   // the folder has its back to us by now, so its -x edge is the one on the right
+    const H = [1463, 738];
+    if (fa === 'clasp') {
+      IB.hose(ctx, fRoot, [H[0] - 9, H[1] - 3], { bow: -5, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: 400, shade: 34 });
+      IB.hose(ctx, dRoot, [H[0] + 9, H[1] - 3], { bow: 5, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: 420, shade: 34 });
+    } else {
+      if (fa) arm(ctx, fRoot, [fRoot[0] + fa.to[0], fRoot[1] + fa.to[1]], { ...fa, flip: -1, seed: 400 });
+      if (da) arm(ctx, dRoot, [dRoot[0] + da.to[0], dRoot[1] + da.to[1]], { ...da, flip: 1, seed: 420 });
     }
-    actor(ctx, dp, docBody, '#d9d9d9', 106, 300);
-    if (dp.akimbo) for (const s of [-1, 1]) { IB.tube(ctx, [[dp.x + s * 86, 648], [dp.x + s * 114, 688], [dp.x + s * 90, 718]], { w: 11, edge: 2.6, fill: C.paper, smooth: true, seed: 320 + s }); IB.oval(ctx, dp.x + s * 88, 720, 8, 7, { fill: C.paper, w: 2.4, seed: 324 + s, n: 8 }); }
-    actor(ctx, fp, folderBody, C.sky, 106, 200);
+    drawDoc(ctx, dp, 300);
+    drawFolder(ctx, fp, 200);
+    if (fa === 'clasp') IB.clasp(ctx, H, { seed: 440, s: 1.3, rot: f < 258 ? 0.12 : 0 });
 
     // heart balloon: the only thing moving in the last second
-    if (tt >= 10.6) {
-      const hy = lerp(720, 415, IB.settle(tt - 10.6, 0.3)), hx = 1456;
-      IB.seg(ctx, hx, hy + 22, hx - 2, hy + 62, { w: 2, seed: 410 });
-      IB.ink(ctx, [[hx, hy + 24], [hx - 22, hy - 2], [hx - 12, hy - 20], [hx, hy - 8], [hx + 12, hy - 20], [hx + 22, hy - 2]], { closed: true, fill: C.yellow, w: 2.6, seed: 411 });
+    if (f >= 258) {
+      const hy = lerp(690, 400, IB.settle(tt - 258 / 24, 0.45, 2.4)), hx = 1460, k = Math.floor(f / 2) % 2 ? 1 : -1;
+      ctx.save();
+      ctx.translate(hx, hy);
+      ctx.rotate(k * 0.07);
+      ctx.scale(f < 260 ? 0.5 : 1.15, 1.15);   // its first drawing is seen edge-on, as if it turned into view
+      IB.ink(ctx, [[0, 27], [k * 5, 40], [-k * 4, 54], [k * 2, 68]], { w: 1.8, seed: 410 });
+      IB.ink(ctx, [[0, 25], [-14, 12], [-25, -3], [-22, -18], [-10, -22], [0, -11], [10, -22], [22, -18], [25, -3], [14, 12]], { closed: true, fill: C.yellow, w: 2.3, seed: 411 });
+      IB.ink(ctx, [[-4, 24], [0, 30], [4, 24]], { w: 2, seed: 412 });
+      ctx.restore();
     }
-
   },
 });
 </script>

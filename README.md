@@ -49,7 +49,7 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --mp4 out/balan
 python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/balance-scale.jpg --n 6
 ```
 
-두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 고르게 뽑은 시점은 구도를 보여 줄 뿐 그림 한 장 한 장은 놓치므로, 연기를 볼 때는 `--frames 16-36`으로 프레임을 짚고 `--box x0,y0,x1,y1`로 배우만 확대한다(원본의 일부만 잘라 보여 주는 장면은 `--ref-crop`에 그 영역을 준다). 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
+두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 고르게 뽑은 시점은 구도를 보여 줄 뿐 그림 한 장 한 장은 놓치므로, 연기를 볼 때는 `--frames 16-36`으로 프레임을 짚고 `--box x0,y0,x1,y1`로 배우만 확대한다(원본의 일부만 잘라 보여 주는 장면은 `--ref-crop`에 그 영역을 준다). 키의 시각이나 위치를 재려고 원본 프레임을 직접 뽑을 때는 시각(`-ss`)이 아니라 프레임 번호로 뽑는다: `ffmpeg -i references/<ref>/<ref>.mp4 -vf "select=between(n\,157\,211)" -fps_mode passthrough -start_number 0 out/ref/%03d.png`(157은 장면의 `ref` 시작초 x 24). `-ss`는 요청한 시각과 같거나 그 뒤의 첫 프레임부터 주기 때문에 시작초의 반올림에 따라 전체가 한 프레임 밀리고, 2프레임마다 한 장인 그림에서는 그 한 프레임이 키를 전부 홀짝이 바뀐 자리에 놓게 만든다. 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
 
 ## 레퍼런스 추가
 

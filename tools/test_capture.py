@@ -46,5 +46,12 @@ refuses('box outside the stage', capture.region, '0,0,2000,1080')
 # the moment a frame number stands for is the middle of that frame, so a seek never lands on a frame boundary
 check('frame to seconds', capture.frame_time(24, 24), 24.5 / 24)
 
+# the reference is cut with ffmpeg, whose seek returns the first frame at or after the time asked for: asking for the middle of frame n returns frame n + 1. The seek time for frame n must fall after frame n - 1 starts and before frame n does, with room for a `ref` start rounded to the millisecond
+for n in (0, 1, 78, 2961):
+    t = capture.ref_seek(n, 24)
+    if not ((n - 1) / 24 + 0.002 < t < n / 24 - 0.002):
+        failed += 1
+        print(f'FAIL reference seek for frame {n}: {t!r} is not safely inside ({(n - 1) / 24!r}, {n / 24!r})')
+
 print('ok' if not failed else f'{failed} failed')
 sys.exit(1 if failed else 0)

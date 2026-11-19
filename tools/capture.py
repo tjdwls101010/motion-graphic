@@ -77,6 +77,11 @@ def frame_time(frame, fps):
     return (frame + 0.5) / fps
 
 
+def ref_seek(frame, fps):
+    """Seconds into the reference segment to ask ffmpeg for so that it returns frame `frame`. ffmpeg's seek returns the first frame at or after the time asked for, so the middle of a frame gives the one after it: ask a quarter frame before this one starts."""
+    return (frame - 0.25) / fps
+
+
 def even_times(duration, n):
     return [duration * (i + 0.5) / n for i in range(n)]
 
@@ -167,7 +172,8 @@ def main():
                 r0, r1 = meta['ref']
                 rx, ry, rw, rh = [int(x) for x in args.ref_crop.split(',')] if args.ref_crop else (0, 0, W, H)
                 framed = lambda im: im.crop((rx, ry, rx + rw, ry + rh)).resize((W, H), Image.LANCZOS) if args.ref_crop else im
-                top = [cut(framed(ref_frame(video, r0 + (r1 - r0) * t / dur))) for t in times]
+                ref_times = [ref_seek(f, fps) for f in args.frames] if args.frames else times   # a named frame must be that very frame of the reference: one frame off hides a cut or a drawing change
+                top = [cut(framed(ref_frame(video, r0 + (r1 - r0) * t / dur))) for t in ref_times]
                 bottom = [cut(shot(page, t)) for t in times]
                 if args.frames:   # every reference frame directly above its render, wrapping at --cols
                     save(tile([stack(a, b) for a, b in zip(top, bottom)], args.cols, args.cell, labels), args.compare)

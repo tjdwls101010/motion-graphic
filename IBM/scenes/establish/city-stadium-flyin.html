@@ -9,8 +9,8 @@
 <script>
 /* 화면을 가득 채운 흑백 선화 도시 한가운데 경기장이 있고, 노란 헬리콥터 한 대가 오른쪽 아래에서 렌즈 앞을 스치듯 들어와 꼬리를 치켜들고 돌아선 뒤 경기장 쪽으로 멀어진다. 전달하는 생각: 이제 벌어질 일의 장소를 한 장으로 알린다.
    Motion notes: 1.9 s. The drawing never moves and is far denser than any other family: line widths 1.5-4.5 px mixed, windows and trusses as texture, almost no fills, and every gap between buildings stuffed with cauliflower foliage (clump). Colour only in two places, the yellow craft and the pale blue seating, plus one bright strip at the stadium's foot.
-   The city is read off the reference frame on a 100 px grid: the stadium (a drum with a rounded shoulder, a band of nine V trusses over a band of nine crosses between posts, an opening whose far stand shows four ring lines above the dark bowl), 22 towers with their widths, heights and which third of each carries window marks (the reference leaves much of every tower white), the foreground blocks, clouds and birds. Foliage is placed by hand as ellipses and generated inside them, so its bumps are not the reference's.
-   The craft is the one moving thing, on twos (CRAFT, 19 drawings from frame 8): nothing for the first 0.33 s, then three drawings larger than the frame as it crosses in front of the lens (the first stretched 1.3x as a smear), two standing on its nose, and from then on it never hovers: every drawing is smaller and more level than the last as it flies off toward the stadium, drifting left then right. The rotor is a fan of straight strokes re-rolled on every drawing. The craft's painted eye and lettering are left out. */
+   The city is read off the reference frame on a 100 px grid: the stadium (a drum with a rounded shoulder, a band of nine V trusses over a band of nine crosses between posts, an opening whose far stand shows four ring lines above the dark bowl), 22 towers with their widths, heights and which third of each carries window marks (the reference leaves much of every tower white), the foreground blocks, clouds and birds. Foliage is placed by hand as ellipses and generated inside them (open strings of bumps about 24 px across over a blank fill), so its bumps are not the reference's; the foreground blocks have four-point roofs where the reference steps some of them.
+   The craft is the one moving thing, on twos (CRAFT, 19 drawings from frame 8): nothing for the first 0.33 s, then three drawings larger than the frame as it crosses in front of the lens (the first stretched 1.3x as a smear), two facing the lens with the boom rising behind the cabin, and from then on it never hovers: every drawing is smaller and more level than the last as it flies off toward the stadium, drifting 136 px left then 76 px back right. The rotor is a fan of straight strokes re-rolled on every drawing; it stays near level while the body tips. The craft's painted eye and lettering are left out. */
 const { lerp, rng } = MG;
 const C = IB.C;
 
@@ -43,15 +43,18 @@ function cloud(ctx, [x0, x1, y, h], seed) {
 
 /* Foliage: the reference fills every gap between buildings with cauliflower masses, an outline of bumps of uneven size with a curl inside here and there. clump covers the ellipse (cx, cy, rx, ry) and paints over what is behind it. */
 function clump(ctx, cx, cy, rx, ry, seed) {
-  const r = rng(seed), n = Math.max(6, Math.round((rx + ry) / 20)), base = [], pts = [];
-  for (let i = 0; i < n; i++) { const a = ((i + (r() - 0.5) * 0.5) / n) * Math.PI * 2; base.push([cx + Math.cos(a) * rx * 0.88, cy + Math.sin(a) * ry * 0.88]); }
-  // each bump is a round arc from one base point to the next, bulging away from the centre; the joins stay sharp, pointing inward
+  const r = rng(seed), n = Math.max(8, Math.round((Math.PI * (rx + ry)) / 24)), base = [], lobes = [];
+  for (let i = 0; i < n; i++) { const a = ((i + (r() - 0.5) * 0.5) / n) * Math.PI * 2; base.push([cx + Math.cos(a) * rx * 0.92, cy + Math.sin(a) * ry * 0.92, a]); }
+  // each bump is a round arc from one base point to the next, bulging away from the centre
   for (let i = 0; i < n; i++) {
-    const p = base[i], q = base[(i + 1) % n], mx = (p[0] + q[0]) / 2 - cx, my = (p[1] + q[1]) / 2 - cy, d = Math.hypot(mx, my) || 1, chord = Math.hypot(q[0] - p[0], q[1] - p[1]), bulge = chord * (0.42 + r() * 0.2);
-    for (let k = 0; k < 7; k++) { const u = k / 7, h = Math.pow(Math.sin(Math.PI * u), 0.75) * bulge; pts.push([lerp(p[0], q[0], u) + (mx / d) * h, lerp(p[1], q[1], u) + (my / d) * h]); }
+    const p = base[i], q = base[(i + 1) % n], mx = (p[0] + q[0]) / 2 - cx, my = (p[1] + q[1]) / 2 - cy, d = Math.hypot(mx, my) || 1, chord = Math.hypot(q[0] - p[0], q[1] - p[1]), bulge = chord * (0.45 + r() * 0.25), arc = [];
+    for (let k = 0; k <= 6; k++) { const u = k / 6, h = Math.pow(Math.sin(Math.PI * u), 0.75) * bulge; arc.push([lerp(p[0], q[0], u) + (mx / d) * h, lerp(p[1], q[1], u) + (my / d) * h]); }
+    lobes.push({ arc, up: my / d < 0.45, skip: r() < 0.14 });
   }
-  IB.ink(ctx, pts, { closed: true, smooth: false, fill: C.bg, w: 2.8, seed, wob: 0.8 });
-  for (let i = 0; i < Math.round(n / 5); i++) { const x = cx + (r() - 0.5) * rx * 1.0, y = cy + (r() - 0.7) * ry * 0.8, q = 10 + r() * 10; IB.ink(ctx, [[x - q, y + q * 0.4], [x - q * 0.6, y - q * 0.3], [x, y - q * 0.55], [x + q * 0.6, y - q * 0.3], [x + q, y + q * 0.4]], { w: 2.4, seed: seed + 20 + i }); }
+  // the mass hides what is behind it but has no outline of its own: only the bumps along its top and sides are inked, as open strokes with a gap here and there
+  IB.ink(ctx, lobes.flatMap((l) => l.arc.slice(0, 6)), { closed: true, smooth: false, fill: C.bg, w: 0, wob: 0 });
+  lobes.forEach((l, i) => { if (l.up && !l.skip) IB.ink(ctx, l.arc, { w: 2.6, seed: seed + i, wob: 0.6 }); });
+  for (let i = 0; i < Math.round(n / 7); i++) { const x = cx + (r() - 0.5) * rx * 1.1, y = cy + (r() - 0.5) * ry * 0.7, q = 6 + r() * 5; IB.ink(ctx, [[x + q, y - q * 0.6], [x - q * 0.2, y - q], [x - q, y], [x - q * 0.3, y + q * 0.8]], { w: 2.2, seed: seed + 40 + i }); }   // a curl where two bumps meet inside the mass
 }
 
 function stadium(ctx) {
@@ -84,7 +87,7 @@ function stadium(ctx) {
   IB.ink(ctx, open, { closed: true, w: 4, seed: 304 });
 }
 
-/* A flat-roofed block seen from above: the roof is the four points given (left, back, right, front), the two near faces drop h px. tex: 'v' vertical lines on both faces, 'h' horizontal lines on the right face, 'u' small window marks on the left face. */
+/* A flat-roofed block seen from above: the roof is the four points given (left, back, right, front), the two near faces drop h px. tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face. The reference steps some of these roofs (an L with a notch); here every roof is four points. */
 function block(ctx, q, h, seed, tex = 'v') {
   const down = (p) => [p[0], p[1] + h];
   IB.ink(ctx, [q[0], q[3], down(q[3]), down(q[0])], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 });
@@ -93,10 +96,12 @@ function block(ctx, q, h, seed, tex = 'v') {
   const face = (a, b, kind) => {
     const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
     if (kind === 'v') for (let i = 1; i < Math.floor(len / 17); i++) { const u = i / Math.floor(len / 17), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + 12, x, y + Math.min(h - 8, 12 + h * 0.55), { w: 1.7, wob: 0.4, seed: seed + i * 7 }); }
+    if (kind === 'band') { for (const k of [0.36, 0.7]) IB.seg(ctx, a[0] + 3, a[1] + h * k, b[0] - 3, b[1] + h * k, { w: 1.8, wob: 0.4, seed: seed + k * 100 }); for (let i = 1; i < Math.floor(len / 20); i++) { const u = i / Math.floor(len / 20), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + h * 0.44, x, y + h * 0.62, { w: 2, wob: 0, seed: seed + i * 7 }); } }
     if (kind === 'h') for (let y = 16; y < h - 6; y += 15) IB.seg(ctx, a[0] + 5, a[1] + y, b[0] - 5, b[1] + y, { w: 1.7, wob: 0.4, seed: seed + y });
     if (kind === 'u') for (let i = 1; i < 4; i++) for (let y = 26; y < h - 14; y += 30) { const u = i / 4, x = lerp(a[0], b[0], u), yy = lerp(a[1], b[1], u) + y; IB.ink(ctx, [[x - 4, yy - 5], [x - 3, yy + 3], [x + 3, yy + 3], [x + 4, yy - 5]], { w: 2, seed: seed + i * 5 + y }); }
   };
   if (tex === 'v') { face(q[0], q[3], 'v'); face(q[3], q[2], 'v'); }
+  if (tex === 'band') { face(q[0], q[3], 'band'); face(q[3], q[2], 'band'); }
   if (tex === 'h') face(q[3], q[2], 'h');
   if (tex === 'u') { face(q[0], q[3], 'u'); face(q[3], q[2], 'h'); }
 }
@@ -111,11 +116,11 @@ function ground(ctx, layer) {
   }
   C1([[110, 700, 110, 48], [200, 780, 120, 44], [1700, 770, 110, 36]]);
   block(ctx, [[228, 672], [400, 642], [545, 656], [380, 696]], 26, 520);
-  block(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], 30, 525);
+  block(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], 30, 525, 'none');
   block(ctx, [[1400, 742], [1512, 708], [1590, 724], [1470, 760]], 118, 510, 'u');
   C1([[150, 900, 150, 60], [1640, 880, 80, 30], [1520, 900, 60, 24]]);
   block(ctx, [[1690, 828], [1800, 806], [1850, 820], [1735, 845]], 92, 530, 'h');
-  block(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], 92, 540);
+  block(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], 92, 540, 'band');
   C1([[920, 862, 150, 30], [820, 846, 60, 22], [1030, 854, 50, 20], [380, 1010, 120, 40], [1790, 970, 150, 60], [1905, 915, 60, 50]]);
   block(ctx, [[1060, 948], [1380, 870], [1612, 896], [1300, 976]], 120, 550);
   block(ctx, [[1215, 922], [1340, 898], [1405, 912], [1280, 938]], 24, 560, 'none');
@@ -125,13 +130,34 @@ function ground(ctx, layer) {
   C1([[1010, 1040, 90, 36], [1720, 1070, 200, 44], [90, 1030, 130, 50]]);
 }
 
-/* The craft, one drawing per two frames from frame 8: [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)]. From the fourth drawing on these are measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation from the proportions of their bounding box. The first three are larger than the frame, so their numbers are fitted by eye. It comes past the lens from the lower right, throws its tail up, stands on its nose for two drawings as it turns, and then never hovers: it keeps shrinking (1.48 to 0.83) and levelling out (0.83 to 0.09 rad) while it drifts 60 px left and 75 px back right, flying away toward the stadium. */
+/* The craft, one drawing per two frames from frame 8: [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
 const CRAFT = [
-  [2090, 650, 4.6, -0.2, -1.3], [1400, 640, 4.4, -0.15, -1], [1218, 514, 3.9, -0.5, -1],
-  [665, 592, 1.74, 1.5, 1], [547, 592, 1.52, 1.5, 1],
-  [414, 581, 1.48, 0.83, 1], [339, 567, 1.43, 0.54, 1], [315, 567, 1.37, 0.45, 1], [293, 566, 1.27, 0.31, 1], [283, 565, 1.23, 0.26, 1], [278, 561, 1.18, 0.2, 1],
-  [285, 560, 1.06, 0.165, 1], [288, 559, 1.06, 0.14, 1], [298, 558, 0.99, 0.12, 1], [304, 558, 0.97, 0.105, 1], [320, 557, 0.92, 0.1, 1], [332, 555, 0.9, 0.09, 1], [338, 555, 0.88, 0.09, 1], [354, 556, 0.83, 0.09, 1],
+  [2090, 570, 4.6, -0.2, -1.3], [1400, 640, 4.4, -0.15, -1], [1200, 500, 3.7, -0.2, -1],
+  ['front', 660, 628, 1, 1], ['front', 549, 620, 0.67, 0.87],
+  [414, 581, 1.48, 0.69, 1], [339, 567, 1.43, 0.39, 1], [315, 567, 1.37, 0.29, 1], [293, 566, 1.27, 0.18, 1], [283, 565, 1.23, 0.14, 1], [278, 561, 1.18, 0.09, 1],
+  [285, 560, 1.1, 0.085, 1], [288, 559, 1.1, 0.06, 1], [298, 558, 1.025, 0.04, 1], [304, 558, 1.0, 0.025, 1], [320, 557, 0.95, 0.02, 1], [332, 555, 0.93, 0.01, 1], [338, 555, 0.91, 0.01, 1], [354, 556, 0.86, 0.01, 1],
 ];
+
+/* The rotor: a fan of thin straight strokes through the mast at (x, y), re-rolled on every drawing. It stays within a few degrees of level whatever the body is doing. */
+function rotor(ctx, x, y, span, lw, d) {
+  const r = rng(700 + d);
+  for (let i = 0; i < 9; i++) { const l = span * (0.6 + r() * 0.4), k = (r() - 0.5) * 0.16; IB.seg(ctx, x - l, y - l * k + (r() - 0.5) * 14, x + l * (0.5 + r() * 0.5), y + l * k * 0.6 + (r() - 0.5) * 14, { w: lw, wob: 0, seed: 710 + i + d * 9 }); }
+}
+
+/* The craft facing the lens, cabin centred on (x, y): the boom rises behind it to the tail fin, the skids hang level under it. sx, sy squeeze it as it turns on. The reference paints an eye and a word on the cabin: left out. */
+function heliFront(ctx, x, y, sx, sy, d) {
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(sx, sy);
+  const lw = 2.6;
+  IB.ink(ctx, [[-22, -100], [-12, -400], [-40, -404], [-40, -420], [40, -420], [40, -404], [12, -400], [22, -100]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 620 });   // boom and tail fin
+  for (const s of [-1, 1]) { IB.tube(ctx, [[s * 58, 96], [s * 74, 126]], { w: 8, edge: 2, fill: '#b9b9b9', seed: 622 + s }); IB.tube(ctx, [[s * 108, 118], [s * 74, 128], [s * 50, 122]], { w: 9, edge: 2, fill: '#b9b9b9', smooth: true, seed: 624 + s }); }   // skids
+  IB.ink(ctx, [[-80, -104], [0, -116], [80, -104], [106, -40], [112, 30], [84, 96], [0, 112], [-84, 96], [-112, 30], [-106, -40]], { closed: true, fill: C.yellow, w: lw, seed: 626 });   // cabin
+  IB.ink(ctx, [[-70, -78], [0, -88], [70, -78], [84, -24], [0, -14], [-84, -24]], { closed: true, fill: C.paper, w: lw, seed: 627 });   // windscreen, two panes
+  IB.seg(ctx, 0, -88, 0, -14, { w: 2, seed: 628 });
+  IB.seg(ctx, 0, -116, 0, -132, { w: 4, seed: 629 });
+  ctx.restore();
+  rotor(ctx, x, y - 132 * sy, 300 * sx, 1.6, d);
+}
 
 /* The one coloured thing in the shot. Drawn nose-right about the cabin's centre; `facing` -1 flips it. The reference paints a brand mark and a word on the cabin: left out. */
 function heli(ctx, x, y, s, rot, facing, d) {
@@ -148,9 +174,9 @@ function heli(ctx, x, y, s, rot, facing, d) {
   IB.seg(ctx, 40, -11, 42, 15, { w: lw * 0.8, seed: 607 }); IB.seg(ctx, 20, 0, 61, 4, { w: lw * 0.8, seed: 608 });
   IB.ink(ctx, [[65, -5], [77, 12], [67, 15]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.8, seed: 609 });
   IB.seg(ctx, 17, -50, 17, -60, { w: lw * 1.4, seed: 610 });
-  // rotor: a fan of thin straight strokes through the mast, re-rolled on every drawing
-  const r = rng(700 + d);
-  for (let i = 0; i < 9; i++) { const l = 170 + r() * 110, k = (r() - 0.5) * 0.16; IB.seg(ctx, 17 - l, -62 - l * k + (r() - 0.5) * 14, 17 + l * (0.5 + r() * 0.5), -62 + l * k * 0.6 + (r() - 0.5) * 14, { w: 1.6 / Math.sqrt(s), wob: 0, seed: 710 + i + d * 9 }); }
+  // the rotor does not tip with the body: most of the body's turn is taken back out about the mast
+  ctx.translate(17, -62); ctx.rotate(-rot * 0.85 * Math.sign(facing)); ctx.translate(-17, 62);
+  ctx.scale(1 / s, 1 / s); rotor(ctx, 17 * s, -62 * s, 280 * s, 1.6 * Math.sqrt(s), d); 
   ctx.restore();
 }
 
@@ -169,8 +195,12 @@ MG.scene({
     // the one moving thing, on twos from frame 8
     const f = IB.frame(t), d = Math.floor((f - 8) / 2);
     if (d >= 0) {
-      const [x, y, sc, rot, facing] = CRAFT[Math.min(d, CRAFT.length - 1)], c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * Math.sign(facing), oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
-      heli(ctx, x - (ox * c - oy * sn), y - (ox * sn + oy * c), sc, rot, facing, d);
+      const k = CRAFT[Math.min(d, CRAFT.length - 1)];
+      if (k[0] === 'front') heliFront(ctx, k[1], k[2], k[3], k[4], d);
+      else {
+        const [x, y, sc, rot, facing] = k, c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * facing, oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
+        heli(ctx, x - (ox * c - oy * sn), y - (ox * sn + oy * c), sc, rot, facing, d);
+      }
     }
   },
 });

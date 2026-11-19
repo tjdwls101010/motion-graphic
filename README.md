@@ -49,7 +49,7 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --mp4 out/balan
 python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/balance-scale.jpg --n 6
 ```
 
-두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
+두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 고르게 뽑은 시점은 구도를 보여 줄 뿐 그림 한 장 한 장은 놓치므로, 연기를 볼 때는 `--frames 16-36`으로 프레임을 짚고 `--box x0,y0,x1,y1`로 배우만 확대한다(원본의 일부만 잘라 보여 주는 장면은 `--ref-crop`에 그 영역을 준다). 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
 
 ## 레퍼런스 추가
 

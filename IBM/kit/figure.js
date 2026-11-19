@@ -1,4 +1,4 @@
-/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the thin legs of objects that walk (IB.peg), speech bubbles (IB.bubble), the pointing hand from off-screen (IB.pointer) and shake marks (IB.shake). Needs ink.js; adds to the global IB. */
+/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the limbs of objects that walk (IB.peg, IB.hose, IB.boot) and their hands (IB.mitt, IB.clasp), speech bubbles (IB.bubble), the pointing hand from off-screen (IB.pointer) and shake marks (IB.shake). Needs ink.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;
@@ -217,13 +217,91 @@
     return { ...(u < 0.5 ? a : b), hip: [lerp(a.hip[0], b.hip[0], u), lerp(a.hip[1], b.hip[1], u)], lean: lerp(a.lean || 0, b.lean || 0, u), nod: lerp(a.nod || 0, b.nod || 0, u), feet: mixPts(a.feet, b.feet), hands: mixPts(a.hands, b.hands) };
   };
 
-  /* peg(ctx, hip, foot, opts) — the thin leg of an object that walks (the reference's folder and document): one narrow trouser leg, graphite where it leaves the body, a small boot. knee bows it sideways (px). The body is drawn after its legs and never deforms. */
+  /* peg(ctx, hip, foot, opts) — the thin leg of an object that walks (the reference's folder and document): one narrow trouser leg, graphite where it leaves the body, a small boot. knee bows it sideways (px); dir -1 / 1 points the toe left / right. The body is drawn after its legs. For a leg that curves, kicks or shows the foot from the front, use IB.hose and IB.boot directly. */
   IB.peg = (ctx, hip, foot, o = {}) => {
     const { fill = '#d9d9d9', w = 13, lw = 2.8, seed = 1, knee = 0, dir = 1 } = o;
     const mid = [(hip[0] + foot[0]) / 2 + knee, (hip[1] + foot[1]) / 2];
     limb(ctx, knee ? [hip, mid, foot] : [hip, foot], knee ? [w, w, w * 0.92] : [w, w * 0.92], { fill, lw, seed, shade: 40 });
-    IB.ink(ctx, [[foot[0] - 8 * dir, foot[1] - 5], [foot[0] + 8 * dir, foot[1] - 5], [foot[0] + 9 * dir, foot[1] + 2], [foot[0] + 17 * dir, foot[1] + 8], [foot[0] + 14 * dir, foot[1] + 12], [foot[0] - 9 * dir, foot[1] + 12]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.93, seed: seed + 6 });
-    IB.seg(ctx, foot[0] - 7 * dir, foot[1] + 2, foot[0] + 8 * dir, foot[1] + 2, { w: lw * 0.65, seed: seed + 7 });
+    IB.boot(ctx, foot, { dir, lw: lw * 0.93, seed: seed + 6 });
+  };
+
+  /* boot(ctx, at, opts) — the small white boot of an object character, ankle at `at`, sole 12 px below it. dir -1 / 1 points the toe left / right (a foot seen from the side: stepping, kicking); dir 0 is the foot seen from the front, which is how the reference draws a character that just stands. rot turns it about the ankle, for a foot in the air; s enlarges it; laces adds the two ticks that make it a sneaker. */
+  IB.boot = (ctx, at, o = {}) => {
+    const { dir = 1, rot = 0, s = 1, lw = 2.6, seed = 1, fill = C.paper, laces = false } = o, moved = rot || s !== 1, [x, y] = moved ? [0, 0] : at, w = lw / s;
+    if (moved) { ctx.save(); ctx.translate(at[0], at[1]); ctx.rotate(rot); ctx.scale(s, s); }
+    if (dir) {
+      IB.ink(ctx, [[x - 8 * dir, y - 5], [x + 8 * dir, y - 5], [x + 9 * dir, y + 2], [x + 17 * dir, y + 8], [x + 14 * dir, y + 12], [x - 9 * dir, y + 12]], { closed: true, smooth: false, fill, w, seed });
+      IB.seg(ctx, x - 7 * dir, y + 2, x + 8 * dir, y + 2, { w: w * 0.7, seed: seed + 1 });
+      if (laces) for (const k of [0, 1]) IB.seg(ctx, x + (3 + k * 4) * dir, y - 4, x + (6 + k * 4) * dir, y + 1, { w: w * 0.6, seed: seed + 2 + k });
+    } else {
+      IB.ink(ctx, [[x - 7, y - 5], [x + 7, y - 5], [x + 8, y + 3], [x + 10, y + 9], [x + 8, y + 12], [x - 8, y + 12], [x - 10, y + 9], [x - 8, y + 3]], { closed: true, smooth: false, fill, w, seed });
+      IB.seg(ctx, x - 7, y + 2, x + 7, y + 2, { w: w * 0.7, seed: seed + 1 });
+      if (laces) for (const k of [0, 1]) IB.seg(ctx, x - 3, y + 5 + k * 3, x + 3, y + 5 + k * 3, { w: w * 0.6, seed: seed + 2 + k });
+    }
+    if (moved) ctx.restore();
+  };
+
+  /* hose(ctx, a, b, opts) — a rubber-hose limb from a to b: the leg or arm of an object character, which has no fixed bone lengths and curves as a whole. Filled, inked along both sides, open at both ends (the root melts into the body, the far end runs into a boot or a hand), graphite at the root.
+     bow   px the middle bulges off the straight line: positive to the right of a limb that hangs down, i.e. to the left of the direction a -> b. One smooth arc
+     via   [x, y] a joint to pass through instead: a knee or an elbow, with straight bones either side
+     w, w1 width at the root and at the far end
+     Returns the direction the limb is heading where it ends, rad, to aim the hand or the boot. */
+  IB.hose = (ctx, a, b, o = {}) => {
+    const { bow = 0, via = null, w = 13, w1 = w * 0.92, fill = '#d9d9d9', lw = 2.8, seed = 1, shade = 40 } = o;
+    let pts = [a, b];
+    if (via) pts = [a, via, b];
+    else if (bow) {
+      const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1, c = [(a[0] + b[0]) / 2 + (dy / d) * bow * 2, (a[1] + b[1]) / 2 - (dx / d) * bow * 2];
+      pts = [0, 0.25, 0.5, 0.75, 1].map((u) => [(1 - u) * (1 - u) * a[0] + 2 * u * (1 - u) * c[0] + u * u * b[0], (1 - u) * (1 - u) * a[1] + 2 * u * (1 - u) * c[1] + u * u * b[1]]);
+    }
+    const n = pts.length - 1;
+    limb(ctx, pts, pts.map((_, i) => lerp(w, w1, i / n)), { fill, lw, seed, shade });
+    return Math.atan2(b[1] - pts[n - 1][1], b[0] - pts[n - 1][0]);
+  };
+
+  /* mitt(ctx, wrist, ang, opts) — the small hand of an object character: a round palm and separate fingers, pointing along `ang` (use what IB.hose returned). The reference gives these characters real little hands, and the fingers carry the acting once the arm has arrived.
+     kind  'rest'  fingers together and curled, a hand that hangs
+           'reach' fingers together and straight, a hand held out
+           'open'  fingers fanned, a hand thrown up or shown
+     flip  -1 puts the thumb on the other side. s scales the hand (1 = 24 px long, a 240 px character).
+     Aim it along the forearm for a hand held out, and 0.5-1 rad past it toward the floor for a limp wrist. */
+  const MITT = {   // fingers as [angle off the hand's axis, length]; the last entry is the thumb
+    rest: [[0.62, 6.5], [0.27, 8], [-0.08, 8], [-0.8, 5.5]],
+    reach: [[0.36, 10.5], [0.06, 12.5], [-0.24, 11.5], [-0.95, 7.5]],
+    open: [[0.6, 10], [0.2, 12.5], [-0.2, 12.5], [-0.6, 10.5], [-1.25, 8]],
+  };
+  IB.mitt = (ctx, wrist, ang, o = {}) => {
+    const { kind = 'rest', flip = 1, s = 1, lw = 2.2, fill = C.bg, seed = 1 } = o, F = MITT[kind], w = lw / s, r = 2.9;
+    ctx.save();
+    ctx.translate(wrist[0], wrist[1]);
+    ctx.rotate(ang);
+    ctx.scale(s, s * flip);
+    // each finger is a capsule that starts inside the palm: outline round the tip, open at the root
+    const finger = ([a, len], i) => {
+      const c = Math.cos(a), sn = Math.sin(a), at = (d, side) => [7 + c * d - sn * r * side, sn * d + c * r * side], L = 5 + len;
+      const pts = [at(2, -1), at(L - r, -1), at(L - r * 0.3, -0.72), at(L, 0), at(L - r * 0.3, 0.72), at(L - r, 1), at(2, 1)];
+      IB.ink(ctx, pts, { closed: true, fill, w: 0, seed: seed + i, wob: 0.15 });
+      IB.ink(ctx, pts, { w, seed: seed + i, wob: 0.15, taper: false });
+    };
+    F.forEach(finger);
+    IB.oval(ctx, 6.5, 0, 7.4, 5.6, { fill, w, seed: seed + 7, n: 10 });
+    // the fingers open into the palm: paint their roots back over the palm's outline
+    F.forEach(([a], i) => IB.ink(ctx, [[7 + Math.cos(a) * 3, Math.sin(a) * 3], [7 + Math.cos(a) * 9.5, Math.sin(a) * 9.5]], { w: r * 2 - w, color: fill, smooth: false, taper: false, grain: 0, wob: 0, seed: seed + i }));
+    ctx.restore();
+  };
+
+  /* clasp(ctx, at, opts) — two mitts holding each other, drawn as the one shape they make: a knot of knuckles where two arms meet. `rot` tips it with the arms. */
+  IB.clasp = (ctx, at, o = {}) => {
+    const { s = 1, rot = 0, lw = 2.4, fill = C.bg, seed = 1 } = o;
+    ctx.save();
+    ctx.translate(at[0], at[1]);
+    ctx.rotate(rot);
+    ctx.scale(s, s);
+    const w = lw / s;
+    IB.ink(ctx, [[-14, -3], [-8, -9], [1, -10], [10, -8], [15, -2], [14, 5], [9, 10], [3, 9], [-2, 12], [-8, 10], [-13, 5]], { closed: true, fill, w, seed });
+    IB.ink(ctx, [[-6, -8], [-2, -3], [5, -2]], { w: w * 0.8, seed: seed + 1 });          // the thumb laid over the top
+    for (const [x, y] of [[-7, 4], [-1, 5.5], [5, 4.5]]) IB.ink(ctx, [[x, y - 3], [x + 0.8, y + 3.5]], { w: w * 0.7, smooth: false, seed: seed + 2 + x });   // knuckles
+    ctx.restore();
   };
 
   /* bubble(ctx, lines, t, at, opts) — a speech bubble: a white shape with the same ink outline as everything else and a tail pointing at the speaker. The reference has no bubbles; this one follows its rules for drawn things and for copy: it never fades, it is drawn on twos, growing out of the tail tip in three drawings (55%, 88%, 100%), its words are there from the third drawing, then it holds dead still and leaves on a hard cut at `until`.

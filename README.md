@@ -27,6 +27,7 @@ tools/
   capture.py      스틸, 콘택트 시트, mp4, 원본 대조 시트 렌더
   build_index.py  index.html 재생성, 썸네일 재렌더(--thumbs), 장면 메타데이터와 썸네일 점검(--check)
   check_pure.py   모든 장면의 render(t)가 시간의 순수 함수인지 검사
+  same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
 <ref>/      레퍼런스 영상 하나 (예: pstack/)
   README.md      출처, 원본과 다른 점
   STYLE.md       계열별 룩과 모션 규칙
@@ -67,4 +68,4 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/b
 3. **스크립트 첫 주석에 "무슨 일이 일어나고 어떤 생각을 전달하는가" 2~4문장과 `Motion notes:`를 쓴다.** 설명 문단은 한국어로 쓰고, 첫 문장이 시트 카드에 그대로 나가므로 그 문장만 읽어도 장면이 무엇인지 알 수 있게 쓴다. Motion notes에는 재사용할 기법과 실제로 쓴 수치(이징, 간격, 길이)를 적고, 이징 이름 같은 기술 용어는 영어 그대로 둔다. 나중에 이 주석을 grep해서 장면을 찾는다.
 4. **빌드와 네트워크 없이 열려야 한다.** `file://`에서는 ES 모듈이 막히므로 일반 `<script src>`만 쓰고, CDN과 새 의존성을 들이지 않는다.
 5. **DOM·SVG 장면은 구조를 `setup`에서 한 번 만들고 `render`에서는 글자·스타일·속성만 갱신한다.** canvas 장면은 매 프레임 전체를 다시 그린다.
-6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만들고, `--compare`로 원본과 대조한다.
+6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만들고, `--compare`로 원본과 대조한다. 그림을 바꾸지 않으려는 변경(코드를 부품으로 옮기기 등)이면 고치기 전 커밋을 `rm -rf out/base && mkdir -p out/base && git archive <커밋> | tar -x -C out/base`로 풀고 `python3 tools/same_frames.py --base out/base IBM/scenes/*/*.html`처럼 바꾼 장면을 지정해 모든 프레임이 그대로인지 확인한다. 정확 비교라 canvas 장면에만 쓴다: SVG 필터를 쓰는 pstack felt 장면은 같은 파일이어도 텍스처 잡음으로 실패한다.

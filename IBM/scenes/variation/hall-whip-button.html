@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 흑백 선화로 빽빽하게 그린 복도 안쪽으로 연보라 종이비행기 하나가 날아 들어가고, 스피드라인 휩이 화면을 쓸면 큰 버튼 앞에서 망설이던 손가락이 꾹 눌러 불이 켜진다. 원본에 없는 창작 장면으로, 원본의 설정 샷·휩 전환·클로즈업 인서트 세 계열을 다른 장소로 이어 붙인 변주다. 전달하는 생각: 장소를 한 장으로 알리고, 곧바로 손끝의 한 동작으로 들어간다.
@@ -93,14 +94,14 @@ function shotB(ctx, t, dx, dy) {
   IB.oval(ctx, BTN[0], BTN[1] + sink, 132 - sink * 0.6, 132 - sink * 0.6, { fill: lit ? C.blue : C.paper, w: 8, seed: 531, n: 20 });
   IB.ink(ctx, IB.ellipse(BTN[0], BTN[1] + sink, 96, 96, 7, 3.5, 4.6), { w: 7, color: lit ? C.paper : '#d9d9d9', seed: 532 });
   // the finger, on twos: in, short stop, back off, in again, press, hold, away
-  const k = Math.round((tt - 3.25) * 12), away = Math.round((tt - 5.25) * 12);
-  const gap = away >= 0 ? [300, 900, 2400][Math.min(2, away)] : k < 0 ? 2400 : pressed ? -6 : [900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20][Math.min(14, k)];
+  const k = IB.drawn(tt, 3.25), away = IB.drawn(tt, 5.25);
+  const gap = away >= 0 ? IB.inbetween([300, 900, 2400], away) : k < 0 ? 2400 : pressed ? -6 : IB.inbetween([900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20], k);
   const F = [BTN[0] + 96 + gap, BTN[1] + 40 + gap * 0.16];   // fingertip
   if (gap < 2000) {
     IB.pointer(ctx, F, { seed: 540 });
     if (k >= 3 && k < 12 && !pressed) IB.shake(ctx, F[0] + 30, F[1] - 70, 30, { a: -1.9, n: 2, w: 6, gap: 20, seed: 548 + k, span: 0.3 });   // the hesitation shows as a tremble above the fingertip
   }
-  const b = Math.round((tt - 4.5) * 12);
+  const b = IB.drawn(tt, 4.5);
   if (b >= 0 && b < 2) for (let i = 0; i < 6; i++) { const a = -3.0 + i * 0.42, r0 = 200 + b * 40, r1 = r0 + 80 - b * 20; IB.seg(ctx, BTN[0] + Math.cos(a) * r0, BTN[1] + Math.sin(a) * r0, BTN[0] + Math.cos(a) * r1, BTN[1] + Math.sin(a) * r1, { w: 8, seed: 560 + i + b * 7 }); }
   ctx.restore();
 }

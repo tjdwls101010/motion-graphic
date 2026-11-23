@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script>
 /* 검은 화면에 초록 눈 한 쌍이 떠서 좌우를 살피고 깜빡이다가, 눈이 작아지는 순간 밝은 화면으로 컷하면 그 눈은 건물 창가에서 쌍안경을 든 사람이었다. 옆 창의 고양이는 그 사람을 지켜보다 창턱 아래로 사라지더니 자기 쌍안경을 들고 올라와 같이 내다보고, 둘이 동시에 쌍안경을 내린다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 전달하는 생각: 누군가는 이미 지켜보고 있다.
    Motion notes: shows the reference frame's region x 700-1920, y 180-866 (CROP) enlarged 1.57x; coordinates in the code are the reference's. The only black (#000) shot in the set, 3.29 s (79 frames). Eyes are 283 x 124 almonds 468 px apart; only the irises move, two frames a drawing, and a look is a jump held 0.4-0.5 s: centre, 85 px left, up 27 px, down-right (46, 26). A blink is one 2-frame hold of total black, with one half-open 2-frame pose after the first.
@@ -23,9 +24,7 @@ const CAM = [[79, 3.79, 1257, 488], [81, 1.92, 1223, 486], [83, 1.32, 1213, 474]
 // irises: [from frame (24 fps; two frames a drawing, on the frames where the reference changes its drawing), dx, dy, lid] held until the next entry; lid 0 = shut, 0.8 = half, 1 = open
 const LOOK = [[0, 0, 0, 1], [8, -5, 0, 1], [10, -75, 0, 1], [12, -85, 0, 1], [24, 0, 0, 0], [26, -85, 4, 0.8], [28, -85, 0, 1], [37, 0, 0, 0], [39, 4, -11, 1], [41, 9, -27, 1], [53, 15, -18, 1], [55, 41, 19, 1], [57, 46, 26, 1]];
 const ZOOM = [[69, 0.98], [71, 0.9], [73, 0.8], [75, 0.65], [77, 0.46]];
-const held = (table, x, first) => { let v = first; for (const k of table) if (x >= k[0]) v = k; return v; };
-/* drawing(keys, f) — the [frame, drawing] key on screen at frame f: the last one at or before it. */
-const drawing = (keys, f) => { let v = keys[0][1]; for (const [k, d] of keys) { if (f < k) break; v = d; } return v; };
+/* IB.held(keys, f) — the [frame, drawing] key on screen at frame f: the last one at or before it. */
 
 function eye(ctx, cx, cy, s, dx, dy, lid) {
   ctx.save();
@@ -106,7 +105,7 @@ function lens(ctx, x, y, r, kind, eye, seed) {
 }
 
 function watcher(ctx, f) {
-  const p = drawing(WATCH, f), isUp = p.arms === 'up', hx = isUp ? p.hx : 0, hy = isUp ? p.hy : 0;
+  const p = IB.held(WATCH, f), isUp = p.arms === 'up', hx = isUp ? p.hx : 0, hy = isUp ? p.hy : 0;
   const mir = (pts) => pts.map(([x, y]) => [2 * HX - x, y]), H = (pts, k = 0.55) => pts.map(([x, y]) => [x + hx * k, y + hy * k]);
   ctx.save();
   ctx.beginPath(); ctx.rect(1083, 368, 250, 407); ctx.clip();   // she is inside the window: sleeves that reach its edges end there
@@ -271,7 +270,7 @@ function catTail(ctx, which) {
 }
 
 function cat(ctx, f) {
-  const p = drawing(CAT, f), SILL = 749;
+  const p = IB.held(CAT, f), SILL = 749;
   if (p.kind === 'none') return;
   if (p.kind === 'sit' || p.kind === 'crouch') {
     const low = p.kind === 'crouch' ? 7 : 0;
@@ -320,13 +319,13 @@ function cat(ctx, f) {
 const FLY = [[250, 1634, 650, 9, -0.5], [252, 1640, 641, 9, -0.3], [254, 1644, 638, 9, 0.2], [256, 1640, 641, 9, -0.4], [258, 1650, 646, 9, 0], [260, 1670, 650, 9, 0.1], [262, 1712, 645, 8, 0], [264, 1784, 646, 7, -0.2], [266, 1791, 636, 8, -0.6], [268, 1805, 634, 10, -1.2], [270, 1805, 623, 13, 2.9], [272, 1805, 633, 17, 2.7], [274, 1796, 633, 21, 2.6], [276, 1770, 682, 32, 2.4], [278, 1701, 738, 44, 2.3]];
 function flyer(ctx, f) {
   if (f < FLY[0][0]) return;
-  const [, x, y, size, rot] = held(FLY, f, FLY[0]);
-  IB.flyer(ctx, x, y, size, { rot, flap: Math.floor(f / 2) % 2, seed: 470 });   // wings on twos here: the reference redraws this insect every second frame in this shot
+  const [, x, y, size, rot] = IB.heldRow(FLY, f, FLY[0]);
+  IB.flyer(ctx, x, y, size, { rot, flap: IB.alternate(f, 2), seed: 470 });   // wings on twos here: the reference redraws this insect every second frame in this shot
 }
 
 function plant(ctx, f) {
   // a pot under a mound of pointed leaves that spills over the sill and trails down the wall, with a few purple blooms
-  const r = rng(31), leaves = [], sway = [0, 0.07, -0.05][Math.floor(f / 2) % 3];   // the one thing in the window that never holds: every leaf tips a little on each drawing, as in the reference
+  const r = rng(31), leaves = [], sway = IB.loop(f, [0, 0.07, -0.05]);   // the one thing in the window that never holds: every leaf tips a little on each drawing, as in the reference
   IB.box(ctx, 1640, 726, 42, 54, { fill: C.paper, w: 2.4, seed: 500 });
   IB.shade(ctx, 1640, 726, 42, 26, { from: 'top', seed: 501, alpha: 0.4 });
   IB.shade(ctx, 1640, 682, 70, 44, { from: 'bottom', seed: 502, alpha: 0.3 });   // the dark inside the mound
@@ -375,12 +374,12 @@ MG.scene({
     if (f < CUT) {
       IB.bg(ctx, '#000000');
       IB.crop(ctx, CROP);
-      const [, dx, dy, lid] = held(LOOK, f, LOOK[0]), s = held(ZOOM, f, [0, 1])[1];
+      const [, dx, dy, lid] = IB.heldRow(LOOK, f, LOOK[0]), s = IB.heldRow(ZOOM, f, [0, 1])[1];
       if (lid > 0) for (const [ex, ey] of [[1100, 541], [1568, 543]]) eye(ctx, FOCUS[0] + (ex - FOCUS[0]) * s, FOCUS[1] + (ey - FOCUS[1]) * s, s, dx, dy, lid);
       return;
     }
     IB.bg(ctx);
-    const [, z, lx, ly] = held(CAM, f, CAM[0]);
+    const [, z, lx, ly] = IB.heldRow(CAM, f, CAM[0]);
     IB.crop(ctx, CROP);
     ctx.translate(lx - z * HX, ly - z * 462);
     ctx.scale(z, z);

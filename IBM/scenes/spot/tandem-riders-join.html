@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 혼자 달리던 자전거에 한 명씩 끼어들 때마다 자전거가 한 칸씩 길어져 5인승 탠덤이 되고, 마지막에 다 같이 손을 놓고 몸을 젖히며 모자 하나가 뒤로 날아간다. 원본은 왼쪽에 카피가 있는 화면이고, 여기서는 문구를 빼고 그림 영역만 잘라 화면에 채웠다. 끼어드는 순간마다 뒤에 탄 사람은 안장에서 붕 뜨고 머리카락이 솟았다 가라앉으며, 앞에 탄 사람은 앞으로 쏠렸다 일어선다. 전달하는 생각: 따로 있던 것들이 한 대에 올라 같은 방향으로 간다.
@@ -29,8 +30,7 @@ const RIDERS = [
 const JOINS = RIDERS.map((r, i) => [r.join, i]).filter(([j]) => j >= 0).sort((a, b) => a[0] - b[0]);
 const GROW = [0.3, 0.8, 1.06, 1];   // how much of its 120 px the frame has gained on each drawing of a join
 
-/* held(keys, f) — the drawing on screen at frame f: the last key at or before it. */
-const held = (keys, f) => { let v = keys[0][1]; for (const [k, p] of keys) { if (f < k) break; v = p; } return v; };
+/* IB.held(keys, f) — the drawing on screen at frame f: the last key at or before it. */
 
 /* A rider's pose. lean: how far the spine is tipped from the riding pose, + forward, in units of about 1.2 px at the shoulder; rise: px off the saddle; tuck 0..1 pulls the knees up and the head down (the newcomer in the air); arms [near, far]: 'bar', 'reach' (the bar, with the arm pulled straight), or a hand position relative to the shoulder; open: free hands are open (fanned fingers, or with flat: a flat palm) instead of fists; legs: 'pedal' | 'out'. */
 const RIDE = { lean: 0, rise: 0, tuck: 0, nod: 0, arms: ['bar', 'bar'], legs: 'pedal', eye: 'dot', mouth: 'smile', hair: 0, sc: 1 };
@@ -128,10 +128,10 @@ function poseOf(i, f) {
     const k = Math.floor((f - J) / 2);
     if (f >= J && k < 4 && RIDERS[i].join <= J) {
       const jolt = (who === i ? NEW : i < who ? BEHIND : AHEAD)[k];
-      return k < 3 ? jolt : { ...held(ACT[RIDERS[i].who], f), rise: jolt.rise, hair: jolt.hair };   // the last drawing is the rider's own acting again, still a little off the saddle
+      return k < 3 ? jolt : { ...IB.held(ACT[RIDERS[i].who], f), rise: jolt.rise, hair: jolt.hair };   // the last drawing is the rider's own acting again, still a little off the saddle
     }
   }
-  return held(ACT[RIDERS[i].who], f);
+  return IB.held(ACT[RIDERS[i].who], f);
 }
 /* How much of its place rider i has taken at frame f: 0 before it joins, GROW through its four drawings, 1 after. */
 const presence = (i, f) => { const J = RIDERS[i].join; return J < 0 ? 1 : f < J ? 0 : GROW[Math.min(3, Math.floor((f - J) / 2))]; };
@@ -294,7 +294,7 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     IB.crop(ctx, CROP);
-    const f = IB.frame(t), d2 = Math.floor(f / 2), alt2 = d2 % 2, flow = [0, 1, -0.6][d2 % 3];
+    const f = IB.frame(t), d2 = Math.floor(f / 2), alt2 = IB.alternate(f, 2), flow = IB.loop(f, [0, 1, -0.6]);
     // clouds drift, ground props scroll (ones)
     const cl = (x, y, w, seed) => IB.ink(ctx, [[x - w / 2, y], [x - w * 0.2, y - w * 0.12], [x + w * 0.05, y - w * 0.16], [x + w * 0.3, y - w * 0.08], [x + w / 2, y], [x, y + 3]], { closed: true, w: 2, seed, fill: C.bg });
     cl(1372 - t * 3, 185, 150, 60);

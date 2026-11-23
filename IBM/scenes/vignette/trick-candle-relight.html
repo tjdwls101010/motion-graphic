@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 아이가 케이크의 촛불을 훅 불어 끄고 뿌듯해하는데 불이 하나씩 도로 켜지고, 더 크게 숨을 들이켜 다시 불어 꺼도 이번엔 한꺼번에 켜져서 "어?" 한다. 원본에 없는 창작 장면으로, 원본 3편의 촛불 부는 아이에서 "준비-동작-정지"와 얼굴만 바뀌는 연기를 가져왔다. 전달하는 생각: 껐다고 생각한 문제가 다시 살아난다.
@@ -20,7 +21,7 @@ const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), face: (u < 0.5 ? a : b).face
 // the two rounds: [inhale at, blow at, relight at, lean back, lean forward, relight stagger in drawings]
 const ROUNDS = [{ inhale: 0.75, blow: 1.25, back: 0.5 + 18 / 12, relight: 2.5, away: -0.1, into: 0.35, stagger: 2 }, { inhale: 3.25, blow: 4, back: 99, relight: 5, away: -0.2, into: 0.5, stagger: 0 }];
 function poseAt(tt) {
-  const n = (t0) => Math.round((tt - t0) * 12), rest = kid(0.06, SMILE);
+  const n = (t0) => IB.drawn(tt, t0), rest = kid(0.06, SMILE);
   let p = kid(0.06, FLAT);
   for (const r of ROUNDS) {
     const lit = (i) => tt >= r.relight + (i * r.stagger) / 12 - 1e-6;
@@ -35,7 +36,7 @@ function poseAt(tt) {
 function flame(i, tt) {
   let s = 1;
   for (const r of ROUNDS) {
-    const b = Math.round((tt - r.blow) * 12), l = Math.round((tt - (r.relight + (i * r.stagger) / 12)) * 12);
+    const b = IB.drawn(tt, r.blow), l = IB.drawn(tt, r.relight + (i * r.stagger) / 12);
     if (b === 1) s = 2; else if (b >= 2) s = 0;
     if (l === 0) s = 3; else if (l > 0) s = 1;
   }
@@ -60,7 +61,7 @@ function candle(ctx, x, state, f, tt) {
   for (let k = 0; k < 3; k++) IB.seg(ctx, x - 8, WICK + 22 + k * 16, x + 8, WICK + 14 + k * 16, { w: 1.8, seed: 201 + x + k });
   IB.seg(ctx, x, WICK + 6, x + 1, WICK - 4, { w: 2, seed: 205 + x });
   if (state === 0) return;
-  const flick = Math.floor(f / 3) % 2 ? 1 : -1;
+  const flick = IB.alternate(f, 3) ? 1 : -1;
   ctx.save(); ctx.translate(x, WICK - 4);
   if (state === 2) { ctx.rotate(1.25); ctx.scale(0.75, 2.2); } else ctx.rotate(flick * 0.12);
   IB.ink(ctx, [[0, 2], [-11, -12], [-7, -30], [0, -46], [8, -28], [11, -12]], { closed: true, fill: C.yellow, w: 2.6, seed: 210 + x + (flick > 0 ? 1 : 0) });
@@ -80,7 +81,7 @@ MG.scene({
     CANDLES.forEach((x, i) => candle(ctx, x, flame(i, tt), f, tt));
     const j = IB.figure(ctx, p, { ...WHO, face: p.face });
     for (const r of ROUNDS) {
-      const b = Math.round((tt - r.blow) * 12), big = r.into > 0.4 ? 1.35 : 1;
+      const b = IB.drawn(tt, r.blow), big = r.into > 0.4 ? 1.35 : 1;
       // breath: three lines leave the mouth and travel toward the candles for three drawings
       if (b >= 0 && b < 3) for (let i = -1; i <= 1; i++) { const x0 = j.headAt[0] + 44 + b * 70 * big, y0 = j.headAt[1] + 12 + i * 15 * big; IB.ink(ctx, [[x0, y0], [x0 + 46 * big, y0 - 4 + i * 5], [x0 + 92 * big, y0 - 12 + i * 12]], { w: 2.8, seed: 300 + i + b * 5 }); }
       // smoke: a thin wisp climbing from each wick for six drawings

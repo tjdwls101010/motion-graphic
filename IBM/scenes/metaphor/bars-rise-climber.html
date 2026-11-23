@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 바닥에서 막대가 하나씩 솟을 때마다 작은 사람이 그 위로 뛰어올라 계단처럼 다섯 칸을 오르고, 가장 높은 파란 막대 꼭대기에 깃발을 꽂고 "다 왔다!" 한다. 원본에 없는 창작 장면으로, 막대그래프를 무대 소품으로 삼아 원본의 "사건마다 한 박자, 사이는 정지"를 옮겼다. 전달하는 생각: 성장은 한 칸씩 딛고 올라간 결과다.
@@ -30,7 +31,7 @@ function poseAt(t) {
   const tt = IB.twos(t);
   let k = -1; while (k + 1 < BARS.length && tt >= BARS[k + 1].hop) k++;
   if (k < 0) return pose('stand', ...START);
-  const step = Math.round((tt - BARS[k].hop) * 12), A = spot(k - 1), B = spot(k);
+  const step = IB.drawn(tt, BARS[k].hop), A = spot(k - 1), B = spot(k);
   if (step === 0) return pose('crouch', ...A);
   if (step < 3) { const u = [0.33, 0.72][step - 1]; return pose('air', lerp(A[0], B[0], u), lerp(A[1], B[1], u) - 90 * Math.sin(u * Math.PI)); }
   if (step === 3) return pose('land', ...B);
@@ -57,9 +58,9 @@ MG.scene({
     // the flag on the last bar: pole drawn on in two drawings, then the cloth, which flutters on threes
     const top = spot(4), px = top[0] + 0.27 * H;
     if (tt >= 5.5) {
-      const grown = [0.5, 1][Math.min(1, Math.round((tt - 5.5) * 12))];
+      const grown = IB.inbetween([0.5, 1], IB.drawn(tt, 5.5));
       IB.seg(ctx, px, top[1], px, top[1] - 250 * grown, { w: 3.4, seed: 300 });
-      if (tt >= 68 / 12 - 1e-6) { const flap = Math.floor(IB.frame(t) / 3) % 2; IB.ink(ctx, [[px, top[1] - 248], [px + 64, top[1] - 232 + flap * 8], [px + 118 - flap * 10, top[1] - 208 - flap * 6], [px + 60, top[1] - 190 + flap * 6], [px, top[1] - 172]], { closed: true, fill: C.green, w: 3, seed: 301 + flap }); }
+      if (tt >= 68 / 12 - 1e-6) { const flap = IB.alternate(IB.frame(t), 3); IB.ink(ctx, [[px, top[1] - 248], [px + 64, top[1] - 232 + flap * 8], [px + 118 - flap * 10, top[1] - 208 - flap * 6], [px + 60, top[1] - 190 + flap * 6], [px, top[1] - 172]], { closed: true, fill: C.green, w: 3, seed: 301 + flap }); }
     }
     IB.figure(ctx, poseAt(t), { ...WHO, face: { mouth: tt >= 5.5 ? 'open' : 'smile' } });
     IB.bubble(ctx, ['다 왔다!'], t, 6.0, { tip: [top[0] - 36, top[1] - 0.93 * H], x: top[0] - 210, y: top[1] - 1.2 * H, seed: 500 });

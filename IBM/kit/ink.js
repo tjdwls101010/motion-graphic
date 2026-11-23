@@ -13,15 +13,6 @@
   };
   IB.FONT = 'Pretendard';
 
-  /* ---------- time ---------- */
-  /* Drawn animation updates every 2 frames of the 24 fps reference (12 fps) and holds dead still in between; slow acting drops to every 3 frames (8 fps). Copy, pans and scrolls stay on ones: pass them the raw t. */
-  IB.FPS = 24;
-  IB.twos = (t) => MG.onTwos(t, 12);
-  IB.threes = (t) => MG.onTwos(t, 8);
-  IB.frame = (t) => Math.floor(t * IB.FPS + 1e-6);
-  /* settle(dt, tau, stop) — 0..1, the curve copy and the end card arrive on: an exponential approach (time constant tau) rescaled so it lands exactly on 1 at `stop` seconds and is truly still afterwards. Fitted to the reference frame by frame: 71 px of head copy closes 60, 48, 38, 31, 25, 20, 16, 13, 10 ... px and is still after 0.79 s with tau 0.2. */
-  IB.settle = (dt, tau = 0.2, stop = tau * 4) => (dt <= 0 ? 0 : dt >= stop ? 1 : (1 - Math.exp(-dt / tau)) / (1 - Math.exp(-stop / tau)));
-
   /* ---------- stage ---------- */
   IB.bg = (ctx, color = IB.C.bg) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);

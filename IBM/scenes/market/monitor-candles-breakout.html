@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/desk.js"></script>
 <script>
@@ -19,7 +20,7 @@ const FIRST = 0.75, HOLD_END = 3.5, BREAK = 13;
 
 // how many candles are on at time tt (a half = wick only), and whether this is the smear drawing
 function shown(tt) {
-  const k = Math.round((tt - FIRST) * 12), b = Math.round((tt - HOLD_END) * 12);
+  const k = IB.drawn(tt, FIRST), b = IB.drawn(tt, HOLD_END);
   if (b < 0) return { n: clamp((k + 1) / 2, 0, BREAK), smear: false };
   if (b === 0) return { n: BREAK, smear: true };
   if (b < 3) return { n: BREAK + 1, smear: false };
@@ -32,7 +33,7 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), f = IB.frame(t), { n, smear } = shown(tt), b = Math.round((tt - HOLD_END) * 12);
+    const tt = IB.twos(t), f = IB.frame(t), { n, smear } = shown(tt), b = IB.drawn(tt, HOLD_END);
     IB.shade(ctx, 520, 1012, 880, 30, { from: 'top', seed: 4, alpha: 0.5 });
     IB.monitor(ctx, 960, 1010, 1560, 830, { lw: 8, bezel: 34, seed: 10 });
     // faint grid and the price axis ticks: drawn, grey, never moving
@@ -43,11 +44,11 @@ MG.scene({
 
     // the live candle's close flips on threes once its body is on
     const data = DATA.map((d) => d.slice()), last = DATA.length - 1;
-    if (n >= DATA.length && Math.floor(f / 3) % 2) data[last][1] = 94;
+    if (n >= DATA.length && IB.alternate(f, 3)) data[last][1] = 94;
     const at = IB.candles(ctx, CHART, data, n, { min: MIN, max: MAX, lw: 7, up: C.blue, down: C.red, seed: 100 });
 
     // the resistance line: dashes drawn on left to right, broken where the breakout went through
-    const dashes = 18, drawn = clamp(Math.round((tt - 0.25) * 12) + 1, 0, 5) / 5 * dashes;
+    const dashes = 18, drawn = clamp(IB.drawn(tt, 0.25) + 1, 0, 5) / 5 * dashes;
     for (let i = 0; i < drawn; i++) { const x0 = cx + (i / dashes) * (cw + 40), x1 = x0 + (cw + 40) / dashes * 0.56; if (b >= 1 && x1 > at.x(BREAK) - 40 && x0 < at.x(BREAK) + 40) continue; IB.seg(ctx, x0, Y(LINE), x1, Y(LINE), { w: 5, seed: 60 + i }); }
 
     if (smear) {

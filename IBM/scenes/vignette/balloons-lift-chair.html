@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 고양이가 자는 의자에 화면 밖에서 뻗어 온 손이 풍선을 하나씩 묶고, 넷째 풍선에서 의자가 바닥을 떠나 떠오르자 고양이가 눈을 뜨고 "야옹?" 했다가 도로 잔다. 원본에 없는 창작 장면으로, 원본 스팟의 "한 화면, 컷 없음, 마지막엔 작은 것 하나만 움직인다"를 작은 상황극으로 옮겼다. 전달하는 생각: 작은 것이 쌓이면 어느 순간 떠오른다.
@@ -18,7 +19,7 @@ const BALLOONS = [
   { to: [215, -140], fill: C.yellow, seed: 130 },
 ].map((b, i) => ({ ...b, in: 0.75 + i * 1.25, rel: 0.75 + i * 1.25 + 7 / 12 }));
 // which drawing of its beat a balloon is on: 0-6 carried by the hand, 7 on released
-const beat = (b, tt) => Math.round((tt - b.in) * 12);
+const beat = (b, tt) => IB.drawn(tt, b.in);
 
 // how far the chair is off the floor
 const lift = (t) => { const tt = IB.twos(t); return 46 * IB.settle(tt - BALLOONS[2].rel, 0.2) + 150 * IB.settle(tt - BALLOONS[3].rel, 0.45, 1.4); };
@@ -94,7 +95,7 @@ MG.scene({
       balloon(ctx, lerp(held[0], K[0] + b.to[0], u), lerp(held[1], K[1] + b.to[1], u), b, K);
     });
     chair(ctx, y0);
-    const eyes = tt >= 4 && tt < 80 / 12 - 1e-6 ? 'wide' : 'shut', tail = t >= 7 ? Math.floor(IB.frame(t) / 3) % 2 : 0;
+    const eyes = tt >= 4 && tt < 80 / 12 - 1e-6 ? 'wide' : 'shut', tail = t >= 7 ? IB.alternate(IB.frame(t), 3) : 0;
     const mouth = cat(ctx, y0, eyes, tail);
     if (hand) {
       if (carried >= 0) balloon(ctx, hand[0] - 30, hand[1] - 190, BALLOONS[carried], [hand[0] - 6, hand[1] + 2]);

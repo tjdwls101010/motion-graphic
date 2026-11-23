@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 다리 달린 상자들이 줄지어 걸어와 하나씩 컨베이어에 뛰어오르면 다리를 접고 실려 가고, 검사대를 지날 때마다 도장이 내려와 초록 체크가 찍힌다. 늦은 꼬마 상자가 "잠깐만요!" 하며 뛰어와 마지막에 올라탄다. 원본에 없는 창작 장면으로, 원본 4편의 다리 달린 폴더·서류를 파이프라인 은유로 옮겼다. 전달하는 생각: 제각각 들어온 것들이 한 줄에 올라 같은 검사를 거친다.
@@ -23,11 +24,11 @@ const LAND = 960, HOP = 4 / 12;
 function at(b, t) {
   const tt = IB.twos(t), f = IB.frame(t);
   if (tt < b.hop) {
-    const speed = b.late ? 336 : 190, x = 760 - speed * (b.hop - tt), step = Math.floor(f / (b.late ? 4 : 6)) % 2;
+    const speed = b.late ? 336 : 190, x = 760 - speed * (b.hop - tt), step = IB.alternate(f, b.late ? 4 : 6);
     return { x, y: FLOOR - 12 - LEG, tilt: (step ? 1 : -1) * (b.late ? 0.07 : 0.035), legs: 1, feet: step ? [[-b.w * 0.2 - 8, 0], [b.w * 0.2 + 22, -12]] : [[-b.w * 0.2 + 22, -12], [b.w * 0.2 - 8, 0]] };
   }
   if (tt < b.hop + HOP) {
-    const k = Math.round((tt - b.hop) * 12), P = [[790, FLOOR - 12 - LEG - 130, -0.22], [850, FLOOR - 12 - LEG - 235, -0.16], [920, BELT - 110, -0.06], [LAND, BELT - 22, 0.05]][Math.min(3, k)];
+    const k = IB.drawn(tt, b.hop), P = [[790, FLOOR - 12 - LEG - 130, -0.22], [850, FLOOR - 12 - LEG - 235, -0.16], [920, BELT - 110, -0.06], [LAND, BELT - 22, 0.05]][Math.min(3, k)];
     return { x: P[0], y: P[1], tilt: P[2], legs: 0.6, feet: [[-b.w * 0.2 - 10, 0], [b.w * 0.2 + 4, -8]], air: true };
   }
   const since = tt - (b.hop + HOP), x = LAND + V * (t - (b.hop + HOP));   // riding: the belt carries it on ones
@@ -35,7 +36,7 @@ function at(b, t) {
 }
 const scanAt = (b) => b.hop + HOP + (SCAN - LAND) / V;
 // which drawing of its stamp a parcel is on: 0 the pad on its way down, 1 contact (the tick is there from this drawing on), 2-3 the pad going back up
-const stampStep = (b, tt) => Math.round((tt - (scanAt(b) - 1 / 12)) * 12);
+const stampStep = (b, tt) => IB.drawn(tt, scanAt(b) - 1 / 12);
 
 function parcel(ctx, b, s, stamped) {
   const { w, h } = b, c = Math.cos(s.tilt), sn = Math.sin(s.tilt), P = (x, y) => [s.x + x * c - y * sn, s.y + x * sn + y * c];

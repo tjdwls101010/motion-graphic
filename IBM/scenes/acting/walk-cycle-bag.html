@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 헤드폰을 쓰고 긴 가방을 멘 사람이 컵을 들고 복도를 걸어가다 노란 문 앞에서 멈춰 한 모금 마신다. 원본에 없는 창작 장면으로, 원본의 걷기(2프레임에 한 장)와 탠덤 스팟의 흐르는 배경을 한 인물의 걷기 사이클로 옮겼다. 전달하는 생각: 인물은 제자리에서 걷고 세상이 뒤로 흐른다.
@@ -30,9 +31,9 @@ function carry(p, sip) {
 function poseAt(t) {
   const tt = IB.twos(t);
   if (tt < STOP) return walkPose((travel(tt) / (4 * STEP)) % 1);
-  const stand = carry(IB.stand(X0, FLOOR, WHO), 0), u = [0.45, 0.8, 1, 1][Math.min(3, Math.round((tt - STOP) * 12))];
+  const stand = carry(IB.stand(X0, FLOOR, WHO), 0), u = IB.inbetween([0.45, 0.8, 1, 1], IB.drawn(tt, STOP));
   if (u < 1) return carry(IB.poseMix(walkPose(0), stand, u), 0);
-  const sip = tt < 6 ? 0 : tt < 7.08 ? [0.55, 1][Math.min(1, Math.round((tt - 6) * 12))] : [0.45, 0][Math.min(1, Math.round((tt - 7.08) * 12))];
+  const sip = tt < 6 ? 0 : tt < 7.08 ? IB.inbetween([0.55, 1], IB.drawn(tt, 6)) : IB.inbetween([0.45, 0], IB.drawn(tt, 7.08));
   return carry(IB.stand(X0, FLOOR, WHO), sip);
 }
 
@@ -131,7 +132,7 @@ MG.scene({
     for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [1, y]], { w: 3, color: WHO.skin, seed: 630 + y, grain: 0 });
     ctx.restore();
     // the bag swings to a stop: shake marks flicker for four drawings, then nothing
-    const k = Math.round((tt - (STOP + RUNOUT)) * 12);
+    const k = IB.drawn(tt, STOP + RUNOUT);
     if (k >= 0 && k < 4) { IB.shake(ctx, bx + 0.46 * h, by + 0.2 * h, 16, { a: 0.5, n: 2, seed: 640 + k, w: 2.6 }); IB.shake(ctx, bx - 0.47 * h, by - 0.2 * h, 14, { a: Math.PI + 0.6, n: 2, seed: 650 + k, w: 2.6 }); }
   },
 });

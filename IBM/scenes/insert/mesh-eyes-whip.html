@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script>
 /* 마스크 철망 너머로 화면을 가득 채운 두 눈이 노려보다 눈썹을 내리고 고개를 기울이며 다가오고, 스피드라인 휩이 화면을 쓸고 지나가면 맞은편 사람의 긴장한 눈이 나온다: 눈썹이 걱정스럽게 치켜 올라가고 땀방울 하나가 길게 자라며 흘러내린다. 전달하는 생각: 대결 직전, 한쪽은 자신 있고 한쪽은 불안하다.
    Motion notes: extreme close-up, lines 6-17 px. The mesh (#d9d7d6 lines 11 px wide, cells ~125 px, bowed like a lens) belongs to the mask, so it moves with the head: every shot is one transform (zoom, shift, tilt) applied to face and mesh together, and the skin above the visor line is darkened to #867968. Faces are drawn from the reference's shapes read off a 100 px grid; both are tables of [frame, drawing] at 24 fps held until the next key (SHOT_A, SHOT_B), nothing interpolated, and every key sits on the frame where the reference changes its drawing (all of them even frames here).
@@ -13,7 +14,6 @@
    Face B (from 1.375 s): lands small (0.97x) and 24 px low with flat brows and its eyes narrowed to slits, a first bead of sweat already on the temple; at 36 it rocks 0.02 rad as it comes up to size and the eyes begin to open; over 38 and 40 the eyes open wide and the brows climb into a worried arch (inner ends up 110 px, outer ends 58). Then the face holds dead still and only the sweat moves: its tip stays put and the drop runs down from it on twos, 20 px long at first and 160 px by the last frame. */
 const C = IB.C, SKIN = '#cfbba0', SHADE = '#867968', MESH = '#d9d7d6', BROW_B = '#948da1';
 const WHIP = 27, B_IN = 33;   // 24 fps frames after the scene start
-const held = (keys, f) => { let v = keys[0][1]; for (const [k, d] of keys) { if (f < k) break; v = d; } return v; };
 
 /* Face A's drawings: scowl 0..1 lowers brows and lids; then the shot's zoom, shift (px) and tilt (rad, + = clockwise). */
 const A0 = { scowl: 0, zoom: 1, dx: 0, dy: 0, rot: 0 };
@@ -132,13 +132,13 @@ MG.scene({
       mesh(ctx);
       ctx.restore();
     };
-    if (f < WHIP) return shot('A', held(SHOT_A, f));
-    if (f >= B_IN) return shot('B', held(SHOT_B, f));
+    if (f < WHIP) return shot('A', IB.held(SHOT_A, f));
+    if (f >= B_IN) return shot('B', IB.held(SHOT_B, f));
     // the whip itself, three drawings on twos: the leaving shot shoved left, streaks alone, the arriving shot still to the right of its place
     const k = Math.floor((f - WHIP) / 2), drawn = WHIP + k * 2;
     if (k !== 1) {
       const leaving = k === 0;
-      shot(leaving ? 'A' : 'B', leaving ? held(SHOT_A, WHIP - 1) : held(SHOT_B, B_IN), leaving ? -1150 : 1150);
+      shot(leaving ? 'A' : 'B', leaving ? IB.held(SHOT_A, WHIP - 1) : IB.held(SHOT_B, B_IN), leaving ? -1150 : 1150);
       // the face breaks up: bars of bare stage eat into it from the open side
       const r = MG.rng(700 + drawn);
       ctx.fillStyle = C.bg;

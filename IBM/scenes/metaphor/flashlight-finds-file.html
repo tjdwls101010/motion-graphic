@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 캄캄한 화면에 눈 한 쌍만 깜빡이고, 손전등 빛의 원뿔이 위아래로 훑다가 상자 뒤에 숨은 서류에 멈추면 화면이 한 번에 밝아지며 "찾았다!", 서류가 다리로 걸어 나와 손을 흔든다. 원본에 없는 창작 장면으로, 원본 6편의 검은 화면과 하드 컷, 카피 카드의 손전등 원뿔을 찾기 은유로 옮겼다. 전달하는 생각: 어디 있는지 모르던 것을 빛을 비춰 찾아낸다.
@@ -20,7 +21,7 @@ const beamAt = (tt) => (tt >= 3.25 ? TARGET : kf(tt, [[0.5, 22], [1.5, -24, 'inO
 const ducked = (tt) => tt < 3.25 && tt >= 0.5 && Math.abs(beamAt(tt) - TARGET) < 15;
 function who(t) {
   const tt = IB.twos(t), p = IB.stand(X0, FLOOR, WHO), sh = [X0 + 2, p.hip[1] - (F.torso - 0.012) * H];
-  const down = tt < 5 - 1e-6 ? 0 : [0.5, 1][Math.min(1, Math.round((tt - 5) * 12))];   // the arm drops after the find
+  const down = tt < 5 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 5));   // the arm drops after the find
   const a = lerp(beamAt(tt), 62, down) * DEG, u = [Math.cos(a), Math.sin(a)];
   p.hands = [[X0 + 40, p.hip[1] - 6], [sh[0] + u[0] * 150, sh[1] + u[1] * 150]];
   p.grip = [false, true];
@@ -39,8 +40,8 @@ function torch(ctx, w, a) {
 
 /* The hiding document: a rigid sheet on two thin legs, with eyes because it has to be seen in the dark. */
 function docState(t) {
-  const tt = IB.twos(t), k = clamp(Math.round((tt - 5) * 12), 0, 12), walking = k > 0 && k < 12, step = Math.floor(k / 3) % 2;
-  return { down: ducked(tt) ? 120 : 0, x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : [0.5, 1][Math.min(1, Math.round((tt - 74 / 12) * 12))], wave: IB.frame(t) >= 152 ? (Math.floor((IB.frame(t) - 152) / 3) + 1) % 2 : 0 };   // 152 = frame of 76/12 s; the hand changes on that very frame
+  const tt = IB.twos(t), k = clamp(IB.drawn(tt, 5), 0, 12), walking = k > 0 && k < 12, step = IB.alternate(k, 3);
+  return { down: ducked(tt) ? 120 : 0, x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 74 / 12)), wave: IB.alternate(IB.frame(t), 3, 152) };   // 152 = frame of 76/12 s; the hand changes on that very frame
 }
 const eyesAt = (d) => [d.x - 26, FLOOR - 12 - LEG - 150 + d.down];
 function eyes(ctx, d, look, shut) {

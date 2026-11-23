@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 왼쪽에서 온 손가락이 첫 도미노를 튕기자 줄줄이 넘어가다가, 위에서 내려온 손가락이 파란 도미노 하나를 눌러 잡는 순간 연쇄가 거기서 멈춘다. 원본에 없는 창작 장면으로, 원본의 "쓰는 동안만 있는 팔"과 한 장씩 어긋나며 번지는 박자를 연쇄 반응 은유로 옮겼다. 전달하는 생각: 한 곳의 문제는 줄줄이 번지고, 한 번의 개입이 그것을 끊는다.
@@ -33,7 +34,7 @@ function rest(next) {
 function angles(tt) {
   const out = new Array(N).fill(0);
   for (let i = HELD - 1; i >= 0; i--) {
-    const k = Math.round((tt - (FLICK + i * WAVE)) * 12);
+    const k = IB.drawn(tt, FLICK + i * WAVE);
     out[i] = k < 0 ? 0 : Math.min(FREE[Math.min(FREE.length - 1, k)], rest(out[i + 1]));
   }
   return out;
@@ -55,7 +56,7 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), n = (t0) => Math.round((tt - t0) * 12), ang = angles(tt);
+    const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), ang = angles(tt);
     IB.smear(ctx, X0 + ((N - 1) * GAP) / 2, FLOOR - 3, N * GAP + 60, { h: 12, seed: 9 });
     for (let i = N - 1; i >= 0; i--) domino(ctx, i, ang[i]);
 

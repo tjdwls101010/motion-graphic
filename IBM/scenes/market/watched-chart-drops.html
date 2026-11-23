@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/desk.js"></script>
 <script>
@@ -13,10 +14,9 @@
 const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 700, DESK = 716;
 const WHO = { h: 520, dir: 1, skin: C.skin[1], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 30 };
-const H = WHO.h, T = (n) => n / 12;
+const H = WHO.h;
 // what the sitter is doing from each time on (twelfths of a second), and what that does to the chart per step
 const BEATS = [[0, 'watch', 0], [18, 'stare', -3], [36, 'back', 3], [54, 'peek', -4], [60, 'back', 3], [69, 'peek', -4], [75, 'cover', 6]];
-const beatAt = (n) => { let b = BEATS[0]; for (const x of BEATS) if (n >= x[0]) b = x; return b; };
 
 function pose(kind) {
   const p = IB.sit(X0, FLOOR, WHO), hy = p.hip[1], key = p.hands;
@@ -28,15 +28,15 @@ function pose(kind) {
   return { ...p, lean: -0.06, hands: [[X0 + 0.055 * H, hy - 0.305 * H], [X0 + 0.04 * H, hy - 0.3 * H]], elbow: [1, 1], face: { eye: 'closed', mouth: 'flat' } };   // cover
 }
 function poseAt(tt) {
-  const n = Math.round(tt * 12), b = beatAt(n), cur = pose(b[1]);
+  const n = Math.round(tt * 12), b = IB.heldRow(BEATS, n, BEATS[0]), cur = pose(b[1]);
   if (n !== b[0] || b[0] === 0) return cur;
-  const prev = pose(beatAt(n - 1)[1]);   // the drawing a beat starts on is halfway there
+  const prev = pose(IB.heldRow(BEATS, n - 1, BEATS[0])[1]);   // the drawing a beat starts on is halfway there
   return { ...IB.poseMix(prev, cur, 0.5), elbow: cur.elbow, face: cur.face };
 }
 // the chart's values: one new point every two drawings from 0.5 s, its direction set by the beat it lands in
 function series(tt) {
   const steps = Math.max(0, Math.floor((Math.round(tt * 12) - 6) / 2) + 1), v = [50];
-  for (let i = 1; i < steps; i++) { const d = beatAt(6 + i * 2)[2]; v.push(v[i - 1] + (d === 0 ? (i % 2 ? 1.5 : -1.5) : d)); }
+  for (let i = 1; i < steps; i++) { const d = IB.heldRow(BEATS, 6 + i * 2, BEATS[0])[2]; v.push(v[i - 1] + (d === 0 ? (i % 2 ? 1.5 : -1.5) : d)); }
   return steps ? v : [];
 }
 
@@ -68,7 +68,7 @@ MG.scene({
       IB.ink(ctx, rising ? [[ax - 18, ay + 14], [ax, ay - 16], [ax + 18, ay + 14]] : [[ax - 18, ay - 14], [ax, ay + 16], [ax + 18, ay - 14]], { closed: true, smooth: false, fill: col, w: 2.8, seed: 91 });
     }
     IB.figure(ctx, p, look, 'near');
-    IB.bubble(ctx, ['안 봐야 오르네.'], t, T(84), { tip: [X0 + 34, p.hip[1] - 0.4 * H], x: X0 + 110, y: p.hip[1] - 0.62 * H, seed: 500 });
+    IB.bubble(ctx, ['안 봐야 오르네.'], t, IB.T(84), { tip: [X0 + 34, p.hip[1] - 0.4 * H], x: X0 + 110, y: p.hip[1] - 0.62 * H, seed: 500 });
   },
 });
 </script>

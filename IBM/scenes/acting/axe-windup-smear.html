@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 도끼를 어깨에 걸친 사람이 머리 위로 크게 들어 올려 한참 버티다가, 스미어 한 장으로 내리쳐 통나무를 둘로 쪼개고 "됐다." 하고 선다. 원본에 없는 창작 장면으로, 원본 3편의 도끼질에서 읽은 "긴 준비, 스미어 한 장, 긴 정지"를 한 인물의 한 동작으로 옮겼다. 전달하는 생각: 오래 벼른 한 번이 일을 끝낸다.
@@ -27,12 +28,12 @@ const HIT = withAxe(base(40, 50, 0.6, [150], [-90, 0.5]), [X0 + 236, HIP + 18], 
 const DONE = { ...base(124, 4, 0.05, [172], [78]), hands: [[X0 + 150, HIP - 12], HIT.G], elbow: [1, 1], grip: [false, true], G: HIT.G, th: HIT.th, flip: 1, face: { mouth: 'smile' } };
 
 function poseAt(t) {
-  const tt = IB.twos(t), step = (t0) => Math.round((tt - t0) * 12);
+  const tt = IB.twos(t), step = (t0) => IB.drawn(tt, t0);
   if (tt < 0.833) return REST;
-  if (tt < 2.0) { const u = [0.35, 0.75, 1][Math.min(2, step(0.833))], p = IB.poseMix(REST, UP, u); return { ...p, G: [lerp(REST.G[0], UP.G[0], u), lerp(REST.G[1], UP.G[1], u)], th: lerp(REST.th, UP.th, u), flip: u < 0.5 ? -1 : 1, behind: true, grip: [true, true], face: UP.face }; }
+  if (tt < 2.0) { const u = IB.inbetween([0.35, 0.75, 1], step(0.833)), p = IB.poseMix(REST, UP, u); return { ...p, G: [lerp(REST.G[0], UP.G[0], u), lerp(REST.G[1], UP.G[1], u)], th: lerp(REST.th, UP.th, u), flip: u < 0.5 ? -1 : 1, behind: true, grip: [true, true], face: UP.face }; }
   if (tt < 2.083) return SMEAR;
   if (tt < 4.5) return HIT;
-  const u = [0.5, 1][Math.min(1, step(4.5))];
+  const u = IB.inbetween([0.5, 1], step(4.5));
   return u < 1 ? { ...IB.poseMix(HIT, DONE, u), G: HIT.G, th: HIT.th, flip: 1, grip: [false, true], face: DONE.face } : DONE;
 }
 
@@ -103,10 +104,10 @@ MG.scene({
       IB.figure(ctx, p, look, 'near');
     }
     // the weight of the raised axe: shake marks by its head for four drawings, then a dead-still hold
-    const s1 = Math.round((tt - 1.0) * 12);
+    const s1 = IB.drawn(tt, 1.0);
     if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
     // impact: a burst at the cut for two drawings
-    const s2 = Math.round((tt - 2.083) * 12);
+    const s2 = IB.drawn(tt, 2.083);
     if (s2 >= 0 && s2 < 2) for (let i = 0; i < 5; i++) { const a = -2.7 + i * 0.56, r0 = 70 + s2 * 26, r1 = r0 + 46 - s2 * 10; IB.seg(ctx, BX + Math.cos(a) * r0, TOP - 20 + Math.sin(a) * r0 * 0.8, BX + Math.cos(a) * r1, TOP - 20 + Math.sin(a) * r1 * 0.8, { w: 3, seed: 410 + i + s2 * 9 }); }
     IB.bubble(ctx, ['됐다.'], t, 4.833, { tip: [X0 + 196, HIP - 196], x: X0 + 330, y: HIP - 296, seed: 500 });
   },

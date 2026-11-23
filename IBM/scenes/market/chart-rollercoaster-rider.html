@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 차트 선을 레일 삼은 노란 카트가 딸깍딸깍 느리게 꼭대기까지 올라가 한참 멈췄다가, 한 장에 바닥까지 곤두박질치고 남은 힘으로 작은 언덕을 넘어 서자 탄 사람이 "…내려 주세요." 한다. 원본에 없는 창작 장면으로, 원본의 "긴 준비, 스미어 한 장, 긴 정지"와 3프레임 단위의 느린 연기를 주가 차트 은유로 옮겼다. 전달하는 생각: 오르는 데는 오래 걸리고 떨어지는 것은 한순간이다.
@@ -13,7 +14,7 @@ const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, AX = 220, BASE = 900;
 const P = [[270, 838], [430, 792], [690, 340], [820, 246], [905, 330], [1030, 730], [1200, 806], [1390, 580], [1520, 530], [1650, 596], [1790, 580]];
 const WHO = { h: 250, dir: 1, skin: C.skin[2], top: C.mint, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'pony', seed: 40 };
-const T = (n) => n / 12, K = 1.35;   // K: the cart and its rider are drawn at this scale, with line widths divided back
+const K = 1.35;   // K: the cart and its rider are drawn at this scale, with line widths divided back
 
 /* The rail as dense samples of the same Catmull-Rom curve IB.ink draws through P, with the length run so far at each sample. */
 const RAIL = (() => {
@@ -38,16 +39,16 @@ function ride(t) {
   const t2 = IB.twos(t), t3 = IB.threes(t);
   if (t3 < 0.5) return { s: S(1), mood: 'calm' };
   if (t2 < 4 - 1e-6) {
-    const k = Math.round((t3 - 0.5) * 8);
+    const k = IB.drawn(t3, 0.5, 8);
     if (k <= 20) { const u = k / 20; return { s: lerp(S(1), S(3) - 24, 1 - Math.pow(1 - u, 1.5)), mood: 'calm', tick: k }; }
-    return { s: S(3) - 24 + 8 * Math.min(3, k - 20), mood: 'scared', shake: Math.round((t2 - 3.5) * 12) };
+    return { s: S(3) - 24 + 8 * Math.min(3, k - 20), mood: 'scared', shake: IB.drawn(t2, 3.5) };
   }
-  const k = Math.round((t2 - T(49)) * 12);
+  const k = IB.drawn(t2, IB.T(49));
   if (k < 0) return { s: lerp(S(3), BOTTOM, 0.5), mood: 'drop', smear: true };
   if (k === 0) return { s: BOTTOM, mood: 'drop', thud: 0 };
   if (k <= 6) return { s: lerp(BOTTOM, S(8), MG.ease.outQuad(k / 6)), mood: 'drop', thud: k === 1 ? 1 : null };
   if (k < 14) return { s: lerp(S(8), END, MG.ease.inOutQuad((k - 6) / 8)), mood: 'dizzy' };
-  return { s: END, mood: 'dizzy', rock: IB.frame(t) >= 162 ? (Math.floor((IB.frame(t) - 162) / 3) + 1) % 2 : 0 };   // 162 = frame of 6.75 s, when the bubble has gone
+  return { s: END, mood: 'dizzy', rock: IB.alternate(IB.frame(t), 3, 162) };   // 162 = frame of 6.75 s, when the bubble has gone
 }
 
 function cart(ctx, r, stretch) {
@@ -95,7 +96,7 @@ MG.scene({
     if (r.shake != null && r.shake >= 0 && r.shake < 4) { IB.shake(ctx, c.p[0] + 70, c.p[1] - 70, 26, { a: -0.5, n: 2, seed: 80 + r.shake, w: 2.8 }); IB.shake(ctx, c.p[0] - 80, c.p[1] - 40, 22, { a: Math.PI + 0.4, n: 2, seed: 90 + r.shake, w: 2.8 }); }
     if (r.smear) for (let i = 0; i < 4; i++) { const q = railAt(lerp(S(3) + 30, r.s - 150, i / 3)).p; IB.seg(ctx, q[0] + 26 + i * 6, q[1] - 34 - i * 12, q[0] + 64 + i * 10, q[1] + 36 - i * 8, { w: 3, seed: 100 + i }); }
     if (r.thud != null) for (let i = 0; i < 4; i++) { const a = -2.6 + i * 0.7, r0 = 96 + r.thud * 20, r1 = r0 + 44; IB.seg(ctx, c.p[0] + Math.cos(a) * r0, c.p[1] - 20 + Math.sin(a) * r0 * 0.7, c.p[0] + Math.cos(a) * r1, c.p[1] - 20 + Math.sin(a) * r1 * 0.7, { w: 3, seed: 110 + i + r.thud * 5 }); }
-    IB.bubble(ctx, ['…내려 주세요.'], t, T(72), { until: T(81), tip: [c.p[0] - 10, c.p[1] - 1.12 * WHO.h], x: c.p[0] - 210, y: c.p[1] - 1.62 * WHO.h, seed: 500 });
+    IB.bubble(ctx, ['…내려 주세요.'], t, IB.T(72), { until: IB.T(81), tip: [c.p[0] - 10, c.p[1] - 1.12 * WHO.h], x: c.p[0] - 210, y: c.p[1] - 1.62 * WHO.h, seed: 500 });
   },
 });
 </script>

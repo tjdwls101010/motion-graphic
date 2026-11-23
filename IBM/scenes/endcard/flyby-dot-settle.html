@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script>
 /* 하드 컷으로 들어온 파란 분필 스미어가 살짝 밀려와 멈추는 사이 큰 날벌레가 화면 앞을 가로질러 멀어지고, 작은 날벌레가 다시 날아와 화면 가운데 위쪽에 내려앉아 멈춘 뒤 빈 무대로 컷한다. 원본에서는 스미어 위에 태그라인 한 줄이 있고 날벌레가 그 글자 위에 앉으며 마지막 컷은 로고인데, 여기서는 문구와 로고를 그리지 않았다. 전달하는 생각: 여섯 편이 모두 같은 서명으로 끝난다.
    Motion notes: frame 0 is the bare #f0f0f0 stage, the smear cuts in on frame 1 already at full opacity, 39 px left of rest, and settles exponentially (tau 0.15 s, ~24% of the remaining distance per frame, still 0.5 s after it appears, i.e. at 0.54 s); the reference's tagline (royal blue, centred, top y 508) rides the same slide. Foreground flyby on ones, frames 3-12: enters top right 330 px long and shrinks to 42 px as it crosses to bottom left, ~230 px per frame, then levels out and climbs off the left edge at y 773. It is one insect making one loop: one empty frame later it comes back in at the same edge 130 px higher, still climbing, 58 px long (frames 14-15), turns right over the top at y 393 and shrinks to 22 px by frame 22, then dips, rises and hovers down to (667, 500) at frame 35 (1.46 s), where the reference has a glyph for it to sit on; wings alternate every frame in flight and freeze on landing. Hold 0.4 s, hard cut at 1.875 s to an empty stage for 1.58 s (the reference's logo hold). The insect is a neutral stand-in. */

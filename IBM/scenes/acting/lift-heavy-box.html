@@ -5,6 +5,7 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
 <script>
 /* 큰 상자를 끌어안고 용을 써 보지만 꿈쩍도 않자 한숨 쉬고 다시 자세를 잡아, 한 번에 들어 올려 세 걸음 휘청이며 옮겨 놓고 "휴." 한다. 원본에 없는 창작 장면으로, 원본의 느린 연기(3프레임에 한 장)를 무게를 보여 주는 데 썼다. 전달하는 생각: 무거운 것은 느리게, 끊어서 움직인다.
@@ -29,10 +30,10 @@ const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), face: (u < 0.5 ? a : b).face
 
 /* The whole scene as a function of time: the pose, the box (centre x, bottom y, tilt) and what is trembling. */
 function state(t) {
-  const t2 = IB.twos(t), t3 = IB.threes(t), n2 = (t0) => Math.round((t2 - t0) * 12), n3 = (t0) => Math.round((t3 - t0) * 8);
+  const t2 = IB.twos(t), t3 = IB.threes(t), n2 = (t0) => IB.drawn(t2, t0), n3 = (t0) => IB.drawn(t3, t0, 8);
   const box = (X, up = 0, tilt = 0) => [X + 225, FLOOR - up, tilt], X1 = X0 + 3 * STEPX;
   if (t2 < 1) return { pose: P.stand(X0), box: box(X0) };
-  if (t2 < 1.5) return { pose: mix(P.stand(X0), P.grip(X0), [0.4, 0.8, 1][Math.min(2, n2(1))]), box: box(X0) };
+  if (t2 < 1.5) return { pose: mix(P.stand(X0), P.grip(X0), IB.inbetween([0.4, 0.8, 1], n2(1))), box: box(X0) };
   if (t3 < 2.5) { const k = n3(1.5); return { pose: k % 2 ? P.strain(X0) : P.grip(X0), box: box(X0, 0, k % 2 ? -0.02 : 0), shake: 300 + k }; }
   if (t2 < 3) return { pose: P.slump(X0), box: box(X0) };
   if (t2 < 3.5) return { pose: n2(3) === 0 ? mix(P.slump(X0), P.grip(X0, 22), 0.5) : P.grip(X0, 22), box: box(X0) };

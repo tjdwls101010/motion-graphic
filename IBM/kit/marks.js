@@ -92,4 +92,13 @@
     for (let i = 0; i < 3; i++) IB.ink(ctx, pts.map(([x, y]) => [x, y - i * dy]), { w: w - i * dw, color, seed: seed + i, grain: 0, wob });
     ctx.restore();
   };
+
+  /* puddle(ctx, at, w, opts) — the chalk under a character's shoes as the reference packs it: a flat ragged core, solid in the middle, under IB.smear's dust. `at` = [centre x, the floor line]; w is the smear's width (84 px plus the distance between two planted feet). It is a puddle round the shoes, not a line under them: the smear starts `rise` px above the floor line. opts rx, ry, n, wob shape the core (a small one under a balloon that has come to rest: spot/folder-meets-document). */
+  IB.puddle = (ctx, [cx, floor], w, o = {}) => {
+    const { rx = w * 0.4, ry = 5.5, n = 14, wob = 2.4, h = 14, rise = 11, seed = 9 } = o;
+    ctx.save();
+    IB.ink(ctx, IB.ellipse(cx, floor - 3, rx, ry, n), { closed: true, fill: C.smear, w: 0, wob, seed });
+    IB.smear(ctx, cx, floor - rise, w, { h, seed });
+    ctx.restore();
+  };
 })(window);

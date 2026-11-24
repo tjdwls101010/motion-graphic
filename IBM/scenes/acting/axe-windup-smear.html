@@ -6,11 +6,13 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/handheld.js"></script>
 <script>
 /* 도끼를 어깨에 걸친 사람이 머리 위로 크게 들어 올려 한참 버티다가, 스미어 한 장으로 내리쳐 통나무를 둘로 쪼개고 "됐다." 하고 선다. 원본에 없는 창작 장면으로, 원본 3편의 도끼질에서 읽은 "긴 준비, 스미어 한 장, 긴 정지"를 한 인물의 한 동작으로 옮겼다. 전달하는 생각: 오래 벼른 한 번이 일을 끝낸다.
    Motion notes: one locked shot, figure 560 px tall, line 3.8 px. Everything on twos. Rest pose held 0.83 s; wind-up in 3 drawings (poseMix 0.35, 0.75, 1) to an overhead pose leaning back 0.2 rad, held dead still 0.92 s (1.08-2.0 s) while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact pose at 2.083 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.4 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 2 drawings, a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
-const { lerp, kf, clamp } = MG;
+const { lerp, clamp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
 const WHO = { h: 560, dir: 1, skin: C.skin[3], top: C.bg, bottom: C.sky, shoe: C.ink, hair: 'curly', seed: 10 };
 const H = WHO.h, HIP = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, DEG = Math.PI / 180;
@@ -37,42 +39,6 @@ function poseAt(t) {
   return u < 1 ? { ...IB.poseMix(HIT, DONE, u), G: HIT.G, th: HIT.th, flip: 1, grip: [false, true], face: DONE.face } : DONE;
 }
 
-function axe(ctx, G, th, flip) {
-  ctx.save(); ctx.translate(G[0], G[1]); ctx.rotate(th); ctx.scale(1, flip);
-  IB.tube(ctx, [[-52, 4], [80, -2], [200, 2], [330, 0]], { w: 24, edge: 3.4, fill: C.yellow, smooth: true, seed: 300 });
-  IB.ink(ctx, [[300, -22], [358, -22], [362, 8], [392, 96], [272, 96], [298, 8]], { closed: true, fill: C.charcoal, w: 3.8, seed: 301 });
-  IB.ink(ctx, [[280, 82], [332, 78], [386, 82]], { w: 2.4, color: '#8a8a8a', seed: 302 });
-  ctx.restore();
-}
-function swingSmear(ctx, G, th) {
-  // the head as one stretched shape along the arc it travels, thin where it came from and full where it is
-  const a0 = th - 105 * DEG, pt = (a, r) => [G[0] + Math.cos(a) * r, G[1] + Math.sin(a) * r], outer = [], inner = [];
-  for (let i = 0; i <= 12; i++) { const k = i / 12, a = lerp(a0, th + 8 * DEG, k); outer.push(pt(a, 392)); inner.push(pt(a, 392 - 118 * Math.pow(k, 0.7))); }
-  IB.ink(ctx, outer.concat(inner.reverse()), { closed: true, fill: C.charcoal, w: 3.6, seed: 310 });
-  for (const [r, s] of [[250, 0.72], [170, 0.5]]) IB.ink(ctx, IB.ellipse(G[0], G[1], r, r, 8, th - 105 * DEG * s, th - 12 * DEG), { w: 2.6, seed: 312 + r });
-  ctx.save(); ctx.translate(G[0], G[1]); ctx.rotate(th);
-  IB.tube(ctx, [[-52, 0], [330, 0]], { w: 24, edge: 3.4, fill: C.yellow, seed: 300 });
-  ctx.restore();
-}
-
-function block(ctx) {
-  IB.smear(ctx, BX, FLOOR - 5, 300, { h: 12, seed: 31 });
-  IB.ink(ctx, [[BX - 96, TOP + 6], [BX - 100, FLOOR - 6], [BX - 60, FLOOR + 4], [BX + 60, FLOOR + 4], [BX + 100, FLOOR - 6], [BX + 96, TOP + 6]], { closed: true, fill: C.bg, w: 3.8, seed: 320 });
-  IB.shade(ctx, BX - 96, FLOOR - 44, 192, 44, { from: 'bottom', seed: 33, alpha: 0.5 });
-  IB.oval(ctx, BX, TOP + 6, 96, 20, { fill: C.bg, w: 3.6, seed: 321, n: 16 });
-  IB.oval(ctx, BX - 6, TOP + 6, 56, 11, { w: 1.8, seed: 322, n: 12 });
-  IB.oval(ctx, BX - 10, TOP + 6, 22, 5, { w: 1.6, seed: 323, n: 8 });
-  for (const [x, y, l] of [[-70, 52, 34], [-30, 44, 50], [22, 58, 30], [58, 40, 44]]) IB.seg(ctx, BX + x, TOP + y, BX + x + 2, TOP + y + l, { w: 2, seed: 330 + x });
-}
-// one half of the log: a tall half-cylinder, pale cut face toward the split. side -1 = left half
-function half(ctx, x, y, rot, side, seed) {
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(side, 1);
-  IB.ink(ctx, [[0, -170], [44, -166], [50, -150], [50, -4], [26, 4], [0, 0]], { closed: true, fill: '#d9d9d9', w: 3.4, seed });
-  IB.ink(ctx, [[0, -170], [26, -160], [50, -164]], { w: 2, seed: seed + 1 });
-  for (const yy of [-120, -70, -30]) IB.seg(ctx, 30 + (yy % 7), yy, 31, yy + 26, { w: 1.8, seed: seed + 2 - yy });
-  IB.ink(ctx, [[0, -170], [0, 0]], { w: 3.4, seed: seed + 3, smooth: false });
-  ctx.restore();
-}
 const CHIPS = [[-150, -210, -0.9], [-90, -300, 0.5], [70, -280, 1.2], [140, -190, -0.4], [210, -120, 0.8], [-230, -110, 1.6]];
 
 MG.scene({
@@ -82,25 +48,23 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), p = poseAt(t), look = { ...WHO, face: p.face }, hit = tt >= 2.083, k = hit ? clamp((tt - 2.083) / 0.5) : 0;
-    block(ctx);
+    IB.choppingBlock(ctx, [BX, FLOOR], { top: TOP });
     // the log: whole until the hit, then two halves tip outward and come to rest on the floor
-    if (!hit) { half(ctx, BX, TOP + 8, 0, -1, 340); half(ctx, BX, TOP + 8, 0, 1, 350); IB.oval(ctx, BX, TOP - 160, 49, 9, { fill: '#d9d9d9', w: 3, seed: 360, n: 12 }); }
+    if (!hit) { IB.logHalf(ctx, [BX, TOP + 8], { side: -1, seed: 340 }); IB.logHalf(ctx, [BX, TOP + 8], { side: 1, seed: 350 }); IB.logTop(ctx, [BX, TOP + 8]); }
     else for (const s of [-1, 1]) {
       const fall = MG.ease.inQuad(k), out = MG.ease.outQuad(k);
-      half(ctx, BX + s * (10 + (s < 0 ? 168 : 214) * out), TOP + 8 - 60 * Math.sin(k * Math.PI) + (FLOOR - TOP - 30) * fall, s * 1.57 * out, s, s < 0 ? 340 : 350);
+      IB.logHalf(ctx, [BX + s * (10 + (s < 0 ? 168 : 214) * out), TOP + 8 - 60 * Math.sin(k * Math.PI) + (FLOOR - TOP - 30) * fall], { rot: s * 1.57 * out, side: s, seed: s < 0 ? 340 : 350 });
     }
     if (hit) CHIPS.forEach(([dx, dy, r], i) => {   // chips: up and out, then lying where they fell
       const x = BX + dx * MG.ease.outQuad(k), y = lerp(TOP - 20 + dy * Math.sin(k * Math.PI * 0.5) * (1 - k) * 1.6, FLOOR - 6 + (i % 3) * 5, MG.ease.inQuad(k));
-      ctx.save(); ctx.translate(x, y); ctx.rotate(r * (1 + k * 4));
-      IB.ink(ctx, [[-11, -4], [10, -6], [12, 4], [-9, 6]], { closed: true, smooth: false, fill: C.paper, w: 2.2, seed: 370 + i });
-      ctx.restore();
+      IB.woodChip(ctx, [x, y], r * (1 + k * 4), { seed: 370 + i });
     });
 
     IB.smear(ctx, X0 + 40, FLOOR - 9, 430, { h: 14, seed: 9 });
-    if (p.behind) { axe(ctx, p.G, p.th, p.flip); IB.figure(ctx, p, look); }
+    if (p.behind) { IB.axe(ctx, p.G, p.th, { flip: p.flip }); IB.figure(ctx, p, look); }
     else {
       IB.figure(ctx, p, look, 'far');
-      if (p === SMEAR) swingSmear(ctx, p.G, p.th); else axe(ctx, p.G, p.th, p.flip);
+      IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: p === SMEAR });
       IB.figure(ctx, p, look, 'near');
     }
     // the weight of the raised axe: shake marks by its head for four drawings, then a dead-still hold
@@ -108,7 +72,7 @@ MG.scene({
     if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
     // impact: a burst at the cut for two drawings
     const s2 = IB.drawn(tt, 2.083);
-    if (s2 >= 0 && s2 < 2) for (let i = 0; i < 5; i++) { const a = -2.7 + i * 0.56, r0 = 70 + s2 * 26, r1 = r0 + 46 - s2 * 10; IB.seg(ctx, BX + Math.cos(a) * r0, TOP - 20 + Math.sin(a) * r0 * 0.8, BX + Math.cos(a) * r1, TOP - 20 + Math.sin(a) * r1 * 0.8, { w: 3, seed: 410 + i + s2 * 9 }); }
+    if (s2 >= 0 && s2 < 2) IB.burst(ctx, [BX, TOP - 20], { n: 5, a0: -2.7, da: 0.56, r0: 70 + s2 * 26, r1: 70 + s2 * 26 + 46 - s2 * 10, sy: 0.8, w: 3, seed: 410 + s2 * 9 });
     IB.bubble(ctx, ['됐다.'], t, 4.833, { tip: [X0 + 196, HIP - 196], x: X0 + 330, y: HIP - 296, seed: 500 });
   },
 });

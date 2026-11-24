@@ -47,4 +47,65 @@
     for (let i = 0; i < 9; i++) { const s = (r() < 0.5 ? -1 : 1) * (1.15 + r() * 0.5), d = 90 + r() * 700, q = edge(s, d); IB.oval(ctx, q[0], q[1], 5 + r() * 6, 4 + r() * 4, { fill: C.blue, w: 2, seed: seed + 40 + i, n: 7 }); }
     ctx.restore();
   };
+
+  /* axe(ctx, grip, th, opts) — a felling axe 382 px long held at `grip` (the lower hand; the upper hand goes 62 px further along the handle), its handle pointing along angle th from butt to head: yellow handle, charcoal head with a grey edge line. flip -1 turns the blade to the other side. smear: true is the one drawing of the swing instead: the head stretched along the 105 degrees of arc it has just travelled, thin where it came from and full where it is, with two speed arcs inside (acting/axe-windup-smear). */
+  IB.axe = (ctx, G, th, o = {}) => {
+    const { flip = 1, smear = false, seed = 300 } = o, DEG = Math.PI / 180;
+    ctx.save();
+    if (smear) {
+      const a0 = th - 105 * DEG, pt = (a, r) => [G[0] + Math.cos(a) * r, G[1] + Math.sin(a) * r], outer = [], inner = [];
+      for (let i = 0; i <= 12; i++) { const k = i / 12, a = MG.lerp(a0, th + 8 * DEG, k); outer.push(pt(a, 392)); inner.push(pt(a, 392 - 118 * Math.pow(k, 0.7))); }
+      IB.ink(ctx, outer.concat(inner.reverse()), { closed: true, fill: C.charcoal, w: 3.6, seed: seed + 10 });
+      for (const [r, s] of [[250, 0.72], [170, 0.5]]) IB.ink(ctx, IB.ellipse(G[0], G[1], r, r, 8, th - 105 * DEG * s, th - 12 * DEG), { w: 2.6, seed: seed + 12 + r });
+      ctx.save(); ctx.translate(G[0], G[1]); ctx.rotate(th);
+      IB.tube(ctx, [[-52, 0], [330, 0]], { w: 24, edge: 3.4, fill: C.yellow, seed });
+      ctx.restore();
+    } else {
+      ctx.translate(G[0], G[1]); ctx.rotate(th); ctx.scale(1, flip);
+      IB.tube(ctx, [[-52, 4], [80, -2], [200, 2], [330, 0]], { w: 24, edge: 3.4, fill: C.yellow, smooth: true, seed });
+      IB.ink(ctx, [[300, -22], [358, -22], [362, 8], [392, 96], [272, 96], [298, 8]], { closed: true, fill: C.charcoal, w: 3.8, seed: seed + 1 });
+      IB.ink(ctx, [[280, 82], [332, 78], [386, 82]], { w: 2.4, color: '#8a8a8a', seed: seed + 2 });
+    }
+    ctx.restore();
+  };
+
+  /* choppingBlock(ctx, at, opts) — a tree stump to split logs on: `at` is the floor under its centre, `top` the y of its top face (122 px up by default). Rings on the top, bark lines down the side, graphite at its foot, its own chalk smear (acting/axe-windup-smear). */
+  IB.choppingBlock = (ctx, [BX, FLOOR], o = {}) => {
+    const { top: TOP = FLOOR - 122, seed = 320 } = o;
+    ctx.save();
+    IB.smear(ctx, BX, FLOOR - 5, 300, { h: 12, seed: seed - 289 });
+    IB.ink(ctx, [[BX - 96, TOP + 6], [BX - 100, FLOOR - 6], [BX - 60, FLOOR + 4], [BX + 60, FLOOR + 4], [BX + 100, FLOOR - 6], [BX + 96, TOP + 6]], { closed: true, fill: C.bg, w: 3.8, seed });
+    IB.shade(ctx, BX - 96, FLOOR - 44, 192, 44, { from: 'bottom', seed: seed - 287, alpha: 0.5 });
+    IB.oval(ctx, BX, TOP + 6, 96, 20, { fill: C.bg, w: 3.6, seed: seed + 1, n: 16 });
+    IB.oval(ctx, BX - 6, TOP + 6, 56, 11, { w: 1.8, seed: seed + 2, n: 12 });
+    IB.oval(ctx, BX - 10, TOP + 6, 22, 5, { w: 1.6, seed: seed + 3, n: 8 });
+    for (const [x, y, l] of [[-70, 52, 34], [-30, 44, 50], [22, 58, 30], [58, 40, 44]]) IB.seg(ctx, BX + x, TOP + y, BX + x + 2, TOP + y + l, { w: 2, seed: seed + 10 + x });
+    ctx.restore();
+  };
+
+  /* logHalf(ctx, at, opts) — one half of a split log: a half-cylinder 170 px tall, its pale cut face toward the split. `at` is the bottom of the cut edge; rot tips it about that point; side -1 is the left half, 1 the right. Two of them back to back with IB.logTop over them are the whole log before the blow (acting/axe-windup-smear). */
+  IB.logHalf = (ctx, [x, y], o = {}) => {
+    const { rot = 0, side = 1, seed = 350 } = o;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(side, 1);
+    IB.ink(ctx, [[0, -170], [44, -166], [50, -150], [50, -4], [26, 4], [0, 0]], { closed: true, fill: '#d9d9d9', w: 3.4, seed });
+    IB.ink(ctx, [[0, -170], [26, -160], [50, -164]], { w: 2, seed: seed + 1 });
+    for (const yy of [-120, -70, -30]) IB.seg(ctx, 30 + (yy % 7), yy, 31, yy + 26, { w: 1.8, seed: seed + 2 - yy });
+    IB.ink(ctx, [[0, -170], [0, 0]], { w: 3.4, seed: seed + 3, smooth: false });
+    ctx.restore();
+  };
+  /* logTop(ctx, at, opts) — the round top face of a whole standing log, 168 px above its base at `at`. */
+  IB.logTop = (ctx, [x, y], o = {}) => {
+    const { seed = 360 } = o;
+    ctx.save();
+    IB.oval(ctx, x, y - 168, 49, 9, { fill: '#d9d9d9', w: 3, seed, n: 12 });
+    ctx.restore();
+  };
+
+  /* woodChip(ctx, at, rot, opts) — a chip of wood about 22 px across, turned by rot: throw six up and out from a blow and leave them lying where they fall (acting/axe-windup-smear). */
+  IB.woodChip = (ctx, [x, y], rot, o = {}) => {
+    const { seed = 370 } = o;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    IB.ink(ctx, [[-11, -4], [10, -6], [12, 4], [-9, 6]], { closed: true, smooth: false, fill: C.paper, w: 2.2, seed });
+    ctx.restore();
+  };
 })(window);

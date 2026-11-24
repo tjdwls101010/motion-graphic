@@ -55,4 +55,25 @@
     IB.ink(ctx, [[x - 9, y - 3], [x - 3, y + 2], [x + 2, y - 2], [x + 9, y - 4]], { w: 2, seed });
     ctx.restore();
   };
+
+  /* wispCloud(ctx, at, w, opts) — a small flat cloud w px wide with a level base, for a wide shot with a horizon: `at` is the middle of its base. Let it drift on ones, slowly (spot/tandem-riders-join: 3 px/s). */
+  IB.wispCloud = (ctx, [x, y], w, o = {}) => {
+    const { seed = 60 } = o;
+    ctx.save();
+    IB.ink(ctx, [[x - w / 2, y], [x - w * 0.2, y - w * 0.12], [x + w * 0.05, y - w * 0.16], [x + w * 0.3, y - w * 0.08], [x + w / 2, y], [x, y + 3]], { closed: true, w: 2, seed, fill: C.bg });
+    ctx.restore();
+  };
+  /* tuft(ctx, at, opts) / stones(ctx, at, opts) — what lies on the ground beside a road: a tuft of grass as one zigzag, or three stones. Scroll them past on ones to say a thing is moving while it stays in place (spot/tandem-riders-join: 332 px/s). */
+  IB.tuft = (ctx, [x, y], o = {}) => {
+    const { seed = 1 } = o;
+    ctx.save();
+    IB.ink(ctx, [[x - 26, y], [x - 20, y - 13], [x - 12, y], [x - 4, y - 18], [x + 4, y], [x + 14, y - 12], [x + 24, y]], { w: 2, smooth: false, seed });
+    ctx.restore();
+  };
+  IB.stones = (ctx, [x, y], o = {}) => {
+    const { seed = 1 } = o;
+    ctx.save();
+    IB.oval(ctx, x, y, 19, 11, { w: 2, seed, n: 8, fill: C.bg }); IB.oval(ctx, x + 32, y + 5, 8, 5, { w: 1.8, seed: seed + 1, n: 6 }); IB.oval(ctx, x - 24, y + 5, 4, 3, { w: 1.8, seed: seed + 2, n: 6 });
+    ctx.restore();
+  };
 })(window);

@@ -182,4 +182,62 @@
     const [x, y, sc, rot, facing] = k, c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * facing, oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
     IB.heli(ctx, [x - (ox * c - oy * sn), y - (ox * sn + oy * c)], { s: sc, rot, facing, d });
   };
+
+  /* ---------- the tandem of the reference's fifth spot ---------- */
+  /* crank: the crank arm's length; r: the wheel's radius. A rider's feet (cast/riders.js) follow the same crank. */
+  IB.TANDEM = { crank: 21, r: 50 };
+  /* bikeWheel(ctx, at, opts) — a wheel centred on the axle at `at`: a thick tyre, a thin rim line, four grey arcs standing in for spokes that jump between two drawings (alt 0 / 1), a hub. */
+  IB.bikeWheel = (ctx, [x, AXLE], o = {}) => {
+    const { alt = 0, r: R = IB.TANDEM.r, seed = 70 } = o;
+    ctx.save();
+    IB.oval(ctx, x, AXLE, R - 4, R - 4, { fill: C.paper, w: 8.5, seed, n: 22, wob: 0.4 });
+    IB.oval(ctx, x, AXLE, R - 13, R - 13, { w: 1.3, seed: seed + 9, n: 18, grain: 0 });
+    for (let i = 0; i < 4; i++) { const a = alt * 0.8 + i * 1.57; IB.ink(ctx, IB.ellipse(x, AXLE, 20 + (i % 2) * 13, 20 + (i % 2) * 13, 5, a, a + 0.9), { w: 1.5, color: '#9a9a9a', seed: seed + i }); }
+    IB.oval(ctx, x, AXLE, 4.5, 4.5, { fill: C.ink, w: 0, n: 8 });
+    ctx.restore();
+  };
+  /* crankset(ctx, bb, a, opts) — a chainring, two cranks and pedals at the bottom bracket bb, at crank angle a, with two grey spin marks that alternate (alt 0 / 1). One turn is twelve drawings on twos (1 s). */
+  IB.crankset = (ctx, bb, a, o = {}) => {
+    const { alt = 0, seed = 140 } = o, CRANK = IB.TANDEM.crank, PI = Math.PI, LW = 1.9;
+    ctx.save();
+    for (const s of [0, PI]) { const q = [bb[0] + CRANK * Math.cos(a + s), bb[1] + CRANK * Math.sin(a + s)]; IB.seg(ctx, bb[0], bb[1], q[0], q[1], { w: 3.2, seed: seed + s }); IB.seg(ctx, q[0] - 10, q[1], q[0] + 12, q[1], { w: 3.2, seed: seed + 1 + s }); }
+    IB.oval(ctx, bb[0], bb[1], 13, 13, { fill: C.paper, w: LW, seed, n: 12 });
+    for (let i = 0; i < 5; i++) IB.oval(ctx, bb[0] + 7.5 * Math.cos(a + i * 1.257), bb[1] + 7.5 * Math.sin(a + i * 1.257), 2, 2, { w: 1.1, seed: seed + 3 + i, n: 6, grain: 0 });
+    for (const s of [-1, 1]) IB.ink(ctx, IB.ellipse(bb[0], bb[1] + 6, 27 + alt * 5, 30 + alt * 5, 4, s > 0 ? 0.25 : 2.35, s > 0 ? 0.8 : 2.9), { w: 1.3, color: '#8a8a8a', seed: seed + 9 + alt + s });   // spin marks
+    ctx.restore();
+  };
+  /* tandem(ctx, state, opts) — a tandem that grows a seat at a time. state: rx, fx (the two axles' x), bbs (every rider's bottom bracket, rear to front), built (which of them have their seat and crank yet: a newcomer's are not there on the first drawing of a join), crank (the crank angle), alt (0 / 1, the wheels' and cranks' two drawings). opts.axle is the axles' y; opts.layer 'wheels' or 'frame' draws only that, so the dust off the rear wheel can go between them. The frame is blue tubing; each seat behind the front one gets a stoker bar bracketed off the seat tube ahead; a grey chain line keeps every crank in step. */
+  IB.tandem = (ctx, st, o = {}) => {
+    const { rx, fx, bbs, built, crank = 0, alt = 0 } = st, { axle: AXLE = 750, layer = null } = o;
+    ctx.save();
+    if (layer !== 'frame') { IB.bikeWheel(ctx, [rx, AXLE], { alt, seed: 70 }); IB.bikeWheel(ctx, [fx, AXLE], { alt, seed: 80 }); }
+    if (layer !== 'wheels') {
+      const tube = (pts, seed) => IB.tube(ctx, pts, { w: 7.5, edge: 1.9, fill: C.blue, seed });
+      const topY = AXLE - 76, live = bbs.filter((_, i) => built[i]), first = live[0], last = live[live.length - 1];
+      for (const dy of [-13, 13]) IB.seg(ctx, first[0], AXLE - 4 + dy, last[0], AXLE - 4 + dy, { w: 1.3, color: '#9a9a9a', seed: 98 + dy, grain: 0 });   // the chain that keeps every crank in step
+      tube([[rx, AXLE], last], 100);                                              // chain stay and bottom tube
+      tube([[rx, AXLE], [first[0] - 26, topY]], 101);                             // seat stay
+      tube([[first[0] - 26, topY], [fx - 52, topY]], 102);                        // top tube
+      tube([last, [fx - 50, topY + 6]], 103);                                     // down tube
+      tube([[fx - 56, topY - 22], [fx - 48, topY + 8], [fx, AXLE]], 104);         // head tube and fork
+      // front bar: a white stem curving back to a blue grip under the front rider's hands
+      IB.tube(ctx, [[fx - 54, topY - 20], [fx - 60, topY - 46], [last[0] + 74, AXLE - 124]], { w: 8, edge: 2, fill: C.paper, smooth: true, seed: 105 });
+      IB.ink(ctx, [[last[0] + 74, AXLE - 124], [last[0] + 50, AXLE - 122]], { w: 8.5, color: C.blue, seed: 106, taper: false });
+      let prev = null;
+      bbs.forEach((_, i) => {
+        if (!built[i]) return;
+        const bb = bbs[i];
+        tube([bb, [bb[0] - 24, topY - 8]], 110 + i);                              // seat tube
+        IB.ink(ctx, [[bb[0] - 44, topY - 15], [bb[0] - 24, topY - 20], [bb[0] - 6, topY - 15], [bb[0] - 8, topY - 9], [bb[0] - 40, topY - 8]], { closed: true, fill: C.charcoal, w: 2, seed: 120 + i });   // saddle
+        if (prev != null) {                                                        // stoker bar for the rider behind, bracketed off this seat tube
+          const g = [bbs[prev][0] + 56, AXLE - 122];
+          IB.tube(ctx, [[bb[0] - 22, topY - 4], [bb[0] - 34, topY - 30], [g[0] + 18, g[1] + 2]], { w: 7, edge: 1.9, fill: C.paper, smooth: true, seed: 130 + i });
+          IB.ink(ctx, [[g[0] + 18, g[1] + 2], [g[0] - 6, g[1] + 2]], { w: 8.5, color: C.blue, seed: 135 + i, taper: false });
+        }
+        IB.crankset(ctx, bb, crank, { alt: alt, seed: 140 + i * 9 });
+        prev = i;
+      });
+    }
+    ctx.restore();
+  };
 })(window);

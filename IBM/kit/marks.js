@@ -101,4 +101,19 @@
     IB.smear(ctx, cx, floor - rise, w, { h, seed });
     ctx.restore();
   };
+
+  /* ripples(ctx, at, opts) — the floor under a wheel: four short blue scribbles, narrower as they go down, that shift between two drawings (alt 0 / 1). Rolling things get these instead of the chalk smear standing figures get. `at` = [the wheel's x, the ground line]. They belong to the ground: draw them before the vehicle is tipped (spot/tandem-riders-join). */
+  IB.ripples = (ctx, [x, ground], o = {}) => {
+    const { alt = 0, seed = 70 } = o;
+    ctx.save();
+    for (let k = 0; k < 4; k++) { const y = ground + 2 + k * 5, half = 46 - k * 7, pts = []; for (let i = 0; i <= 6; i++) pts.push([x - half + (i / 6) * half * 2 + ((k + alt) % 2) * 6, y + (i % 2 ? -1.6 : 1.6)]); IB.ink(ctx, pts, { w: 2, color: C.blue, seed: seed + 20 + k, grain: 0 }); }
+    ctx.restore();
+  };
+
+  /* wheelDust(ctx, at, d) — a puff of dust off a rear wheel: two small ovals that drift back over three drawings, then three drawings without. `at` = [the axle's x, the axle's y]; d is the drawing number (frame / 2) (spot/tandem-riders-join). */
+  IB.wheelDust = (ctx, [rx, AXLE], d2) => {
+    ctx.save();
+    if (d2 % 6 < 3) for (let k = 0; k < 2; k++) IB.oval(ctx, rx - 70 - k * 28 - (d2 % 3) * 14, AXLE + 30 + k * 6 - (d2 % 3) * 3, 12 - k * 5 - (d2 % 3) * 2, 7 - k * 3, { w: 1.6, seed: 90 + k, n: 7, fill: C.bg });
+    ctx.restore();
+  };
 })(window);

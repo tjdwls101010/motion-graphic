@@ -76,4 +76,36 @@
     IB.oval(ctx, x, y, 19, 11, { w: 2, seed, n: 8, fill: C.bg }); IB.oval(ctx, x + 32, y + 5, 8, 5, { w: 1.8, seed: seed + 1, n: 6 }); IB.oval(ctx, x - 24, y + 5, 4, 3, { w: 1.8, seed: seed + 2, n: 6 });
     ctx.restore();
   };
+
+  /* bandCloud(ctx, [x0, x1, y], opts) — a long stretched cloud with a paper fill and a 3 px outline, from x0 to x1 about y: the sky behind a wall (spot/dark-eyes-reveal). */
+  IB.bandCloud = (ctx, [x0, x1, y], o = {}) => {
+    const { seed = 600 } = o, lerp = MG.lerp;
+    ctx.save();
+    IB.ink(ctx, [[x0, y + 12], [lerp(x0, x1, 0.3), y - 8], [lerp(x0, x1, 0.6), y - 2], [x1, y - 30], [x1, y + 34], [lerp(x0, x1, 0.55), y + 28], [lerp(x0, x1, 0.2), y + 30]], { closed: true, fill: C.paper, w: 3, seed });
+    ctx.restore();
+  };
+
+  /* sillPlant(ctx, state, opts) — a window-box plant: a pot under a mound of pointed leaves that spills over the sill and trails down the wall, a few purple blooms, a yellow bud. It stands where the reference has it (the pot at x 1640-1682 on the sill at y 780); opts.shift = [dx, dy] moves it. state.sway tips every leaf a little: loop three values on twos (0, 0.07, -0.05) and it is the one thing in its shot that never holds. The leaves are seeded, so their places differ from the reference's (spot/dark-eyes-reveal). */
+  IB.sillPlant = (ctx, st = {}, o = {}) => {
+    const { sway = 0 } = st, { shift = [0, 0] } = o, lerp = MG.lerp;
+    ctx.save(); ctx.translate(shift[0], shift[1]);
+    // a pot under a mound of pointed leaves that spills over the sill and trails down the wall, with a few purple blooms
+    const r = MG.rng(31), leaves = [];   // the one thing in the window that never holds: every leaf tips a little on each drawing, as in the reference
+    IB.box(ctx, 1640, 726, 42, 54, { fill: C.paper, w: 2.4, seed: 500 });
+    IB.shade(ctx, 1640, 726, 42, 26, { from: 'top', seed: 501, alpha: 0.4 });
+    IB.shade(ctx, 1640, 682, 70, 44, { from: 'bottom', seed: 502, alpha: 0.3 });   // the dark inside the mound
+    for (let i = 0; i < 46; i++) { const a = r() * Math.PI * 2, d = Math.sqrt(r()); leaves.push([1672 + Math.cos(a) * 62 * d, 708 + Math.sin(a) * 52 * d, a + (r() - 0.5), i]); }
+    const trail = [[1700, 766], [1716, 800], [1732, 836], [1722, 870], [1740, 900], [1734, 934]];
+    for (let i = 0; i < 26; i++) { const u = r() * (trail.length - 1), k = Math.min(trail.length - 2, Math.floor(u)), v = u - k; leaves.push([lerp(trail[k][0], trail[k + 1][0], v) + (r() - 0.5) * 44, lerp(trail[k][1], trail[k + 1][1], v) + (r() - 0.5) * 16, Math.PI * (0.2 + r() * 0.6), 100 + i]); }
+    leaves.sort((p, q) => p[1] - q[1]);
+    for (const [x, y, a, i] of leaves) {
+      const bloom = i % 4 === 0;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a + sway * ((i % 3) - 1));
+      if (bloom) IB.ink(ctx, [[-7, -3], [-9, -12], [-3, -8], [0, -14], [3, -8], [9, -12], [7, -3], [0, 6]], { closed: true, smooth: false, fill: '#a08ae8', w: 2, seed: 520 + i });
+      else { IB.ink(ctx, [[0, -15], [8, -3], [5, 9], [0, 13], [-5, 9], [-8, -3]], { closed: true, fill: C.paper, w: 2, seed: 520 + i }); IB.seg(ctx, 0, -9, 0, 9, { w: 1.3, seed: 620 + i }); }
+      ctx.restore();
+    }
+    IB.ink(ctx, [[1641, 654], [1643, 645], [1648, 644], [1650, 651], [1646, 656]], { closed: true, fill: C.yellow, w: 1.7, seed: 504 });   // the bud the flyer comes for
+    ctx.restore();
+  };
 })(window);

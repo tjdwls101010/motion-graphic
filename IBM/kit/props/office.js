@@ -67,11 +67,11 @@
     ctx.restore();
   };
 
-  /* keyboard(ctx, at, opts) — a flat keyboard seen from the side, lying on a desk top: `at` is its near left corner on the top surface (market/watched-chart-drops). */
+  /* keyboard(ctx, at, opts) — a flat keyboard seen from the side, lying on a desk top: `at` is its near left corner on the top surface; w, h its size, lw its line (market/watched-chart-drops, market/trading-desk-row). */
   IB.keyboard = (ctx, [x, top], o = {}) => {
-    const { w = 170, seed = 50 } = o;
+    const { w = 170, h = 12, lw = 2.8, seed = 50 } = o;
     ctx.save();
-    IB.box(ctx, x, top - 12, w, 12, { fill: C.bg, w: 2.8, seed });
+    IB.box(ctx, x, top - h, w, h, { fill: C.bg, w: lw, seed });
     ctx.restore();
   };
 
@@ -155,6 +155,47 @@
     const { seed = 90 } = o;
     ctx.save();
     IB.ink(ctx, [[px, py], [px, py + 74], [px + 20, py + 56], [px + 34, py + 88], [px + 48, py + 82], [px + 34, py + 50], [px + 58, py + 50]], { closed: true, smooth: false, fill: C.paper, w: 6, seed, wob: 0 });
+    ctx.restore();
+  };
+
+  /* workstation(ctx, at, opts) — one seat's desk in a row of them, seen from the side: `at` = [the sitter's hip x (the x IB.chair and IB.sit get), the desk top's y]. A desk from 70 to 440 px ahead of the sitter, a keyboard, and a monitor seen edge on (a thin slanted slab on a foot): use it when what is on the screen does not matter (market/trading-desk-row). */
+  IB.workstation = (ctx, [x, DESK], o = {}) => {
+    const { floor: FLOOR = DESK + 162, seed = 500 } = o;
+    ctx.save();
+    IB.desk(ctx, x + 70, x + 440, DESK, FLOOR, { lw: 3.2, seed });
+    IB.keyboard(ctx, [x + 94, DESK], { w: 130, h: 10, lw: 2.4, seed: seed + 3 });
+    IB.box(ctx, x + 330, DESK - 8, 70, 8, { fill: C.bg, w: 2.6, seed: seed + 4 });                                          // the monitor, seen edge on
+    IB.seg(ctx, x + 365, DESK - 8, x + 372, DESK - 60, { w: 4, seed: seed + 5 });
+    IB.ink(ctx, [[x + 348, DESK - 200], [x + 366, DESK - 204], [x + 388, DESK - 46], [x + 370, DESK - 42]], { closed: true, smooth: false, fill: C.bg, w: 3.2, seed: seed + 6 });
+    IB.seg(ctx, x + 350, DESK - 190, x + 370, DESK - 52, { w: 2, color: C.paper, seed: seed + 7, grain: 0 });
+    ctx.restore();
+  };
+
+  /* wallClock(ctx, at, opts) — a round wall clock centred on `at`, radius r, with two hands given as vectors from the centre (market/trading-desk-row). */
+  IB.wallClock = (ctx, [x, y], o = {}) => {
+    const { r = 54, hands = [[0, -34], [22, 12]], fill = C.paper, lw = 3.4, hw = 3, n = 18, seed = 480 } = o;
+    ctx.save();
+    IB.oval(ctx, x, y, r, r, { fill, w: lw, seed, n });
+    hands.forEach(([dx, dy], i) => IB.seg(ctx, x, y, x + dx, y + dy, { w: hw, seed: seed + 1 + i }));
+    ctx.restore();
+  };
+
+  /* flyingSheet(ctx, from, to, k, opts) — a sheet of paper thrown off a desk: it leaves `from`, tumbles through an arc 330 px high for 14 drawings and lies flat at `to` from then on. k is the drawing since it left (IB.drawn); before 0 nothing is drawn. A thing put down stays where it lands (market/trading-desk-row). */
+  IB.flyingSheet = (ctx, from, to, n, o = {}) => {
+    const { seed = 600 } = o, k = MG.clamp(n, -1, 14); if (k < 0) return;
+    const u = k / 14, x = MG.lerp(from[0], to[0], u), y = MG.lerp(from[1], to[1], u * u) - 330 * Math.sin(Math.PI * Math.min(1, u * 1.15)) * (1 - u * 0.5);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(u < 1 ? k * 0.7 + seed : 0.1);
+    IB.box(ctx, -32, u < 1 ? -42 : -6, 64, u < 1 ? 84 : 12, { fill: C.paper, w: 2.4, seed });
+    if (u < 1) for (let i = 0; i < 3; i++) IB.seg(ctx, -20, -24 + i * 18, 18, -24 + i * 18, { w: 1.6, seed: seed + 1 + i });
+    ctx.restore();
+  };
+
+  /* phoneCradle(ctx, at, opts) — a desk phone's base, 74 x 22: `at` = [its left edge, the desk top's y]. rest: true draws the handset lying on it instead of the base (draw the base first, behind the sitter, and the resting handset after them) (market/trading-desk-row). */
+  IB.phoneCradle = (ctx, [X, top], o = {}) => {
+    const { rest = false, seed = 520 } = o;
+    ctx.save();
+    if (rest) IB.ink(ctx, [[X + 4, top - 34], [X + 70, top - 34], [X + 72, top - 22], [X + 2, top - 22]], { closed: true, fill: C.charcoal, w: 2.6, seed: seed + 2 });
+    else IB.box(ctx, X, top - 22, 74, 22, { fill: C.bg, w: 2.6, seed });
     ctx.restore();
   };
 })(window);

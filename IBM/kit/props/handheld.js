@@ -108,4 +108,21 @@
     IB.ink(ctx, [[-11, -4], [10, -6], [12, 4], [-9, 6]], { closed: true, smooth: false, fill: C.paper, w: 2.2, seed });
     ctx.restore();
   };
+
+  /* handset(ctx, hand, opts) — a phone handset held in the hand at `hand` (the wrist IB.figure returns), upright beside the head; cradle = [the base's left edge, the desk top's y] draws its cord back to an IB.phoneCradle. Hold it at the ear (0.035 h behind the head centre), not in front of the face (market/trading-desk-row). */
+  IB.handset = (ctx, [hx, hy], o = {}) => {
+    const { cradle = null, seed = 521 } = o;
+    ctx.save();
+    if (cradle) IB.ink(ctx, [[hx + 10, hy + 18], [hx + 60, hy + 70], [cradle[0] + 14, cradle[1] - 60], [cradle[0] + 26, cradle[1] - 22]], { w: 2, seed });
+    IB.ink(ctx, [[hx - 9, hy - 20], [hx + 3, hy - 22], [hx + 9, hy + 16], [hx - 3, hy + 20]], { closed: true, fill: C.charcoal, w: 2.6, seed: seed + 1 });
+    ctx.restore();
+  };
+
+  /* cup(ctx, hand, opts) — a paper cup 40 px tall held at `hand` (the wrist), or standing on a surface when `hand` is 6 px above it (market/trading-desk-row). */
+  IB.cup = (ctx, [hx, hy], o = {}) => {
+    const { seed = 523 } = o;
+    ctx.save();
+    IB.ink(ctx, [[hx - 4, hy - 34], [hx + 22, hy - 34], [hx + 18, hy + 6], [hx, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed });
+    ctx.restore();
+  };
 })(window);

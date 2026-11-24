@@ -102,4 +102,59 @@
     for (let i = 1; i <= xTicks; i++) IB.seg(ctx, AX + i * xStep, BASE, AX + i * xStep, BASE + 16, { w: 3, seed: seed + 10 + i });
     ctx.restore();
   };
+
+  /* priceGrid(ctx, rect, opts) — what a candle chart sits on, drawn once and never moving: a faint grey line across the chart at each price in `levels` with a tick on the price axis beside it, the price axis 50 px right of the chart and the time axis 20 px under it. rect and min/max are the ones IB.candles gets (market/monitor-candles-breakout). */
+  IB.priceGrid = (ctx, [cx, cy, cw, ch], o = {}) => {
+    const { min = 0, max = 1, levels = [], seed = 20 } = o, Y = (v) => cy + ch - ((v - min) / (max - min)) * ch;
+    ctx.save();
+    for (const v of levels) { IB.seg(ctx, cx, Y(v), cx + cw + 40, Y(v), { w: 2, color: '#d9d9d9', seed: seed + v, grain: 0 }); IB.seg(ctx, cx + cw + 60, Y(v), cx + cw + 96, Y(v), { w: 5, seed: seed + 10 + v }); }
+    IB.seg(ctx, cx + cw + 50, cy - 20, cx + cw + 50, cy + ch + 20, { w: 5, seed: seed + 20 });
+    IB.seg(ctx, cx - 20, cy + ch + 20, cx + cw + 50, cy + ch + 20, { w: 5, seed: seed + 21 });
+    ctx.restore();
+  };
+
+  /* dashLine(ctx, at, len, opts) — a dashed level line (resistance, a target) from `at` running `len` px right in `dashes` dashes, of which the first `drawn` are there: draw it on left to right over a few drawings. `gap` = [x0, x1] leaves out the dashes that touch that span, where a breakout went through (market/monitor-candles-breakout). */
+  IB.dashLine = (ctx, [x, y], len, o = {}) => {
+    const { dashes = 18, drawn = dashes, gap = null, w = 5, seed = 60 } = o;
+    ctx.save();
+    for (let i = 0; i < drawn; i++) { const x0 = x + (i / dashes) * len, x1 = x0 + len / dashes * 0.56; if (gap && x1 > gap[0] && x0 < gap[1]) continue; IB.seg(ctx, x0, y, x1, y, { w, seed: seed + i }); }
+    ctx.restore();
+  };
+
+  /* candleSmear(ctx, x, ys, opts) — the one smear drawing of a candle that shoots up: its body 14% taller than it will be, the wick 30 px above that, three speed lines beside it. x is the candle's centre; ys = { open, close, low } are those prices' y on the chart (IB.candles returns the scale). Show it for one drawing, then the real candle (market/monitor-candles-breakout). */
+  IB.candleSmear = (ctx, x, ys, o = {}) => {
+    const { fill = C.blue, seed = 200 } = o, top = ys.close - (ys.open - ys.close) * 0.14;
+    ctx.save();
+    IB.seg(ctx, x, top - 30, x, ys.low, { w: 5.6, seed });
+    IB.box(ctx, x - 19, top, 38, ys.open - top, { fill, w: 7, seed: seed + 1 });
+    for (const dx of [-62, -44, 46]) IB.seg(ctx, x + dx, ys.open - 20, x + dx, ys.open - 150 - Math.abs(dx), { w: 5, seed: seed + 3 + dx });
+    ctx.restore();
+  };
+
+  /* priceTag(ctx, at, opts) — the tag on the price axis that points at the current price: a paper pentagon with one bar for the number. `at` = [right edge of the chart, the price's y]. Step it to each finished close; it does not follow a live flicker (market/monitor-candles-breakout). */
+  IB.priceTag = (ctx, [x, y], o = {}) => {
+    const { seed = 70 } = o;
+    ctx.save();
+    IB.ink(ctx, [[x + 62, y], [x + 88, y - 26], [x + 164, y - 26], [x + 164, y + 26], [x + 88, y + 26]], { closed: true, smooth: false, fill: C.paper, w: 6, seed });
+    IB.seg(ctx, x + 104, y, x + 146, y, { w: 6, seed: seed + 1 });
+    ctx.restore();
+  };
+
+  /* popupTag(ctx, at, opts) — a tooltip beside the thing the cursor rests on: a paper card up and left of `at` with a blue up arrow and two bars for text. It is a drawing: it pops on whole, one drawing after the cursor arrives (market/monitor-candles-breakout). */
+  IB.popupTag = (ctx, [x, y], o = {}) => {
+    const { fill = C.blue, seed = 80 } = o;
+    ctx.save();
+    IB.box(ctx, x - 250, y - 150, 200, 110, { fill: C.paper, w: 6, seed });
+    IB.ink(ctx, [[x - 222, y - 78], [x - 196, y - 122], [x - 170, y - 78]], { closed: true, smooth: false, fill, w: 5, seed: seed + 1 });
+    for (const dy of [-112, -88]) IB.seg(ctx, x - 148, y + dy, x - 76, y + dy, { w: 6, seed: seed + 2 + dy });
+    ctx.restore();
+  };
+
+  /* cursor(ctx, at, opts) — a mouse pointer arrow 88 px tall with its tip at `at`. It is interface, not drawing: move it on ones along IB.settle like copy, never on twos (market/monitor-candles-breakout). */
+  IB.cursor = (ctx, [px, py], o = {}) => {
+    const { seed = 90 } = o;
+    ctx.save();
+    IB.ink(ctx, [[px, py], [px, py + 74], [px + 20, py + 56], [px + 34, py + 88], [px + 48, py + 82], [px + 34, py + 50], [px + 58, py + 50]], { closed: true, smooth: false, fill: C.paper, w: 6, seed, wob: 0 });
+    ctx.restore();
+  };
 })(window);

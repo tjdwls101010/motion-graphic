@@ -6,117 +6,22 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/cast/closeup.js"></script>
 <script>
 /* 마스크 철망 너머로 화면을 가득 채운 두 눈이 노려보다 눈썹을 내리고 고개를 기울이며 다가오고, 스피드라인 휩이 화면을 쓸고 지나가면 맞은편 사람의 긴장한 눈이 나온다: 눈썹이 걱정스럽게 치켜 올라가고 땀방울 하나가 길게 자라며 흘러내린다. 전달하는 생각: 대결 직전, 한쪽은 자신 있고 한쪽은 불안하다.
    Motion notes: extreme close-up, lines 6-17 px. The mesh (#d9d7d6 lines 11 px wide, cells ~125 px, bowed like a lens) belongs to the mask, so it moves with the head: every shot is one transform (zoom, shift, tilt) applied to face and mesh together, and the skin above the visor line is darkened to #867968. Faces are drawn from the reference's shapes read off a 100 px grid; both are tables of [frame, drawing] at 24 fps held until the next key (SHOT_A, SHOT_B), nothing interpolated, and every key sits on the frame where the reference changes its drawing (all of them even frames here).
    Face A (0-1.08 s) goes in and comes back out through the same drawings: the scowl builds over three drawings (frames 6, 8, 10: by the end the inner ends of the brows are 24 px lower and the upper lids cut the top off the irises); at 12 the head tips 0.018 rad and drops 14 px, 2% larger; at 14 it sinks another 10 px; holds 4 frames; then 18 repeats the drawing of 12, 20 that of 10, 22 that of 8. At 24 that last drawing jumps 120 px left, and holds three frames until the whip takes it.
    Whip = three drawings on twos (0.25 s, frames 27-32): the leaving face shoved 1150 px left and breaking into streaks tinted with its skin colours; streaks alone on #f0f0f0; the arriving face 1150 px to the right of its place.
    Face B (from 1.375 s): lands small (0.97x) and 24 px low with flat brows and its eyes narrowed to slits, a first bead of sweat already on the temple; at 36 it rocks 0.02 rad as it comes up to size and the eyes begin to open; over 38 and 40 the eyes open wide and the brows climb into a worried arch (inner ends up 110 px, outer ends 58). Then the face holds dead still and only the sweat moves: its tip stays put and the drop runs down from it on twos, 20 px long at first and 160 px by the last frame. */
-const C = IB.C, SKIN = '#cfbba0', SHADE = '#867968', MESH = '#d9d7d6', BROW_B = '#948da1';
+const C = IB.C, SKIN = IB.MASK.skin, SHADE = IB.MASK.shade;
 const WHIP = 27, B_IN = 33;   // 24 fps frames after the scene start
 
-/* Face A's drawings: scowl 0..1 lowers brows and lids; then the shot's zoom, shift (px) and tilt (rad, + = clockwise). */
-const A0 = { scowl: 0, zoom: 1, dx: 0, dy: 0, rot: 0 };
-const A6 = { ...A0, scowl: 0.12 }, A8 = { ...A0, scowl: 0.45 }, A10 = { ...A0, scowl: 0.8 }, A12 = { ...A0, scowl: 1, rot: 0.018, dy: 14, zoom: 1.02 };
-const SHOT_A = [
-  [0, A0], [6, A6], [8, A8], [10, A10], [12, A12],
-  [14, { ...A12, dy: 24, zoom: 1.025 }],
-  [18, A12], [20, A10], [22, A8],   // back out through the drawings it went in by
-  [24, { ...A8, dx: -120 }],
-];
-/* Face B's drawings: lids 0..1 opens the eyes from slits; worry 0..1 raises the brows into an arch; drop is the length of the sweat drop that hangs from a fixed tip on the temple. */
-const B0 = { lids: 0.3, worry: 0, zoom: 0.97, dx: 0, dy: 24, rot: 0, drop: 20 };
-const B40 = { ...B0, lids: 1, worry: 1, zoom: 1.02, dy: 0 };
-const SHOT_B = [
-  [0, B0],
-  [36, { ...B0, lids: 0.65, zoom: 1, dy: 8, rot: -0.02, worry: 0.15, drop: 30 }],
-  [38, { ...B40, lids: 0.9, worry: 0.65, drop: 50 }],
-  [40, { ...B40, drop: 74 }],
-  ...[[42, 96], [44, 114], [46, 130], [48, 142], [50, 152], [52, 158], [54, 160]].map(([f, drop]) => [f, { ...B40, drop }]),
-];
-
-function mesh(ctx) {
-  const bow = (v, o) => 1 + 0.07 * (1 - Math.pow(o / 760, 2)) * (Math.abs(v) / 960);
-  for (let i = -9; i <= 9; i++) {
-    const x0 = i * 125 + 40, pts = [];
-    for (let y = -120; y <= 1200; y += 80) pts.push([960 + x0 * bow(x0, y - 540), y]);
-    IB.ink(ctx, pts, { w: 11, color: MESH, seed: 900 + i, taper: false, wob: 0.5 });
-  }
-  for (let j = -6; j <= 6; j++) {
-    const y0 = j * 122 + 30, pts = [];
-    for (let x = -160; x <= 2080; x += 120) pts.push([x, 540 + y0 * bow(y0 * 1.6, x - 960)]);
-    IB.ink(ctx, pts, { w: 11, color: MESH, seed: 930 + j, taper: false, wob: 0.5 });
-  }
-}
-
-/* Everything on a face is drawn for the eye on screen-left and mirrored about the face's centre line for the other; irises are placed per eye, because both look the same way. */
-const mirror = (cx) => (pts) => pts.map(([x, y]) => [2 * cx - x, y]);
-function skin(ctx, outline) {
-  ctx.fillStyle = SHADE; ctx.fillRect(-2400, -600, 6800, 2400);
-  IB.ink(ctx, outline, { closed: true, smooth: false, fill: SKIN, w: 0, wob: 0 });   // straight along the visor's shadow, slanting away down both cheeks
-}
-function eyeball(ctx, almond, iris, r, glint, white, seed) {
-  IB.ink(ctx, almond, { closed: true, fill: white, w: 0, seed, wob: 0.3 });
-  ctx.save();
-  ctx.beginPath(); almond.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.closePath(); ctx.clip();
-  return () => { IB.oval(ctx, iris[0], iris[1], r, r, { fill: C.ink, w: 0, n: 18 }); IB.oval(ctx, glint[0], glint[1], r * 0.18, r * 0.18, { fill: '#d5d5d5', w: 0, n: 8 }); ctx.restore(); };
-}
-
-/* Graphite under the tip of the nose: a soft arc, three passes of a wide translucent stroke. */
-function smudge(ctx, pts, seed) {
-  for (let i = 0; i < 3; i++) IB.ink(ctx, pts.map(([x, y]) => [x, y - i * 5]), { w: 16 - i * 4, color: 'rgba(60, 52, 44, 0.2)', seed: seed + i, grain: 0, wob: 1.5 });
-}
-
-function faceA(ctx, p) {
-  const CX = 934, M = mirror(CX), k = p.scowl, VISOR = 445;
-  skin(ctx, [[130, VISOR], [1845, VISOR], [1880, 560], [1902, 700], [1910, 1200], [14, 1200], [20, 930], [70, 680]]);
-  for (const side of [0, 1]) {
-    const m = side ? M : (q) => q, sx = side ? -1 : 1;
-    // upper lid: the scowl drops its middle 33 px and leaves the corners where they are
-    const lidTop = [[250, 426], [300, 364 + k * 20], [385, 312 + k * 30], [500, 297 + k * 33], [600, 332 + k * 28], [660, 400 + k * 12], [695, 464]];
-    const almond = m(lidTop.concat([[600, 472], [480, 478], [330, 456]]));
-    const iris = side ? [1398, 407] : [490, 403];
-    const done = eyeball(ctx, almond, iris, 92, [iris[0] - 32, iris[1] - 54 + k * 30], '#a7a7a7', 10 + side);
-    ctx.fillStyle = '#dedede'; ctx.fillRect(0, VISOR + 4, 1920, 60);   // below the visor's shadow line the white of the eye is lit
-    done();
-    IB.ink(ctx, m(lidTop), { w: 17, seed: 12 + side, wob: 0.5 });
-    IB.ink(ctx, m([[640, 440], [690, 470], [702, 482]]), { w: 6, seed: 14 + side });                 // the lash that runs on past the inner corner
-    // brow: thin and high at the temple, thick and low over the nose; the scowl turns it about its outer end
-    const a = k * 0.05 * sx, c = Math.cos(a), sn = Math.sin(a), turn = (pts) => pts.map(([x, y]) => { const X = 2 * (side ? CX : 0) + (side ? -x : x), dx = X - (side ? 2 * CX - 220 : 220), dy = y - 195; return [X - dx + dx * c - dy * sn, y - dy + dx * sn + dy * c]; });
-    IB.ink(ctx, turn([[220, 190], [300, 176], [385, 168], [470, 172], [557, 188], [640, 228], [698, 270], [718, 296], [708, 312], [686, 310], [634, 286], [560, 250], [480, 222], [400, 208], [320, 202], [227, 203]]), { closed: true, fill: C.ink, w: 3, seed: 20 + side });
-  }
-  // nose: one open stroke, graphite at the nostril line, and the hard shadow it throws below
-  IB.ink(ctx, [[800, 952], [940, 962], [1090, 946], [1046, 1012], [920, 1036], [818, 1002]], { closed: true, fill: SHADE, w: 0, wob: 0 });
-  IB.ink(ctx, [[837, 576], [792, 680], [748, 790], [739, 873], [806, 940], [921, 959], [1046, 940], [1113, 873], [1110, 783]], { w: 12, seed: 50 });
-  smudge(ctx, [[850, 912], [920, 926], [1000, 916]], 54);
-}
-
-function faceB(ctx, p) {
-  const CX = 960, M = mirror(CX), VISOR = 470;
-  skin(ctx, [[130, VISOR], [1760, VISOR], [1850, 600], [1918, 740], [1904, 1200], [40, 1200], [10, 650], [60, 540]]);
-  for (const side of [0, 1]) {
-    const m = side ? M : (q) => q;
-    const shut = (1 - p.lids) * 62, lidTop = [[250, 514], [300, 468 + shut * 0.55], [380, 428 + shut * 0.9], [460, 407 + shut], [540, 422 + shut * 0.9], [620, 462 + shut * 0.55], [682, 503]];
-    const iris = side ? [1398, 490] : [470, 490];
-    eyeball(ctx, m(lidTop.concat([[640, 532], [460, 537], [300, 530]])), iris, 82, [iris[0] - 25, iris[1] - 30], C.paper, 30 + side)();
-    IB.ink(ctx, m(lidTop), { w: 16, seed: 32 + side, wob: 0.5 });
-    IB.ink(ctx, m([[640, 478], [700, 512], [716, 524]]), { w: 6, seed: 34 + side });
-    // brow: pale, outlined, blunt over the nose and tapering to the temple; worry lifts the inner end 110 px and the outer end 58
-    const lift = (pts) => pts.map(([x, y]) => [x, y + (1 - p.worry) * (58 + (52 * (x - 134)) / 590)]);
-    IB.ink(ctx, m(lift([[134, 230], [190, 184], [250, 148], [384, 90], [480, 72], [576, 66], [722, 72], [728, 104], [576, 106], [480, 112], [384, 128], [300, 156], [240, 190]])), { closed: true, fill: BROW_B, w: 7, seed: 40 + side });
-  }
-  ctx.fillStyle = C.ink;
-  for (const [x, y] of [[610, 710], [470, 762], [591, 802], [349, 810], [399, 946], [1229, 687], [1338, 783], [1223, 797], [1492, 787], [1319, 883], [1450, 918]]) { ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill(); }   // freckles
-  IB.ink(ctx, [[790, 1016], [1100, 1016], [1070, 1090], [830, 1090]], { closed: true, fill: SHADE, w: 0, wob: 0 });
-  IB.ink(ctx, [[797, 374], [826, 470], [841, 556], [824, 610]], { w: 10, seed: 52 });                                   // the bridge, on the side away from the light
-  IB.ink(ctx, [[1052, 576], [1062, 680], [1078, 770], [1112, 880], [1104, 968], [1040, 1024], [921, 1040], [826, 1018], [768, 950], [758, 872], [770, 806], [803, 758]], { w: 12, seed: 51 });
-  smudge(ctx, [[850, 990], [925, 1004], [1000, 994]], 55);
-  if (p.drop) {   // a sweat drop on the temple: a point at the top, a bulb at the bottom
-    const len = p.drop, y = 380, x = 1822, r = Math.min(29, len * 0.3), by = y + len - r;
-    IB.ink(ctx, [[x - 4, y], [x - r * 0.75, by - r * 0.7], [x - r, by], [x - r * 0.7, by + r * 0.72], [x, by + r], [x + r * 0.7, by + r * 0.72], [x + r, by], [x + r * 0.7, by - r * 0.7], [x + 2, y + len * 0.3]], { closed: true, fill: SHADE, w: 7, seed: 60 });
-    if (len > 60) IB.ink(ctx, [[x - r * 0.45, by - r * 0.1], [x - r * 0.3, by + r * 0.4]], { w: 4, color: C.paper, seed: 61, grain: 0 });
-  }
-}
+/* Face A's drawings: it scowls from frame 6 (IB.boldFace.MOVE.scowl), and its last drawing jumps 120 px left three frames before the whip. */
+const A = IB.boldFace.POSE;
+const SHOT_A = [[0, A.rest], ...IB.play(IB.boldFace.MOVE.scowl, 6), [24, { ...A.frown, dx: -120 }]];
+/* Face B's drawings: it enters squinting, with a sweat drop already there, and takes alarm from frame 36. */
+const SHOT_B = [[0, IB.worriedFace.POSE.squint], ...IB.play(IB.worriedFace.MOVE.alarm, 36)];
 
 MG.scene({
   title: 'insert / mesh-eyes-whip',
@@ -125,13 +30,7 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t);
-    const shot = (who, p, dx = 0) => {
-      ctx.save();
-      ctx.translate(960 + p.dx + dx, 540 + p.dy); ctx.rotate(p.rot); ctx.scale(p.zoom, p.zoom); ctx.translate(-960, -540);
-      (who === 'A' ? faceA : faceB)(ctx, p);
-      mesh(ctx);
-      ctx.restore();
-    };
+    const shot = (who, p, dx = 0) => IB.closeup(ctx, p, () => { (who === 'A' ? IB.boldFace : IB.worriedFace)(ctx, p); IB.maskMesh(ctx); }, dx);
     if (f < WHIP) return shot('A', IB.held(SHOT_A, f));
     if (f >= B_IN) return shot('B', IB.held(SHOT_B, f));
     // the whip itself, three drawings on twos: the leaving shot shoved left, streaks alone, the arriving shot still to the right of its place
@@ -139,13 +38,7 @@ MG.scene({
     if (k !== 1) {
       const leaving = k === 0;
       shot(leaving ? 'A' : 'B', leaving ? IB.held(SHOT_A, WHIP - 1) : IB.held(SHOT_B, B_IN), leaving ? -1150 : 1150);
-      // the face breaks up: bars of bare stage eat into it from the open side
-      const r = MG.rng(700 + drawn);
-      ctx.fillStyle = C.bg;
-      for (let i = 0; i < 46; i++) { const y = r() * 1080, h = 6 + r() * 30, w = 500 + r() * 1100; ctx.fillRect(leaving ? 1920 - w - 260 * r() : 0, y, w + 400, h); }
-      ctx.fillRect(leaving ? 1000 : 0, 0, 920, 1080);
-      for (let i = 0; i < 30; i++) { const y = r() * 1080, h = 5 + r() * 26, w = 200 + r() * 700; ctx.fillStyle = r() < 0.5 ? SKIN : SHADE; ctx.globalAlpha = 0.85; ctx.fillRect(leaving ? 1000 - w * 0.4 : 920 - w * 0.6, y, w, h); }
-      ctx.globalAlpha = 1;
+      IB.whipBreakup(ctx, drawn, { leaving, wipe: true, streaks: [SKIN, SHADE] });   // the face breaks up: bars of bare stage eat into it from the open side
     }
     IB.whip(ctx, drawn, { seed: 4, tint: k !== 1 ? [SKIN] : [] });
   },

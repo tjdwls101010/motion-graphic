@@ -94,4 +94,15 @@
     IB.oval(ctx, SCAN, 297, 11, 11, { fill: hit >= 1 ? C.green : C.paper, w: 2.4, seed: seed + 2, n: 9 });
     ctx.restore();
   };
+
+  /* paperPlane(ctx, at, opts) — a lavender paper plane 124 px long (times s) pointing right, turned by rot; stretch > 1 is its smear drawing as it enters. Line width is kept at 3 px on screen down to scale 1.9, then 1.6 px in the plane's own units. Fly it as a list of drawings on twos, each smaller, toward a vanishing point (variation/hall-whip-button). */
+  IB.paperPlane = (ctx, [x, y], o = {}) => {
+    const { s = 1, rot = 0, stretch = 1, seed = 400 } = o;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s * stretch, s);
+    const w = Math.max(1.6, 3 / s);
+    IB.ink(ctx, [[-60, -6], [64, 0], [-60, 30], [-40, 6]], { closed: true, smooth: false, fill: C.lavender, w, seed });
+    IB.ink(ctx, [[-60, -6], [64, 0], [-52, -34]], { closed: true, smooth: false, fill: '#d3c4f5', w, seed: seed + 1 });
+    IB.seg(ctx, -40, 6, 64, 0, { w: w * 0.7, seed: seed + 2 });
+    ctx.restore();
+  };
 })(window);

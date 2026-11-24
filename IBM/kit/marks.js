@@ -72,4 +72,24 @@
     const { half = 13 * (Math.PI / 180), alpha = 0.55 } = o;
     ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = C.paper; ctx.beginPath(); beamPath(ctx, from, a, half); ctx.fill(); ctx.restore();
   };
+
+  /* whipBreakup(ctx, frame, opts) — how a shot leaves or arrives through a speed-line whip (IB.whip): bars of bare stage eat into it from its open side, re-rolled for every `frame`. Draw the shot shoved sideways (about 1150 px), then this, then IB.whip. leaving: true for the shot going out to the left, false for the one coming in from the right. open (0..1) thins the bars as an arriving shot settles; wipe: true also clears the whole open half; streaks: [colour, colour] adds 30 translucent bars of the shot's own colours where it tears (insert/mesh-eyes-whip, variation/hall-whip-button). */
+  IB.whipBreakup = (ctx, frame, o = {}) => {
+    const { leaving = true, open = 1, wipe = false, streaks = null } = o;
+    ctx.save();
+    const r = MG.rng(700 + frame);
+    ctx.fillStyle = C.bg;
+    for (let i = 0; i < Math.round(46 * open); i++) { const y = r() * 1080, h = 6 + r() * 30, w = 500 + r() * 1100; ctx.fillRect(leaving ? 1920 - w - 260 * r() : 0, y, w + 400, h); }
+    if (wipe) ctx.fillRect(leaving ? 1000 : 0, 0, 920, 1080);
+    if (streaks) for (let i = 0; i < 30; i++) { const y = r() * 1080, h = 5 + r() * 26, w = 200 + r() * 700; ctx.fillStyle = r() < 0.5 ? streaks[0] : streaks[1]; ctx.globalAlpha = 0.85; ctx.fillRect(leaving ? 1000 - w * 0.4 : 920 - w * 0.6, y, w, h); }
+    ctx.restore();
+  };
+
+  /* smudge(ctx, pts, opts) — rubbed graphite: three passes of a wide translucent stroke along `pts`, each pass `dy` px higher and `dw` px thinner. Softer than IB.shade's stipple: under a nose in a close-up, inside a cloud (insert/mesh-eyes-whip, establish/city-stadium-flyin). */
+  IB.smudge = (ctx, pts, o = {}) => {
+    const { w = 16, dw = 4, dy = 5, color = 'rgba(60, 52, 44, 0.2)', seed = 54, wob = 0.7 } = o;
+    ctx.save();
+    for (let i = 0; i < 3; i++) IB.ink(ctx, pts.map(([x, y]) => [x, y - i * dy]), { w: w - i * dw, color, seed: seed + i, grain: 0, wob });
+    ctx.restore();
+  };
 })(window);

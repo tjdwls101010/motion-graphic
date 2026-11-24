@@ -136,4 +136,24 @@
     IB.ink(ctx, [[x + 24, y + h - 24], [x + w * 0.4, y + h * 0.42], [x + w * 0.55, y + h * 0.62], [x + w * 0.7, y + h * 0.5], [x + w - 24, y + h - 24]], { w: 2, smooth: false, seed: seed + 2 });
     ctx.restore();
   };
+
+  /* callButton(ctx, at, state, opts) — a lift call button at insert size, filling the frame: a plate with rounded corners and four screws, an indicator arrow above, and a round button 352 px across whose cap sinks 10 px when pressed. `at` is the button's centre. state.pressed sinks the cap; state.lit turns the cap blue and the indicator mint (they light together). Lines 7-9 px, as an insert's are (variation/hall-whip-button). */
+  const BUTTON_AT = [860, 560];
+  IB.callButton = (ctx, at, st = {}, o = {}) => {
+    const { pressed = false, lit = pressed } = st;
+    ctx.save(); ctx.translate(at[0] - BUTTON_AT[0], at[1] - BUTTON_AT[1]);
+    IB.shade(ctx, 520, 968, 700, 34, { from: 'top', seed: 51, alpha: 0.5 });
+    IB.ink(ctx, [[1176, 154, 0], [544, 154, 1], [544, 916, 2], [1176, 916, 3]].flatMap(([x, y, q]) => IB.ellipse(x, y, 44, 44, 5, -q * Math.PI / 2, -(q + 1) * Math.PI / 2)), { closed: true, smooth: false, fill: C.paper, w: 9, seed: 500, wob: 1.2 });   // a plate with rounded corners
+    for (const [x, y] of [[560, 170], [1160, 170], [560, 900], [1160, 900]]) { IB.oval(ctx, x, y, 15, 15, { w: 5, seed: 510 + x + y, n: 9 }); IB.seg(ctx, x - 8, y - 6, x + 8, y + 6, { w: 4, seed: 511 + x + y }); }
+    // the indicator above the button: an arrow that lights with it
+    IB.box(ctx, 740, 196, 240, 96, { fill: lit ? C.mint : C.bg, w: 7, seed: 520 });
+    IB.ink(ctx, [[820, 262], [860, 220], [900, 262]], { w: 9, smooth: false, seed: 521 });
+    // the button: a collar, and a cap that sinks when pressed
+    IB.oval(ctx, 860, 560, 176, 176, { fill: C.bg, w: 9, seed: 530, n: 22 });
+    IB.shade(ctx, 860 - 150, 560 + 60, 300, 110, { from: 'bottom', seed: 53, alpha: 0.5 });
+    const sink = pressed ? 10 : 0;
+    IB.oval(ctx, 860, 560 + sink, 132 - sink * 0.6, 132 - sink * 0.6, { fill: lit ? C.blue : C.paper, w: 8, seed: 531, n: 20 });
+    IB.ink(ctx, IB.ellipse(860, 560 + sink, 96, 96, 7, 3.5, 4.6), { w: 7, color: lit ? C.paper : '#d9d9d9', seed: 532 });
+    ctx.restore();
+  };
 })(window);

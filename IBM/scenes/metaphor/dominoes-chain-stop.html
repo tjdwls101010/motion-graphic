@@ -6,7 +6,9 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/metaphor.js"></script>
 <script>
 /* 왼쪽에서 온 손가락이 첫 도미노를 튕기자 줄줄이 넘어가다가, 위에서 내려온 손가락이 파란 도미노 하나를 눌러 잡는 순간 연쇄가 거기서 멈춘다. 원본에 없는 창작 장면으로, 원본의 "쓰는 동안만 있는 팔"과 한 장씩 어긋나며 번지는 박자를 연쇄 반응 은유로 옮겼다. 전달하는 생각: 한 곳의 문제는 줄줄이 번지고, 한 번의 개입이 그것을 끊는다.
    Motion notes: one locked shot, 5 s, all on twos. Twelve dominoes 124 px apart (57 x 208). Each starts exactly one drawing (2 frames) after the one before it: the offset of one drawing per item is the whole effect, a wave that travels 124 px per drawing = 1488 px/s. A falling domino would go 19, 44, 68, 90 degrees from upright on successive drawings, but it can never pass the one it falls on, so its angle on every drawing is the smaller of that and where it comes to rest against its neighbour's angle on the same drawing (rest(), solved from the two rectangles): 18.7 degrees against one still upright, about 62 once the row lies stacked. No domino ever overlaps another. The flicking finger comes in from the left in 3 drawings (tip 150, 60, 14 px short), flicks on the 4th at 1.0 s following the tipped face, and is gone in 2 more. The stopping finger starts down from the top on that same drawing and is on the blue domino at 1.25 s, 0.33 s before the wave reaches it at 1.58 s: the save is set up while the chain is still running. The eighth domino stops at 18.7 degrees against the held one; a three-line burst and shake marks on the held domino for 2 drawings; then dead still for 1.25 s. The finger lifts at 3.0 s in 2 drawings, the blue domino trembles (shake marks, 4 drawings) and stands. Two colours: the yellow sleeves, the one blue domino. */
@@ -15,41 +17,15 @@ const C = IB.C, FLOOR = 840, N = 12, GAP = 124, X0 = 278, S = 1.3, DW = 44 * S, 
 const FLICK = 1, WAVE = 1 / 12, FREE = [19, 44, 68, 90];   // seconds: the first domino starts; delay from one domino to the next. FREE: degrees per drawing with nothing in the way
 const xOf = (i) => X0 + i * GAP;
 
-/* The angle (degrees from upright) at which a domino comes to rest on its right-hand neighbour when that neighbour is at `next` degrees. Both pivot on their lower right corners, GAP apart. Two ways they can touch: this one's top right corner on the neighbour's left face, or the neighbour's top left corner on this one's right face; the answer is the largest angle at which neither goes through. */
-function rest(next) {
-  const b = next * DEG, un = [Math.sin(b), -Math.cos(b)], rn = [Math.cos(b), Math.sin(b)];   // the neighbour's up and right
-  const L = [GAP - DW * rn[0], -DW * rn[1]], TL = [L[0] + DH * un[0], L[1] + DH * un[1]];    // its lower left and top left corners, from this one's pivot
-  const clear = (deg) => {
-    const a = deg * DEG, u = [Math.sin(a), -Math.cos(a)], r = [Math.cos(a), Math.sin(a)], cx = DH * u[0] - L[0], cy = DH * u[1] - L[1];
-    let m = Infinity;
-    const up = cx * un[0] + cy * un[1]; if (up >= 0 && up <= DH) m = Math.min(m, -(cx * rn[0] + cy * rn[1]));
-    const mine = TL[0] * u[0] + TL[1] * u[1]; if (mine >= 0 && mine <= DH) m = Math.min(m, TL[0] * r[0] + TL[1] * r[1]);
-    return m;
-  };
-  let lo = 0, hi = 90;
-  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (clear(mid) >= 0) lo = mid; else hi = mid; }
-  return lo;
-}
 // every domino's angle on the drawing at time tt, worked out from the held one leftward
 function angles(tt) {
   const out = new Array(N).fill(0);
   for (let i = HELD - 1; i >= 0; i--) {
     const k = IB.drawn(tt, FLICK + i * WAVE);
-    out[i] = k < 0 ? 0 : Math.min(FREE[Math.min(FREE.length - 1, k)], rest(out[i + 1]));
+    out[i] = k < 0 ? 0 : Math.min(FREE[Math.min(FREE.length - 1, k)], IB.dominoRest(out[i + 1], GAP, DW, DH));
   }
   return out;
 }
-function domino(ctx, i, deg) {
-  ctx.save();
-  ctx.translate(xOf(i) + DW / 2, FLOOR); ctx.rotate(deg * DEG); ctx.scale(S, S);
-  IB.box(ctx, -44, -160, 44, 160, { fill: i === HELD ? C.blue : C.paper, w: 3.4 / S, seed: 100 + i * 7 });
-  IB.seg(ctx, -38, -80, -6, -80, { w: 2 / S, seed: 101 + i * 7 });
-  ctx.fillStyle = C.ink;
-  for (const [x, y] of i % 3 === 0 ? [[-22, -118]] : i % 3 === 1 ? [[-30, -130], [-14, -104]] : [[-30, -132], [-22, -118], [-14, -104]]) { ctx.beginPath(); ctx.arc(x, y, 4.2, 0, 7); ctx.fill(); }
-  for (const [x, y] of i % 2 ? [[-22, -42]] : [[-30, -54], [-14, -30]]) { ctx.beginPath(); ctx.arc(x, y, 4.2, 0, 7); ctx.fill(); }
-  ctx.restore();
-}
-
 MG.scene({
   title: 'metaphor / dominoes-chain-stop',
   duration: 5, ref: null, fps: 24,
@@ -58,7 +34,7 @@ MG.scene({
     IB.bg(ctx);
     const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), ang = angles(tt);
     IB.smear(ctx, X0 + ((N - 1) * GAP) / 2, FLOOR - 3, N * GAP + 60, { h: 12, seed: 9 });
-    for (let i = N - 1; i >= 0; i--) domino(ctx, i, ang[i]);
+    for (let i = N - 1; i >= 0; i--) IB.domino(ctx, [xOf(i) + DW / 2, FLOOR], { deg: ang[i], face: i }, { s: S, fill: i === HELD ? C.blue : C.paper, seed: 100 + i * 7 });
 
     // the finger that starts it: in from the left, flick, gone. On the flick it rides the face it has just tipped
     const a = n(FLICK - 3 / 12), tipY = FLOOR - DH + 34;
@@ -70,7 +46,7 @@ MG.scene({
     // the wave arrives at the held domino: a burst between the two and a tremble, two drawings
     const hit = n(FLICK + (HELD - 1) * WAVE);
     if (hit >= 0 && hit < 2) {
-      for (let i = 0; i < 3; i++) { const dir = -2.0 + i * 0.5, r0 = 26 + hit * 12, r1 = r0 + 30; IB.seg(ctx, top[0] - DW / 2 - 6 + Math.cos(dir) * r0, top[1] + 30 + Math.sin(dir) * r0, top[0] - DW / 2 - 6 + Math.cos(dir) * r1, top[1] + 30 + Math.sin(dir) * r1, { w: 2.8, seed: 300 + i + hit * 5 }); }
+      IB.burst(ctx, [top[0] - DW / 2 - 6, top[1] + 30], { n: 3, a0: -2.0, da: 0.5, r0: 26 + hit * 12, r1: 26 + hit * 12 + 30, seed: 300 + hit * 5 });
       IB.shake(ctx, top[0] + DW / 2 + 10, top[1] + 60, 16, { a: 0, n: 2, seed: 310 + hit, w: 2.6 });
     }
     // let go: it trembles for four drawings and stands

@@ -1,4 +1,4 @@
-/* desk.js — office and market props in the look of the IBM spots: a seated pose for the figure rig, an office chair, a desk, a monitor seen from the front, and a candlestick chart to put on its screen. Flat fills and ink outlines like everything else; a screen is paper white and what is on it is drawn, never glowing. Needs ink.js and figure.js; adds to the global IB. */
+/* props/office.js — office and market props in the look of the IBM spots: a seated pose for the figure rig, an office chair, a desk, a monitor seen from the front, and a candlestick chart to put on its screen. Flat fills and ink outlines like everything else; a screen is paper white and what is on it is drawn, never glowing. Needs ink.js and figure.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C, F = IB.FIG;
 
@@ -57,5 +57,39 @@
       IB.box(ctx, X(i) - slot * 0.28, (a + b) / 2 - tall / 2, slot * 0.56, tall, { fill: cl >= op ? up : down, w: lw, seed: seed + i * 3 + 1, wob: 0.4 });
     });
     return { x: X, y: Y };
+  };
+
+  /* arrow(ctx, at, opts) — a solid up or down triangle that says which way a price went: up blue, down red (the only two meanings these colours carry). `at` is its centre; `half` its half width, `base` and `tip` how far the base and the point sit from the centre (market/watched-chart-drops, market/trading-desk-row). */
+  IB.arrow = (ctx, [x, y], o = {}) => {
+    const { up = true, half = 18, base = 14, tip = 16, fill = up ? C.blue : C.red, w = 2.8, seed = 91 } = o;
+    ctx.save();
+    IB.ink(ctx, up ? [[x - half, y + base], [x, y - tip], [x + half, y + base]] : [[x - half, y - base], [x, y + tip], [x + half, y - base]], { closed: true, smooth: false, fill, w, seed });
+    ctx.restore();
+  };
+
+  /* keyboard(ctx, at, opts) — a flat keyboard seen from the side, lying on a desk top: `at` is its near left corner on the top surface (market/watched-chart-drops). */
+  IB.keyboard = (ctx, [x, top], o = {}) => {
+    const { w = 170, seed = 50 } = o;
+    ctx.save();
+    IB.box(ctx, x, top - 12, w, 12, { fill: C.bg, w: 2.8, seed });
+    ctx.restore();
+  };
+
+  /* lineChart(ctx, screen, values, opts) — a live line chart on a monitor screen [x, y, w, h] (IB.monitor's return): two faint grid lines, the last `win` values one `gap` px apart as one ink line clipped to the screen, a dot on the newest value and an arrow in the corner, blue when it last rose and red when it fell. `min`..`min + span` is the value range mapped onto the screen. Grow it by one value every two drawings: a drawn chart is a drawing (market/watched-chart-drops). */
+  IB.lineChart = (ctx, scr, v, o = {}) => {
+    const { win: WIN = 27, gap: GAP = 17, min = 20, span = 60, seed = 70 } = o;
+    const n = v.length, first = Math.max(0, n - WIN), y = (val) => scr[1] + scr[3] - 30 - ((val - min) / span) * (scr[3] - 70);
+    ctx.save(); IB.clipRect(ctx, scr);
+    for (const g of [0.3, 0.6]) IB.seg(ctx, scr[0], scr[1] + scr[3] * g, scr[0] + scr[2], scr[1] + scr[3] * g, { w: 1.6, color: '#d9d9d9', seed: seed + g * 10, grain: 0 });
+    const pts = v.slice(first).map((val, i) => [scr[0] + 22 + i * GAP, y(val)]);
+    if (pts.length > 1) IB.ink(ctx, pts, { w: 4, smooth: false, seed: seed + 10 + first, taper: false, wob: 0.3 });
+    ctx.restore();
+    if (n > 1) {
+      const rising = v[n - 1] > v[n - 2], col = rising ? C.blue : C.red, end = pts[pts.length - 1];
+      ctx.save();
+      if (end[1] > scr[1] + 12) IB.oval(ctx, end[0], end[1], 9, 9, { fill: col, w: 2.6, seed: seed + 20, n: 9 });
+      ctx.restore();
+      IB.arrow(ctx, [scr[0] + 44, scr[1] + 44], { up: rising, fill: col, seed: seed + 21 });   // the arrow in the corner says the same thing
+    }
   };
 })(window);

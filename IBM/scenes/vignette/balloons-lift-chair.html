@@ -7,6 +7,9 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/party.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/cast/cat.js"></script>
 <script>
 /* 고양이가 자는 의자에 화면 밖에서 뻗어 온 손이 풍선을 하나씩 묶고, 넷째 풍선에서 의자가 바닥을 떠나 떠오르자 고양이가 눈을 뜨고 "야옹?" 했다가 도로 잔다. 원본에 없는 창작 장면으로, 원본 스팟의 "한 화면, 컷 없음, 마지막엔 작은 것 하나만 움직인다"를 작은 상황극으로 옮겼다. 전달하는 생각: 작은 것이 쌓이면 어느 순간 떠오른다.
    Motion notes: one locked shot, 8 s, no cuts. A beat every 1.25 s, on the 12 fps grid: the arm comes in from off-screen in 4 drawings on twos (hand x 1700, 1380, 1180, then its place), holds 0.25 s as if tying, lets go on the 8th drawing, and leaves in 3 drawings; an arm exists only while it is used. A released balloon rises to its place on IB.settle (tau 0.25 s) and then never moves. The first three balloons change nothing: the fourth is the event. After the third the chair lifts 46 px (tau 0.2) and stops, which is the warning; after the fourth it rises 150 px more (tau 0.45, 1.4 s to stop). The chalk smear and the graphite stay on the floor where the chair was: the gap between them and the legs is what says "off the ground". The cat only changes its eyes (shut, wide at 4.0 s, shut again at 6.67 s) and its bubble shows 4.17-5.42 s travelling with the chair on twos. Three colours, the balloons' yellow, lavender and sky: the sleeve is white and the cat's eyes are ink, so nothing else competes. Last second: everything held, only the tail swings, two drawings alternating on threes. */
@@ -25,50 +28,6 @@ const beat = (b, tt) => IB.drawn(tt, b.in);
 const lift = (t) => { const tt = IB.twos(t); return 46 * IB.settle(tt - BALLOONS[2].rel, 0.2) + 150 * IB.settle(tt - BALLOONS[3].rel, 0.45, 1.4); };
 const knot = (t) => [CX + 84, SEAT - BACK - lift(t)];
 const HAND = (t) => { const k = knot(t); return [k[0] + 96, k[1] - 26]; };   // where the hand ties
-
-function balloon(ctx, x, y, b, from) {
-  IB.ink(ctx, [from, [lerp(from[0], x, 0.45) + 14, lerp(from[1], y + 74, 0.5)], [x, y + 78]], { w: 2, seed: b.seed + 3 });
-  IB.oval(ctx, x, y, 60, 70, { fill: b.fill, w: 3.2, seed: b.seed, n: 14 });
-  IB.ink(ctx, [[x - 9, y + 68], [x + 9, y + 68], [x + 7, y + 82], [x - 8, y + 81]], { closed: true, fill: b.fill, w: 2.4, seed: b.seed + 1 });
-  IB.ink(ctx, IB.ellipse(x - 6, y - 4, 40, 50, 6, 3.5, 4.5), { w: 2.6, color: C.paper, seed: b.seed + 2 });
-}
-
-function chair(ctx, y0) {
-  const seat = SEAT - y0, floor = FLOOR - y0, post = (x, top, bot, w, seed) => IB.box(ctx, x - w / 2, top, w, bot - top, { fill: C.paper, w: 3, seed });
-  post(CX - 62, seat + 20, floor - 12, 12, 200); post(CX + 62, seat + 20, floor - 12, 12, 201);          // back legs, a little shorter
-  IB.seg(ctx, CX - 62, seat + 96, CX + 62, seat + 96, { w: 2.6, seed: 202 });
-  post(CX - 84, seat - BACK, floor, 17, 203); post(CX + 84, seat - BACK, floor, 17, 204);                // front legs run up into the back posts
-  for (let i = 0; i < 3; i++) IB.box(ctx, CX - 76, seat - BACK + 22 + i * 50, 152, 22, { fill: C.paper, w: 2.6, seed: 205 + i });
-  IB.box(ctx, CX - 104, seat, 208, 22, { fill: C.paper, w: 3.2, seed: 210 });
-  IB.shade(ctx, CX - 92, seat + 23, 184, 30, { from: 'top', seed: 21, alpha: 0.5 });
-  IB.seg(ctx, CX - 78, seat + 110, CX + 78, seat + 110, { w: 3, seed: 211 });
-}
-
-function cat(ctx, y0, eyes, tail) {
-  const by = SEAT - y0, x = CX - 6;
-  // tail over the seat's edge, the one thing that moves at the end
-  IB.tube(ctx, [[x - 46, by - 16], [x - 92, by - 6], [x - 112 + tail * 12, by + 44], [x - 96 + tail * 34, by + 86]], { w: 15, edge: 2.8, fill: C.paper, smooth: true, seed: 300 + tail });
-  IB.ink(ctx, [[x - 50, by], [x - 56, by - 44], [x - 30, by - 84], [x + 26, by - 86], [x + 54, by - 46], [x + 50, by]], { closed: true, fill: C.paper, w: 3.2, seed: 310 });
-  for (const s of [-1, 1]) IB.ink(ctx, [[x + s * 12, by - 2], [x + s * 14, by - 36], [x + s * 30, by - 34], [x + s * 32, by - 2]], { w: 2.4, seed: 312 + s });   // front paws
-  const hy = by - 112;
-  for (const s of [-1, 1]) IB.ink(ctx, [[x + s * 40, hy - 14], [x + s * 36, hy - 50], [x + s * 10, hy - 30]], { closed: true, smooth: false, fill: C.paper, w: 3, seed: 320 + s });
-  IB.oval(ctx, x, hy, 46, 36, { fill: C.paper, w: 3.2, seed: 322, n: 14 });
-  for (const s of [-1, 1]) {
-    if (eyes === 'wide') { IB.oval(ctx, x + s * 18, hy - 2, 8.5, 9.5, { fill: C.paper, w: 2.4, seed: 330 + s, n: 9 }); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.ellipse(x + s * 18, hy - 2, 2.6, 7, 0, 0, 7); ctx.fill(); }
-    else IB.ink(ctx, [[x + s * 26, hy - 4], [x + s * 18, hy + 2], [x + s * 10, hy - 4]], { w: 2.6, seed: 330 + s });
-    for (const dy of [0, 9]) IB.seg(ctx, x + s * 30, hy + 10 + dy, x + s * 62, hy + 6 + dy * 1.6, { w: 1.6, seed: 334 + s + dy });
-  }
-  IB.ink(ctx, [[x - 5, hy + 8], [x + 5, hy + 8], [x, hy + 14]], { closed: true, fill: C.ink, w: 1.5, seed: 340 });
-  return [x + 44, hy - 26];
-}
-
-// the arm from off-screen right: a sleeve and a hand that holds the string
-function arm(ctx, hx, hy) {
-  IB.tube(ctx, [[2000, hy + 70], [hx + 150, hy + 26], [hx + 36, hy + 4]], { w: 42, edge: 3.2, fill: C.bg, smooth: true, seed: 400 });
-  IB.ink(ctx, [[hx + 44, hy - 20], [hx + 30, hy - 22], [hx + 28, hy + 30], [hx + 44, hy + 30]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 401 });   // cuff
-  IB.ink(ctx, [[hx + 30, hy - 16], [hx + 4, hy - 20], [hx - 16, hy - 8], [hx - 18, hy + 10], [hx + 2, hy + 22], [hx + 30, hy + 24]], { closed: true, fill: C.skin[1], w: 3, seed: 402 });
-  for (const dy of [-6, 4, 13]) IB.ink(ctx, [[hx - 14, hy + dy], [hx + 2, hy + dy - 1]], { w: 2, seed: 404 + dy });
-}
 
 MG.scene({
   title: 'vignette / balloons-lift-chair',
@@ -92,14 +51,14 @@ MG.scene({
     BALLOONS.forEach((b, i) => {
       if (beat(b, tt) < 7) return;
       const u = IB.settle(tt - b.rel, 0.25), held = [H[0] - 30, H[1] - 190];
-      balloon(ctx, lerp(held[0], K[0] + b.to[0], u), lerp(held[1], K[1] + b.to[1], u), b, K);
+      IB.balloon(ctx, [lerp(held[0], K[0] + b.to[0], u), lerp(held[1], K[1] + b.to[1], u)], { from: K, fill: b.fill, seed: b.seed });
     });
-    chair(ctx, y0);
+    IB.diningChair(ctx, [CX, FLOOR], { lift: y0, seat: FLOOR - SEAT, back: BACK });
     const eyes = tt >= 4 && tt < 80 / 12 - 1e-6 ? 'wide' : 'shut', tail = t >= 7 ? IB.alternate(IB.frame(t), 3) : 0;
-    const mouth = cat(ctx, y0, eyes, tail);
+    const mouth = IB.chairCat(ctx, [CX - 6, SEAT - y0], { eyes, tail });
     if (hand) {
-      if (carried >= 0) balloon(ctx, hand[0] - 30, hand[1] - 190, BALLOONS[carried], [hand[0] - 6, hand[1] + 2]);
-      arm(ctx, hand[0], hand[1]);
+      if (carried >= 0) IB.balloon(ctx, [hand[0] - 30, hand[1] - 190], { from: [hand[0] - 6, hand[1] + 2], fill: BALLOONS[carried].fill, seed: BALLOONS[carried].seed });
+      IB.reachArm(ctx, hand);
     }
     IB.bubble(ctx, ['야옹?'], t, 50 / 12, { tip: [mouth[0] - 104, mouth[1] - 4], x: mouth[0] - 262, y: mouth[1] - 80, until: 65 / 12, seed: 500 });
   },

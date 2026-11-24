@@ -194,6 +194,9 @@
   };
 
   /* ---------- chalk ---------- */
+  /* pipe(ctx, pts, opts) — the lavender tubing the reference builds stands and frames from (the party's hoop stand): IB.tube 13 px wide with a 2.75 px ink edge. Also the legs and gantry of the creative scenes' machines. */
+  IB.pipe = (ctx, pts, o = {}) => IB.tube(ctx, pts, { w: 13, edge: 2.75, fill: IB.C.lavender, ...o });
+
   /* smear(ctx, cx, y, w, opts) — the blue chalk floor mark under feet and under the end-card line: a crisp top edge at y, a dense core, dust falling away below and thinning toward both ends. w is the width of the dense core (dust feathers out ~15% further on each side); the end-card smear is w=1000, h=34, a foot smear w≈110, h≈10. */
   IB.smear = (ctx, cx, y, w, o = {}) => {
     const { h = Math.max(6, w * 0.034), color = IB.C.smear, seed = 5, alpha = 1 } = o;

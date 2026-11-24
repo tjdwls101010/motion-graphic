@@ -6,11 +6,13 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/parcel.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
 <script>
 /* 다리 달린 상자들이 줄지어 걸어와 하나씩 컨베이어에 뛰어오르면 다리를 접고 실려 가고, 검사대를 지날 때마다 도장이 내려와 초록 체크가 찍힌다. 늦은 꼬마 상자가 "잠깐만요!" 하며 뛰어와 마지막에 올라탄다. 원본에 없는 창작 장면으로, 원본 4편의 다리 달린 폴더·서류를 파이프라인 은유로 옮겼다. 전달하는 생각: 제각각 들어온 것들이 한 줄에 올라 같은 검사를 거친다.
    Motion notes: one locked shot, 8 s. Two frame rates side by side and that is the point: the characters walk, hop and fold their legs on twos, the machine (belt marks, rollers, parcels riding it) runs on ones at 230 px/s. A parcel is a rigid box: it never squashes, it tilts (walk +-0.035 rad every 6 frames, hop -0.22 rad) and its legs exist only while it needs them (gone 2 drawings after landing). Queue spacing 237 px = walk speed 190 px/s x 1.25 s between hops. Hop = 4 drawings over 0.33 s, peak 250 px above the floor one drawing before the landing. Stamp: one drawing of the pad as a stretched smear, one drawing in contact, back up in 2 drawings; the tick is there from the contact drawing and a four-line burst lasts 2 drawings. The latecomer runs at 336 px/s with a step every 4 frames and its bubble travels with it on twos. Colour: three in the shot. Lavender (tubing and one parcel), yellow (one parcel), and the tick, which is the only green; the other parcels are white. */
-const { lerp, kf, clamp, prog } = MG;
 const C = IB.C, FLOOR = 900, BELT = 690, BX0 = 880, V = 230, SCAN = 1500, LEG = 74;
 const BOXES = [
   { w: 190, h: 150, fill: C.paper, hop: 1.25, seed: 100 },
@@ -38,48 +40,14 @@ const scanAt = (b) => b.hop + HOP + (SCAN - LAND) / V;
 // which drawing of its stamp a parcel is on: 0 the pad on its way down, 1 contact (the tick is there from this drawing on), 2-3 the pad going back up
 const stampStep = (b, tt) => IB.drawn(tt, scanAt(b) - 1 / 12);
 
-function parcel(ctx, b, s, stamped) {
-  const { w, h } = b, c = Math.cos(s.tilt), sn = Math.sin(s.tilt), P = (x, y) => [s.x + x * c - y * sn, s.y + x * sn + y * c];
-  if (s.legs > 0) for (const i of [0, 1]) {
-    const hip = P((i ? 1 : -1) * w * 0.2, -3), len = LEG * s.legs;
-    const foot = s.riding || s.air ? [hip[0] + s.feet[i][0] * 0.15 + (s.air ? 10 : 0), hip[1] + len] : [s.x + s.feet[i][0], FLOOR - 12 + s.feet[i][1]];
-    IB.peg(ctx, hip, foot, { seed: b.seed + 20 + i * 9, knee: s.air ? 10 : 0, fill: '#d9d9d9' });
-  }
-  ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.tilt);
-  IB.box(ctx, -w / 2, -h, w, h, { fill: b.fill, w: 3.6, seed: b.seed });
-  IB.box(ctx, -15, -h, 30, h * 0.34, { w: 2, seed: b.seed + 1 });                                        // tape over the top seam
-  IB.box(ctx, -w * 0.4, -h * 0.42, w * 0.34, h * 0.26, { fill: C.bg, w: 2, seed: b.seed + 2 });           // label
-  for (let i = 0; i < 2; i++) IB.seg(ctx, -w * 0.36, -h * 0.34 + i * h * 0.09, -w * 0.12, -h * 0.34 + i * h * 0.09, { w: 1.8, seed: b.seed + 3 + i });
-  if (stamped) IB.ink(ctx, [[w * 0.1, -h * 0.34], [w * 0.2, -h * 0.2], [w * 0.4, -h * 0.52]], { w: Math.max(6, w * 0.045), color: C.green, smooth: false, seed: b.seed + 6, taper: false });
-  ctx.restore();
-}
-
-function conveyor(ctx, t) {
-  for (const x of [960, 1340, 1720]) { IB.smear(ctx, x, FLOOR - 4, 130, { h: 9, seed: 40 + x }); IB.tube(ctx, [[x - 34, FLOOR], [x, BELT + 60], [x + 34, FLOOR]], { w: 13, edge: 2.75, fill: C.lavender, seed: 300 + x }); }
-  IB.ink(ctx, [[2000, BELT + 46], [2000, BELT]].concat(IB.ellipse(BX0 + 23, BELT + 23, 23, 23, 8, -Math.PI / 2, -Math.PI * 1.5)), { closed: true, smooth: false, fill: '#d9d9d9', w: 3.6, seed: 310 });
-  for (let x = BX0 + 26; x < 1960; x += 150) {
-    IB.oval(ctx, x, BELT + 23, 17, 17, { fill: C.paper, w: 2.6, seed: 320 + x, n: 10, wob: 0.3 });
-    const a = (t * V) / 17; IB.seg(ctx, x - Math.cos(a) * 12, BELT + 23 - Math.sin(a) * 12, x + Math.cos(a) * 12, BELT + 23 + Math.sin(a) * 12, { w: 2, seed: 321, wob: 0 });
-  }
-  // marks on the belt, travelling with it on ones
-  for (let i = -1; i < 13; i++) { const x = BX0 + 40 + ((i * 90 + t * V) % 1080 + 1080) % 1080; IB.seg(ctx, x, BELT + 6, x + 26, BELT + 6, { w: 2, seed: 330 + ((i % 12) + 12) % 12, color: '#8a8a8a' }); }
-}
-function scanner(ctx, t) {
-  const tube = (pts, seed) => IB.tube(ctx, pts, { w: 13, edge: 2.75, fill: C.lavender, seed });
-  // which parcel is under the pad, and how far the pad is down (0 up, 1 touching)
+// which parcel is under the pad, and how far the pad is down (0 up, 1 touching)
+function stamp(tt) {
   let down = 0, top = BELT - 150, hit = -1;
-  BOXES.forEach((b, i) => {
-    const k = stampStep(b, IB.twos(t));
+  BOXES.forEach((b) => {
+    const k = stampStep(b, tt);
     if (k >= 0 && k < 4) { down = [0.6, 1, 0.55, 0.2][k]; top = BELT - b.h; hit = k; }
   });
-  const rest = 372, y = lerp(rest, top - 34, down);
-  IB.tube(ctx, [[SCAN, 300], [SCAN, y]], { w: 11, edge: 2.4, fill: C.paper, seed: 350 });
-  if (hit === 0) IB.ink(ctx, [[SCAN - 46, rest + 6], [SCAN + 46, rest + 6], [SCAN + 50, y + 34], [SCAN - 50, y + 34]], { closed: true, smooth: false, fill: C.charcoal, w: 3, seed: 352 });   // the pad on its way down: one stretched drawing
-  else IB.box(ctx, SCAN - 50, y, 100, 34, { fill: C.charcoal, w: 3.4, seed: 351 });
-  if (hit === 1 || hit === 2) for (let i = 0; i < 4; i++) { const a = [-2.6, -2.1, -1.05, -0.55][i], r0 = 84 + (hit - 1) * 20, r1 = r0 + 36; IB.seg(ctx, SCAN + Math.cos(a) * r0, top + Math.sin(a) * r0 * 0.6, SCAN + Math.cos(a) * r1, top + Math.sin(a) * r1 * 0.6, { w: 2.8, seed: 360 + i + hit * 5 }); }
-  tube([[SCAN - 170, BELT + 2], [SCAN - 170, 296], [SCAN + 170, 296], [SCAN + 170, BELT + 2]], 340);
-  IB.box(ctx, SCAN - 44, 272, 88, 50, { fill: C.lavender, w: 3.2, seed: 341 });
-  IB.oval(ctx, SCAN, 297, 11, 11, { fill: hit >= 1 ? C.green : C.paper, w: 2.4, seed: 342, n: 9 });
+  return { down, top, hit };
 }
 
 MG.scene({
@@ -89,11 +57,11 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t);
-    conveyor(ctx, t);
+    IB.conveyor(ctx, [BX0, BELT], { travel: t * V }, { floor: FLOOR });
     const states = BOXES.map((b) => at(b, t));
     BOXES.forEach((b, i) => { const s = states[i]; if (!s.riding && !s.air && s.x > -200) IB.smear(ctx, s.x + 6, FLOOR - 11, b.w * 0.9, { h: 12, seed: b.seed + 30 }); });
-    BOXES.forEach((b, i) => { const s = states[i]; if (s.x > -200 && s.x < 2150) parcel(ctx, b, s, stampStep(b, tt) >= 1); });
-    scanner(ctx, t);
+    BOXES.forEach((b, i) => { const s = states[i]; if (s.x > -200 && s.x < 2150) IB.parcel(ctx, [s.x, s.y], { ...s, stamped: stampStep(b, tt) >= 1 }, { w: b.w, h: b.h, fill: b.fill, seed: b.seed, leg: LEG, ground: FLOOR - 12 }); });
+    IB.stamper(ctx, [SCAN, BELT], stamp(tt));
     const late = BOXES[3], s = states[3];
     IB.bubble(ctx, ['잠깐만요!'], t, 4.917, { tip: [s.x + 56, s.y - late.h - 22], x: s.x + 190, y: s.y - late.h - 120, until: 6.75, seed: 500 });
   },

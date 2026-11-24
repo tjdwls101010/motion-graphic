@@ -63,4 +63,35 @@
     for (let i = 0; i < 4; i++) { const q = rail.at(lerp(from, to, i / 3)).p; IB.seg(ctx, q[0] + 26 + i * 6, q[1] - 34 - i * 12, q[0] + 64 + i * 10, q[1] + 36 - i * 8, { w: 3, seed: seed + i }); }
     ctx.restore();
   };
+
+  /* conveyor(ctx, at, state, opts) — a belt conveyor running off-screen right: `at` = [x of its rounded left end, y of the belt's top]. Lavender pipe legs at each x in `legs` standing on `floor` (each with its chalk smear), a grey belt 46 px deep, a roller every 150 px, short marks on the belt. state.travel is how far the belt has run in px: rollers turn and marks move with it. It is a machine: give it travel = raw t * speed, on ones, while what rides it acts on twos (metaphor/parcels-board-conveyor: 230 px/s). */
+  IB.conveyor = (ctx, [BX0, BELT], st = {}, o = {}) => {
+    const { travel = 0 } = st, { floor: FLOOR = BELT + 210, legs = [960, 1340, 1720], seed = 300 } = o;
+    ctx.save();
+    for (const x of legs) { IB.smear(ctx, x, FLOOR - 4, 130, { h: 9, seed: seed - 260 + x }); IB.pipe(ctx, [[x - 34, FLOOR], [x, BELT + 60], [x + 34, FLOOR]], { seed: seed + x }); }
+    IB.ink(ctx, [[2000, BELT + 46], [2000, BELT]].concat(IB.ellipse(BX0 + 23, BELT + 23, 23, 23, 8, -Math.PI / 2, -Math.PI * 1.5)), { closed: true, smooth: false, fill: '#d9d9d9', w: 3.6, seed: seed + 10 });
+    for (let x = BX0 + 26; x < 1960; x += 150) {
+      IB.oval(ctx, x, BELT + 23, 17, 17, { fill: C.paper, w: 2.6, seed: seed + 20 + x, n: 10, wob: 0.3 });
+      const a = travel / 17; IB.seg(ctx, x - Math.cos(a) * 12, BELT + 23 - Math.sin(a) * 12, x + Math.cos(a) * 12, BELT + 23 + Math.sin(a) * 12, { w: 2, seed: seed + 21, wob: 0 });
+    }
+    // marks on the belt, travelling with it on ones
+    for (let i = -1; i < 13; i++) { const x = BX0 + 40 + ((i * 90 + travel) % 1080 + 1080) % 1080; IB.seg(ctx, x, BELT + 6, x + 26, BELT + 6, { w: 2, seed: seed + 30 + ((i % 12) + 12) % 12, color: '#8a8a8a' }); }
+    ctx.restore();
+  };
+
+  /* stamper(ctx, at, state, opts) — a gantry over a belt with a stamping pad on a rod and a lamp: `at` = [the pad's x, the belt's top y]. state: down 0..1 (0 the pad at rest 318 px above the belt, 1 touching); top, the y of the top of the thing under it (the pad stops 34 px above... on it); hit, the drawing of a stamp: 0 the pad on its way down (one stretched drawing), 1 contact, 2-3 going back up, -1 none. A burst flies off the contact on drawings 1 and 2; the lamp is green from contact on. The pad's four drawings: down 0.6, 1, 0.55, 0.2 (metaphor/parcels-board-conveyor). */
+  const STAMPER_AT = [1500, 690];
+  IB.stamper = (ctx, at, st = {}, o = {}) => {
+    const { down = 0, hit = -1 } = st, { seed = 340 } = o, SCAN = STAMPER_AT[0], BELT = STAMPER_AT[1], dy = at[1] - BELT;
+    const top = (st.top == null ? at[1] - 150 : st.top) - dy, rest = 372, y = lerp(rest, top - 34, down);
+    ctx.save(); ctx.translate(at[0] - SCAN, dy);
+    IB.tube(ctx, [[SCAN, 300], [SCAN, y]], { w: 11, edge: 2.4, fill: C.paper, seed: seed + 10 });
+    if (hit === 0) IB.ink(ctx, [[SCAN - 46, rest + 6], [SCAN + 46, rest + 6], [SCAN + 50, y + 34], [SCAN - 50, y + 34]], { closed: true, smooth: false, fill: C.charcoal, w: 3, seed: seed + 12 });   // the pad on its way down: one stretched drawing
+    else IB.box(ctx, SCAN - 50, y, 100, 34, { fill: C.charcoal, w: 3.4, seed: seed + 11 });
+    if (hit === 1 || hit === 2) IB.burst(ctx, [SCAN, top], { angles: [-2.6, -2.1, -1.05, -0.55], r0: 84 + (hit - 1) * 20, r1: 84 + (hit - 1) * 20 + 36, sy: 0.6, seed: seed + 20 + hit * 5 });
+    IB.pipe(ctx, [[SCAN - 170, BELT + 2], [SCAN - 170, 296], [SCAN + 170, 296], [SCAN + 170, BELT + 2]], { seed });
+    IB.box(ctx, SCAN - 44, 272, 88, 50, { fill: C.lavender, w: 3.2, seed: seed + 1 });
+    IB.oval(ctx, SCAN, 297, 11, 11, { fill: hit >= 1 ? C.green : C.paper, w: 2.4, seed: seed + 2, n: 9 });
+    ctx.restore();
+  };
 })(window);

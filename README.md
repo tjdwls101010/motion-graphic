@@ -33,7 +33,7 @@ tools/
   STYLE.md       계열별 룩과 모션 규칙
   CATALOG.md     원본의 샷 전체 목록과 구현 여부
   families.json  계열 이름과 시트 순서 {"계열": "이름", …}
-  kit/           이 영상 스타일의 부품
+  kit/           이 영상 스타일의 부품: 선과 박자 도구, 캐릭터(cast/), 소품(props/), 배경 세트(sets/). 장면은 이것을 조립만 한다
   scenes/<계열>/<장면>.html
   thumbs/<계열>-<장면>.jpg   시트 카드의 정지 썸네일. build_index.py --thumbs가 다시 만든다
 references/<ref>/<ref>.mp4   원본 영상. 로컬에만 두고 저장소에 넣지 않는다(.gitignore)
@@ -55,7 +55,7 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/b
 ## 레퍼런스 추가
 
 1. 원본 영상을 `references/<ref>/<ref>.mp4`에 둔다.
-2. `<ref>/families.json`에 계열을 적고, 장면을 `<ref>/scenes/<계열>/<장면>.html`에 만든다. 엔진은 `../../../core/`에서, 이 영상 스타일의 부품은 `../../kit/`에서 불러온다.
+2. `<ref>/families.json`에 계열을 적고, 장면을 `<ref>/scenes/<계열>/<장면>.html`에 만든다. 엔진은 `../../../core/`에서, 이 영상 스타일의 부품은 `../../kit/`에서 불러온다. 여러 장면에 다시 쓸 그림(캐릭터, 소품, 배경)은 장면이 아니라 `kit/`에 부품으로 두고, 장면에는 포즈·박자·배치의 표와 조립만 남긴다(IBM이 그 예다: `IBM/README.md`의 부품 지도).
 3. `<ref>/README.md`, `STYLE.md`, `CATALOG.md`를 pstack과 같은 모양으로 쓴다.
 4. `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만든다.
 

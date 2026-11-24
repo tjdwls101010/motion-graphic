@@ -17,17 +17,59 @@ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i 
 
 ## 스타일 부품 (`kit/`)
 
-장면은 공용 엔진(`../core/`) 위에 이 부품을 `<script src>`로 불러 쓴다. 전부 2D canvas에 그리고, 입체도 3D 렌더러 없이 투영한 점을 같은 붓펜으로 그린다.
+장면에 보이는 것은 전부 여기 있는 부품이다: 캐릭터, 소품, 배경 세트, 효과 표시, 박자 도구. 장면 파일에는 데이터 표(포즈, 박자, 배치)와 조립 순서만 있고, 모양을 직접 그리는 코드는 없다. 새 장면도 그렇게 만든다: 부품을 고르고, 가장 가까운 장면의 표를 가져오고, 모자란 그림은 장면이 아니라 여기에 부품으로 더한다.
+
+전부 2D canvas에 그리고, 입체도 3D 렌더러 없이 투영한 점을 같은 붓펜으로 그린다. 장면은 공용 엔진(`../core/`) 다음에 `ink.js`, `time.js`를 부르고, 그 뒤로 쓰는 파일만 `<script src>`로 나열한다(순서: `marks.js`, `figure.js`, `solid.js`, 그다음 `cast/`·`props/`·`sets/`). 부품마다 머리 주석에 무엇인지, 기준점, 상태 필드, 쓰는 장면이 적혀 있다.
 
 ```
-ink.js   팔레트(IB.C), 화면 자르기(IB.crop), 붓펜 선과 채움(IB.ink, IB.box, IB.oval, IB.tube), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
-         12fps 양자화(IB.twos), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
-         밀려 들어와 멈추는 카피(IB.copy, IB.TYPE: 지금 장면에서는 쓰지 않는다)
-figure.js 옆모습 인물 리그(IB.figure, IB.stand, IB.walk, IB.poseMix, IB.footLift, 비례는 IB.FIG),
-         다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
-         화면 밖에서 온 손(IB.pointer), 말풍선(IB.bubble), 흔들림선(IB.shake)
-solid.js 입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
-desk.js  앉은 포즈(IB.sit), 사무실 의자·책상·정면 모니터(IB.chair, IB.desk, IB.monitor), 캔들 차트(IB.candles). market 계열이 쓴다
+ink.js     붓펜 선과 질감: 팔레트(IB.C), 선과 채움(IB.ink, IB.box, IB.oval, IB.seg, IB.tube, IB.pipe), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
+           화면 자르기(IB.crop, IB.clipRect), 점 목록 도구(IB.ellipse, IB.rect, IB.along, IB.mirror), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
+           밀려 들어와 멈추는 카피(IB.copy, IB.TYPE)
+time.js    시계와 그림 목록: 12fps·8fps 양자화(IB.twos, IB.threes), 프레임 번호(IB.frame), 정착 곡선(IB.settle), 12fps 격자(IB.T, IB.drawn),
+           그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop)
+marks.js   효과 표시: 터짐선(IB.burst), 쿵(IB.thud), 입김(IB.breath), 연기(IB.smoke), 물방울과 튐(IB.drop, IB.splash), 어둠과 빛줄기(IB.darkness, IB.lightBeam),
+           휩에 뜯기는 화면(IB.whipBreakup), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
+figure.js  옆모습 인물 리그(IB.figure, IB.stand, IB.walk, IB.poseMix, IB.footLift, 비례는 IB.FIG), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
+           화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
+solid.js   입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
+cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동작(MOVE: 그 동작의 첫 그림부터 센 [프레임, 포즈] 목록)을 내보낸다
+  people.js   IB.figure에 입히는 고정 출연진(IB.PEOPLE: chopper, lifter, walker, climber, neighbour, searcher, kid, passenger, trader, typist, lounger)과 군중(IB.PASSERSBY)
+  paper.js    폴더와 서류(IB.folder, IB.doc, 둘의 팔 IB.paperArm, IB.reachArms, IB.paperClasp), 숨는 서류(IB.hidingDoc, IB.docEyes)
+  parcel.js   다리 달린 소포(IB.parcel)
+  riders.js   탠덤의 다섯 사람(IB.rider, IB.RIDERS), 날아가는 모자(IB.flyingCap)
+  watcher.js  쌍안경 관찰자(IB.watcher), 암전 속 두 눈(IB.darkEyes)
+  cat.js      창가 고양이(IB.windowCat), 의자 위 고양이(IB.chairCat)
+  closeup.js  철망 너머 두 얼굴(IB.boldFace, IB.worriedFace), 철망(IB.maskMesh), 인서트의 줌과 기울기(IB.closeup)
+props/     소품
+  nature.js   화분(IB.pottedPlant, IB.PLANTS), 창턱 화분(IB.sillPlant), 구름 셋(IB.cloud, IB.bandCloud, IB.wispCloud), 나무 덩어리(IB.clump), 새(IB.bird), 풀과 돌(IB.tuft, IB.stones)
+  home.js     식탁 의자(IB.diningChair), 케이크 식탁과 초(IB.partyTable, IB.candle), 펜던트 등(IB.hangingLamp), 나무 상자(IB.woodCrate), 문(IB.door), 액자(IB.pictureFrame),
+              트로피 장식장(IB.trophyCabinet), 교차한 검(IB.crossedFoils), 호출 버튼(IB.callButton)
+  handheld.js 도끼와 그루터기·장작(IB.axe, IB.choppingBlock, IB.logHalf, IB.logTop, IB.woodChip), 손전등(IB.torch), 호스·노즐·물줄기(IB.gardenHose, IB.nozzle, IB.waterJet),
+              종이 상자(IB.cardboardBox), 전화기(IB.handset, IB.phone), 컵(IB.cup, IB.smallCup, IB.strawCup), 가방과 끈(IB.slingBag, IB.strap, IB.briefcase)
+  party.js    풍선(IB.balloon, IB.looseBalloon, IB.heartBalloon), 미러볼(IB.discoBall), 색종이(IB.confettiField, IB.confetti)
+  vehicles.js 헬리콥터(IB.heli, IB.heliFront, IB.rotor, IB.heliDrawing), 탠덤(IB.tandem, IB.bikeWheel, IB.crankset), 택시(IB.cab), 종이비행기(IB.paperPlane),
+              롤러코스터(IB.rail, IB.coasterTrack, IB.coasterCart), 컨베이어와 스탬프 기계(IB.conveyor, IB.stamper)
+  office.js   앉은 포즈(IB.sit), 의자·책상·모니터·자리(IB.chair, IB.desk, IB.monitor, IB.workstation, IB.keyboard), 캔들 차트와 선 차트(IB.candles, IB.lineChart, IB.priceGrid, IB.chartAxes,
+              IB.dashLine, IB.candleSmear, IB.priceTag), 커서와 팝업(IB.cursor, IB.popupTag), 화살표(IB.arrow), 벽시계(IB.wallClock), 전화 받침(IB.phoneCradle), 날리는 종이(IB.flyingSheet)
+  metaphor.js 막대(IB.bar), 깃발(IB.flag), 도미노(IB.domino, IB.dominoRest), 낭떠러지와 널빤지(IB.ledge, IB.plank)
+sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이터다. `layer`로 나눠 그려서 배우가 그 사이에 선다
+  city.js     도시와 경기장(IB.stadiumCity, IB.stadium, IB.tower, IB.roofBlock)
+  street.js   금융가 거리(IB.financeStreet, IB.windowGrid)
+  corridor.js 원근 복도(IB.corridor)
+  facade.js   건물 정면의 두 창과 방(IB.apartmentFacade, IB.windowFrame, IB.sashAndSill)
+  party.js    파티 구석(IB.partyCorner)
+  trading.js  시세판(IB.tickerBoard)
+```
+
+부품을 쓰는 규칙은 다음과 같다.
+
+- **호출 모양은 `IB.<이름>(ctx, 기준점, 상태, 옵션)`이다.** 기준점은 서 있는 것이면 바닥에 닿는 가운데, 떠 있는 것이면 중심이고, 정확히 어디인지는 머리 주석에 있다. `seed`의 기본값은 원래 장면이 쓰던 값이라, 같은 부품을 한 화면에 둘 놓을 때는 `seed`를 달리 준다.
+- **원본에서 좌표째 옮긴 그림은 원본의 무대 좌표로 그린다.** 폴더와 서류, 관찰자와 창가 고양이, 철망 얼굴, 도시·거리·건물 정면이 그렇다. 다른 자리에 놓으려면 `shift` 옵션을 주거나 컨텍스트를 옮긴다(`ctx.translate`).
+- **연기는 `[프레임, 포즈]` 표로 적고 `IB.held`로 읽는다.** 캐릭터의 `MOVE`는 그 표의 조각이다: `[[0, POSE.front], ...IB.play(IB.folder.MOVE.kick, 18)]`처럼 시작 프레임에 끼워 넣는다. 다음 키까지가 그대로 정지 구간이다.
+- **장면에 남는 것은 표와 조립뿐이다.** 아래 명령의 출력이 0줄이어야 한다. `IB.smear`, `IB.shade`, `IB.shake`, `IB.flyer`, `IB.figure`, `IB.bubble`처럼 이름 붙은 부품을 장면이 놓는 것은 조립이다.
+
+```bash
+grep -rnE "IB\.(ink|box|oval|seg|tube|ellipse|limb|peg|hose|boot|mitt|clasp|crease)\(|ctx\.(fill|stroke|fillRect|strokeRect|arc|ellipse|quadraticCurveTo|bezierCurveTo|fillText)\(" IBM/scenes
 ```
 
 ## 창작 장면

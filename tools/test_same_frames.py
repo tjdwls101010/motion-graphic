@@ -82,6 +82,9 @@ fails_because('a difference in the first frame only fails', run(current={'extra'
 fails_because('a difference in the last frame only (not at the end instant) fails', run(current={'extra': "if (t > 11 / 24 && t < 0.5) { ctx.fillStyle = '#fdfdfd'; ctx.fillRect(10, 10, 4, 4); }"}), 'moments differ')
 # the refactor moves frame counters such as IB.frame = floor(t * 24 + 1e-6): a slip that moves a boundary by a hair (a lost epsilon, >= turned into >) changes nothing mid-frame and shifts a drawing at the frame's first instant, where an mp4 samples it
 fails_because('a difference only at the start of a frame fails', run(base={'extra': "if (t < 0.4 && Math.floor(t * 24 + 1e-6) % 2) { ctx.fillStyle = '#fdfdfd'; ctx.fillRect(10, 10, 4, 4); }"}, current={'extra': "if (t < 0.4 && Math.floor(t * 24 - 1e-6) % 2) { ctx.fillStyle = '#fdfdfd'; ctx.fillRect(10, 10, 4, 4); }"}), 'moments differ')
+# Chrome very rarely rasterises one pixel of a frame differently (measured: one pixel in about 10,000 renders); a real change reproduces on every render, so a difference that is gone when both sides are drawn again is noise. Simulated here by a speck drawn only the first time a page renders each moment.
+code, out, _ = run(current={'extra': "window.__seen = window.__seen || {}; if (!window.__seen[t] && t > 0.2 && t < 0.3) { window.__seen[t] = 1; ctx.fillStyle = '#fdfdfd'; ctx.fillRect(10, 10, 1, 1); }"})
+check('a difference that does not repeat when drawn again passes as noise', (code, SAME in out), (0, True))
 fails_because('a scene that raises a JavaScript error in the current tree fails', run(current={'extra': 'if (t > 0.3) undefinedName();'}), 'undefinedName')
 fails_because('a scene that raises a JavaScript error in the base tree fails', run(base={'extra': 'if (t > 0.3) undefinedName();'}), 'undefinedName')
 fails_because('a changed duration fails', run(current={'extra': '', 'dur': '0.75'}), 'changed')

@@ -10,7 +10,7 @@ Make the base tree from the commit the change started from, outside the reposito
   same_frames.py --base out/base                                     every scene of both trees (pstack felt scenes fail, see below)
   same_frames.py --base out/base --diff out/diff IBM/scenes/...     also write the first differing frame of each failing scene, base | current | difference (enlarged marks)
 
-Measured 2026-11-23 on the 23 IBM scenes (3976 frames), two separate headless Chrome instances, one seeking forward and one backward: no pixel differed in any frame, so the comparison is exact rather than thresholded (check_pure.py keeps its own tolerance). That holds for canvas scenes. Three pstack felt scenes (SVG with filtered textures) did not hold: against a byte-identical base tree they differed by scattered texture specks on the frames where the sign or board moves, so run the tool on canvas scenes, or read a felt failure's --diff image before believing it. Rendering takes about 0.07 s per capture, so the 23 IBM scenes take about 18 minutes.
+Measured 2026-11-23 on the 23 IBM scenes (3976 frames), two separate headless Chrome instances, one seeking forward and one backward: no pixel differed in any frame, so the comparison is exact rather than thresholded (check_pure.py keeps its own tolerance). Sampling every frame's first instant as well later turned up one pixel that differed once in about 16,000 renders, at a different frame on each run: Chrome very rarely rasterises a pixel differently. So a moment that differs is drawn again on both sides (twice, after a seek elsewhere) and counts only if it still differs: a real change differs on every render. Noise that went away is printed under the scene. That holds for canvas scenes. Three pstack felt scenes (SVG with filtered textures) did not hold: against a byte-identical base tree they differed by scattered texture specks on the frames where the sign or board moves, so run the tool on canvas scenes, or read a felt failure's --diff image before believing it. Rendering takes about 0.07 s per capture, so the 23 IBM scenes take about 18 minutes.
 
 Exit 0 when every scene matches, 1 otherwise. Requires: pip install playwright pillow, Google Chrome.
 """
@@ -28,6 +28,7 @@ import library  # noqa: E402
 # 성진: comparison is exact because canvas scenes rasterise reproducibly; SVG scenes with filters (pstack felt) do not and fail against an identical tree. Add a tolerance only when a behaviour-preserving change to such scenes needs this evidence.
 
 META = '({duration: __mg.duration, fps: __mg.fps, ref: __mg.ref})'
+RETRIES = 2
 
 
 def open_page(browser, path, errors, pages):
@@ -71,14 +72,23 @@ def compare(browser, cur, base, diff_dir):
         times = moments(mb['duration'], mb['fps'])
         if len(times) < 2:
             return errors + ['the scene has no frames to compare']
-        bad = []
+        bad, noise = [], []
         for label, t in times:
             x, y = capture.shot(a, t), capture.shot(b, t)
             box = ImageChops.difference(x, y).getbbox()
             if box:
-                if not bad and diff_dir:
-                    save_diff(diff_dir, cur, label, x, y)
-                bad.append(f'{label} {box}')
+                for _ in range(RETRIES):   # a real change differs on every render; noise does not repeat
+                    capture.shot(a, 0), capture.shot(b, 0)
+                    x2, y2 = capture.shot(a, t), capture.shot(b, t)
+                    if not ImageChops.difference(x2, y2).getbbox():
+                        noise.append(f'{label} {box}')
+                        break
+                else:
+                    if not bad and diff_dir:
+                        save_diff(diff_dir, cur, label, x, y)
+                    bad.append(f'{label} {box}')
+        if noise:
+            print(f'       noise, gone when drawn again: {", ".join(noise)}', flush=True)
         if bad:
             errors.append(f'{len(bad)}/{len(times)} moments differ (frame, bounding box): ' + ', '.join(bad[:8]) + (' …' if len(bad) > 8 else ''))
     except Exception as e:  # a scene that never becomes ready is a failure, not a crash of the check

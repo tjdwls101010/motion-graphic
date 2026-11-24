@@ -28,6 +28,9 @@
     return s;
   };
 
+  /* clipRect(ctx, [x, y, w, h]) — clip everything drawn until the matching ctx.restore() to a rectangle: a monitor's screen, the part of the stage above the floor line. Call ctx.save() first. */
+  IB.clipRect = (ctx, [x, y, w, h]) => { ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); };
+
   /* ---------- dust ---------- */
   /* Every grain of dust (edge dust, graphite shading, chalk) goes through here, for two reasons found the hard way with tools/check_pure.py.
      1. Chrome draws canvas paths with 4x MSAA, so an edge pixel has only five possible values and one sample flipping is a 62-level jump; which draws get MSAA depends on how the frame's operations are batched, and a frame with tens of thousands of operations is split into batches at points that vary from one capture to the next. Specks drawn one fillRect at a time (10,000 for one end-card smear) made a dense frame differ from itself by up to 63 pixels over the check's 40-level threshold (it allows 30).

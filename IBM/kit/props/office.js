@@ -43,7 +43,6 @@
     IB.box(ctx, r[0], r[1], r[2], r[3], { fill: C.paper, w: lw * 0.7, seed: seed + 3 });
     return r;
   };
-  IB.clipRect = (ctx, [x, y, w, h]) => { ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); };
 
   /* candles(ctx, rect, data, n, opts) — a candlestick chart in `rect`. data is [[open, close, high, low], ...] in price units, scaled so opts.min..opts.max fills the rect's height. n is how many candles are there: a whole number draws that many, and a half more draws the next one's wick only, so stepping n by 0.5 per drawing puts each candle on in two drawings, wick then body. A rising candle is opts.up (blue) and a falling one opts.down (red), the market scenes' convention; a candle that closes where it opened counts as rising, and a body thinner than 1.5 line widths is drawn that thick, centred on its price. Returns { x(i), y(price) } for whatever the scene draws over it. */
   IB.candles = (ctx, [rx, ry, rw, rh], data, n, o = {}) => {

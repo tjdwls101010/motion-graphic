@@ -52,4 +52,88 @@
     ctx.restore();
     if (state === 3) IB.burst(ctx, [x, WICK - 26], { angles: [0, 1, 2, 3].map((i) => -Math.PI / 2 + (i - 1.5) * 0.7), r0: 62, r1: 86, w: 2.6, seed: seed + 20 + x });
   };
+
+  /* hangingLamp(ctx, at, opts) — a pendant lamp on a cord from above the frame: a yellow trapezoid shade 160 px wide with a paper bulb under it. `at` is the middle of the shade's lower edge (metaphor/flashlight-finds-file). */
+  const LAMP_AT = [1120, 300];
+  IB.hangingLamp = (ctx, at, o = {}) => {
+    const { fill = C.yellow, seed = 300 } = o;
+    ctx.save(); ctx.translate(at[0] - LAMP_AT[0], at[1] - LAMP_AT[1]);
+    IB.seg(ctx, 1120, -10, 1120, 210, { w: 3, seed });
+    IB.ink(ctx, [[1040, 300], [1076, 214], [1164, 214], [1200, 300]], { closed: true, smooth: false, fill, w: 3.4, seed: seed + 1 });
+    IB.ink(ctx, IB.ellipse(1120, 302, 30, 18, 6, 0, Math.PI), { w: 3, seed: seed + 2, fill: C.paper, closed: true });
+    ctx.restore();
+  };
+
+  /* woodCrate(ctx, at, opts) — a wooden crate w x h: two slat lines, a diagonal brace, graphite at its foot, its chalk smear. `at` is the floor under its centre. Something can hide behind it (metaphor/flashlight-finds-file). */
+  IB.woodCrate = (ctx, [cx, FLOOR], o = {}) => {
+    const { w = 190, h = 170, seed = 340 } = o, x = cx - w / 2, y = FLOOR - h;
+    ctx.save();
+    IB.smear(ctx, cx, FLOOR - 4, w * 1.25, { h: 11, seed: seed - 308 });
+    IB.box(ctx, x, y, w, h, { fill: C.bg, w: 3.8, seed });
+    for (const yy of [0.34, 0.67]) IB.seg(ctx, x, y + h * yy, x + w, y + h * yy, { w: 2.4, seed: seed + 1 + yy * 10 });
+    IB.seg(ctx, x + 8, y + 8, x + w - 8, y + h - 8, { w: 2.2, seed: seed + 5 });
+    IB.shade(ctx, x + 3, FLOOR - 36, w - 6, 34, { from: 'bottom', seed: seed - 307, alpha: 0.45 });
+    ctx.restore();
+  };
+
+  /* trophyCabinet(ctx, at, opts) — a wall cabinet 260 x 340 with three shelves of trophies, plaques and boxes, graphite under it. `at` is its top left corner. Dense line drawing with no colour: wall dressing that says "a place with a history" (acting/walk-cycle-bag). */
+  IB.trophyCabinet = (ctx, [x, y], o = {}) => {
+    const { seed = 300 } = o;
+    ctx.save();
+    IB.shade(ctx, x - 6, y + 348, 272, 16, { from: 'top', seed: seed - 296, alpha: 0.6 });
+    IB.box(ctx, x, y, 260, 340, { w: 3.4, seed, fill: C.bg });
+    IB.box(ctx, x + 12, y + 12, 236, 316, { w: 2, seed: seed + 1 });
+    for (const sy of [110, 220]) { IB.seg(ctx, x + 12, y + sy, x + 248, y + sy, { w: 2.6, seed: seed + 2 + sy }); IB.seg(ctx, x + 12, y + sy + 9, x + 248, y + sy + 9, { w: 1.6, seed: seed + 3 + sy }); }
+    const cup = (cx, by, s, sd) => {   // a trophy: bowl, stem, plinth
+      IB.ink(ctx, [[cx - 20 * s, by - 62 * s], [cx + 20 * s, by - 62 * s], [cx + 14 * s, by - 34 * s], [cx, by - 26 * s], [cx - 14 * s, by - 34 * s]], { closed: true, w: 2, seed: sd, fill: C.bg });
+      IB.ink(ctx, IB.ellipse(cx - 22 * s, by - 50 * s, 9 * s, 10 * s, 5, 1.2, 4.9), { w: 1.8, seed: sd + 1 });
+      IB.ink(ctx, IB.ellipse(cx + 22 * s, by - 50 * s, 9 * s, 10 * s, 5, -1.8, 1.9), { w: 1.8, seed: sd + 2 });
+      IB.seg(ctx, cx, by - 26 * s, cx, by - 12 * s, { w: 2, seed: sd + 3 });
+      IB.box(ctx, cx - 16 * s, by - 12 * s, 32 * s, 12 * s, { w: 2, seed: sd + 4 });
+    };
+    const plaque = (px, py, w, h, sd) => { IB.box(ctx, px, py, w, h, { w: 2, seed: sd }); IB.ink(ctx, [[px + w * 0.3, py + h * 0.3], [px + w * 0.7, py + h * 0.3], [px + w * 0.7, py + h * 0.6], [px + w * 0.5, py + h * 0.78], [px + w * 0.3, py + h * 0.6]], { closed: true, w: 1.6, seed: sd + 1 }); };
+    cup(x + 62, y + 108, 0.8, seed + 10); plaque(x + 112, y + 44, 56, 62, seed + 20); IB.box(ctx, x + 190, y + 70, 34, 38, { w: 2, seed: seed + 26 });
+    cup(x + 66, y + 218, 1.1, seed + 30); IB.ink(ctx, [[x + 116, y + 218], [x + 119, y + 160], [x + 126, y + 160], [x + 129, y + 218]], { closed: true, w: 2, seed: seed + 36 }); cup(x + 168, y + 218, 0.9, seed + 40); plaque(x + 204, y + 168, 36, 48, seed + 46);
+    plaque(x + 160, y + 248, 64, 74, seed + 50); cup(x + 60, y + 326, 0.75, seed + 56); IB.seg(ctx, x + 96, y + 322, x + 124, y + 248, { w: 2, seed: seed + 60 }); IB.box(ctx, x + 104, y + 300, 30, 26, { w: 2, seed: seed + 62 });
+    ctx.restore();
+  };
+
+  /* crossedFoils(ctx, at, opts) — two fencing foils crossed on a wall, hilts down, centred on `at` (acting/walk-cycle-bag). */
+  IB.crossedFoils = (ctx, [x, y], o = {}) => {
+    const { seed = 400 } = o;
+    ctx.save();
+    for (const s of [-1, 1]) {
+      IB.seg(ctx, x - s * 118, y - 190, x + s * 96, y + 150, { w: 2.4, seed: seed + s });
+      ctx.save(); ctx.translate(x + s * 96, y + 150); ctx.rotate(s * -0.58);
+      IB.ink(ctx, IB.ellipse(0, 0, 30, 26, 8, Math.PI, Math.PI * 2).concat([[26, 10], [-26, 10]]), { closed: true, w: 2.6, seed: seed + 4 + s, fill: C.bg });
+      IB.box(ctx, -7, 10, 14, 44, { w: 2.2, seed: seed + 8 + s, fill: C.bg });
+      ctx.restore();
+    }
+    ctx.restore();
+  };
+
+  /* door(ctx, at, opts) — a yellow panelled door 230 x 550 in its frame, with a knob and a small sign beside it, its chalk smear on the floor. `at` = [the door's left edge, the floor]. The one colour on a wall of line drawings: where the walk is going (acting/walk-cycle-bag). */
+  IB.door = (ctx, [x, FLOOR], o = {}) => {
+    const { fill = C.yellow, seed = 500 } = o;
+    ctx.save();
+    IB.smear(ctx, x + 115, FLOOR + 1, 300, { h: 9, seed: seed - 479 });
+    IB.box(ctx, x - 16, FLOOR - 566, 262, 566, { w: 3.2, seed, fill: C.bg });
+    IB.box(ctx, x, FLOOR - 550, 230, 550, { w: 3.4, seed: seed + 1, fill });
+    IB.box(ctx, x + 30, FLOOR - 510, 170, 190, { w: 2.2, seed: seed + 2 });
+    IB.box(ctx, x + 30, FLOOR - 280, 170, 230, { w: 2.2, seed: seed + 3 });
+    IB.oval(ctx, x + 196, FLOOR - 300, 11, 11, { w: 2.6, seed: seed + 4, fill: C.paper, n: 9 });
+    IB.box(ctx, x + 276, FLOOR - 420, 54, 30, { w: 2.2, seed: seed + 6, fill: C.paper });
+    ctx.restore();
+  };
+
+  /* pictureFrame(ctx, at, opts) — a framed picture w x h on a wall: a mustard frame, a mountain zigzag inside, graphite under it. `at` is its top left corner (acting/walk-cycle-bag). */
+  IB.pictureFrame = (ctx, [x, y], o = {}) => {
+    const { w = 210, h = 160, fill = C.mustard, seed = 700 } = o;
+    ctx.save();
+    IB.shade(ctx, x, y + h + 4, w, 10, { from: 'top', seed, alpha: 0.5 });
+    IB.box(ctx, x, y, w, h, { w: 3, seed, fill });
+    IB.box(ctx, x + 14, y + 14, w - 28, h - 28, { w: 2, seed: seed + 1, fill: C.bg });
+    IB.ink(ctx, [[x + 24, y + h - 24], [x + w * 0.4, y + h * 0.42], [x + w * 0.55, y + h * 0.62], [x + w * 0.7, y + h * 0.5], [x + w - 24, y + h - 24]], { w: 2, smooth: false, seed: seed + 2 });
+    ctx.restore();
+  };
 })(window);

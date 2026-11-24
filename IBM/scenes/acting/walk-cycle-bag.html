@@ -7,10 +7,13 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/props/handheld.js"></script>
 <script>
 /* 헤드폰을 쓰고 긴 가방을 멘 사람이 컵을 들고 복도를 걸어가다 노란 문 앞에서 멈춰 한 모금 마신다. 원본에 없는 창작 장면으로, 원본의 걷기(2프레임에 한 장)와 탠덤 스팟의 흐르는 배경을 한 인물의 걷기 사이클로 옮겼다. 전달하는 생각: 인물은 제자리에서 걷고 세상이 뒤로 흐른다.
    Motion notes: travelling shot, figure fixed at x=900, 520 px tall, line 3.7 px (IB.figLine). Walk cycle = 12 drawn poses on twos, 1.0 s per two steps; each step carries the body 0.42 h, so the props scroll at 0.84 h/s = 437 px/s on ones (the drawing steps, the world glides: STYLE "카메라, 스크롤만 1프레임 단위"). Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peels up to 0.6 rad over the last 25%; swing foot lifts 0.085 h on a half sine. Hip is lowest at each contact and rises 0.028 h at mid-stance. The arms do not swing because both hands are busy (cup, strap): only the bag bounces, one pose behind the hip. Stop at 5.0 s on a contact pose: three in-betweens on twos to the standing pose (poseMix 0.45, 0.8, 1) while the scroll runs out over 0.33 s (outQuad, 72 px), then the bag's shake marks flicker for 4 drawings and everything holds dead still for 0.6 s. Sip: cup to the mouth in 2 drawings at 6.0 s, held 1 s, back down in 2 drawings; nothing else moves. Floor = one chalk smear that stays under the feet; the wall is only what hangs on it. Three colours: the bag (#b79df0, the purple of the production still, not a film-palette colour), mustard frames, the yellow door. */
-const { prog, lerp, clamp, kf } = MG;
+const { prog, lerp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 900;
 const WHO = { h: 520, dir: 1, skin: C.skin[4], top: C.bg, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'cap', hat: '#bdbdbd', brim: 'back', tail: true, phones: true, face: { eye: 'shades', mouth: 'flat' }, seed: 40 };
 const CYCLE = 1.0, STEP = 0.21 * WHO.h, SPEED = (4 * STEP) / CYCLE, STOP = 5.0, RUNOUT = 0.33;
@@ -37,66 +40,6 @@ function poseAt(t) {
   return carry(IB.stand(X0, FLOOR, WHO), sip);
 }
 
-/* ---------- what hangs on the wall (world x, drawn at x - travel) ---------- */
-function cabinet(ctx, x, y) {
-  IB.shade(ctx, x - 6, y + 348, 272, 16, { from: 'top', seed: 4, alpha: 0.6 });
-  IB.box(ctx, x, y, 260, 340, { w: 3.4, seed: 300, fill: C.bg });
-  IB.box(ctx, x + 12, y + 12, 236, 316, { w: 2, seed: 301 });
-  for (const sy of [110, 220]) { IB.seg(ctx, x + 12, y + sy, x + 248, y + sy, { w: 2.6, seed: 302 + sy }); IB.seg(ctx, x + 12, y + sy + 9, x + 248, y + sy + 9, { w: 1.6, seed: 303 + sy }); }
-  const cup = (cx, by, s, seed) => {   // a trophy: bowl, stem, plinth
-    IB.ink(ctx, [[cx - 20 * s, by - 62 * s], [cx + 20 * s, by - 62 * s], [cx + 14 * s, by - 34 * s], [cx, by - 26 * s], [cx - 14 * s, by - 34 * s]], { closed: true, w: 2, seed, fill: C.bg });
-    IB.ink(ctx, IB.ellipse(cx - 22 * s, by - 50 * s, 9 * s, 10 * s, 5, 1.2, 4.9), { w: 1.8, seed: seed + 1 });
-    IB.ink(ctx, IB.ellipse(cx + 22 * s, by - 50 * s, 9 * s, 10 * s, 5, -1.8, 1.9), { w: 1.8, seed: seed + 2 });
-    IB.seg(ctx, cx, by - 26 * s, cx, by - 12 * s, { w: 2, seed: seed + 3 });
-    IB.box(ctx, cx - 16 * s, by - 12 * s, 32 * s, 12 * s, { w: 2, seed: seed + 4 });
-  };
-  const plaque = (px, py, w, h, seed) => { IB.box(ctx, px, py, w, h, { w: 2, seed }); IB.ink(ctx, [[px + w * 0.3, py + h * 0.3], [px + w * 0.7, py + h * 0.3], [px + w * 0.7, py + h * 0.6], [px + w * 0.5, py + h * 0.78], [px + w * 0.3, py + h * 0.6]], { closed: true, w: 1.6, seed: seed + 1 }); };
-  cup(x + 62, y + 108, 0.8, 310); plaque(x + 112, y + 44, 56, 62, 320); IB.box(ctx, x + 190, y + 70, 34, 38, { w: 2, seed: 326 });
-  cup(x + 66, y + 218, 1.1, 330); IB.ink(ctx, [[x + 116, y + 218], [x + 119, y + 160], [x + 126, y + 160], [x + 129, y + 218]], { closed: true, w: 2, seed: 336 }); cup(x + 168, y + 218, 0.9, 340); plaque(x + 204, y + 168, 36, 48, 346);
-  plaque(x + 160, y + 248, 64, 74, 350); cup(x + 60, y + 326, 0.75, 356); IB.seg(ctx, x + 96, y + 322, x + 124, y + 248, { w: 2, seed: 360 }); IB.box(ctx, x + 104, y + 300, 30, 26, { w: 2, seed: 362 });
-}
-function foils(ctx, x, y) {
-  for (const s of [-1, 1]) {
-    IB.seg(ctx, x - s * 118, y - 190, x + s * 96, y + 150, { w: 2.4, seed: 400 + s });
-    ctx.save(); ctx.translate(x + s * 96, y + 150); ctx.rotate(s * -0.58);
-    IB.ink(ctx, IB.ellipse(0, 0, 30, 26, 8, Math.PI, Math.PI * 2).concat([[26, 10], [-26, 10]]), { closed: true, w: 2.6, seed: 404 + s, fill: C.bg });
-    IB.box(ctx, -7, 10, 14, 44, { w: 2.2, seed: 408 + s, fill: C.bg });
-    ctx.restore();
-  }
-}
-function door(ctx, x) {
-  IB.smear(ctx, x + 115, FLOOR + 1, 300, { h: 9, seed: 21 });
-  IB.box(ctx, x - 16, FLOOR - 566, 262, 566, { w: 3.2, seed: 500, fill: C.bg });
-  IB.box(ctx, x, FLOOR - 550, 230, 550, { w: 3.4, seed: 501, fill: C.yellow });
-  IB.box(ctx, x + 30, FLOOR - 510, 170, 190, { w: 2.2, seed: 502 });
-  IB.box(ctx, x + 30, FLOOR - 280, 170, 230, { w: 2.2, seed: 503 });
-  IB.oval(ctx, x + 196, FLOOR - 300, 11, 11, { w: 2.6, seed: 504, fill: C.paper, n: 9 });
-  IB.box(ctx, x + 276, FLOOR - 420, 54, 30, { w: 2.2, seed: 506, fill: C.paper });
-}
-function plant(ctx, x) {
-  IB.smear(ctx, x, FLOOR - 2, 130, { h: 8, seed: 22 });
-  const leaf = (a, len, seed) => { ctx.save(); ctx.translate(x, FLOOR - 120); ctx.rotate(a); IB.ink(ctx, [[0, 0], [14, -len * 0.45], [0, -len], [-14, -len * 0.45]], { closed: true, w: 2.4, seed, fill: C.bg }); IB.seg(ctx, 0, -6, 0, -len * 0.8, { w: 1.4, seed: seed + 1 }); ctx.restore(); };
-  [[-1.0, 120], [-0.5, 170], [0.05, 200], [0.55, 160], [1.05, 115], [-0.25, 110], [0.3, 105]].forEach(([a, l], i) => leaf(a, l, 520 + i * 2));
-  IB.ink(ctx, [[x - 46, FLOOR - 122], [x + 46, FLOOR - 122], [x + 34, FLOOR], [x - 34, FLOOR]], { closed: true, smooth: false, w: 3, seed: 540, fill: C.bg });
-  IB.box(ctx, x - 52, FLOOR - 134, 104, 18, { w: 2.6, seed: 541, fill: C.bg });
-}
-function frame(ctx, x, y, w, h, seed) {
-  IB.shade(ctx, x, y + h + 4, w, 10, { from: 'top', seed, alpha: 0.5 });
-  IB.box(ctx, x, y, w, h, { w: 3, seed, fill: C.mustard });
-  IB.box(ctx, x + 14, y + 14, w - 28, h - 28, { w: 2, seed: seed + 1, fill: C.bg });
-  IB.ink(ctx, [[x + 24, y + h - 24], [x + w * 0.4, y + h * 0.42], [x + w * 0.55, y + h * 0.62], [x + w * 0.7, y + h * 0.5], [x + w - 24, y + h - 24]], { w: 2, smooth: false, seed: seed + 2 });
-}
-
-function bag(ctx, j, lagY) {
-  // a long lavender bag slung across the back: low end ahead of the hip, high end behind the shoulder; the strap crosses the chest
-  const h = WHO.h, cx = j.hip[0] - 0.05 * h, cy = lerp(j.hip[1], j.sh[1], 0.42) + lagY;
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(0.36);
-  IB.ink(ctx, [[-238, -22], [-226, -36], [-200, -40], [0, -42], [190, -40], [224, -30], [238, -6], [236, 16], [222, 32], [190, 38], [0, 40], [-205, 40], [-230, 34], [-240, 14]], { closed: true, fill: '#b79df0', w: 3.6, seed: 600 });
-  IB.seg(ctx, 96, -40, 104, 36, { w: 2.4, seed: 601 }); IB.seg(ctx, 112, -40, 120, 36, { w: 2.4, seed: 602 });
-  ctx.restore();
-  return [cx, cy];
-}
-
 MG.scene({
   title: 'acting / walk-cycle-bag',
   duration: 8, ref: null, fps: 24,
@@ -107,30 +50,25 @@ MG.scene({
     // the wall, scrolling on ones. World x = where it sits when the walk has ended, plus the whole distance walked
     ctx.save();
     ctx.translate(END - X, 0);
-    foils(ctx, -1500, 330);
-    frame(ctx, -1060, 250, 210, 160, 700);
-    cabinet(ctx, -560, 240);
-    plant(ctx, 120);
-    frame(ctx, 330, 300, 150, 190, 710);
-    door(ctx, 1270);
+    IB.crossedFoils(ctx, [-1500, 330]);
+    IB.pictureFrame(ctx, [-1060, 250], { w: 210, h: 160, seed: 700 });
+    IB.trophyCabinet(ctx, [-560, 240]);
+    IB.pottedPlant(ctx, [120, FLOOR], IB.PLANTS.bushy);
+    IB.pictureFrame(ctx, [330, 300], { w: 150, h: 190, seed: 710 });
+    IB.door(ctx, [1270, FLOOR]);
     ctx.restore();
 
     const pose = poseAt(t), prev = poseAt(tt - 1 / 12);
     IB.smear(ctx, X0, FLOOR - 9, 300, { h: 14, seed: 9 });
     const probe = { hip: pose.hip, sh: [pose.hip[0] + Math.sin(pose.lean || 0) * F.torso * h, pose.hip[1] - Math.cos(pose.lean || 0) * F.torso * h] };
-    const [bx, by] = bag(ctx, probe, (prev.hip[1] - pose.hip[1]) * 1.6);
+    // a long lavender bag slung across the back: low end ahead of the hip, high end behind the shoulder; it lags the body by 1.6 times the hip's last move
+    const bx = probe.hip[0] - 0.05 * h, by = lerp(probe.hip[1], probe.sh[1], 0.42) + (prev.hip[1] - pose.hip[1]) * 1.6;
+    IB.slingBag(ctx, [bx, by]);
     const j = IB.figure(ctx, pose, WHO);
     // strap over the near shoulder, down across the chest to the bag's low end, under the hand that holds it
-    IB.ink(ctx, [[j.sh[0] - 0.035 * h, j.sh[1] - 0.012 * h], [j.sh[0] + 0.035 * h, j.sh[1] + 0.035 * h], [j.hands[1][0] + 0.012 * h, j.hands[1][1]], [bx + 0.21 * h, by + 0.02 * h]], { w: 4.4, seed: 610, taper: false, smooth: false });
+    IB.strap(ctx, [[j.sh[0] - 0.035 * h, j.sh[1] - 0.012 * h], [j.sh[0] + 0.035 * h, j.sh[1] + 0.035 * h], [j.hands[1][0] + 0.012 * h, j.hands[1][1]], [bx + 0.21 * h, by + 0.02 * h]]);
     // the cup in the far hand: lid, straw, and the fingers back over it
-    const [hx, hy] = j.hands[0];
-    ctx.save(); ctx.translate(hx + 20, hy - 6);
-    IB.seg(ctx, 4, -44, 9, -74, { w: 3, seed: 620 });
-    IB.ink(ctx, [[-19, -42], [23, -42], [17, 26], [-13, 26]], { closed: true, smooth: false, fill: C.paper, w: 3, seed: 621 });
-    IB.box(ctx, -22, -50, 48, 10, { fill: C.paper, w: 2.6, seed: 622 });
-    for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [2, y]], { w: 6.4, color: C.ink, seed: 630 + y, grain: 0 });
-    for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [1, y]], { w: 3, color: WHO.skin, seed: 630 + y, grain: 0 });
-    ctx.restore();
+    IB.strawCup(ctx, j.hands[0], { skin: WHO.skin });
     // the bag swings to a stop: shake marks flicker for four drawings, then nothing
     const k = IB.drawn(tt, STOP + RUNOUT);
     if (k >= 0 && k < 4) { IB.shake(ctx, bx + 0.46 * h, by + 0.2 * h, 16, { a: 0.5, n: 2, seed: 640 + k, w: 2.6 }); IB.shake(ctx, bx - 0.47 * h, by - 0.2 * h, 14, { a: Math.PI + 0.6, n: 2, seed: 650 + k, w: 2.6 }); }

@@ -125,4 +125,42 @@
     IB.ink(ctx, [[hx - 4, hy - 34], [hx + 22, hy - 34], [hx + 18, hy + 6], [hx, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed });
     ctx.restore();
   };
+
+  /* torch(ctx, wrist, a, opts) — a grey hand torch held at `wrist`, pointing along angle a: a barrel with three grip ribs and a flared head whose lens is 96 px ahead of the wrist. Its light is IB.darkness / IB.lightBeam (metaphor/flashlight-finds-file). */
+  IB.torch = (ctx, w, a, o = {}) => {
+    const { seed = 200 } = o;
+    ctx.save(); ctx.translate(w[0], w[1]); ctx.rotate(a);
+    IB.box(ctx, -34, -13, 90, 26, { fill: '#d9d9d9', w: 3, seed });
+    IB.ink(ctx, [[56, -13], [84, -24], [96, -24], [96, 24], [84, 24], [56, 13]], { closed: true, smooth: false, fill: '#d9d9d9', w: 3, seed: seed + 1 });
+    for (let i = 0; i < 3; i++) IB.seg(ctx, -22 + i * 12, -12, -22 + i * 12, 12, { w: 1.8, seed: seed + 2 + i });
+    ctx.restore();
+  };
+
+  /* slingBag(ctx, at, opts) — a long bag (476 px, a fencer's) slung across the back, drawn before the figure: `at` is its centre, about 0.05 h behind the hip and 42% of the way up to the shoulder; it lies at 0.36 rad, low end ahead of the hip. Let it lag: add 1.6 times how far the hip moved since the last drawing to its y (acting/walk-cycle-bag). */
+  IB.slingBag = (ctx, [cx, cy], o = {}) => {
+    const { fill = '#b79df0', seed = 600 } = o;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(0.36);
+    IB.ink(ctx, [[-238, -22], [-226, -36], [-200, -40], [0, -42], [190, -40], [224, -30], [238, -6], [236, 16], [222, 32], [190, 38], [0, 40], [-205, 40], [-230, 34], [-240, 14]], { closed: true, fill, w: 3.6, seed });
+    IB.seg(ctx, 96, -40, 104, 36, { w: 2.4, seed: seed + 1 }); IB.seg(ctx, 112, -40, 120, 36, { w: 2.4, seed: seed + 2 });
+    ctx.restore();
+  };
+  /* strap(ctx, pts, opts) — a bag strap as one flat 4.4 px line through `pts`, drawn over the figure: over the near shoulder, down across the chest, under the hand that holds it, to the bag's low end (acting/walk-cycle-bag). */
+  IB.strap = (ctx, pts, o = {}) => {
+    const { seed = 610 } = o;
+    ctx.save();
+    IB.ink(ctx, pts, { w: 4.4, seed, taper: false, smooth: false });
+    ctx.restore();
+  };
+
+  /* strawCup(ctx, hand, opts) — a takeaway cup with a lid and a straw in the hand at `hand` (the wrist), drawn over the figure with three fingers of colour `skin` wrapped back over it (acting/walk-cycle-bag). */
+  IB.strawCup = (ctx, [hx, hy], o = {}) => {
+    const { skin = C.skin[4], seed = 620 } = o;
+    ctx.save(); ctx.translate(hx + 20, hy - 6);
+    IB.seg(ctx, 4, -44, 9, -74, { w: 3, seed });
+    IB.ink(ctx, [[-19, -42], [23, -42], [17, 26], [-13, 26]], { closed: true, smooth: false, fill: C.paper, w: 3, seed: seed + 1 });
+    IB.box(ctx, -22, -50, 48, 10, { fill: C.paper, w: 2.6, seed: seed + 2 });
+    for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [2, y]], { w: 6.4, color: C.ink, seed: seed + 10 + y, grain: 0 });
+    for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [1, y]], { w: 3, color: skin, seed: seed + 10 + y, grain: 0 });
+    ctx.restore();
+  };
 })(window);

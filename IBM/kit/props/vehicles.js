@@ -105,4 +105,21 @@
     IB.seg(ctx, -40, 6, 64, 0, { w: w * 0.7, seed: seed + 2 });
     ctx.restore();
   };
+
+  /* cab(ctx, at, state, opts) — a yellow taxi 388 px long seen from the side, heading right: `at` = [its centre x, the road's y]; the wheels (radius 34) stand on the road. state.spin turns the wheels: give it the distance travelled / 34. A machine: move it on ones (market/street-rush-hour: 520 px/s). */
+  IB.cab = (ctx, [x, ROAD], st = {}, o = {}) => {
+    const { spin = 0 } = st, y = ROAD - 34;   // the wheels stand on the road, inside its near edge
+    ctx.save();
+    IB.ink(ctx, [[x - 190, y], [x - 196, y - 50], [x - 150, y - 62], [x - 104, y - 112], [x + 56, y - 112], [x + 110, y - 62], [x + 178, y - 54], [x + 192, y - 30], [x + 190, y]], { closed: true, smooth: false, fill: C.yellow, w: 3.4, seed: 700, wob: 0.5 });
+    IB.ink(ctx, [[x - 134, y - 64], [x - 96, y - 102], [x - 28, y - 102], [x - 28, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 701 });
+    IB.ink(ctx, [[x - 14, y - 64], [x - 14, y - 102], [x + 50, y - 102], [x + 92, y - 64]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 702 });
+    IB.box(ctx, x - 44, y - 132, 60, 20, { fill: C.paper, w: 2.6, seed: 703 });
+    for (let i = 0; i < 9; i++) if (i % 2 === 0) { ctx.fillStyle = C.ink; ctx.fillRect(x - 126 + i * 26, y - 44, 26, 12); }
+    for (const wx of [x - 118, x + 116]) {
+      IB.oval(ctx, wx, y, 34, 34, { fill: C.charcoal, w: 3, seed: 710 + (wx > x ? 1 : 0), n: 16, wob: 0.3 });
+      IB.oval(ctx, wx, y, 14, 14, { fill: C.paper, w: 2, seed: 712, n: 10, wob: 0.2 });
+      IB.seg(ctx, wx - Math.cos(spin) * 13, y - Math.sin(spin) * 13, wx + Math.cos(spin) * 13, y + Math.sin(spin) * 13, { w: 2, seed: 713, wob: 0 });
+    }
+    ctx.restore();
+  };
 })(window);

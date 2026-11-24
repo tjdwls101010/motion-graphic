@@ -163,4 +163,28 @@
     for (const y of [-6, 3, 12]) IB.ink(ctx, [[-22, y], [-6, y - 3], [1, y]], { w: 3, color: skin, seed: seed + 10 + y, grain: 0 });
     ctx.restore();
   };
+
+  /* briefcase(ctx, hand, opts) — a briefcase hanging from the hand at `hand` (the wrist), sized to a figure of height h (0.18 h wide), lines of width lw (the figure's): what a walker in a crowd carries (market/street-rush-hour). */
+  IB.briefcase = (ctx, [hx, hy], o = {}) => {
+    const { h = 250, fill = C.paper, lw = IB.figLine(h), seed = 820 } = o;
+    ctx.save();
+    IB.seg(ctx, hx, hy + 6, hx, hy + 16, { w: lw, seed });
+    IB.box(ctx, hx - 0.09 * h, hy + 16, 0.18 * h, 0.12 * h, { fill, w: lw, seed: seed + 1 });
+    ctx.restore();
+  };
+  /* smallCup(ctx, hand, opts) — a small paper cup (36 px) carried in front of the body by a walker in a crowd: `hand` is the wrist, d the way they face (1 right, -1 left) (market/street-rush-hour). */
+  IB.smallCup = (ctx, [hx, hy], o = {}) => {
+    const { d = 1, lw = 2.2, seed = 822 } = o;
+    ctx.save();
+    IB.ink(ctx, [[hx - 9 + 8 * d, hy - 30], [hx + 9 + 8 * d, hy - 30], [hx + 6 + 8 * d, hy + 6], [hx - 6 + 8 * d, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: lw, seed });
+    ctx.restore();
+  };
+  /* phone(ctx, at, opts) — a mobile phone 18 x 32: `at` = [its centre x, its top edge]. up: true shows a small blue up arrow on its screen (good news) (market/street-rush-hour). */
+  IB.phone = (ctx, [px, py], o = {}) => {
+    const { up = false, lw = 2.2, seed = 823 } = o;
+    ctx.save();
+    IB.box(ctx, px - 9, py, 18, 32, { fill: C.paper, w: lw, seed });
+    if (up) IB.ink(ctx, [[px - 5, py + 20], [px, py + 9], [px + 5, py + 20]], { closed: true, smooth: false, fill: C.blue, w: 1.2, seed: seed + 1 });
+    ctx.restore();
+  };
 })(window);

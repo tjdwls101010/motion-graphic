@@ -6,7 +6,10 @@
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
 <script>
 /* 차트 선을 레일 삼은 노란 카트가 딸깍딸깍 느리게 꼭대기까지 올라가 한참 멈췄다가, 한 장에 바닥까지 곤두박질치고 남은 힘으로 작은 언덕을 넘어 서자 탄 사람이 "…내려 주세요." 한다. 원본에 없는 창작 장면으로, 원본의 "긴 준비, 스미어 한 장, 긴 정지"와 3프레임 단위의 느린 연기를 주가 차트 은유로 옮겼다. 전달하는 생각: 오르는 데는 오래 걸리고 떨어지는 것은 한순간이다.
    Motion notes: one locked shot, 7.5 s. The rail is the chart line itself (one ink stroke through 11 points) on two axes; the cart is rigid and is placed by its two wheels: the rear wheel's centre is one radius off the curve along the curve's normal, and the front wheel's place on the curve is searched (bisection) until its centre, set off the same way, is exactly one wheelbase from the rear one. The body spans the line between the two centres, so both drawn wheels touch the line through every bend. Climb 0.5-3.0 s on threes (8 fps), 21 drawings whose steps shrink toward the top (1 - (1 - u)^1.5), a tick mark flipping sides behind the wheel on every drawing: slow and countable is what climbing looks like. Three more drawings creep the last 24 px onto the crest, then the cart is dead still 0.63 s (3.38-4.0 s) while shake marks flicker for 4 drawings. The plunge is ONE drawing at 4.0 s: the cart halfway down, where the rail is straight enough to take its length, stretched 2.1x along the rail, four speed lines trailing, arms already up. On the next drawing it is at the lowest point of the dip with a four-line burst for 2 drawings, then it runs on twos: up the small hill in 6 drawings (outQuad), over and along to the end in 8 (inOutQuad), stopped at 5.25 s. The bubble shows 6.0-6.75 s over a still pose and leaves on a hard cut; from then only the rider's head rocks, two drawings alternating on threes. The climb's beats are on the threes grid (eighths of a second); it hands over to twos at 4.0 s, which is on both grids. The cart is rigid and turns with the rail's slope; the rider is drawn inside the cart's turned frame, so the body tips with it. Two colours: the yellow cart, the mint top. */
@@ -16,24 +19,10 @@ const P = [[270, 838], [430, 792], [690, 340], [820, 246], [905, 330], [1030, 73
 const WHO = { h: 250, dir: 1, skin: C.skin[2], top: C.mint, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'pony', seed: 40 };
 const K = 1.35;   // K: the cart and its rider are drawn at this scale, with line widths divided back
 
-/* The rail as dense samples of the same Catmull-Rom curve IB.ink draws through P, with the length run so far at each sample. */
-const RAIL = (() => {
-  const n = P.length, at = (i) => P[Math.max(0, Math.min(n - 1, i))], pts = [], PER = 40;
-  for (let i = 0; i < n - 1; i++) { const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2); for (let k = 0; k < PER; k++) { const u = k / PER, u2 = u * u, u3 = u2 * u; pts.push([0, 1].map((d) => 0.5 * (2 * p1[d] + (-p0[d] + p2[d]) * u + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * u2 + (-p0[d] + 3 * p1[d] - 3 * p2[d] + p3[d]) * u3))); } }
-  pts.push(P[n - 1]);
-  const len = [0]; for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-  return { pts, len, per: PER };
-})();
+const RAIL = IB.rail(P);
 const S = (i) => RAIL.len[i * RAIL.per];   // arc length at control point i
 const BOTTOM = (() => { let b = 5 * RAIL.per; for (let i = 5 * RAIL.per; i <= 7 * RAIL.per; i++) if (RAIL.pts[i][1] > RAIL.pts[b][1]) b = i; return RAIL.len[b]; })();   // the lowest point of the dip after the peak
 const END = S(10) - 150;   // where the cart stops: its nose short of the rail's end
-function railAt(s) {
-  const { pts, len } = RAIL; s = clamp(s, 0, len[len.length - 1] - 0.01);
-  let i = 0; while (len[i + 1] < s) i++;
-  const u = (s - len[i]) / (len[i + 1] - len[i]), a = pts[i], b = pts[i + 1];
-  return { p: [lerp(a[0], b[0], u), lerp(a[1], b[1], u)], a: Math.atan2(b[1] - a[1], b[0] - a[0]) };
-}
-
 /* Where the cart is and what it is doing, drawing by drawing. */
 function ride(t) {
   const t2 = IB.twos(t), t3 = IB.threes(t);
@@ -51,29 +40,12 @@ function ride(t) {
   return { s: END, mood: 'dizzy', rock: IB.alternate(IB.frame(t), 3, 162) };   // 162 = frame of 6.75 s, when the bubble has gone
 }
 
-function cart(ctx, r, stretch) {
-  // each wheel's centre sits one radius (plus half the rail's thickness) off the rail along the rail's normal there, 40 K behind s and 42 K ahead; the cart hangs between the two centres
-  const R = 11 * K + 2.75, off = (q) => [q.p[0] + Math.sin(q.a) * R, q.p[1] - Math.cos(q.a) * R];
-  const base = 82 * K * stretch, sr = r.s - 40 * K * stretch, rear = off(railAt(sr));
-  // the cart does not bend: find where on the rail the front wheel has to be for the two centres to be one wheelbase apart
-  let lo = sr + base * 0.5, hi = sr + base * 1.6;
-  for (let i = 0; i < 22; i++) { const mid = (lo + hi) / 2, q = off(railAt(mid)); if (Math.hypot(q[0] - rear[0], q[1] - rear[1]) < base) lo = mid; else hi = mid; }
-  const front = off(railAt((lo + hi) / 2)), a = Math.atan2(front[1] - rear[1], front[0] - rear[0]), h = WHO.h;
-  const p = [lerp(rear[0], front[0], 40 / 82) - Math.sin(a) * 11 * K, lerp(rear[1], front[1], 40 / 82) + Math.cos(a) * 11 * K];
-  ctx.save();
-  ctx.translate(p[0], p[1]); ctx.rotate(a); ctx.scale(stretch * K, K);
-  const who = { ...WHO, lw: IB.figLine(h * K) / K };
-  // the rider sits inside: hip low in the cart, feet forward and hidden, hands on the bar or thrown up
+/* The rider in the cart, in the cart's own coordinates: hip low in the cart, feet forward and hidden, hands on the bar or thrown up. */
+function rider(r) {
   const up = r.mood === 'drop', hip = [-14, -52];
   const pose = { hip, lean: up ? -0.12 : 0.03, nod: r.mood === 'dizzy' ? 0.25 + (r.rock ? 0.14 : 0) : up ? -0.3 : r.mood === 'scared' ? 0.1 : 0, feet: [[26, -36, 0], [18, -34, 0]], hands: up ? [[26, -180], [4, -186]] : [[50, -92], [44, -88]], grip: [!up, !up], knee: [1, 1] };
   const face = r.mood === 'calm' ? { mouth: 'smile' } : r.mood === 'scared' ? { eye: 'wide', mouth: 'flat', brow: -1 } : r.mood === 'drop' ? { eye: 'wide', mouth: 'open' } : { eye: 'closed', mouth: 'frown' };
-  IB.figure(ctx, pose, { ...who, face }, 'far');
-  if (!up) IB.seg(ctx, 40, -50, 50, -94, { w: 3.4 / K, seed: 60 });                                               // the bar
-  IB.ink(ctx, [[-66, -66], [-58, -16], [58, -16], [72, -52], [56, -52], [48, -40], [-46, -40], [-50, -66]], { closed: true, smooth: false, fill: C.yellow, w: 3.8 / K, seed: 61 });
-  for (const x of [-40, 42]) { IB.oval(ctx, x, -11, 11, 11, { fill: C.paper, w: 3.2 / K, seed: 62 + x, n: 10 }); IB.oval(ctx, x, -11, 3, 3, { fill: C.ink, w: 0, n: 6 }); }
-  IB.figure(ctx, pose, { ...who, face }, 'near');
-  ctx.restore();
-  return { p, a, h };
+  return { look: { ...WHO, face }, pose, bar: !up };
 }
 
 MG.scene({
@@ -84,18 +56,15 @@ MG.scene({
     IB.bg(ctx);
     const r = ride(t);
     // axes with ticks, supports from the rail down to the axis, then the rail
-    IB.seg(ctx, AX, 150, AX, BASE, { w: 4, seed: 10 }); IB.seg(ctx, AX, BASE, 1800, BASE, { w: 4, seed: 11 });
-    for (let i = 1; i <= 5; i++) IB.seg(ctx, AX - 16, BASE - i * 130, AX, BASE - i * 130, { w: 3, seed: 12 + i });
-    for (let i = 1; i <= 9; i++) IB.seg(ctx, AX + i * 165, BASE, AX + i * 165, BASE + 16, { w: 3, seed: 20 + i });
-    for (let s = 90; s < RAIL.len[RAIL.len.length - 1]; s += 96) { const q = railAt(s).p; IB.seg(ctx, q[0], q[1] + 4, q[0], BASE, { w: 2, color: '#b0b0b0', seed: 30 + Math.round(s), grain: 0 }); }
+    IB.chartAxes(ctx, [AX, BASE]);
+    IB.coasterTrack(ctx, RAIL, { base: BASE, layer: 'supports' });
     IB.smear(ctx, 1010, BASE + 2, 1500, { h: 12, seed: 9 });
-    IB.ink(ctx, P, { w: 5.5, seed: 40, taper: false });
-
-    const c = cart(ctx, r, r.smear ? 2.1 : 1), back = [c.p[0] - Math.cos(c.a) * 70 * K, c.p[1] - Math.sin(c.a) * 70 * K];
-    if (r.tick != null && r.tick > 0) { const side = r.tick % 2 ? -1 : 1; IB.seg(ctx, back[0] - 14, back[1] + side * 10 - 20, back[0] - 30, back[1] + side * 16 - 26, { w: 2.6, seed: 70 + r.tick }); }   // the clack of each notch
+    IB.coasterTrack(ctx, RAIL, { layer: 'rail' });
+    const c = IB.coasterCart(ctx, RAIL, r.s, { stretch: r.smear ? 2.1 : 1, K, rider: rider(r) });
+    if (r.tick != null && r.tick > 0) IB.coasterClack(ctx, c, r.tick, { K });   // the clack of each notch
     if (r.shake != null && r.shake >= 0 && r.shake < 4) { IB.shake(ctx, c.p[0] + 70, c.p[1] - 70, 26, { a: -0.5, n: 2, seed: 80 + r.shake, w: 2.8 }); IB.shake(ctx, c.p[0] - 80, c.p[1] - 40, 22, { a: Math.PI + 0.4, n: 2, seed: 90 + r.shake, w: 2.8 }); }
-    if (r.smear) for (let i = 0; i < 4; i++) { const q = railAt(lerp(S(3) + 30, r.s - 150, i / 3)).p; IB.seg(ctx, q[0] + 26 + i * 6, q[1] - 34 - i * 12, q[0] + 64 + i * 10, q[1] + 36 - i * 8, { w: 3, seed: 100 + i }); }
-    if (r.thud != null) for (let i = 0; i < 4; i++) { const a = -2.6 + i * 0.7, r0 = 96 + r.thud * 20, r1 = r0 + 44; IB.seg(ctx, c.p[0] + Math.cos(a) * r0, c.p[1] - 20 + Math.sin(a) * r0 * 0.7, c.p[0] + Math.cos(a) * r1, c.p[1] - 20 + Math.sin(a) * r1 * 0.7, { w: 3, seed: 110 + i + r.thud * 5 }); }
+    if (r.smear) IB.coasterSpeedLines(ctx, RAIL, S(3) + 30, r.s - 150);
+    if (r.thud != null) IB.burst(ctx, [c.p[0], c.p[1] - 20], { a0: -2.6, da: 0.7, r0: 96 + r.thud * 20, r1: 96 + r.thud * 20 + 44, sy: 0.7, w: 3, seed: 110 + r.thud * 5 });
     IB.bubble(ctx, ['…내려 주세요.'], t, IB.T(72), { until: IB.T(81), tip: [c.p[0] - 10, c.p[1] - 1.12 * WHO.h], x: c.p[0] - 210, y: c.p[1] - 1.62 * WHO.h, seed: 500 });
   },
 });

@@ -39,4 +39,20 @@
     IB.ink(ctx, [[x + 2, y], [x + 9, y - 12], [x - 3, y - 26], [x + 6, y - 40]], { w: 1.8, seed });
     ctx.restore();
   };
+
+  /* drop(ctx, at, opts) — one falling drop of water, 51 px tall, its round end at `at` (variation/hose-wipe-endcard). */
+  IB.drop = (ctx, [x, y], o = {}) => {
+    const { fill = C.blue, seed = 700 } = o;
+    ctx.save();
+    IB.ink(ctx, [[x, y - 34], [x - 13, y - 4], [x - 9, y + 12], [x, y + 17], [x + 9, y + 12], [x + 13, y - 4]], { closed: true, fill, w: 2.8, seed });
+    ctx.restore();
+  };
+
+  /* splash(ctx, at, opts) — where a drop hits the floor at `at`: three short lines thrown up and out, drawing k 0 then 1 (wider and higher), then nothing (variation/hose-wipe-endcard). */
+  IB.splash = (ctx, [x, y0], o = {}) => {
+    const { k: s = 0, color = C.blue, seed = 710 } = o;
+    ctx.save();
+    for (let i = -1; i <= 1; i++) IB.seg(ctx, x + i * (16 + s * 10), y0 - s * 6, x + i * (34 + s * 18), (y0 - 26) - s * 16 - (i === 0 ? 14 : 0), { w: 2.8, color, seed: seed + i + s * 5 });
+    ctx.restore();
+  };
 })(window);

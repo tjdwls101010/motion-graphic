@@ -92,4 +92,14 @@
       IB.arrow(ctx, [scr[0] + 44, scr[1] + 44], { up: rising, fill: col, seed: seed + 21 });   // the arrow in the corner says the same thing
     }
   };
+
+  /* chartAxes(ctx, origin, opts) — the two axes of a drawn chart from `origin` = [x, y] (the bottom left corner): up to `top`, right to `right`, with yTicks ticks every yStep px on the vertical axis and xTicks every xStep px under the horizontal one (market/chart-rollercoaster-rider). */
+  IB.chartAxes = (ctx, [AX, BASE], o = {}) => {
+    const { top = 150, right = 1800, yTicks = 5, yStep = 130, xTicks = 9, xStep = 165, seed = 10 } = o;
+    ctx.save();
+    IB.seg(ctx, AX, top, AX, BASE, { w: 4, seed }); IB.seg(ctx, AX, BASE, right, BASE, { w: 4, seed: seed + 1 });
+    for (let i = 1; i <= yTicks; i++) IB.seg(ctx, AX - 16, BASE - i * yStep, AX, BASE - i * yStep, { w: 3, seed: seed + 2 + i });
+    for (let i = 1; i <= xTicks; i++) IB.seg(ctx, AX + i * xStep, BASE, AX + i * xStep, BASE + 16, { w: 3, seed: seed + 10 + i });
+    ctx.restore();
+  };
 })(window);

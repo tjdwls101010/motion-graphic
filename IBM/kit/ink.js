@@ -168,6 +168,10 @@
   /* Point lists for the common shapes, ready for IB.ink. */
   IB.line = (x1, y1, x2, y2) => [[x1, y1], [x2, y2]];
   IB.rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  /* along(path, u) — the point a fraction u (0..1, clamped) of the way along a polyline, counting each segment as one equal step (not by length): where a bulge travelling down a hose is. */
+  IB.along = (path, u) => { const x = MG.clamp(u) * (path.length - 1), i = Math.min(path.length - 2, Math.floor(x)), v = x - i; return [MG.lerp(path[i][0], path[i + 1][0], v), MG.lerp(path[i][1], path[i + 1][1], v)]; };
+  /* mirror(cx) — a function that reflects point lists about the vertical line x = cx: draw one side of a face and mirror it for the other. */
+  IB.mirror = (cx) => (pts) => pts.map(([x, y]) => [2 * cx - x, y]);
   IB.ellipse = (cx, cy, rx, ry = rx, n = 14, a0 = 0, a1 = Math.PI * 2) => {
     const full = Math.abs(a1 - a0) >= Math.PI * 2 - 1e-6, out = [];
     for (let i = 0; i < (full ? n : n + 1); i++) {

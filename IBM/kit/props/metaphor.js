@@ -52,4 +52,34 @@
     for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (clear(mid) >= 0) lo = mid; else hi = mid; }
     return lo;
   };
+
+  /* ledge(ctx, at, opts) — one side of a gap: a white cliff whose top edge is at `at` = [edge x, top y], running off-screen to the left (side 'left') or right, graphite down its face and a few cracks. Two of them make the gap a plank bridges (metaphor/bridge-plank-cross). */
+  IB.ledge = (ctx, [wall, TOP], o = {}) => {
+    const { side = 'left', seed = 100 } = o, left = side === 'left', x0 = left ? -40 : wall, x1 = left ? wall : 1960;
+    ctx.save();
+    IB.ink(ctx, [[x0, TOP], [x1, TOP], [x1, 1120], [x0, 1120]], { closed: true, smooth: false, fill: C.paper, w: 3.8, seed: seed + wall });
+    IB.shade(ctx, left ? wall - 70 : wall + 4, TOP + 6, 66, 370, { from: left ? 'right' : 'left', seed: seed - 89 + wall, alpha: 0.5 });
+    for (let i = 0; i < 4; i++) IB.seg(ctx, wall + (left ? -1 : 1) * (130 + i * 150), TOP + 60 + (i % 2) * 80, wall + (left ? -1 : 1) * (190 + i * 150), TOP + 60 + (i % 2) * 80, { w: 2, seed: seed + 10 + i + wall });
+    ctx.restore();
+  };
+
+  /* plank(ctx, state, opts) — a mustard plank `thick` px thick and ends[1] - ends[0] long, in one of three drawings. state.lie: lying from ends[0] to ends[1] on ledges whose edges are `edges`, its top at `top`, sagging into a V at sag = [x, depth] under a weight (or flat). state.held: [x, y, rot], carried with its grip point `grip` px from the left end. state.swing: [hinge x, hinge y], the one drawing of it swinging down onto the far ledge, stretched along its arc with two speed arcs (metaphor/bridge-plank-cross). */
+  IB.plank = (ctx, st = {}, o = {}) => {
+    const { ends: PLANK = [688, 1244], edges: [LEFT, RIGHT] = [700, 1220], top: TOP = 700, thick: THICK = 18, grip = 300, seed = 200 } = o;
+    ctx.save();
+    if (st.lie) {
+      const sag = st.sag, line = [[PLANK[0], 0], [LEFT, 0], ...(sag ? [[sag[0], sag[1]]] : []), [RIGHT, 0], [PLANK[1], 0]];
+      IB.ink(ctx, line.map(([x, d]) => [x, TOP - THICK + d]).concat(line.slice().reverse().map(([x, d]) => [x, TOP + d])), { closed: true, smooth: false, fill: C.mustard, w: 3, seed });
+    } else if (st.held) {
+      const [x, y, rot] = st.held;
+      ctx.translate(x, y); ctx.rotate(rot);
+      IB.box(ctx, -grip, -THICK / 2, PLANK[1] - PLANK[0], THICK, { fill: C.mustard, w: 3, seed });
+    } else if (st.swing) {
+      // one drawing: the plank halfway down and stretched along its swing, hinged where its near end will rest
+      const hinge = st.swing, len = PLANK[1] - PLANK[0], pt = (deg, r) => [hinge[0] - Math.cos(deg * Math.PI / 180) * r, hinge[1] - Math.sin(deg * Math.PI / 180) * r];
+      IB.ink(ctx, [pt(48, -8), pt(60, len * 0.5), pt(64, len), pt(42, len), pt(40, len * 0.5)], { closed: true, smooth: false, fill: C.mustard, w: 3, seed: seed + 10 });
+      for (const r of [len * 0.9, len * 0.6]) IB.ink(ctx, IB.ellipse(hinge[0], hinge[1], r, r, 6, Math.PI + 1.2, Math.PI + 1.75), { w: 2.4, seed: seed + 11 + Math.round(r) });
+    }
+    ctx.restore();
+  };
 })(window);

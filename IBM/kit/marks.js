@@ -12,4 +12,31 @@
     }
     ctx.restore();
   };
+
+  /* thud(ctx, at, opts) — something heavy set down on the floor: on each side of it two lines kick up and out along the floor and a dust puff rolls away. `at` is the floor under its centre, `half` its half width, `k` the drawing (0, then 1 a little further out: two drawings) (acting/lift-heavy-box). */
+  IB.thud = (ctx, [bx, FLOOR], o = {}) => {
+    const { half = 115, k = 0, seed = 400 } = o;
+    ctx.save();
+    for (const d of [-1, 1]) {
+      for (let i = 0; i < 2; i++) IB.seg(ctx, bx + d * (half + 22 + k * 16), FLOOR - 14 - i * 26, bx + d * (half + 62 + k * 22), FLOOR - 26 - i * 44, { w: 3, seed: seed + i + d + k * 7 });
+      IB.oval(ctx, bx + d * (half + 50 + k * 30), FLOOR - 8, 20 - k * 6, 12 - k * 4, { w: 2.2, seed: seed + 10 + d + k, n: 8, fill: C.bg });
+    }
+    ctx.restore();
+  };
+
+  /* breath(ctx, head, opts) — three lines leaving a mouth and travelling forward, one drawing each for three drawings (k 0, 1, 2: 70 px further each, times `big`). `head` is the head centre IB.figure returns (headAt) of a figure facing right (vignette/trick-candle-relight). */
+  IB.breath = (ctx, head, o = {}) => {
+    const { k: b = 0, big = 1, seed = 300 } = o;
+    ctx.save();
+    for (let i = -1; i <= 1; i++) { const x0 = head[0] + 44 + b * 70 * big, y0 = head[1] + 12 + i * 15 * big; IB.ink(ctx, [[x0, y0], [x0 + 46 * big, y0 - 4 + i * 5], [x0 + 92 * big, y0 - 12 + i * 12]], { w: 2.8, seed: seed + i + b * 5 }); }
+    ctx.restore();
+  };
+
+  /* smoke(ctx, at, opts) — a thin wisp of smoke from a snuffed wick at `at`, climbing 14 px a drawing (k 0, 1, ...); six drawings is plenty. Give a new seed every drawing (vignette/trick-candle-relight). */
+  IB.smoke = (ctx, [x, base], o = {}) => {
+    const { k = 0, seed = 320 } = o, y = base - 12 - k * 14;
+    ctx.save();
+    IB.ink(ctx, [[x + 2, y], [x + 9, y - 12], [x - 3, y - 26], [x + 6, y - 40]], { w: 1.8, seed });
+    ctx.restore();
+  };
 })(window);

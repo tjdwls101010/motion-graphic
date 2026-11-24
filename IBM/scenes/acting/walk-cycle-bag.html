@@ -7,6 +7,7 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/props/home.js"></script>
 <script src="../../kit/props/handheld.js"></script>
@@ -14,8 +15,8 @@
 /* 헤드폰을 쓰고 긴 가방을 멘 사람이 컵을 들고 복도를 걸어가다 노란 문 앞에서 멈춰 한 모금 마신다. 원본에 없는 창작 장면으로, 원본의 걷기(2프레임에 한 장)와 탠덤 스팟의 흐르는 배경을 한 인물의 걷기 사이클로 옮겼다. 전달하는 생각: 인물은 제자리에서 걷고 세상이 뒤로 흐른다.
    Motion notes: travelling shot, figure fixed at x=900, 520 px tall, line 3.7 px (IB.figLine). Walk cycle = 12 drawn poses on twos, 1.0 s per two steps; each step carries the body 0.42 h, so the props scroll at 0.84 h/s = 437 px/s on ones (the drawing steps, the world glides: STYLE "카메라, 스크롤만 1프레임 단위"). Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peels up to 0.6 rad over the last 25%; swing foot lifts 0.085 h on a half sine. Hip is lowest at each contact and rises 0.028 h at mid-stance. The arms do not swing because both hands are busy (cup, strap): only the bag bounces, one pose behind the hip. Stop at 5.0 s on a contact pose: three in-betweens on twos to the standing pose (poseMix 0.45, 0.8, 1) while the scroll runs out over 0.33 s (outQuad, 72 px), then the bag's shake marks flicker for 4 drawings and everything holds dead still for 0.6 s. Sip: cup to the mouth in 2 drawings at 6.0 s, held 1 s, back down in 2 drawings; nothing else moves. Floor = one chalk smear that stays under the feet; the wall is only what hangs on it. Three colours: the bag (#b79df0, the purple of the production still, not a film-palette colour), mustard frames, the yellow door. */
 const { prog, lerp } = MG;
-const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 900;
-const WHO = { h: 520, dir: 1, skin: C.skin[4], top: C.bg, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'cap', hat: '#bdbdbd', brim: 'back', tail: true, phones: true, face: { eye: 'shades', mouth: 'flat' }, seed: 40 };
+const F = IB.FIG, FLOOR = 930, X0 = 900;
+const WHO = { ...IB.PEOPLE.walker, h: 520, dir: 1, seed: 40 };
 const CYCLE = 1.0, STEP = 0.21 * WHO.h, SPEED = (4 * STEP) / CYCLE, STOP = 5.0, RUNOUT = 0.33;
 
 // distance the world has scrolled by time t (ones): constant speed, then a short run-out

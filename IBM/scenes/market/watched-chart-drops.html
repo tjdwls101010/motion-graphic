@@ -7,12 +7,13 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script>
 /* 책상에 앉은 사람이 모니터를 노려보면 차트가 내려가고, 포기하고 뒤로 기대 눈을 감으면 오르고, 실눈을 뜰 때마다 다시 꺾이더니 두 손으로 눈을 가리자 화면 위로 치솟아 "안 봐야 오르네." 한다. 원본에 없는 창작 장면으로, 원본 스팟의 "같은 박자를 되풀이하다 뒤집기"와 얼굴만 바뀌는 연기를 투자자의 징크스 개그로 옮겼다. 전달하는 생각: 들여다본다고 오르지 않는다. 상승은 파랑, 하락은 빨강이다.
    Motion notes: one locked shot, 9 s, figure 520 px tall, seated (IB.sit). The chart is the second actor and it only ever reacts: it gains one point every 2 drawings (6 per second, 17 px apart; once the window is full it steps 17 px each time a point is added), and the direction of each new point is decided by where the eyes are on that drawing: watched, it falls 3 a step (4 on a peek); unwatched, it climbs 3, then 6 once the eyes are covered. A change of pose is one in-between (poseMix 0.5) and then a hold; the face changes on the same drawing as the pose. Beats: watch 0.5-1.5 s (flat), lean in and stare 1.5-3.0 s (falls), lean back with the hands behind the head and the eyes shut 3.0-4.5 s (climbs), peek 4.5-5.0 (falls), shut 5.0-5.75 (climbs), peek 5.75-6.25 (falls), both hands over the eyes from 6.25 s: the line climbs out of the top of the screen, the bubble comes at 7.0 s, and for the last 2 s the pose is dead still and only the line keeps stepping. The dot at the line's end and the arrow in the screen's corner are blue while it rises and red while it falls: with the yellow top that is the shot's three colours. */
-const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 700, DESK = 716;
-const WHO = { h: 520, dir: 1, skin: C.skin[1], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 30 };
+const FLOOR = 930, X0 = 700, DESK = 716;
+const WHO = { ...IB.PEOPLE.trader, h: 520, dir: 1, seed: 30 };
 const H = WHO.h;
 // what the sitter is doing from each time on (twelfths of a second), and what that does to the chart per step
 const BEATS = [[0, 'watch', 0], [18, 'stare', -3], [36, 'back', 3], [54, 'peek', -4], [60, 'back', 3], [69, 'peek', -4], [75, 'cover', 6]];

@@ -13,7 +13,7 @@
 <script>
 /* 고양이가 자는 의자에 화면 밖에서 뻗어 온 손이 풍선을 하나씩 묶고, 넷째 풍선에서 의자가 바닥을 떠나 떠오르자 고양이가 눈을 뜨고 "야옹?" 했다가 도로 잔다. 원본에 없는 창작 장면으로, 원본 스팟의 "한 화면, 컷 없음, 마지막엔 작은 것 하나만 움직인다"를 작은 상황극으로 옮겼다. 전달하는 생각: 작은 것이 쌓이면 어느 순간 떠오른다.
    Motion notes: one locked shot, 8 s, no cuts. A beat every 1.25 s, on the 12 fps grid: the arm comes in from off-screen in 4 drawings on twos (hand x 1700, 1380, 1180, then its place), holds 0.25 s as if tying, lets go on the 8th drawing, and leaves in 3 drawings; an arm exists only while it is used. A released balloon rises to its place on IB.settle (tau 0.25 s) and then never moves. The first three balloons change nothing: the fourth is the event. After the third the chair lifts 46 px (tau 0.2) and stops, which is the warning; after the fourth it rises 150 px more (tau 0.45, 1.4 s to stop). The chalk smear and the graphite stay on the floor where the chair was: the gap between them and the legs is what says "off the ground". The cat only changes its eyes (shut, wide at 4.0 s, shut again at 6.67 s) and its bubble shows 4.17-5.42 s travelling with the chair on twos. Three colours, the balloons' yellow, lavender and sky: the sleeve is white and the cat's eyes are ink, so nothing else competes. Last second: everything held, only the tail swings, two drawings alternating on threes. */
-const { lerp, clamp } = MG;
+const { lerp } = MG;
 const C = IB.C, FLOOR = 900, CX = 860, SEAT = FLOOR - 160, BACK = 190;
 const BALLOONS = [
   { to: [-170, -190], fill: C.yellow, seed: 100 },

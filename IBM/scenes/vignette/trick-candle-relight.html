@@ -8,13 +8,13 @@
 <script src="../../kit/time.js"></script>
 <script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/home.js"></script>
 <script>
 /* 아이가 케이크의 촛불을 훅 불어 끄고 뿌듯해하는데 불이 하나씩 도로 켜지고, 더 크게 숨을 들이켜 다시 불어 꺼도 이번엔 한꺼번에 켜져서 "어?" 한다. 원본에 없는 창작 장면으로, 원본 3편의 촛불 부는 아이에서 "준비-동작-정지"와 얼굴만 바뀌는 연기를 가져왔다. 전달하는 생각: 껐다고 생각한 문제가 다시 살아난다.
    Motion notes: one locked shot, 7 s, figure 440 px tall. Two rounds of the same four beats, the second bigger: inhale (lean back 0.1 rad, then 0.2), a hold (0.42 s, then 0.67 s), blow (lean forward 0.35, then 0.5; the pose arrives in one drawing), result held. The body only tips at the hip, which shifts just enough to keep both hands on the table edge; between poses there are one or two in-betweens on twos and no easing. Blow: three puff lines travel from the mouth for 3 drawings; the flames lie over to the right for one drawing (a smear, 2.2x long) and are gone on the next; a wisp of smoke climbs 14 px per drawing for 6 drawings above each wick. Relight round one: one flame per drawing-pair, left to right, 2 drawings apart (2.5, 2.67, 2.83 s), each with a four-point spark for one drawing. Relight round two: all three on the same drawing at 5.0 s, then the bubble at 5.25 s. A lit flame is two drawings alternating on threes (8 fps) and that is the only thing moving while a pose holds, including the whole last second. The face changes with the beat, not between: eyes shut for the blow, a smile when the flames are out, wide when they return. Three colours: lavender cake, yellow flames, the sky top. */
-const { lerp, clamp } = MG;
-const C = IB.C, F = IB.FIG, FLOOR = 930, TABLE = 690, X0 = 720;
-const WHO = { h: 440, dir: 1, skin: C.skin[4], top: C.sky, bottom: C.ink, shoe: C.paper, hair: 'curly', seed: 60 };
+const F = IB.FIG, FLOOR = 930, TABLE = 690, X0 = 720;
+const WHO = { ...IB.PEOPLE.kid, h: 440, dir: 1, seed: 60 };
 const H = WHO.h, CANDLES = [1010, 1062, 1114], WICK = TABLE - 8 - 112 - 72;
 const kid = (lean, face) => { const p = IB.stand(X0, FLOOR, WHO); p.lean = lean; p.hip[0] += -Math.sin(lean) * F.torso * H * 0.6; p.hands = [[X0 + 70, TABLE - 8], [X0 + 54, TABLE - 6]]; p.face = face; return p; };
 const SMILE = { mouth: 'smile' }, FLAT = { mouth: 'flat' }, PUFF = { eye: 'closed', mouth: 'open' }, WIDE = { eye: 'wide', mouth: 'flat', brow: -1 }, IN = { eye: 'closed', mouth: 'flat', brow: 1 };

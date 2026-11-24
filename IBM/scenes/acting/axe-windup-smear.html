@@ -8,13 +8,14 @@
 <script src="../../kit/time.js"></script>
 <script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
 <script>
 /* 도끼를 어깨에 걸친 사람이 머리 위로 크게 들어 올려 한참 버티다가, 스미어 한 장으로 내리쳐 통나무를 둘로 쪼개고 "됐다." 하고 선다. 원본에 없는 창작 장면으로, 원본 3편의 도끼질에서 읽은 "긴 준비, 스미어 한 장, 긴 정지"를 한 인물의 한 동작으로 옮겼다. 전달하는 생각: 오래 벼른 한 번이 일을 끝낸다.
    Motion notes: one locked shot, figure 560 px tall, line 3.8 px. Everything on twos. Rest pose held 0.83 s; wind-up in 3 drawings (poseMix 0.35, 0.75, 1) to an overhead pose leaning back 0.2 rad, held dead still 0.92 s (1.08-2.0 s) while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact pose at 2.083 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.4 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 2 drawings, a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
 const { lerp, clamp } = MG;
-const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
-const WHO = { h: 560, dir: 1, skin: C.skin[3], top: C.bg, bottom: C.sky, shoe: C.ink, hair: 'curly', seed: 10 };
+const F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
+const WHO = { ...IB.PEOPLE.chopper, h: 560, dir: 1, seed: 10 };
 const H = WHO.h, HIP = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, DEG = Math.PI / 180;
 
 // a pose = the body's joints plus the axe: grip point G and the angle the handle points (butt to head)

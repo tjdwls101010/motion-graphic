@@ -8,13 +8,14 @@
 <script src="../../kit/time.js"></script>
 <script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
 <script>
 /* 호스를 잡고 버틴 사람 손에서 물줄기가 터져 나와 점점 퍼지더니 화면을 통째로 덮고, 그대로 하드 컷으로 엔드카드가 되어 파란 분필 스미어와 마무리 한 줄이 밀려와 멈추고 남은 물방울이 떨어진다. 원본에 없는 창작 장면으로, 원본 3편의 "본편의 마지막 소품이 엔드카드로 넘어가는 전환"과 엔드카드의 정착을 다른 상황에 썼다. 전달하는 생각: 본편의 마지막 동작이 그대로 끝맺음이 된다.
    Motion notes: two shots, 6 s. Shot A (0-2.5 s), on twos: braced pose held 0.75 s; a bulge runs up the hose to the nozzle in 6 drawings; the water bursts at 1.25 s and she is thrown back in the same drawing (spine from 0.12 to -0.14 rad, shake marks 4 drawings). The stream is a flat blue wedge with an ink edge from the nozzle to past the frame, its white streaks re-rolled on every drawing; half-angle 3, 4, 5, 6, 7, 8, 8 degrees over 7 drawings, then it opens 12, 18, 26, 38, 55, 80 degrees and the last two drawings are the whole frame in blue: the prop becomes the wipe. Shot B from 2.5 s is the end card and uses the reference's measured numbers (STYLE.md endcard, IB.TYPE.tag): hard cut, the line (64 px, royal, centred, glyph top y=508) and the chalk smear (1000 x 34 at y=910) arrive together 39 px left of their place and settle on ones in 0.5 s (IB.settle tau 0.152). The line is a placeholder for a closing line. What carries over the cut is the water: five drops fall on twos, 260 px per drawing, from 2.75 s at 0.25 s intervals, each ending in a three-line splash on the smear for 2 drawings; from 4.5 s the card is dead still. Royal blue appears only in the smear and the line, the water is the lighter blue. */
 const { lerp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 560, DEG = Math.PI / 180, CUT = 2.5, BURST = 15 / 12;
-const WHO = { h: 520, dir: 1, skin: C.skin[3], top: C.bg, bottom: C.bg, shoe: C.ink, hair: 'curly', seed: 10 };
+const WHO = { ...IB.PEOPLE.chopper, bottom: C.bg, h: 520, dir: 1, seed: 10 };   // the same person in white trousers
 const H = WHO.h, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, AY = FLOOR - F.ankle * H;
 const SPREAD = [3, 4, 5, 6, 7, 8, 8, 12, 18, 26, 38, 55, 80];   // half-angle of the stream per drawing after the burst; then full frame
 

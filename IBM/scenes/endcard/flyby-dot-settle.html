@@ -24,7 +24,7 @@ MG.scene({
     const f = IB.frame(t);
     if (f < 1) return;
     if (t >= LOGO) return;   // the reference cuts to its logo here and holds it; nothing is drawn in its place
-    const dx = -39 * (1 - IB.settle(t - CUT_IN, 0.152, 0.5));   // the reference's tagline arrives on this same slide; only the smear is drawn
+    const dx = -IB.TYPE.tag.from * (1 - IB.settle(t - CUT_IN, IB.TYPE.tag.tau, IB.TYPE.tag.stop));   // the reference's tagline arrives on this same slide; only the smear is drawn
     IB.smear(ctx, 935 + dx, 910, 1000, { h: 34, seed: 9 });
 
     const fly = FLYBY.find((k) => k[0] === f);

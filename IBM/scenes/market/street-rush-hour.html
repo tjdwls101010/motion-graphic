@@ -7,6 +7,7 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/handheld.js"></script>
 <script src="../../kit/props/vehicles.js"></script>
@@ -18,23 +19,22 @@ const { lerp } = MG;
 const C = IB.C, F = IB.FIG, ROAD = 856;
 
 /* ---------- the crowd ---------- */
-const suit = (c) => ({ top: c, topKind: 'long', bottom: c });
 const CROWD = [
-  { x0: 300, dir: 1, h: 270, floor: 985, off: 0, top: C.lavender, topKind: 'long', bottom: C.ink, hair: 'bun', skin: C.skin[2], hero: true },
-  { x0: -120, dir: 1, h: 258, floor: 985, off: 3, ...suit(C.charcoal), hair: 'short', skin: C.skin[1], prop: 'case' },
-  { x0: 1980, dir: -1, h: 262, floor: 985, off: 5, top: C.yellow, topKind: 'long', bottom: C.ink, hair: 'curly', skin: C.skin[4], prop: 'cup' },
-  { x0: 2460, dir: -1, h: 250, floor: 985, off: 2, ...suit(C.ink), hair: 'bald', skin: C.skin[3], prop: 'phone' },
-  { x0: 760, dir: 1, h: 232, floor: 930, off: 4, top: C.bg, topKind: 'long', bottom: C.charcoal, hair: 'pony', skin: C.skin[0], prop: 'cup' },
-  { x0: 60, dir: 1, h: 240, floor: 930, off: 1, ...suit(C.ink), hair: 'short', hairColor: '#8a8a8a', skin: C.skin[2], prop: 'case' },
-  { x0: 1560, dir: -1, h: 236, floor: 930, off: 3, ...suit(C.charcoal), hair: 'cap', hat: C.paper, skin: C.skin[1], prop: 'case' },
-  { x0: 2260, dir: -1, h: 228, floor: 930, off: 5, top: C.bg, topKind: 'long', bottom: C.ink, hair: 'bun', skin: C.skin[4], prop: 'phone' },
+  { x0: 300, dir: 1, h: 270, floor: 985, off: 0, ...IB.PASSERSBY[0], hero: true },
+  { x0: -120, dir: 1, h: 258, floor: 985, off: 3, ...IB.PASSERSBY[1], prop: 'case' },
+  { x0: 1980, dir: -1, h: 262, floor: 985, off: 5, ...IB.PASSERSBY[2], prop: 'cup' },
+  { x0: 2460, dir: -1, h: 250, floor: 985, off: 2, ...IB.PASSERSBY[3], prop: 'phone' },
+  { x0: 760, dir: 1, h: 232, floor: 930, off: 4, ...IB.PASSERSBY[4], prop: 'cup' },
+  { x0: 60, dir: 1, h: 240, floor: 930, off: 1, ...IB.PASSERSBY[5], prop: 'case' },
+  { x0: 1560, dir: -1, h: 236, floor: 930, off: 3, ...IB.PASSERSBY[6], prop: 'case' },
+  { x0: 2260, dir: -1, h: 228, floor: 930, off: 5, ...IB.PASSERSBY[7], prop: 'phone' },
   // the second wave, still off-screen when the scene starts
-  { x0: -640, dir: 1, h: 266, floor: 985, off: 2, top: C.bg, topKind: 'long', bottom: C.charcoal, hair: 'curly', skin: C.skin[3], prop: 'cup' },
-  { x0: -1010, dir: 1, h: 234, floor: 930, off: 0, ...suit(C.charcoal), hair: 'bun', skin: C.skin[0], prop: 'phone' },
-  { x0: 2900, dir: -1, h: 260, floor: 985, off: 4, ...suit(C.ink), hair: 'short', skin: C.skin[2], prop: 'case' },
-  { x0: 3250, dir: -1, h: 238, floor: 930, off: 1, top: C.bg, topKind: 'long', bottom: C.ink, hair: 'pony', skin: C.skin[1], prop: 'cup' },
-  { x0: -420, dir: 1, h: 230, floor: 930, off: 5, ...suit(C.ink), hair: 'cap', hat: C.paper, skin: C.skin[4], prop: 'case' },
-].map((w, i) => ({ ...w, shoe: w.bottom === C.ink ? C.paper : C.ink, seed: 800 + i * 30 }));
+  { x0: -640, dir: 1, h: 266, floor: 985, off: 2, ...IB.PASSERSBY[8], prop: 'cup' },
+  { x0: -1010, dir: 1, h: 234, floor: 930, off: 0, ...IB.PASSERSBY[9], prop: 'phone' },
+  { x0: 2900, dir: -1, h: 260, floor: 985, off: 4, ...IB.PASSERSBY[10], prop: 'case' },
+  { x0: 3250, dir: -1, h: 238, floor: 930, off: 1, ...IB.PASSERSBY[11], prop: 'cup' },
+  { x0: -420, dir: 1, h: 230, floor: 930, off: 5, ...IB.PASSERSBY[12], prop: 'case' },
+].map((w, i) => ({ ...w, seed: 800 + i * 30 }));
 // those walking left keep 14 px nearer the viewer than those walking right, so two who cross pass in front of one another instead of merging
 const ROWS = CROWD.map((w) => ({ ...w, floor: w.floor + (w.dir < 0 ? 14 : 0) })).sort((a, b) => a.floor - b.floor);
 const STOP = 34, GO = 58, PH_STOP = (STOP / 12) % 1;   // the hero stops on drawing 34 (2.83 s) and walks on at drawing 58 (4.83 s)

@@ -255,10 +255,10 @@
   };
   IB.walkLen = (look, stride = 0.21) => 4 * stride * look.h;
 
-  /* poseMix(a, b, u) — the pose a fraction u of the way from a to b, joint by joint. For the one or two in-betweens of a move; a held pose is just a (the reference holds its poses dead still). */
+  /* poseMix(a, b, u) — the pose a fraction u of the way from a to b, joint by joint. For the one or two in-betweens of a move; a held pose is just a (the reference holds its poses dead still). u above 1 is an overshoot drawing (1.05-1.1, the body passing its mark before it settles on b): hip, lean, nod and hands go past b, the feet never do (a foot on the floor does not overshoot). */
   IB.poseMix = (a, b, u) => {
-    const mixPts = (p, q) => p.map((v, i) => v.map((c, j) => lerp(c, q[i][j] == null ? c : q[i][j], u)));
-    return { ...(u < 0.5 ? a : b), hip: [lerp(a.hip[0], b.hip[0], u), lerp(a.hip[1], b.hip[1], u)], lean: lerp(a.lean || 0, b.lean || 0, u), nod: lerp(a.nod || 0, b.nod || 0, u), feet: mixPts(a.feet, b.feet), hands: mixPts(a.hands, b.hands) };
+    const mixPts = (p, q, v) => p.map((w, i) => w.map((c, j) => lerp(c, q[i][j] == null ? c : q[i][j], v)));
+    return { ...(u < 0.5 ? a : b), hip: [lerp(a.hip[0], b.hip[0], u), lerp(a.hip[1], b.hip[1], u)], lean: lerp(a.lean || 0, b.lean || 0, u), nod: lerp(a.nod || 0, b.nod || 0, u), feet: mixPts(a.feet, b.feet, Math.min(1, Math.max(0, u))), hands: mixPts(a.hands, b.hands, u) };
   };
 
   /* peg(ctx, hip, foot, opts) — the thin leg of an object that walks (the reference's folder and document): one narrow trouser leg, graphite where it leaves the body, a small boot. knee bows it sideways (px); dir -1 / 1 points the toe left / right. The body is drawn after its legs. For a leg that curves, kicks or shows the foot from the front, use IB.hose and IB.boot directly. */

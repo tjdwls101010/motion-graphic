@@ -12,7 +12,7 @@
 <script src="../../kit/props/handheld.js"></script>
 <script>
 /* 도끼를 어깨에 걸친 사람이 머리 위로 크게 들어 올려 한참 버티다가, 스미어 한 장으로 내리쳐 통나무를 둘로 쪼개고 "됐다." 하고 선다. 원본에 없는 창작 장면으로, 원본 3편의 도끼질에서 읽은 "긴 준비, 스미어 한 장, 긴 정지"를 한 인물의 한 동작으로 옮겼다. 전달하는 생각: 오래 벼른 한 번이 일을 끝낸다.
-   Motion notes: one locked shot, figure 560 px tall, line 3.8 px. Everything on twos. Rest pose held 0.83 s; wind-up in 3 drawings (poseMix 0.35, 0.75, 1) to an overhead pose leaning back 0.2 rad, held dead still 0.92 s (1.08-2.0 s) while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact pose at 2.083 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.4 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 2 drawings, a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
+   Motion notes: one locked shot, figure 560 px tall, line 3.8 px. Everything on twos, written as one list of drawings (ACT, frame -> pose): 17 drawings, 12 a second while she moves (tools/drawings.py). Rest pose held 0.83 s; anticipation in 2 drawings (0.83-1.0 s): the knees give, the axe dips behind her and the stance widens one foot at a time, each foot lifted on its drawing so no planted foot slides; wind-up in 3 drawings (mix 0.3, 0.72 and an overshoot 1.08 past the overhead pose) and the overhead pose at 1.25 s, leaning back 0.2 rad, held dead still 0.75 s while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact at 2.083 s is one drawing deeper than where she stops (blade 12 px further in, hip 12 px lower, spine 0.66 rad), then the impact pose at 2.17 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.3 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 4 drawings: the back foot comes forward lifted on two of them, an overshoot (1.08) and the end pose at 4.75 s; every drawing passes the one before it as pose.prev, so her curls and head trail each move by one drawing and every hold is dead still from its second drawing; a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
 const { lerp, clamp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
 const WHO = { ...IB.PEOPLE.chopper, h: 560, dir: 1, seed: 10 };
@@ -28,17 +28,35 @@ const REST = withAxe(base(0, 0, -0.04, [22], [-20]), [X0 + 64, HIP - 112], -143 
 const UP = withAxe(base(-22, 8, -0.2, [96], [-72]), [X0 - 44, HIP - 282], 159 * DEG - 2 * Math.PI, { flip: 1, behind: true, face: { mouth: 'flat', brow: 1 } });
 const SMEAR = withAxe(base(20, 20, 0.28, [140], [-84, 0.3]), [X0 + 196, HIP - 150], 12 * DEG, { flip: 1, face: { mouth: 'open', brow: 1 } });
 const HIT = withAxe(base(40, 50, 0.6, [150], [-90, 0.5]), [X0 + 236, HIP + 18], 30 * DEG, { flip: 1, face: { eye: 'closed', mouth: 'open' } });
-const DONE = { ...base(124, 4, 0.05, [172], [78]), hands: [[X0 + 150, HIP - 12], HIT.G], elbow: [1, 1], grip: [false, true], G: HIT.G, th: HIT.th, flip: 1, face: { mouth: 'smile' } };
+const DONE = { ...base(124, 4, 0.05, [150], [78]), hands: [[X0 + 150, HIP - 12], HIT.G], elbow: [1, 1], grip: [false, true], G: HIT.G, th: HIT.th, flip: 1, face: { mouth: 'smile' } };
 
+// the wind-up's anticipation: knees give, the axe drops a little behind the back, before it goes up
+const ANT = withAxe(base(-6, 18, 0.07, [96], [-72]), [X0 + 58, HIP - 92], -150 * DEG, { flip: -1, behind: true, face: { mouth: 'flat' } });
+// the impact drawing: the blade a little deeper and the body lower than where it comes to rest, one drawing before HIT
+const DEEP = withAxe(base(46, 62, 0.66, [150], [-90, 0.5]), [X0 + 240, HIP + 30], 33 * DEG, { flip: 1, face: { eye: 'closed', mouth: 'open' } });
+// a drawing between two axe poses: the body mixed (feet never past b), the grip point and the handle's angle mixed with it
+const mixAxe = (a, b, u, more) => withAxe(IB.poseMix(a, b, u), [lerp(a.G[0], b.G[0], u), lerp(a.G[1], b.G[1], u)], lerp(a.th, b.th, u), { flip: u < 0.5 ? a.flip : b.flip, behind: a.behind && b.behind, face: (u < 0.5 ? a : b).face, ...more });
+const DONEAT = (u) => ({ ...IB.poseMix(HIT, DONE, u), G: HIT.G, th: HIT.th, flip: 1, grip: [false, true], face: DONE.face });
+
+/* The acting as a list of drawings, [frame at 24 fps, pose]: each holds until the next key. Rest 0-19; anticipation 20-23; up in two in-betweens and an overshoot past UP (24-29); UP held dead still 30-47; the swing is one smear drawing (48); the blade goes in deeper for one drawing (50) and settles (52), held to 107; recovery in two in-betweens, an overshoot and DONE (108-114). */
+// feet: a planted foot sits on the floor at its x; a lifted one is 0.06 h up with its toe down, on its way to the next spot. A foot that changes place goes through a lifted drawing: mixing two poses would slide it along the floor.
+const AY = FLOOR - F.ankle * H, planted = (x, pitch = 0) => [X0 + x, AY - IB.footLift(pitch, H), pitch], lifted = (x) => [X0 + x, AY - 0.06 * H, 0.3];
+const feetOf = (p, far, near) => ({ ...p, feet: [far, near] });
+const ACT = [
+  [0, REST],
+  // the stance widens in the dip, one foot at a time: the near foot steps back (20), then the far foot forward (22); from 24 the feet are UP's
+  [20, feetOf(mixAxe(REST, ANT, 0.6), planted(22), lifted(-46))], [22, feetOf(ANT, lifted(60), planted(-72))],
+  [24, mixAxe(ANT, UP, 0.3)], [26, mixAxe(ANT, UP, 0.72)], [28, mixAxe(ANT, UP, 1.08)], [30, UP],
+  [48, SMEAR], [50, DEEP], [52, HIT],
+  // the back foot comes forward in two lifted drawings (108, 110) and lands at 112; the front foot stays where the swing planted it
+  [108, feetOf(DONEAT(0.35), planted(150), lifted(-30))], [110, feetOf(DONEAT(0.75), planted(150), lifted(40))], [112, DONEAT(1.08)], [114, DONE],
+];
+// the pose on screen at t, with the drawing before it as prev (the head and the curls trail one drawing)
 function poseAt(t) {
-  const tt = IB.twos(t), step = (t0) => IB.drawn(tt, t0);
-  if (tt < 0.833) return REST;
-  if (tt < 2.0) { const u = IB.inbetween([0.35, 0.75, 1], step(0.833)), p = IB.poseMix(REST, UP, u); return { ...p, G: [lerp(REST.G[0], UP.G[0], u), lerp(REST.G[1], UP.G[1], u)], th: lerp(REST.th, UP.th, u), flip: u < 0.5 ? -1 : 1, behind: true, grip: [true, true], face: UP.face }; }
-  if (tt < 2.083) return SMEAR;
-  if (tt < 4.5) return HIT;
-  const u = IB.inbetween([0.5, 1], step(4.5));
-  return u < 1 ? { ...IB.poseMix(HIT, DONE, u), G: HIT.G, th: HIT.th, flip: 1, grip: [false, true], face: DONE.face } : DONE;
+  const f = IB.frame(IB.twos(t)), p = IB.held(ACT, f), q = f > 0 ? IB.held(ACT, f - 1) : p;
+  return p === SMEAR ? p : { ...p, prev: q === SMEAR ? undefined : q };   // the smear is its own drawing: no trail into or out of it
 }
+IB.actors = (t) => ({ chopper: poseAt(t) });
 
 const CHIPS = [[-150, -210, -0.9], [-90, -300, 0.5], [70, -280, 1.2], [140, -190, -0.4], [210, -120, 0.8], [-230, -110, 1.6]];
 
@@ -65,11 +83,11 @@ MG.scene({
     if (p.behind) { IB.axe(ctx, p.G, p.th, { flip: p.flip }); IB.figure(ctx, p, look); }
     else {
       IB.figure(ctx, p, look, 'far');
-      IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: p === SMEAR });
+      IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: IB.held(ACT, IB.frame(tt)) === SMEAR });
       IB.figure(ctx, p, look, 'near');
     }
     // the weight of the raised axe: shake marks by its head for four drawings, then a dead-still hold
-    const s1 = IB.drawn(tt, 1.0);
+    const s1 = IB.drawn(tt, 1.25);
     if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
     // impact: a burst at the cut for two drawings
     const s2 = IB.drawn(tt, 2.083);

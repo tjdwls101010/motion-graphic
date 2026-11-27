@@ -70,15 +70,15 @@ SAMPLE = """<!doctype html>
 /* %s The rest of the comment. */
 MG.scene({
   title: 'sample',
-  duration: 6, %s fps: 24,
+  %s %s fps: 24,
   render() {},
 });
 </script>
 """
 
 
-def run_parts(sample_ref='ref: null,', comment='소품 견본: IB.crate와 IB.box.', group='props', poster=True, args=()):
-    """Run build_index.py in a library with one scene and one part sample; returns (exit code, stdout, parts.html text or '')."""
+def run_parts(sample_ref='ref: null,', comment='소품 견본: IB.crate와 IB.box.', group='props', poster=True, args=(), duration='duration: 6,', extra=()):
+    """Run build_index.py in a library with one scene and one part sample (plus a complete sample in each group of `extra`); returns (exit code, stdout, parts.html text or '')."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         shutil.copytree(TOOLS, root / 'tools', ignore=shutil.ignore_patterns('__pycache__'))
@@ -88,7 +88,12 @@ def run_parts(sample_ref='ref: null,', comment='소품 견본: IB.crate와 IB.bo
         (root / 'demo' / 'families.json').write_text('{"fam": "계열"}')
         (root / 'demo' / 'scenes' / 'fam' / 'one.html').write_text(SCENE % ('', 'ref: null,'))
         (root / 'demo' / 'thumbs' / 'fam-one.jpg').write_bytes(b'')
-        (root / 'demo' / 'parts' / group / 'crate.html').write_text(SAMPLE % (comment, sample_ref))
+        text = SAMPLE % (comment or '', duration, sample_ref)
+        (root / 'demo' / 'parts' / group / 'crate.html').write_text(text if comment is not None else text.replace('/*  The rest of the comment. */\n', ''))   # None: no top comment at all
+        for g in extra:
+            (root / 'demo' / 'parts' / g).mkdir(parents=True, exist_ok=True)
+            (root / 'demo' / 'parts' / g / 'more.html').write_text(SAMPLE % (f'견본 {g}.', 'duration: 6,', 'ref: null,'))
+            (root / 'demo' / 'thumbs' / f'parts-{g}-more.jpg').write_bytes(b'')
         if poster:
             (root / 'demo' / 'thumbs' / f'parts-{group}-crate.jpg').write_bytes(b'')
         done = subprocess.run([sys.executable, str(root / 'tools' / 'build_index.py'), *args], capture_output=True, text=True)
@@ -106,7 +111,12 @@ check('a complete sample passes --check', run_parts(args=('--check',))[0], 0)
 check('a sample without a poster fails --check', run_parts(poster=False, args=('--check',))[0], 1)
 check('a sample that declares no ref: null fails --check', run_parts(sample_ref='', args=('--check',))[0], 1)
 check('a sample in a group the sheet does not know fails --check', run_parts(group='misc', args=('--check',))[0], 1)
-check('a sample needs no Motion notes', run_parts(args=('--check',))[0], 0)
+check('a sample without a duration fails --check', run_parts(duration='', args=('--check',))[0], 1)
+check('a sample without a top comment sentence fails --check', run_parts(comment=None, args=('--check',))[0], 1)
+page = run_parts(extra=('marks', 'sets'))[2]
+check('groups follow library.GROUPS, not the alphabet: sets before marks', 0 <= page.find('<code>sets</code>') < page.find('<code>marks</code>'), True)
+code, out, page = run_parts(group='misc')
+check('a sample in an unknown group is reported, left out of the sheet and of its count', ('misc' in out, 'crate.html' in page, '견본 0장' in page), (True, False, True))
 idx = run('ref: null,')[1]
 check('the scene gallery links to parts.html', 'href="parts.html"' in idx, True)
 

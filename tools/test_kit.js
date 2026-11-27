@@ -100,10 +100,11 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
       }
     }
   }
-  // 5. every exported part is on the part sheet (named in a sample's code or comment)
+  // 5. every exported part is on the part sheet: used in a sample's script code, not only named in a comment, a string (titles, labels) or an HTML comment
   const sampleDir = path.join(ROOT, ref, 'parts');
   if (fs.existsSync(sampleDir)) {
-    const shown = new Set(pages.filter(([kind]) => kind === 'parts').flatMap(([, fam, s]) => [...names(fs.readFileSync(path.join(sampleDir, fam, s), 'utf8'))]));
+    const code = (src) => src.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''").replace(/`(?:[^`\\]|\\.)*`/g, (s) => [...s.matchAll(/\$\{([^}]*)\}/g)].map((m) => m[1]).join(' '));   // a template string keeps only its ${...} code
+    const shown = new Set(pages.filter(([kind]) => kind === 'parts').flatMap(([, fam, s]) => [...names(code(fs.readFileSync(path.join(sampleDir, fam, s), 'utf8')))]));
     const missing = Object.keys(owner).filter((n) => !shown.has(n) && !(NOT_SHOWN[ref] || {})[n]).sort();
     if (missing.length) fail(`${ref}: ${missing.length} parts are on no part sample: ${missing.map((n) => 'IB.' + n + ' (' + owner[n] + ')').join(', ')}`);
   }

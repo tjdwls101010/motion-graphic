@@ -14,7 +14,7 @@
 <script src="../../kit/props/handheld.js"></script>
 <script>
 /* 헤드폰을 쓰고 긴 가방을 멘 사람이 컵을 들고 복도를 걸어가다 노란 문 앞에서 멈춰 한 모금 마신다. 원본에 없는 창작 장면으로, 원본의 걷기(2프레임에 한 장)와 탠덤 스팟의 흐르는 배경을 한 인물의 걷기 사이클로 옮겼다. 전달하는 생각: 인물은 제자리에서 걷고 세상이 뒤로 흐른다.
-   Motion notes: travelling shot, figure fixed at x=900, 520 px tall, line 3.7 px (IB.figLine). Walk cycle = 12 drawn poses on twos, 1.0 s per two steps; each step carries the body 0.42 h, so the props scroll at 0.84 h/s = 437 px/s on ones (the drawing steps, the world glides: STYLE "카메라, 스크롤만 1프레임 단위"). Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peels up to 0.6 rad over the last 25%; swing foot lifts 0.085 h on a half sine. Hip is lowest at each contact and rises 0.028 h at mid-stance. The arms do not swing because both hands are busy (cup, strap): only the bag bounces, one pose behind the hip. Stop at 5.0 s on a contact pose: three in-betweens on twos to the standing pose (poseMix 0.45, 0.8, 1) while the scroll runs out over 0.33 s (outQuad, 72 px), then the bag's shake marks flicker for 4 drawings and everything holds dead still for 0.6 s. Sip: cup to the mouth in 2 drawings at 6.0 s, held 1 s, back down in 2 drawings; nothing else moves. Floor = one chalk smear that stays under the feet; the wall is only what hangs on it. Three colours: the bag (#b79df0, the purple of the production still, not a film-palette colour), mustard frames, the yellow door. */
+   Motion notes: travelling shot, figure fixed at x=900, 520 px tall, line 3.7 px (IB.figLine). Walk cycle = 12 drawn poses on twos, 1.0 s per two steps; each step carries the body 0.42 h, so the props scroll at 0.84 h/s = 437 px/s on ones (the drawing steps, the world glides: STYLE "카메라, 스크롤만 1프레임 단위"). Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peels up to 0.6 rad over the last 25%; swing foot lifts 0.085 h on a half sine. Hip is lowest at each contact and rises 0.028 h at mid-stance. The arms do not swing because both hands are busy (cup, strap): only the bag bounces, one pose behind the hip. Stop at 5.0 s on a contact pose: two in-betweens on twos, one drawing where the body carries on past the standing pose (hips and hands 16 px forward, leaning 0.08 rad, feet planted) and the standing pose while the scroll runs out over 0.33 s (outQuad, 72 px), then the bag's shake marks flicker for 4 drawings and everything holds dead still for 0.6 s. Sip: the cup dips 0.12 of the way down first (5.92 s), comes up in one in-between to the mouth at 6.08 s, held 1 s, back down in 3 drawings with one below its resting place; nothing else moves. Every drawing passes the one before it as pose.prev: the head trails the stop and the sip by one drawing. Floor = one chalk smear that stays under the feet; the wall is only what hangs on it. Three colours: the bag (#b79df0, the purple of the production still, not a film-palette colour), mustard frames, the yellow door. */
 const { prog, lerp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 900;
 const WHO = { ...IB.PEOPLE.walker, h: 520, dir: 1, seed: 40 };
@@ -28,7 +28,8 @@ const walkPose = (ph) => carry(IB.walk(X0, FLOOR, WHO, ph), 0);   // the cycle i
 // both hands are busy: the far one holds a cup out in front, the near one holds the bag strap at the chest
 function carry(p, sip) {
   const h = WHO.h, sy = p.hip[1] - F.torso * h;
-  p.hands = [[X0 + lerp(0.2, 0.125, sip) * h, sy + lerp(0.115, -0.045, sip) * h], [X0 + 0.1 * h, sy + 0.125 * h]];
+  const x = p.hip[0];   // the hands ride with the hips (an overshoot drawing carries them forward too)
+  p.hands = [[x + lerp(0.2, 0.125, sip) * h, sy + lerp(0.115, -0.045, sip) * h], [x + 0.1 * h, sy + 0.125 * h]];
   p.elbow = [1, 1];
   p.nod = -0.16 * sip;
   return p;
@@ -36,11 +37,16 @@ function carry(p, sip) {
 function poseAt(t) {
   const tt = IB.twos(t);
   if (tt < STOP) return walkPose((travel(tt) / (4 * STEP)) % 1);
-  const stand = carry(IB.stand(X0, FLOOR, WHO), 0), u = IB.inbetween([0.45, 0.8, 1, 1], IB.drawn(tt, STOP));
-  if (u < 1) return carry(IB.poseMix(walkPose(0), stand, u), 0);
-  const sip = tt < 6 ? 0 : tt < 7.08 ? IB.inbetween([0.55, 1], IB.drawn(tt, 6)) : IB.inbetween([0.45, 0], IB.drawn(tt, 7.08));
+  // the stop: two in-betweens, then one drawing where the body carries on past the standing pose (u 1.08: hips and hands forward, feet planted) before it settles back
+  const stand = carry(IB.stand(X0, FLOOR, WHO), 0), k = IB.drawn(tt, STOP);
+  if (k < 2) return carry(IB.poseMix(walkPose(0), stand, [0.45, 0.8][k]), 0);
+  if (k === 2) { const p = IB.stand(X0, FLOOR, WHO); p.hip = [X0 + 0.03 * WHO.h, p.hip[1] + 3]; p.lean = 0.08; return carry(p, 0); }   // the body carries on past standing: hips 16 px forward over planted feet, leaning in
+  // the sip: the cup dips first (anticipation), comes up in one in-between, is held; on the way down it drops a little below where it rests and comes back
+  const sip = tt < 6 - 1 / 12 - 1e-6 ? 0 : tt < 7.08 ? IB.inbetween([-0.12, 0.55, 1], IB.drawn(tt, 6 - 1 / 12)) : IB.inbetween([0.45, -0.08, 0], IB.drawn(tt, 7.08));
   return carry(IB.stand(X0, FLOOR, WHO), sip);
 }
+
+IB.actors = (t) => ({ walker: { ...poseAt(t), prev: poseAt(IB.twos(t) - 1 / 12) } });
 
 MG.scene({
   title: 'acting / walk-cycle-bag',
@@ -66,7 +72,7 @@ MG.scene({
     // a long lavender bag slung across the back: low end ahead of the hip, high end behind the shoulder; it lags the body by 1.6 times the hip's last move
     const bx = probe.hip[0] - 0.05 * h, by = lerp(probe.hip[1], probe.sh[1], 0.42) + (prev.hip[1] - pose.hip[1]) * 1.6;
     IB.slingBag(ctx, [bx, by]);
-    const j = IB.figure(ctx, pose, WHO);
+    const j = IB.figure(ctx, { ...pose, prev }, WHO);   // the drawing before trails the head by one drawing
     // strap over the near shoulder, down across the chest to the bag's low end, under the hand that holds it
     IB.strap(ctx, [[j.sh[0] - 0.035 * h, j.sh[1] - 0.012 * h], [j.sh[0] + 0.035 * h, j.sh[1] + 0.035 * h], [j.hands[1][0] + 0.012 * h, j.hands[1][1]], [bx + 0.21 * h, by + 0.02 * h]]);
     // the cup in the far hand: lid, straw, and the fingers back over it

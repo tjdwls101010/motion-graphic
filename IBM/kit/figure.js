@@ -105,14 +105,18 @@
   }
 
   /* The head in profile: skull, nose and chin as one shape, an eye, a mouth. face: { eye: 'dot' | 'closed' | 'wide' | 'shades', mouth: 'smile' | 'flat' | 'open' | 'frown', brow: -1..1 } */
-  function head(ctx, at, ang, dir, h, look, lw, seed) {
+  function head(ctx, at, ang, dir, h, look, lw, seed, swing = 0) {
     const s = (F.head * h) / 21, face = look.face || {};
     ctx.save();
     ctx.translate(at[0], at[1]);
     ctx.rotate(ang * dir);
     ctx.scale(s * dir, s);
     const w = lw / s;
-    hairBack(ctx, look, w, seed + 20);
+    if (swing) {   // hair behind the head trails the move by one drawing: turned about the nape, + lifts it up and back
+      ctx.save(); ctx.translate(-15, 5); ctx.rotate(swing); ctx.translate(15, -5);
+      hairBack(ctx, look, w, seed + 20);
+      ctx.restore();
+    } else hairBack(ctx, look, w, seed + 20);
     IB.ink(ctx, [[-2, -21], [14, -15], [19, -3], [27, 3], [19, 7], [16, 17], [2, 22], [-15, 14], [-20, -4]], { closed: true, fill: look.skin, w, seed });
     IB.ink(ctx, [[-9, -2], [-13, 3], [-8, 7]], { w: w * 0.7, seed: seed + 1 });   // ear
     hairFront(ctx, look, w, seed + 30);
@@ -134,11 +138,12 @@
   }
 
   /* figure(ctx, pose, look) — draw one person.
-     pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], grip: [false, false] }
+     pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], grip: [false, false], prev }
+           prev is the pose of the drawing shown just before this one (a plain pose, without a prev of its own). With it the head and the hair behind it trail the move by one drawing: the head keeps half of the lean and nod it just left, and a ponytail, bun or curls swing against the way the hips moved and the way the spine tipped. The drawing after a move has stopped has prev equal to itself, so the trail settles there and the hold that follows is dead still. Without prev nothing trails. Pass it from the scene's own drawing grid: prev = the pose at IB.twos(t) - 1e-4 (or IB.threes for a part on threes), so it changes only where the drawings do.
            hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. Start from IB.stand() and move what the pose changes.
      look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, face, seed }
            h is the standing height in px, dir 1 faces right and -1 left. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
-     Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands). Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
+     Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands), and drag: [dx, dy], half of how far the hips moved since prev and the other way, for a hanging thing (a bag, a cord) to trail by. Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
   IB.figure = (ctx, pose, look, only) => {
     const h = look.h, d = look.dir || 1, lw = look.lw || IB.figLine(h), seed = look.seed || 1, skin = look.skin || C.skin[2];
     const top = look.top || C.bg, bottom = look.bottom || C.navy, tee = (look.topKind || 'tee') === 'tee', shorts = look.bottomKind === 'shorts';
@@ -146,6 +151,10 @@
     const hip = pose.hip, at = (u, f) => [hip[0] + sx * u * h + fx * f * h, hip[1] + sy * u * h + fy * f * h];
     const sh = at(F.torso - 0.012, 0.004), headAt = at(F.torso + F.neck, 0.016 + (pose.nod || 0) * 0.03);
     const knee = pose.knee || [1, 1], elbow = pose.elbow || [1, 1], grip = pose.grip || [false, false];
+    // follow-through from the previous drawing (none without pose.prev)
+    const prev = pose.prev, dl = prev ? (prev.lean || 0) - lean : 0, dn = prev ? (prev.nod || 0) - (pose.nod || 0) : 0;
+    const vx = prev ? hip[0] - prev.hip[0] : 0, vy = prev ? hip[1] - prev.hip[1] : 0;
+    const swing = prev ? clamp((2.5 * vx * d) / h - 0.8 * (lean - (prev.lean || 0)), -0.5, 0.5) * (look.hair === 'curly' ? 0.4 : 1) : 0;   // a mass of curls is heavy: it swings less
     const roots = [at(0, 0.024), at(0, -0.024)];   // the far leg leaves the pelvis a little ahead of the near one, which gives the trousers their width
     const legs = pose.feet.map((f, i) => { const [k, e] = ik(roots[i], f, F.thigh * h, F.shin * h, -d * knee[i]); return { k, e, pitch: f[2] || 0, root: roots[i] }; });
     const arms = pose.hands.map((w, i) => { const [el, e] = ik(sh, w, F.upper * h, F.fore * h, d * elbow[i]); return { el, e }; });
@@ -177,10 +186,10 @@
       // torso: one garment shape from the shoulders to a hem below the hip joint (u along the spine, f forward)
       const hem = shorts || look.tuck ? -0.03 : -0.085;
       IB.ink(ctx, [at(F.torso + 0.012, -0.03), at(F.torso + 0.02, 0.012), at(F.torso - 0.03, 0.06), at(F.torso * 0.55, 0.082), at(0.03, 0.08), at(hem, 0.078), at(hem, 0.076), at(hem, -0.076), at(hem, -0.078), at(0.05, -0.078), at(F.torso * 0.7, -0.074), at(F.torso - 0.03, -0.06)], { closed: true, fill: top, w: lw, seed: seed + 60, wob: 0.5 });
-      head(ctx, headAt, lean * 0.5 + (pose.nod || 0), d, h, { ...look, skin }, lw, seed + 70);
+      head(ctx, headAt, lean * 0.5 + (pose.nod || 0) + (prev ? dl * 0.5 + dn * 0.5 : 0), d, h, { ...look, skin }, lw, seed + 70, swing);
     }
     if (only !== 'far') drawArm(1);
-    return { hip, sh, headAt, knees: legs.map((l) => l.k), elbows: arms.map((a) => a.el), feet: legs.map((l) => l.e), hands: arms.map((a) => a.e) };
+    return { hip, sh, headAt, knees: legs.map((l) => l.k), elbows: arms.map((a) => a.el), feet: legs.map((l) => l.e), hands: arms.map((a) => a.e), drag: [-vx * 0.5, -vy * 0.5] };
   };
 
   /* stand(x, floor, look) — the neutral pose of a figure standing at x on the floor line: feet together, arms hanging. Every other pose is this with a few joints moved. */
@@ -193,7 +202,7 @@
     };
   };
 
-  /* walk(x, floor, look, ph, opts) — one drawing of a walk cycle for a figure whose body is at x: ph 0..1 runs through two steps and ph = 0 is the contact with the near foot ahead. Draw 12 of them on twos for the reference's walk (1.0 s per two steps). Each step carries the body `stride` x h (default 0.21, so IB.walkLen = 0.84 h per cycle): either move x by that much per cycle across a still stage, or keep x and scroll the world under the feet.
+  /* walk(x, floor, look, ph, opts) — one drawing of a walk cycle for a figure whose body is at x: ph 0..1 runs through two steps and ph = 0 is the contact with the near foot ahead. Draw 12 of them on twos for the reference's walk (1.0 s per two steps). Each step carries the body 2 x `stride` x h (stride defaults to 0.21: 0.42 h a step, so IB.walkLen = 0.84 h per cycle): either move x by that much per cycle across a still stage, or keep x and scroll the world under the feet.
      Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peeling up to 0.6 rad over its last 25%. Swing foot: 0.085 h off the floor on a half sine. Hip lowest at each contact, 0.028 h higher at mid-stance. Arms swing against the legs by `swing` x h (default 0.11); a scene whose figure carries something overwrites p.hands. */
   IB.walk = (x, floor, look, ph, o = {}) => {
     const h = look.h, d = look.dir || 1, step = (o.stride == null ? 0.21 : o.stride) * h, p = IB.stand(x, floor, look), ay = floor - F.ankle * h;

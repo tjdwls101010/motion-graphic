@@ -12,7 +12,7 @@
 <script src="../../kit/sets/city.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 배경 세트 견본: 도시 세트(sets/city 전면)를 짓는 조각 셋, 정면에서 본 고층 건물 IB.tower, 위에서 본 납작 지붕 블록 IB.roofBlock, 경기장 IB.stadium. 고층 건물은 무늬(dots 창 대시 열, v 세로줄, h 가로줄, grid, bays 세로 창 넷)를 너비의 일부(from..to)에만 얹고 나머지는 희게 둔다: 원본은 대개 3분의 1을 비운다. cap은 지붕 위 좁은 블록이고, 바닥은 y 700까지 내려가 앞의 것 뒤로 숨는다. 지붕 블록은 네 점(왼, 뒤, 오른, 앞) 지붕에 두 면이 h만큼 내려오고, 면의 무늬는 tex(v, band, h, u, none)다. 선은 1.6–4.5px이 섞이고 색은 경기장 발치의 파란 띠 하나뿐이다. 행과 seed는 IB.stadiumCity의 TOWERS·ground() 그대로이고, 칸에 늘어놓으려고 x만 옮겼다. */
+/* 배경 세트 견본: 도시 세트(sets/city 전면)를 짓는 조각 셋, 정면에서 본 고층 건물 IB.tower, 위에서 본 납작 지붕 블록 IB.roofBlock(지붕 점이 넷이면 상자, 다섯 이상이면 꺾인 지붕(모서리가 파인 L자, 안으로 파인 홈): 보는 쪽을 향한 변마다 벽이 내려오고 무늬는 'v'와 'band'만), 경기장 IB.stadium. 고층 건물은 무늬(dots 창 대시 열, v 세로줄, h 가로줄, grid, bays 세로 창 넷)를 너비의 일부(from..to)에만 얹고 나머지는 희게 둔다: 원본은 대개 3분의 1을 비운다. cap은 지붕 위 좁은 블록이고, 바닥은 y 700까지 내려가 앞의 것 뒤로 숨는다. 지붕 블록은 네 점(왼, 뒤, 오른, 앞) 지붕에 두 면이 h만큼 내려오고, 면의 무늬는 tex(v, band, h, u, none)다. 선은 1.6–4.5px이 섞이고 색은 경기장 발치의 파란 띠 하나뿐이다. 행과 seed는 IB.stadiumCity의 TOWERS·ground() 그대로이고, 칸에 늘어놓으려고 x만 옮겼다. */
 const TOWERS = { v: [[780, 945, 395, 'v', 0.05, 0.95], 321], dots: [[1522, 1650, 392, 'dots', 0.1, 0.6], 308], h: [[1725, 1845, 478, 'h', 0.3, 0.95], 373], grid: [[1312, 1492, 335, 'grid', 0.08, 1], 256], bays: [[100, 285, 435, 'bays', 0.05, 0.75], 334], cap: [[298, 368, 335, 'dots', 0.1, 0.9, [305, 352, 322]], 269] };
 const row = (list, x0, gap) => { let x = x0; return list.map((k) => { const [b, seed] = TOWERS[k], dx = x - b[0]; x += b[1] - b[0] + gap; return { b, seed, dx }; }); };
 const tower = (ctx, { b, seed, dx }) => { ctx.save(); ctx.translate(dx, 0); IB.tower(ctx, b, { seed }); ctx.restore(); };
@@ -26,7 +26,7 @@ MG.scene({
     const c = SAMPLE.grid(6, 3), V = (cx, bottom) => [cx - c[0][2] / 2, bottom - c[0][3], c[0][2], c[0][3]];
     SAMPLE.cell(ctx, c[0], V(960, 720), () => row(['v', 'dots', 'h'], 700, 40).forEach((q) => tower(ctx, q)), "IB.tower(row) — 'v', 'dots', 'h'");
     SAMPLE.cell(ctx, c[1], V(960, 720), () => row(['grid', 'bays', 'cap'], 690, 30).forEach((q) => tower(ctx, q)), "IB.tower — 'grid', 'bays', cap");
-    SAMPLE.cell(ctx, c[2], V(480, 1030), () => IB.roofBlock(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], { h: 92, seed: 540, tex: 'band' }), "IB.roofBlock(q, { h, tex: 'band' })");
+    SAMPLE.cell(ctx, c[2], V(480, 1030), () => IB.roofBlock(ctx, [[198, 834], [420, 790], [755, 833], [408, 920], [255, 888], [360, 862]], { h: 96, seed: 540, tex: 'band' }), "IB.roofBlock(6-point q: an L, tex 'band')");
     const wide = SAMPLE.span(c, 3, 4);
     SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [965, 885], 20), () => IB.stadium(ctx), 'IB.stadium({ shift })');
     SAMPLE.cell(ctx, c[5], V(1600, 980), () => {

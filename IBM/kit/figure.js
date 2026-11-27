@@ -202,7 +202,13 @@
         const cut = [lerp(sh[0], A.el[0], 0.58), lerp(sh[1], A.el[1], 0.58)];
         limb(ctx, [cut, A.el, A.e], [F.armW * h * 1.15, F.armW * h, F.wristW * h], { fill: skin, lw, seed: sd, shade: h * 0.04 });
         limb(ctx, [sh, cut], [F.sleeveW * h * 0.92, F.sleeveW * h], { fill: top, lw, seed: sd + 8, cap: 'end' });
-      } else limb(ctx, [sh, A.el, A.e], [F.sleeveW * h * 0.9, F.armW * h * 1.25, F.cuffArmW * h], { fill: top, lw, seed: sd, cap: 'end' });
+      } else {
+        limb(ctx, [sh, A.el, A.e], [F.sleeveW * h * 0.9, F.armW * h * 1.25, F.cuffArmW * h], { fill: top, lw, seed: sd, cap: 'end' });
+        if (h >= 400) {   // the cuff band of a long sleeve, as the reference's medium shots draw it (the sweater at the cake, the walker's jacket); at wide size it would crowd the hand
+          const L = Math.hypot(A.e[0] - A.el[0], A.e[1] - A.el[1]) || 1, ux = (A.e[0] - A.el[0]) / L, uy = (A.e[1] - A.el[1]) / L, c = [A.e[0] - ux * 0.035 * h, A.e[1] - uy * 0.035 * h], hw = F.cuffArmW * h * 0.47;
+          IB.ink(ctx, [[c[0] - uy * hw, c[1] + ux * hw], [c[0] + uy * hw, c[1] - ux * hw]], { w: lw * 0.75, smooth: false, seed: sd + 9, taper: false });
+        }
+      }
       hand(ctx, A.e, ang, h, skin, lw * 0.9, sd + 12, kinds[i]);
     };
 

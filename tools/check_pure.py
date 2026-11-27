@@ -3,7 +3,7 @@
 
 For each scene the same three moments are captured twice: once seeking forward (25%, 50%, 75% of the duration) and once after jumping to the end and coming back in a different order (75%, 25%, 50%). A scene that keeps state between calls, or uses wall-clock time or unseeded randomness, draws something different for the same t and fails. Also fails a scene that raises a JavaScript error.
 
-Chrome does not rasterise the same frame bit-identically twice (gradients and antialiased edges move by 1-3 levels, up to ~16 on a pixel or two), so two captures count as different only when more than LIMIT pixels differ by more than LEVEL.
+Chrome does not rasterise the same frame bit-identically twice (gradients and antialiased edges move by 1-3 levels, up to ~16 on a pixel or two), so two captures count as different only when more than LIMIT pixels differ by more than LEVEL. A fresh page's first captures can also differ once, more than that (a dense line drawing failed about one run in five): a moment that differs is taken again after two other histories and fails only if those differ too.
 
   check_pure.py                         every scene and part sample of every reference
   check_pure.py pstack/scenes/sketch/*.html only these
@@ -51,7 +51,12 @@ def main():
                 capture.shot(page, 0)
                 for t in (times[2], times[0], times[1]):
                     if differs(first[t], capture.shot(page, t)):
-                        errors.append(f'frame at t={t:.2f}s depends on what was rendered before it')
+                        # Chrome can rasterise a fresh page's first captures a little differently (same_frames.py saw the same): a scene that keeps state differs again when the moment is taken after two other histories, a transient does not
+                        capture.shot(page, 0)
+                        a = capture.shot(page, t)
+                        capture.shot(page, dur)
+                        if differs(a, capture.shot(page, t)):
+                            errors.append(f'frame at t={t:.2f}s depends on what was rendered before it')
             except Exception as e:  # a scene that never becomes ready is a failure, not a crash of the check
                 errors.append(f'{type(e).__name__}: {e}'.splitlines()[0])
             page.close()

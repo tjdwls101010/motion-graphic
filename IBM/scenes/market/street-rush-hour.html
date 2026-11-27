@@ -61,7 +61,7 @@ function walkerPose(w, k) {
 function walker(ctx, w, k) {
   const { p, x, phone, prop } = walkerPose(w, k), d = w.dir;
   if (x < -160 || x > 2080) return null;
-  if (w.hero && k > 0) p.prev = walkerPose(w, k - 1).p;   // the hero's head trails the stop and the look by one drawing
+  if (w.hero && k >= STOP && k <= GO + 1) p.prev = walkerPose(w, k - 1).p;   // the hero's head trails the stop and the look by one drawing; walking, no prev (the bun would lean back the whole walk)
   const face = phone === 1 ? { eye: 'wide', mouth: k >= STOP + 6 ? 'smile' : 'flat' } : { mouth: 'flat' };
   const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
   if (prop === 'case') IB.briefcase(ctx, j.hands[0], { h: w.h, fill: w.bottom === C.ink ? C.charcoal : C.paper, lw, seed: w.seed + 20 });

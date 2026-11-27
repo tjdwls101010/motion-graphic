@@ -1,4 +1,4 @@
-/* cast/paper.js — the office paper that walks: the reference's folder and document (objects with thin legs, never a face) and their relatives in the creative scenes. Needs ink.js and figure.js; adds to the global IB. */
+/* cast/paper.js — the office paper that walks: the reference's folder and document (objects with thin legs, never a face) and their relatives in the creative scenes. Needs ink.js, marks.js, figure.js and solid.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;
@@ -36,7 +36,7 @@
   };
 
   /* ---------- the folder and the document of the reference's fourth spot ---------- */
-  /* Both are things with thickness that turn in depth (solid.js projects them and the same brush pen draws the result), on rubber-hose legs with boots, and arms that grow out from behind an edge only while they are needed. They are staged in the reference's own coordinates: floor line y 893, the folder starting at x 1093 and the document at x 1700. A pose's x and its feet are stage px, not offsets from the body: a planted foot keeps the same x from drawing to drawing while the body's x moves over it, which is what stops it skating. To stage them somewhere else, translate the context. Needs solid.js and marks.js as well. */
+  /* Both are things with thickness that turn in depth (solid.js projects them and the same brush pen draws the result), on rubber-hose legs with boots, and arms that grow out from behind an edge only while they are needed. They are staged in the reference's own coordinates: floor line y 893, the folder starting at x 1093 and the document at x 1700. A pose's x and its feet are stage px, not offsets from the body: a planted foot keeps the same x from drawing to drawing while the body's x moves over it, which is what stops it skating. To stage them somewhere else, translate the context. */
   const PI = Math.PI, FLOOR = 893, ANKLE = FLOOR - 12, HIP = 106;
   IB.PAPER = { floor: FLOOR, ankle: ANKLE, hip: HIP };
 

@@ -1,4 +1,4 @@
-/* marks.js — the effect marks the IBM look draws beside a thing instead of moving it smoothly: burst lines at an impact, speed arcs behind a swing, chalk puddles, breath and smoke. Each is a few brush-pen strokes that exist for one to three drawings and are redrawn with a new seed every drawing. Load after ink.js and time.js; adds to the global IB. */
+/* marks.js — the effect marks the IBM look draws beside a thing instead of moving it smoothly: burst lines at an impact, speed arcs behind a swing, chalk puddles, breath and smoke. Each is a few brush-pen strokes that exist for one to three drawings and are redrawn with a new seed every drawing. Needs ink.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
 

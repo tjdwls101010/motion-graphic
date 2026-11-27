@@ -1,4 +1,4 @@
-/* props/handheld.js — things a person carries, swings or points in the IBM look: flat fills inside a brush-pen outline, the hand-drawn wobble, graphite only where a thing meets the floor. Needs ink.js; adds to the global IB. */
+/* props/handheld.js — things a person carries, swings or points in the IBM look: flat fills inside a brush-pen outline, the hand-drawn wobble, graphite only where a thing meets the floor. Needs ink.js and figure.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
 

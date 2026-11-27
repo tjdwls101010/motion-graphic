@@ -1,4 +1,4 @@
-/* props/party.js — balloons and party things in the IBM look: flat colour inside a brush-pen outline, a paper glint, strings as thin ink. Needs ink.js; adds to the global IB. */
+/* props/party.js — balloons and party things in the IBM look: flat colour inside a brush-pen outline, a paper glint, strings as thin ink. Needs ink.js, marks.js and solid.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp } = MG;

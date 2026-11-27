@@ -1,4 +1,4 @@
-/* props/home.js — furniture and fittings of a room in the IBM look: paper-white wood in a brush-pen outline, graphite under seats and where things meet the floor. Needs ink.js; adds to the global IB. */
+/* props/home.js — furniture and fittings of a room in the IBM look: paper-white wood in a brush-pen outline, graphite under seats and where things meet the floor. Needs ink.js and marks.js; adds to the global IB. */
 (function (g) {
   const IB = g.IB, C = IB.C;
 

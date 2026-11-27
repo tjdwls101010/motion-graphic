@@ -1,4 +1,4 @@
-/* props/nature.js — plants, clouds and other growing things in the IBM look: outlines only, the fill is the stage colour, a little graphite; they are set dressing and stay white so the actors keep the colour. Needs ink.js; adds to the global IB. */
+/* props/nature.js — plants, clouds and other growing things in the IBM look: outlines only, the fill is the stage colour, a little graphite; they are set dressing and stay white so the actors keep the colour. Needs ink.js and marks.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
 

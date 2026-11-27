@@ -1,4 +1,4 @@
-/* sets/street.js — a financial district street as one still line drawing: a far skyline, two towers, a stock exchange with columns and a pediment, kerb, lamp and hydrant. The establishing-shot grammar of the reference: 1.5-4 px lines, no fills (every face is the stage colour), windows as texture, and nothing moves but one small thing (the flag). Needs ink.js and props/office.js (the clock); adds to the global IB. */
+/* sets/street.js — a financial district street as one still line drawing: a far skyline, two towers, a stock exchange with columns and a pediment, kerb, lamp and hydrant. The establishing-shot grammar of the reference: 1.5-4 px lines, no fills (every face is the stage colour), windows as texture, and nothing moves but one small thing (the flag). Needs ink.js and props/office.js; adds to the global IB. */
 (function (g) {
   const IB = g.IB, C = IB.C;
 

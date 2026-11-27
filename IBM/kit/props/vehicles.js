@@ -1,4 +1,4 @@
-/* props/vehicles.js — things that roll, fly or carry in the IBM look: flat colour bodies in a brush-pen outline, wheels as paper ovals, motion shown by drawings and marks rather than blur. Needs ink.js and figure.js; adds to the global IB. */
+/* props/vehicles.js — things that roll, fly or carry in the IBM look: flat colour bodies in a brush-pen outline, wheels as paper ovals, motion shown by drawings and marks rather than blur. Needs ink.js, marks.js and figure.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;

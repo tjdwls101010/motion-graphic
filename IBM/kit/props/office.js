@@ -1,6 +1,6 @@
 /* props/office.js — office and market props in the look of the IBM spots: a seated pose for the figure rig, an office chair, a desk, a monitor seen from the front, and a candlestick chart to put on its screen. Flat fills and ink outlines like everything else; a screen is paper white and what is on it is drawn, never glowing. Needs ink.js and figure.js; adds to the global IB. */
 (function (g) {
-  const MG = g.MG, IB = g.IB, C = IB.C, F = IB.FIG;
+  const MG = g.MG, IB = g.IB, C = IB.C;
 
   /* How high a seat holds the hip joint, as a fraction of the sitter's height: 0.05 h (half a thigh's thickness) above a seat whose top is 0.285 h off the floor. */
   IB.SEAT = 0.335;
@@ -10,7 +10,7 @@
     const h = look.h, d = look.dir || 1, hy = floor - IB.SEAT * h;
     return {
       hip: [x, hy], lean: 0.04, nod: 0,
-      feet: [[x + 0.27 * h * d, floor - F.ankle * h, 0], [x + 0.21 * h * d, floor - F.ankle * h, 0]],
+      feet: [[x + 0.27 * h * d, floor - IB.FIG.ankle * h, 0], [x + 0.21 * h * d, floor - IB.FIG.ankle * h, 0]],
       hands: [[x + 0.25 * h * d, hy - 0.11 * h], [x + 0.21 * h * d, hy - 0.1 * h]],
     };
   };

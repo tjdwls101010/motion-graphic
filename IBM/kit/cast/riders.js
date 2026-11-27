@@ -1,4 +1,4 @@
-/* cast/riders.js — the five riders of the reference's fifth spot, who pile onto a tandem one by one: small figures (about 250 px seated) with 1.9 px lines, each told apart by hair or headgear and clothes, not by face. Their own rig, anchored on the bottom bracket they pedal: joint positions were read off the reference, and the poses are numbers (lean, rise, tuck, nod, arms). Needs ink.js, figure.js (IB.ik, IB.limb, IB.mitt) and props/vehicles.js (IB.TANDEM); adds to the global IB. */
+/* cast/riders.js — the five riders of the reference's fifth spot, who pile onto a tandem one by one: small figures (about 250 px seated) with 1.9 px lines, each told apart by hair or headgear and clothes, not by face. Their own rig, anchored on the bottom bracket they pedal: joint positions were read off the reference, and the poses are numbers (lean, rise, tuck, nod, arms). Needs ink.js, figure.js and props/vehicles.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp } = MG;

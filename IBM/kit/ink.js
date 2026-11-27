@@ -1,4 +1,4 @@
-/* ink.js — the brush-pen look of the IBM spots on a 2D canvas: flat grey stage, black ink outlines over white fills, one or two flat colours, the blue chalk smear that stands in for the floor, copy that slides in and settles, and the speed-line whip between shots. Immediate mode: a scene's render(t) repaints everything. Every measured number in ../STYLE.md lives here once. Exposes the global IB. */
+/* ink.js — the brush-pen look of the IBM spots on a 2D canvas: flat grey stage, black ink outlines over white fills, one or two flat colours, the blue chalk smear that stands in for the floor, copy that slides in and settles, and the speed-line whip between shots. Immediate mode: a scene's render(t) repaints everything. Every measured number in ../STYLE.md lives here once. Needs time.js (IB.copy reads IB.settle and IB.frame at call time); exposes the global IB. */
 (function (g) {
   const MG = g.MG;
   const IB = (g.IB = {});

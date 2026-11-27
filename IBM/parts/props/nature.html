@@ -18,16 +18,16 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     SAMPLE.title(ctx, 'props/nature.js — plants, clouds, foliage, ground');
-    const f = IB.frame(t), c = SAMPLE.grid(9, 3);
-    SAMPLE.cell(ctx, c[0], [1640 - 300, 930 - 430, 600, 450], () => IB.pottedPlant(ctx, [1640, 930], IB.PLANTS.tall), 'IB.pottedPlant(PLANTS.tall)');
-    SAMPLE.cell(ctx, c[1], [1640 - 300, 930 - 430, 600, 450], () => IB.pottedPlant(ctx, [1640, 930], IB.PLANTS.bushy), 'IB.pottedPlant(PLANTS.bushy)');
-    SAMPLE.cell(ctx, c[2], [1560, 620, 260, 330], () => IB.sillPlant(ctx, { sway: IB.loop(f, [0, 0.07, -0.05]) }), 'IB.sillPlant — sway on twos');
-    SAMPLE.cell(ctx, c[3], [280, 70, 360, 150], () => IB.cloud(ctx, [300, 618, 145, 58]), 'IB.cloud([x0, x1, y, h])');
-    SAMPLE.cell(ctx, c[4], [520, 0, 480, 140], () => IB.bandCloud(ctx, [540, 975, 68]), 'IB.bandCloud([x0, x1, y])');
-    SAMPLE.cell(ctx, c[5], [860, 150, 600, 270], () => { IB.wispCloud(ctx, [1100 - (t % 4) * 30, 300], { w: 150 }); IB.wispCloud(ctx, [1260 - (t % 4) * 30, 360], { w: 62, seed: 61 }); }, 'IB.wispCloud — drifting on ones');
-    SAMPLE.cell(ctx, c[6], [700, 640, 500, 300], () => { IB.clump(ctx, [950, 800], [150, 60], { seed: 501 }); IB.clump(ctx, [830, 760], [70, 30], { seed: 502 }); }, 'IB.clump(at, [rx, ry])');
-    SAMPLE.cell(ctx, c[7], [100, 300, 400, 200], () => [[230, 415], [262, 466], [330, 380], [380, 430]].forEach((b) => IB.bird(ctx, b)), 'IB.bird');
-    SAMPLE.cell(ctx, c[8], [700, 760, 520, 200], () => { IB.tuft(ctx, [820, 860], { seed: 3 }); IB.stones(ctx, [960, 870], { seed: 5 }); IB.tuft(ctx, [1100, 850], { seed: 7 }); }, 'IB.tuft, IB.stones');
+    const f = IB.frame(t), c = SAMPLE.grid(10, 5), band = SAMPLE.span(c, 5, 6);   // 1:1 cells: each window is its cell's size
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [1640, 930], 12), () => IB.pottedPlant(ctx, [1640, 930], IB.PLANTS.tall), 'IB.pottedPlant(PLANTS.tall)');
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [1640, 930]), () => IB.pottedPlant(ctx, [1640, 930], IB.PLANTS.bushy), 'PLANTS.bushy');
+    SAMPLE.cell(ctx, c[2], SAMPLE.fit(c[2], [1690, 980]), () => IB.sillPlant(ctx, { sway: IB.loop(f, [0, 0.07, -0.05]) }), 'IB.sillPlant — sway on twos');
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [928, 900]), () => { IB.clump(ctx, [950, 800], [150, 60], { seed: 501 }); IB.clump(ctx, [830, 760], [70, 30], { seed: 502 }); }, 'IB.clump(at, [rx, ry])');
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [459, 380]), () => IB.cloud(ctx, [300, 618, 145, 58]), 'IB.cloud([x0, x1, y, h])');
+    SAMPLE.cell(ctx, band, SAMPLE.fit(band, [757, 300]), () => IB.bandCloud(ctx, [540, 975, 68]), 'IB.bandCloud([x0, x1, y])');
+    SAMPLE.cell(ctx, c[7], SAMPLE.fit(c[7], [1128, 540]), () => { IB.wispCloud(ctx, [1100 - (t % 4) * 15, 300], { w: 150 }); IB.wispCloud(ctx, [1260 - (t % 4) * 15, 360], { w: 62, seed: 61 }); }, 'IB.wispCloud — drifting');
+    SAMPLE.cell(ctx, c[8], SAMPLE.fit(c[8], [305, 620]), () => [[230, 415], [262, 466], [330, 380], [380, 430]].forEach((b) => IB.bird(ctx, b)), 'IB.bird');
+    SAMPLE.cell(ctx, c[9], SAMPLE.fit(c[9], [960, 980]), () => { IB.tuft(ctx, [820, 860], { seed: 3 }); IB.stones(ctx, [960, 870], { seed: 5 }); IB.tuft(ctx, [1100, 850], { seed: 7 }); }, 'IB.tuft, IB.stones');
   },
 });
 </script>

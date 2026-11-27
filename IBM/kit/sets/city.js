@@ -16,7 +16,7 @@
     ctx.restore();
   };
 
-  /* roofBlock(ctx, q, opts) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop opts.h px. More than four points make a stepped roof (an L, a notch: the reference steps some roofs): every edge facing the viewer drops a wall, and tex patterns each wall. opts.tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
+  /* roofBlock(ctx, q, opts) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop opts.h px. More than four points make a stepped roof (an L, a notch: the reference steps some roofs): every edge facing the viewer drops a wall, nearest drawn last (ordered by each edge's lowest point, which is right for an L or a notch; a deep fold of a far edge behind a near one would need splitting), and tex 'v' or 'band' patterns each wall ('h' and 'u' are four-point only). opts.tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
   IB.roofBlock = (ctx, q, o = {}) => {
     const { h = 60, seed = 500, tex = 'v' } = o;
     if (q.length > 4) return stepped(ctx, q, h, seed, tex);
@@ -53,7 +53,8 @@
       IB.ink(ctx, [a, b, [b[0], b[1] + h], [a[0], a[1] + h]], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 + i });
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       if (tex === 'band' && len > 30) {
-        for (const k of [0.36, 0.7]) IB.seg(ctx, a[0] + 3, a[1] + h * k, b[0] - 3, b[1] + h * k, { w: 1.8, wob: 0.4, seed: seed + i * 13 + k * 100 });
+        const ins = Math.sign(b[0] - a[0]) * 3;   // 3 px in from each end, whichever way the edge runs
+        for (const k of [0.36, 0.7]) IB.seg(ctx, a[0] + ins, a[1] + h * k, b[0] - ins, b[1] + h * k, { w: 1.8, wob: 0.4, seed: seed + i * 13 + k * 100 });
         for (let j = 1; j < Math.floor(len / 20); j++) { const u = j / Math.floor(len / 20), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + h * 0.45, x, y + h * 0.6, { w: 2.2, wob: 0, seed: seed + i * 17 + j }); }
       }
       if (tex === 'v') for (let j = 1; j < Math.floor(len / 17); j++) { const u = j / Math.floor(len / 17), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + 12, x, y + Math.min(h - 8, 12 + h * 0.55), { w: 1.7, wob: 0.4, seed: seed + i * 7 + j }); }

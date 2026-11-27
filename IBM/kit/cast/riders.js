@@ -119,6 +119,7 @@
       IB.ink(ctx, [[-10, -7], [4, -8], [12, -3], [22, 0], [22, 5], [-10, 5]], { closed: true, fill: r.shoe, w: 1.8, seed: sd + 2 });
       if (r.shorts) IB.seg(ctx, 1, -7, 6, 4, { w: 1.5, seed: sd + 3 }); else IB.seg(ctx, -9, 1.5, 21, 2, { w: 1.2, seed: sd + 3, color: r.shoe === C.navy ? C.paper : C.ink });
       ctx.restore();
+      return knee;
     };
     const arm = (i, sd) => {
       const want = p.arms[i], root = [sh[0] + 2, sh[1] + 6];
@@ -139,8 +140,9 @@
     const ux = (sh[0] - hip[0]) / L, uy = (sh[1] - hip[1]) / L, T = (along, across) => [hip[0] + (ux * along - uy * across) * k, hip[1] + (uy * along + ux * across) * k];
     IB.ink(ctx, [T(26, -15), T(26, 28), T(-8, 24), T(-12, -12)], { closed: true, fill: r.leg, w: LW, seed: seed + 29 });
     IB.limb(ctx, [T(76, 4), [headAt[0] - 4, headAt[1] + 8]], [14 * k, 13 * k], { fill: r.skin, lw: LW, seed: seed + 28 });
-    leg(crank, seed + 10);
-    // the garment goes over the near thigh: its hem lies across the lap as the reference draws it
+    const knee = leg(crank, seed + 10);
+    // the garment's front hangs down the near thigh to near its middle, its hem across it, as the reference draws it: a flap along the thigh, open at its root so the torso's garment drawn next covers where it starts
+    if (!r.bib) IB.limb(ctx, [T(6, 6), [lerp(hip[0], knee[0], 0.5), lerp(hip[1], knee[1], 0.5)]], [36 * k, 33 * k], { fill: r.top, lw: LW, seed: seed + 37, cap: 'end' });
     const hem = r.bib ? [T(30, 31), T(20, 30), T(19, -16)] : [T(30, 32), T(10, 35), T(2, 30), T(4, -14)];   // overalls are worn over a top tucked in at the waist
     IB.ink(ctx, [T(86, -10), T(88, 6), T(78, 19), T(54, 27), ...hem, T(48, -21), T(72, -19)], { closed: true, fill: r.top, w: LW, seed: seed + 30 });
     if (!r.bib) IB.ink(ctx, [T(14, 30), T(20, 18), T(18, 6)], { w: 1.3, seed: seed + 36 });   // the fold where the hem gathers over the lap

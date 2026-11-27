@@ -12,7 +12,7 @@
 <script src="../../kit/props/home.js"></script>
 <script>
 /* 아이가 케이크의 촛불을 훅 불어 끄고 뿌듯해하는데 불이 하나씩 도로 켜지고, 더 크게 숨을 들이켜 다시 불어 꺼도 이번엔 한꺼번에 켜져서 "어?" 한다. 원본에 없는 창작 장면으로, 원본 3편의 촛불 부는 아이에서 "준비-동작-정지"와 얼굴만 바뀌는 연기를 가져왔다. 전달하는 생각: 껐다고 생각한 문제가 다시 살아난다.
-   Motion notes: one locked shot, 7 s, figure 440 px tall. Two rounds of the same four beats, the second bigger: inhale (lean back 0.1 rad, then 0.2), a hold (0.42 s, then 0.67 s), blow (lean forward 0.35, then 0.5; the pose arrives in one drawing), result held. The body only tips at the hip, which shifts just enough to keep both hands on the table edge; between poses there are one or two in-betweens on twos and no easing. Blow: three puff lines travel from the mouth for 3 drawings; the flames lie over to the right for one drawing (a smear, 2.2x long) and are gone on the next; a wisp of smoke climbs 14 px per drawing for 6 drawings above each wick. Relight round one: one flame per drawing-pair, left to right, 2 drawings apart (2.5, 2.67, 2.83 s), each with a four-point spark for one drawing. Relight round two: all three on the same drawing at 5.0 s, then the bubble at 5.25 s. A lit flame is two drawings alternating on threes (8 fps) and that is the only thing moving while a pose holds, including the whole last second. The face changes with the beat, not between: eyes shut for the blow, a smile when the flames are out, wide when they return. Three colours: lavender cake, yellow flames, the sky top. */
+   Motion notes: one locked shot, 7 s, figure 440 px tall. Two rounds of the same four beats, the second bigger: inhale (lean back 0.1 rad, then 0.2), a hold (0.33 s, then 0.58 s, after the overshoot drawing), blow (lean forward 0.35, then 0.5; the pose arrives in one drawing), result held. The inhale goes 15% past its hold for one drawing; out of the blow one in-between leads to the smile; when the last flame is back she is thrown back past upright (lean -0.14) for one drawing (the take). Each drawing passes the one before as pose.prev, so her curls trail the blow and the take. The body only tips at the hip, which shifts just enough to keep both hands on the table edge; between poses there are one or two in-betweens on twos and no easing. Blow: three puff lines travel from the mouth for 3 drawings; the flames lie over to the right for one drawing (a smear, 2.2x long) and are gone on the next; a wisp of smoke climbs 14 px per drawing for 6 drawings above each wick. Relight round one: one flame per drawing-pair, left to right, 2 drawings apart (2.5, 2.67, 2.83 s), each with a four-point spark for one drawing. Relight round two: all three on the same drawing at 5.0 s, then the bubble at 5.25 s. A lit flame is two drawings alternating on threes (8 fps) and that is the only thing moving while a pose holds, including the whole last second. The face changes with the beat, not between: eyes shut for the blow, a smile when the flames are out, wide when they return. Three colours: lavender cake, yellow flames, the sky top. */
 const F = IB.FIG, FLOOR = 930, TABLE = 690, X0 = 720;
 const WHO = { ...IB.PEOPLE.kid, h: 440, dir: 1, seed: 60 };
 const H = WHO.h, CANDLES = [1010, 1062, 1114], WICK = TABLE - 8 - 112 - 72;
@@ -27,9 +27,14 @@ function poseAt(tt) {
   for (const r of ROUNDS) {
     const lit = (i) => tt >= r.relight + (i * r.stagger) / 12 - 1e-6;
     if (tt < r.inhale - 1e-6) break;
-    if (tt < r.blow - 1e-6) { const k = n(r.inhale); p = k === 0 ? IB.poseMix(kid(0.06, FLAT), kid(r.away, IN), 0.6) : kid(r.away, IN); continue; }
-    p = n(r.blow) < 5 ? kid(r.into, PUFF) : tt >= r.back - 1e-6 ? rest : kid(r.into * 0.7, SMILE);
-    if (lit(0)) p = kid(lit(2) ? 0.02 : p.lean, WIDE);
+    // the inhale: half-way, one drawing 15% further back than the hold, then the hold
+    if (tt < r.blow - 1e-6) { const k = n(r.inhale); p = k === 0 ? IB.poseMix(kid(0.06, FLAT), kid(r.away, IN), 0.6) : k === 1 ? kid(r.away * 1.15, IN) : kid(r.away, IN); continue; }
+    // the blow arrives in one drawing; out of it, one in-between to the smile
+    const b = n(r.blow);
+    p = b < 5 ? kid(r.into, PUFF) : tt >= r.back - 1e-6 ? rest : b === 5 ? kid(r.into * 0.85, SMILE) : kid(r.into * 0.7, SMILE);
+    // the take when the last flame is back: thrown back past upright for one drawing, then upright
+    const all = (r.stagger * 2) / 12;
+    if (lit(0)) p = kid(lit(2) ? (IB.drawn(tt, r.relight + all) === 0 ? -0.14 : 0.02) : p.lean, WIDE);
   }
   return p;
 }
@@ -44,6 +49,10 @@ function flame(i, tt) {
   return s;
 }
 
+// the kid's drawing with the one before as prev: the curls and the head trail the blow and the take
+const drawnAt = (t) => { const tt = IB.twos(t); return { ...poseAt(tt), prev: tt > 0 ? poseAt(IB.twos(tt - 1e-4)) : undefined }; };
+IB.actors = (t) => ({ kid: drawnAt(t), flames: CANDLES.map((_, i) => flame(i, IB.twos(t))) });
+
 MG.scene({
   title: 'vignette / trick-candle-relight',
   duration: 7, ref: null, fps: 24,
@@ -54,7 +63,7 @@ MG.scene({
     IB.smear(ctx, X0, FLOOR - 9, 290, { h: 13, seed: 8 });
     IB.partyTable(ctx, [1062, FLOOR]);
     CANDLES.forEach((x, i) => IB.candle(ctx, [x, WICK], { lit: flame(i, tt), flicker: IB.alternate(f, 3) }));
-    const j = IB.figure(ctx, p, { ...WHO, face: p.face });
+    const j = IB.figure(ctx, drawnAt(t), { ...WHO, face: p.face });
     for (const r of ROUNDS) {
       const b = IB.drawn(tt, r.blow), big = r.into > 0.4 ? 1.35 : 1;
       // breath: three lines leave the mouth and travel toward the candles for three drawings

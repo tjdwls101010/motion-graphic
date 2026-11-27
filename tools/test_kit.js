@@ -16,6 +16,8 @@ const defines = (src) => new Set([...strip(src).matchAll(/\bIB\.(\w+)\s*=(?!=)/g
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
 
 let failed = 0;
+// names a scene defines on IB itself instead of a kit file: IB.actors(t), the actors' drawings for tools/drawings.py
+const SCENE_DEFINES = new Set(['actors']);
 // 5: kit names that no part sample has to use, each with the reason
 const NOT_SHOWN = { IBM: {} };
 const fail = (msg) => { failed++; console.log('FAIL ' + msg); };
@@ -60,6 +62,7 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
     }
     const script = html.split('<script>').slice(1).join('\n');
     for (const n of names(script)) {
+      if (SCENE_DEFINES.has(n) && defines(script).has(n)) continue;   // a scene's own hook, not a kit part
       const o = owner[n];
       if (!o) fail(`${name} uses IB.${n}, which no kit file defines`);
       else if (!loaded.includes(o)) fail(`${name} uses IB.${n} from kit/${o} without loading it`);

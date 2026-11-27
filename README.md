@@ -28,6 +28,7 @@ tools/
   capture.py      스틸, 콘택트 시트, mp4, 원본 대조 시트 렌더
   build_index.py  index.html과 parts.html 재생성, 썸네일 재렌더(--thumbs), 장면·견본 메타데이터와 썸네일 점검(--check)
   check_pure.py   모든 장면과 견본의 render(t)가 시간의 순수 함수인지 검사
+  drawings.py     장면의 IB.actors(t)로 배우마다 그림 수를 센다: 그림이 바뀌는 프레임, 움직이는 동안의 초당 그림 수, 가장 긴 정지, 스텝보다 오래 남은 그림. 연기 업그레이드의 수치 근거
   same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
   test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs), 장면과 견본의 불러오기, 캐릭터 MOVE의 모양, kit의 모든 부품이 어느 견본에 그려지는지를 브라우저 없이 확인한다
 <ref>/      레퍼런스 영상 하나 (예: pstack/)

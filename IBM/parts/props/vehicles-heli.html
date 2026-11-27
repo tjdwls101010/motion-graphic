@@ -11,7 +11,7 @@
 <script src="../../kit/props/vehicles.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 소품 견본: 탈것, 노란 헬리콥터의 옆모습 IB.heli와 정면 IB.heliFront, 그리고 회전날개 IB.rotor. 날개는 가는 직선 아홉 개의 부채이고 그림(d)마다 새로 굴린다: 2프레임마다 d를 올리면 돈다. 몸통이 기울어도 날개는 거의 수평이다(몸통 회전의 85%를 돛대에서 되돌림). 옆모습은 s로 키우고 rot으로 기울이고 facing -1로 뒤집으며(-1.3은 들어올 때의 스미어 한 장), 선 굵기는 배율의 제곱근으로 가늘어진다. 정면은 선회 도중 두 장에만 쓰고 sx·sy로 눌러 돌아선다. 비스듬한 각도는 아직 없어서 옆모습을 돌리고 줄여 쓴다. 원본의 로고와 글자는 빠져 있다. 원본 비행 경로는 props/vehicles-heli-flyin에 있다. */
+/* 소품 견본: 탈것, 노란 헬리콥터의 옆모습 IB.heli와 정면 IB.heliFront, 그리고 회전날개 IB.rotor. 날개는 가는 직선 아홉 개의 부채이고 그림(d)마다 새로 굴린다: 2프레임마다 d를 올리면 돈다. 몸통이 기울어도 날개는 거의 수평이다(몸통 회전의 85%를 돛대에서 되돌림). 옆모습은 s로 키우고 rot으로 기울이고 facing -1로 뒤집으며(-1.3은 들어올 때의 스미어 한 장), 선 굵기는 배율의 제곱근으로 가늘어진다. 정면은 선회 도중 두 장에만 쓰고 sx·sy로 눌러 돌아선다. 그 사이의 비스듬한 각도는 IB.heliTurn이 그린다: 몸통을 입체 조각(달걀 모양 조종석, 꼬리 붐과 날개, 스키드 둘)으로 짓고 yaw(0 옆모습 오른쪽, PI/2 정면, PI 옆모습 왼쪽)와 내려다보는 tilt로 투영해 같은 붓펜으로 그린다. 아래 칸은 yaw가 2프레임마다 한 장씩 도는 모습이다. 원본의 로고와 글자는 빠져 있다. 원본 비행 경로는 props/vehicles-heli-flyin에 있다. */
 MG.scene({
   title: 'props / vehicles-heli',
   duration: 3, ref: null, fps: 24, loop: true,
@@ -19,14 +19,17 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     SAMPLE.title(ctx, 'props/vehicles.js — the helicopter: side, front, rotor');
-    const d = Math.floor(IB.frame(t) / 2), c = SAMPLE.grid(2, 2), V = [0, 0, c[0][2], c[0][3]];
+    const d = Math.floor(IB.frame(t) / 2), c = SAMPLE.grid(4, 2), V = [0, 0, c[0][2], c[0][3]], wide = SAMPLE.span(c, 2, 3);
     SAMPLE.cell(ctx, c[0], V, () => {
-      IB.heli(ctx, [520, 230], { d });
-      IB.heli(ctx, [400, 520], { rot: 0.2, facing: -1, d: d + 5 });
-      IB.seg(ctx, 449, 830, 449, 790, { w: 3.4, seed: 1 });
-      IB.rotor(ctx, [449, 790], { span: 280, d: d + 9 });
+      IB.heli(ctx, [330, 240], { d });
+      IB.heli(ctx, [600, 250], { rot: 0.2, facing: -1, d: d + 5 });
+      IB.seg(ctx, 700, 440, 700, 410, { w: 3.4, seed: 1 });
+      IB.rotor(ctx, [700, 410], { span: 160, d: d + 9 });
     }, 'IB.heli(at, { s, rot, facing, d }) — facing 1, facing -1 rot 0.2; IB.rotor');
-    SAMPLE.cell(ctx, c[1], V, () => IB.heliFront(ctx, [449, 560], { d }), 'IB.heliFront(at, { sx, sy, d })');
+    SAMPLE.cell(ctx, c[1], V, () => IB.heliFront(ctx, [449, 300], { sx: 0.6, sy: 0.6, d }), 'IB.heliFront(at, { sx, sy, d })  ×0.6 by sx, sy');
+    // the turn: nine angles side to side, one per drawing on twos
+    const yaw = (Math.floor(IB.frame(t) / 2) % 9) * (Math.PI / 8);
+    SAMPLE.cell(ctx, wide, [0, 0, wide[2], wide[3]], () => { IB.heliTurn(ctx, [wide[2] / 2 - 200, 250], { yaw, d }); IB.heliTurn(ctx, [wide[2] / 2 + 260, 250], { yaw: Math.PI - yaw, tilt: 0.55, s: 0.8, d: d + 3 }); }, `IB.heliTurn(at, { yaw: ${yaw.toFixed(2)}, tilt, s, d })`);
   },
 });
 </script>

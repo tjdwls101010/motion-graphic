@@ -131,7 +131,6 @@
   };
 
   /* heli(ctx, at, opts) — the yellow helicopter seen from the side, nose right, drawn about the centre of its cabin at `at`: s scales it, rot tips it, facing -1 flips it nose left (and -1.3 also stretches it: the smear drawing it enters on), d is the drawing number (re-rolls the rotor). The rotor does not tip with the body: 85% of the body's turn is taken back out about the mast. Line width thins with the square root of the scale. The reference paints a brand mark and a word on the cabin: left out. (establish/city-stadium-flyin). */
-  // 성진: only a side view and a front view exist, so the oblique drawings of a turn are the side view scaled and rotated. Draw the in-between angles in the upgrade round (plan 4-3).
   IB.heli = (ctx, [x, y], o = {}) => {
     const { s = 1, rot = 0, facing = 1, d = 0 } = o;
     ctx.save();
@@ -169,16 +168,64 @@
     IB.rotor(ctx, [x, y - 132 * sy], { span: 300 * sx, lw: 1.6, d });
   };
 
-  /* heli.MOVE.flyIn — the reference's fly-in, nineteen drawings on twos as [frame, drawing], never hovering; each drawing is [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
+  /* heliTurn(ctx, at, opts) — the same craft at any angle between the side and the front, for the drawings of a turn: it is built as a few solid parts (an egg of a cabin, a boom with its fin, two skids) and projected, then drawn with the same brush pen. yaw 0 is the side view nose right, PI / 2 nose to the lens, PI side view nose left; the camera looks down at it by `tilt` rad (0.35); rot tips the drawing about `at` while the rotor keeps near level (15% of it). `at` is the cabin's centre, s its scale (1: cabin about 150 px long; lines 2.4 x sqrt(s) on screen, as IB.heli). The near side window shows only on the side that faces the lens, the windscreen only while the nose does. */
+  IB.heliTurn = (ctx, [x, y], o = {}) => {
+    const { s = 1, yaw = Math.PI / 4, tilt = 0.35, rot = 0, d = 0, seed = 640 } = o, c = Math.cos(yaw), sn = Math.sin(yaw), ce = Math.cos(tilt), se = Math.sin(tilt), cr = Math.cos(rot), sr = Math.sin(rot);
+    // body coordinates: x forward, y to the craft's left, z up. Depth (toward the lens) is the rotated y; nearer points sit lower on screen
+    const P = ([px, py, pz]) => { const X = px * c - py * sn, D = px * sn + py * c, u = s * X, v = s * (-pz * ce + D * se); return [x + u * cr - v * sr, y + u * sr + v * cr]; }, depth = ([px, py]) => px * sn + py * c;   // rot tips the whole drawing about `at`
+    const lw = 2.4 * Math.sqrt(s), RX = 78, RY = 52, RZ = 56;   // on screen the same as IB.heli's line at the same scale
+    const hull = (pts) => { pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); const cr = (o2, a, b) => (a[0] - o2[0]) * (b[1] - o2[1]) - (a[1] - o2[1]) * (b[0] - o2[0]); const lo = [], up = []; for (const p of pts) { while (lo.length > 1 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); } for (const p of pts.slice().reverse()) { while (up.length > 1 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); } return lo.slice(0, -1).concat(up.slice(0, -1)); };
+    const egg = (u, v) => [RX * Math.cos(v) * Math.cos(u) * (Math.cos(u) > 0 ? 1.12 : 0.8), RY * Math.cos(v) * Math.sin(u), RZ * Math.sin(v) * (Math.sin(v) < 0 ? 0.85 : 1)];   // the cabin: a longer nose, shorter behind, a flatter belly   // the cabin: rounder at the nose, a little shorter behind
+    const parts = [];
+    // boom, fin, stabiliser
+    const boom = [[-58, 0, 12], [-150, 0, 22], [-232, 0, 30]];
+    parts.push([depth([-150, 0]), () => {
+      IB.tube(ctx, boom.map(P), { w: 15 * s, edge: lw, fill: C.yellow, seed });
+      IB.ink(ctx, [[-222, 0, 26], [-236, 0, 26], [-246, 0, 112], [-232, 0, 112]].map(P), { closed: true, smooth: false, fill: C.yellow, w: lw, seed: seed + 1 });
+      IB.ink(ctx, [[-238, -26, 30], [-226, -26, 30], [-226, 26, 30], [-238, 26, 30]].map(P), { closed: true, smooth: false, fill: C.yellow, w: lw, seed: seed + 2 });
+    }]);
+    // skids: the far one first
+    for (const side of [-1, 1]) parts.push([depth([0, side * 44]) - 1, () => {
+      IB.tube(ctx, [[-58, side * 44, -64], [78, side * 44, -64]].map(P), { w: 8 * s, edge: 1.8 * Math.sqrt(s), fill: '#b9b9b9', seed: seed + 3 + side });
+      for (const lx of [-34, 44]) IB.tube(ctx, [[lx, side * 26, -44], [lx - 8, side * 44, -64]].map(P), { w: 6 * s, edge: 1.6 * Math.sqrt(s), fill: '#b9b9b9', seed: seed + 5 + side + lx });
+    }]);
+    // cabin, its windows, mast and rotor
+    parts.push([depth([0, 0]), () => {
+      const pts = []; for (let i = 0; i < 28; i++) for (let j = -6; j <= 6; j++) pts.push(P(egg((i / 28) * Math.PI * 2, (j / 6) * (Math.PI / 2) * 0.98)));
+      IB.ink(ctx, hull(pts), { closed: true, fill: C.yellow, w: lw, seed: seed + 9 });
+      // windscreen: the front of the egg above its waist, while the nose faces the lens
+      if (sn > 0.12) {
+        const ws = []; for (let i = 0; i <= 8; i++) ws.push(egg(-0.9 + (i / 8) * 1.8, 0.95)); for (let i = 8; i >= 0; i--) ws.push(egg(-0.9 + (i / 8) * 1.8, 0.28));
+        IB.ink(ctx, ws.map(P), { closed: true, fill: C.paper, w: lw, seed: seed + 10 });
+        IB.ink(ctx, [egg(0, 0.97), egg(0, 0.26)].map(P), { w: lw * 0.8, seed: seed + 11 });
+      }
+      // side window on the side that faces the lens
+      const side = c >= 0 ? 1 : -1;   // the craft's left (y > 0) faces the lens while cos(yaw) > 0
+      if (Math.abs(c) > 0.15) {
+        const sw = []; for (let i = 0; i <= 6; i++) sw.push(egg(side * (0.95 + (i / 6) * 0.85), 0.8)); for (let i = 6; i >= 0; i--) sw.push(egg(side * (0.95 + (i / 6) * 0.85), 0.2));
+        IB.ink(ctx, sw.map(P), { closed: true, fill: C.paper, w: lw, seed: seed + 12 });
+        IB.ink(ctx, [egg(side * 1.37, 0.82), egg(side * 1.37, 0.18)].map(P), { w: lw * 0.8, seed: seed + 13 });
+      }
+      IB.seg(ctx, ...P([6, 0, RZ - 2]), ...P([6, 0, RZ + 14]), { w: lw * 1.4, seed: seed + 14 });
+      const m = P([6, 0, RZ + 16]);   // the rotor keeps near level: only 15% of the body's tip
+      ctx.save(); ctx.translate(m[0], m[1]); ctx.rotate(rot * 0.15); IB.rotor(ctx, [0, 0], { span: 290 * s, lw: 1.6 * Math.sqrt(s), d }); ctx.restore();
+    }]);
+    ctx.save();
+    parts.sort((a, b) => a[0] - b[0]).forEach(([, draw]) => draw());
+    ctx.restore();
+  };
+
+  /* heli.MOVE.flyIn — the reference's fly-in, nineteen drawings on twos as [frame, drawing], never hovering; each drawing is [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens, or ['turn', x, y, scale, yaw, rotation, tilt] for a three-quarter drawing (IB.heliTurn, placed by its cabin's centre). Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right (a smear, then two three-quarter drawings from the front-left, nose left: yaw 2.85, 2.7, larger than the frame), swings round to face us with its tail up for two drawings, and then never hovers: three-quarter drawings from the front-right (yaw 0.95 to 0.58) and side views, shrinking (1.48 to 0.86) and levelling out (0.25 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
   IB.heli.MOVE = { flyIn: [
-    [0, [2090, 570, 4.6, -0.2, -1.3]], [2, [1400, 640, 4.4, -0.15, -1]], [4, [1200, 500, 3.7, -0.2, -1]],
+    [0, [2090, 570, 4.6, -0.2, -1.3]], [2, ['turn', 1250, 700, 4.3, 2.85, -0.1, 0.45]], [4, ['turn', 930, 640, 3.6, 2.7, -0.12, 0.45]],
     [6, ['front', 660, 628, 1, 1]], [8, ['front', 549, 620, 0.67, 0.87]],
-    [10, [414, 581, 1.48, 0.69, 1]], [12, [339, 567, 1.43, 0.39, 1]], [14, [315, 567, 1.37, 0.29, 1]], [16, [293, 566, 1.27, 0.18, 1]], [18, [283, 565, 1.23, 0.14, 1]], [20, [278, 561, 1.18, 0.09, 1]],
+    [10, ['turn', 430, 600, 1.48, 0.95, 0.25, 0.6]], [12, ['turn', 360, 590, 1.43, 0.85, 0.15, 0.55]], [14, ['turn', 335, 588, 1.37, 0.78, 0.1, 0.5]], [16, ['turn', 312, 586, 1.27, 0.7, 0.06, 0.48]], [18, ['turn', 302, 584, 1.23, 0.64, 0.04, 0.45]], [20, ['turn', 296, 580, 1.18, 0.58, 0.03, 0.42]],
     [22, [285, 560, 1.1, 0.085, 1]], [24, [288, 559, 1.1, 0.06, 1]], [26, [298, 558, 1.025, 0.04, 1]], [28, [304, 558, 1.0, 0.025, 1]], [30, [320, 557, 0.95, 0.02, 1]], [32, [332, 555, 0.93, 0.01, 1]], [34, [338, 555, 0.91, 0.01, 1]], [36, [354, 556, 0.86, 0.01, 1]],
   ] };
-  /* heliDrawing(ctx, row, d) — draw one row of a flight table like heli.MOVE.flyIn as drawing number d: a side-view row is placed by the centre of its yellow shape (which sits (-47.9, -14.1) x scale from the craft's own origin), a 'front' row by its cabin. (establish/city-stadium-flyin). */
+  /* heliDrawing(ctx, row, d) — draw one row of a flight table like heli.MOVE.flyIn as drawing number d: a side-view row is placed by the centre of its yellow shape (which sits (-47.9, -14.1) x scale from the craft's own origin), a 'front' or 'turn' row by its cabin's centre. (establish/city-stadium-flyin). */
   IB.heliDrawing = (ctx, k, d) => {
     if (k[0] === 'front') return IB.heliFront(ctx, [k[1], k[2]], { sx: k[3], sy: k[4], d });
+    if (k[0] === 'turn') { const [, tx, ty, ts, yaw, rot = 0, tilt = 0.35] = k; return IB.heliTurn(ctx, [tx, ty], { s: ts, yaw, tilt, rot, d }); }
     const [x, y, sc, rot, facing] = k, c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * facing, oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
     IB.heli(ctx, [x - (ox * c - oy * sn), y - (ox * sn + oy * c)], { s: sc, rot, facing, d });
   };

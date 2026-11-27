@@ -37,6 +37,8 @@ const DOC = [[0, D.POSE.stand], ...IB.play(D.MOVE.spin, 83), ...IB.play(D.MOVE.a
 // the arms that find each other, and the balloon the folder kicks at frame 0
 const FARM = IB.play(F.MOVE.reach, 214), DARM = IB.play(D.MOVE.reach, 216), BALLOON = IB.play(IB.looseBalloon.MOVE.kicked, 0);
 const MEET = [1463, 738];   // where the two hands hold
+// the actors' drawings at t, for tools/drawings.py (the baseline in STYLE.md)
+IB.actors = (t) => { const f = IB.frame(t); return { folder: IB.held(FOLDER, f), doc: IB.held(DOC, f) }; };
 
 MG.scene({
   title: 'spot / folder-meets-document',

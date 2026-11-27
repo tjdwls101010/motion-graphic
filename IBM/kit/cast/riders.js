@@ -13,7 +13,7 @@
     vents: { who: 'vents', skin: C.skin[4], top: C.navy, arm: C.navy, leg: C.paper, shoe: C.paper, watch: true },
   };
 
-  // 성진: face() and parts of HAIR are near-copies (about 1 px apart) of figure.js's private head, hairBack and hairFront. Moving them here kept every pixel; merging the two would redraw one of them, so it waits for the upgrade round (plan 4-3, the tandem figures).
+  // 성진(남김): face() and parts of HAIR are near-copies (about 1 px apart) of figure.js's private head, hairBack and hairFront. Moving them here kept every pixel; merging the two would redraw one of them, so it waits for the upgrade round (plan 4-3, the tandem figures).
   /* The face every rider shares, in head units (profile radius about 22) facing +x: skull, nose and chin as one shape, an ear, an eye, a mouth. */
   function face(ctx, skin, p, seed) {
     IB.ink(ctx, [[-2, -22], [14, -16], [19, -4], [27, 3], [19, 7], [17, 17], [3, 23], [-15, 15], [-21, -4]], { closed: true, fill: skin, w: LW, seed });
@@ -135,18 +135,21 @@
     };
     arm(1, seed + 60);
     leg(crank + PI, seed);
-    // torso: a pelvis in the trouser colour, a neck, then one boxy garment from the collar to a hem at the waist, all built on the spine so that they lean as one
+    // torso: a pelvis in the trouser colour, a neck, then one loose garment from the collar down over the hips, its hem hanging lower in front over the lap (the reference's tops are never cut at the waist), all built on the spine so that they lean as one
     const ux = (sh[0] - hip[0]) / L, uy = (sh[1] - hip[1]) / L, T = (along, across) => [hip[0] + (ux * along - uy * across) * k, hip[1] + (uy * along + ux * across) * k];
     IB.ink(ctx, [T(26, -15), T(26, 28), T(-8, 24), T(-12, -12)], { closed: true, fill: r.leg, w: LW, seed: seed + 29 });
     IB.limb(ctx, [T(76, 4), [headAt[0] - 4, headAt[1] + 8]], [14 * k, 13 * k], { fill: r.skin, lw: LW, seed: seed + 28 });
-    IB.ink(ctx, [T(86, -10), T(88, 6), T(78, 19), T(54, 27), T(30, 31), T(20, 30), T(19, -16), T(48, -21), T(72, -19)], { closed: true, fill: r.top, w: LW, seed: seed + 30 });
+    leg(crank, seed + 10);
+    // the garment goes over the near thigh: its hem lies across the lap as the reference draws it
+    const hem = r.bib ? [T(30, 31), T(20, 30), T(19, -16)] : [T(30, 32), T(10, 35), T(2, 30), T(4, -14)];   // overalls are worn over a top tucked in at the waist
+    IB.ink(ctx, [T(86, -10), T(88, 6), T(78, 19), T(54, 27), ...hem, T(48, -21), T(72, -19)], { closed: true, fill: r.top, w: LW, seed: seed + 30 });
+    if (!r.bib) IB.ink(ctx, [T(14, 30), T(20, 18), T(18, 6)], { w: 1.3, seed: seed + 36 });   // the fold where the hem gathers over the lap
     if (r.bib) {   // overalls: a bib up the front and a strap over the shoulder
       IB.ink(ctx, [T(62, 2), T(58, 26), T(30, 31), T(20, 30), T(19, -16), T(36, -19), T(46, -8)], { closed: true, fill: r.leg, w: 1.7, seed: seed + 31 });
       IB.ink(ctx, [T(60, 6), T(76, 0), T(85, -9)], { w: 5, color: r.leg, seed: seed + 32, taper: false, grain: 0 });
       IB.ink(ctx, [T(60, 3), T(75, -3), T(86, -12)], { w: 1.5, seed: seed + 33 });
       IB.oval(ctx, ...T(56, 9), 2.4, 2.4, { fill: C.paper, w: 1.1, seed: seed + 34, n: 6 });
     } else IB.ink(ctx, [T(84, 6), T(76, 14), T(66, 16)], { w: 1.4, seed: seed + 35 });   // collar
-    leg(crank, seed + 10);
     arm(0, seed + 80);
     head(ctx, headAt, r, p, alt, seed + 100, bare);
     ctx.restore();

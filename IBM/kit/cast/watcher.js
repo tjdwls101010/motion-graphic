@@ -1,4 +1,4 @@
-/* cast/watcher.js — the watcher of the reference's sixth spot: a pair of green eyes in the dark that turn out, at the cut, to belong to someone at a window with binoculars. Her drawings were read off the reference on a 4x enlarged grid and stay in its coordinates (the axis of her face at x 1206, the point between her lenses at y 462): to stage her somewhere else, translate the context. Needs ink.js; adds to the global IB. Used by spot/dark-eyes-reveal. */
+/* cast/watcher.js — the watcher of the reference's sixth spot: a pair of green eyes in the dark that turn out, at the cut, to belong to someone at a window with binoculars. Her drawings were read off the reference on a 4x enlarged grid and stay in its coordinates (the axis of her face at x 1206, the point between her lenses at y 462): to stage her somewhere else, give opts.at, opts.s and opts.flip (IB.place). Needs ink.js; adds to the global IB. Used by spot/dark-eyes-reveal. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const GREEN = '#4ca757', SKIRT = '#7cc47a', SKIN = C.skin[0], HX = 1206;   // HX: the axis her face is symmetric about
@@ -56,7 +56,7 @@
     ctx.restore();
   }
 
-  /* watcher(ctx, pose) — her at the window, from the waist up, behind its glass (she is clipped to the window's opening: sleeves that reach its edges end there).
+  /* watcher(ctx, pose, opts) — her at the window, from the waist up, behind its glass (she is clipped to the window's opening: sleeves that reach its edges end there).
    pose: arms 'up': hx, hy shift hands and binoculars and carry the head with them at 0.55 of that; a large negative hx also turns the binoculars, so the right barrel shows its side; big enlarges the lenses; eye is where her eye sits inside each lens (px off its centre); lens is what shows in the glass: 'eye' (white almond, green iris), 'dark' (a blink), 'squint' (an arc), 'wide' (round, the green ring of the opening). arms 'down': drop lowers hands and binoculars (px), fore 0..1 foreshortens the barrels (1 = full length), face is 'wide' | 'half' | 'closed'.
      POSE: up (binoculars at her eyes, looking straight out). MOVE, in frames from each one's first drawing: scanRight, swingLeft, find, lower. IB.watcher.FOCUS is the point between her lenses, for a camera that pulls back from them; opts.at puts it elsewhere, with opts.s and opts.flip (IB.place). */
   IB.watcher = (ctx, p, o = {}) => {

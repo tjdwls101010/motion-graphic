@@ -52,7 +52,7 @@
   }
   const CX = 1539;   // the cat's centre line once it faces us
 
-  /* windowCat(ctx, pose) — a small white cat (head 37 px) on a window sill, in the reference's coordinates (the sill at y 749, the cat about x 1539): to stage it somewhere else, translate the context.
+  /* windowCat(ctx, pose, opts) — a small white cat (head 37 px) on a window sill, in the reference's coordinates (the sill at y 749, the cat about x 1539): to stage it somewhere else, give opts.at (below).
    pose: kind 'sit': side-on on the sill, head turned by `turn` (-1 profile left ... 1 back over its shoulder) and tipped by `tilt` (rad, - = nose up), ears [left, right] px lowered. 'crouch', 'slink', 'rump', 'tip': leaving. 'none': gone. 'ears', 'peek', 'watch', 'lower', 'rest': front-on behind the sill with its own binoculars; glass 'black' | 'slit' is what shows in them, dip lowers them (px), tail 0-3 is which swish drawing, face 'dot' | 'happy' | 'up' | 'side'.
      opts.at puts its centre on the sill (IB.windowCat.ORIGIN) elsewhere, with opts.s and opts.flip (IB.place). POSE: sit. MOVE, in frames from each one's first drawing: earFlick, lookBack (it looks over its shoulder a beat before the watcher swings: the cat moves first), leave (off the sill in four drawings, then gone), comeBack (ear tips, binoculars on the sill, binoculars at its eyes, the tail swishing), lower (one drawing behind the watcher), followFly. */
   IB.windowCat = (ctx, p, o = {}) => {

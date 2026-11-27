@@ -27,8 +27,7 @@ const BALLOONS = [
 const beat = (b, tt) => IB.drawn(tt, b.in);
 
 // how far the chair is off the floor
-/* bob(dt, amp, until) — a float that has arrived bobs past its place and back, damped, on the drawing grid, and is cut to dead still after `until` s (the reference holds still: a bob that never ends would be a boil). */
-const bob = (dt, amp, until) => (dt > 0 && dt < until ? amp * Math.exp(-dt / 0.35) * Math.sin((dt * 2 * Math.PI) / 0.62) : 0);
+const bob = IB.bob;   // kit/time.js
 const lift = (t) => { const tt = IB.twos(t), d2 = tt - BALLOONS[2].rel, d3 = tt - BALLOONS[3].rel; return 46 * IB.settle(d2, 0.2) + bob(d2 - 0.35, 7, 0.55) + 150 * IB.settle(d3, 0.45, 1.4) + bob(d3 - 1.0, 12, 0.75); };   // each bob is over before the next beat: the first before the fourth arm holds, the second before the last second
 const knot = (t) => [CX + 84, SEAT - BACK - lift(t)];
 const HAND = (t) => { const k = knot(t); return [k[0] + 96, k[1] - 26]; };   // where the hand ties

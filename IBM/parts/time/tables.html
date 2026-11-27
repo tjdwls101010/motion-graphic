@@ -10,7 +10,7 @@
 <script src="../../kit/cast/closeup.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 박자 견본: 연기를 적는 그림 목록 도구 IB.held(그 프레임에 유효한 그림), IB.heldRow(값 여럿인 행 통째로), IB.play(캐릭터의 MOVE를 장면 표의 시작 프레임에 끼우기), IB.inbetween(손으로 놓은 섞는 비율), IB.alternate(두 그림 번갈아), IB.loop(멈추지 않는 순환). 연기는 곡선이 아니라 [프레임, 그림] 표다: 다음 키까지가 그대로 정지 구간이고 키 사이를 보간하지 않으며, 움직이는 동안은 키를 2프레임 간격으로 둔다. 칸마다 장면의 실제 표를 시간축(아래 눈금, 한 칸이 한 프레임)과 함께 돌린다: 291px 팬의 2프레임당 이동량 9, 12, 12, 113, 117, 13, 9, 6(천천히 출발해 두 걸음에 건너가고 세 걸음에 멈춤, spot/folder-meets-document), 암전 뒤 렌즈 줌 CAM 행 3.79에서 1배까지(spot/dark-eyes-reveal), 찌푸리는 얼굴 IB.boldFace.MOVE.scowl을 6프레임에 끼운 SHOT_A(insert/mesh-eyes-whip, 눈썹 안쪽 끝이 24px 내려옴). 중간 그림은 이징 대신 비율 0.35, 0.75, 1이고, 깃발·불꽃·꼬리는 3프레임마다 두 장을, 바람에 날리는 것과 화분은 2프레임마다 세 장을 돈다. */
+/* 박자 견본: 연기를 적는 그림 목록 도구 IB.held(그 프레임에 유효한 그림), IB.heldRow(값 여럿인 행 통째로), IB.play(캐릭터의 MOVE를 장면 표의 시작 프레임에 끼우기), IB.inbetween(손으로 놓은 섞는 비율), IB.alternate(두 그림 번갈아), IB.loop(멈추지 않는 순환), IB.bob(도착한 것이 감쇠하며 출렁이다 1초 뒤 정확히 멈춤). 연기는 곡선이 아니라 [프레임, 그림] 표다: 다음 키까지가 그대로 정지 구간이고 키 사이를 보간하지 않으며, 움직이는 동안은 키를 2프레임 간격으로 둔다. 칸마다 장면의 실제 표를 시간축(아래 눈금, 한 칸이 한 프레임)과 함께 돌린다: 291px 팬의 2프레임당 이동량 9, 12, 12, 113, 117, 13, 9, 6(천천히 출발해 두 걸음에 건너가고 세 걸음에 멈춤, spot/folder-meets-document), 암전 뒤 렌즈 줌 CAM 행 3.79에서 1배까지(spot/dark-eyes-reveal), 찌푸리는 얼굴 IB.boldFace.MOVE.scowl을 6프레임에 끼운 SHOT_A(insert/mesh-eyes-whip, 눈썹 안쪽 끝이 24px 내려옴). 중간 그림은 이징 대신 비율 0.35, 0.75, 1이고, 깃발·불꽃·꼬리는 3프레임마다 두 장을, 바람에 날리는 것과 화분은 2프레임마다 세 장을 돈다. */
 const PAN = [[0, 0], [2, 9], [4, 21], [6, 33], [8, 146], [10, 263], [12, 276], [14, 285], [16, 291]];
 const CAM = [[79, 3.79, 1257, 488], [81, 1.92, 1223, 486], [83, 1.32, 1213, 474], [85, 1.15, 1206, 467], [87, 1.06, 1206, 464], [89, 1.016, 1206, 463], [91, 0.992, 1205, 463], [93, 1, 1206, 462]];
 const A = IB.boldFace.POSE, SHOT_A = [[0, A.rest], ...IB.play(IB.boldFace.MOVE.scowl, 6), [24, { ...A.frown, dx: -120 }]];
@@ -68,11 +68,14 @@ MG.scene({
       flag(ctx, 360, 120, IB.alternate(f % 48, 2, 24), 50);
     }, `IB.alternate(f, 3) · IB.alternate(f, 2, 24)`);
     const sway = IB.loop(f, [0, 0.07, -0.05]);
+    // beside them, a float that arrives, bobs and stops: it rises on IB.settle and bobs by IB.bob, once every 2 s
+    const bt = IB.twos(t) % 2, by = 330 - 160 * IB.settle(bt - 0.2, 0.25) - IB.bob(bt - 0.6, 30, 1.0);
     SAMPLE.cell(ctx, c[5], win(5), () => [[200, -0.3, 150], [300, 0, 210], [400, 0.35, 170]].forEach(([bx, lean, len], i) => {
       ctx.save(); ctx.translate(bx, 330); ctx.rotate(lean + sway * (1 + i * 0.5));
       IB.ink(ctx, [[0, 0], [8, -len * 0.5], [4, -len]], { w: 4, seed: 60 + i });
       ctx.restore();
-    }), `IB.loop(f, [0, 0.07, -0.05]) — ${sway}`);
+      if (i === 2) IB.oval(ctx, 570, by, 16, 16, { fill: IB.C.sky, w: 3, seed: 90 });
+    }), `IB.loop(f, [0, 0.07, -0.05]) — ${sway} · IB.bob`);
   },
 });
 </script>

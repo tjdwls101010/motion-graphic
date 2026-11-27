@@ -65,6 +65,11 @@ check('settle is still after 4 tau by default', IB.settle(0.8, 0.2), 1);
 // alternate and loop count frames from 0: a negative frame is outside their contract (a scene clamps first, or gives alternate a `from`)
 check('alternate from frame 0', IB.alternate(0, 3), 0);
 check('loop from frame 0', IB.loop(0, ['p', 'q']), 'p');
+check('bob is 0 before it starts', IB.bob(0, 10, 1), 0);
+check('bob is cut to exactly 0 at until', IB.bob(1, 10, 1), 0);
+check('bob is 0 after until', IB.bob(1.5, 10, 1), 0);
+check('bob goes past its place a quarter period in', IB.bob(0.155, 10, 1) > 6, true);
+check('bob swings back the other way half a period later', IB.bob(0.465, 10, 1) < 0, true);
 
 console.log(failed ? `${failed} failed` : 'ok');
 process.exit(failed ? 1 : 0);

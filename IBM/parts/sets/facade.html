@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / facade</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/facade.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 원본 여섯째 스팟의 아파트 벽 IB.apartmentFacade, 창 둘이 나란하고 오른쪽 창 너머로 방(선반, 액자, 펜던트 등)이 보인다. 하늘 쪽은 늘어난 구름과 덤불, 벽은 벽돌 몇 획이 벽 전체를 대신한다. 레이어 셋이 차례로 쌓여서 두 창의 사람을 그 사이에 넣는다: back(하늘, 덤불, 벽돌, 위층 창 머리, 왼쪽 창틀) → 왼쪽 창 안의 이 → middle(왼쪽 창살과 창턱, 오른쪽 창틀과 방) → 오른쪽 창 안의 이 → front(오른쪽 창살과 창턱) → 창턱 위의 것(원본은 IB.sillPlant). 회색 덩어리는 사람 자리 표시다. 원본을 4배 확대한 격자에서 읽어 원본 좌표 그대로이고, 다른 자리에는 opts.shift로 옮긴다. 창 하나는 sets/windows에 칸으로 있다. */
+const STEPS = ['back', 'left occupant', 'middle', 'right occupant', 'front + sill plant'];
+const occupant = (ctx, x, seed) => IB.ink(ctx, [[x + 70, 800], [x + 84, 470], [x + 206, 470], [x + 220, 800]], { closed: true, fill: '#c9c9c9', w: 3, seed });
+MG.scene({
+  title: 'sets / facade',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const shown = Math.min(STEPS.length, 1 + Math.floor(t / 0.6)), f = IB.frame(t);   // one more step every 0.6 s, then the whole wall holds
+    IB.apartmentFacade(ctx, { layer: 'back' });
+    if (shown > 1) occupant(ctx, 1068, 5);
+    if (shown > 2) IB.apartmentFacade(ctx, { layer: 'middle' });
+    if (shown > 3) occupant(ctx, 1470, 6);
+    if (shown > 4) { IB.apartmentFacade(ctx, { layer: 'front' }); IB.sillPlant(ctx, { sway: IB.loop(f, [0, 0.07, -0.05]) }); }
+    SAMPLE.caption(ctx, `IB.apartmentFacade({ layer }) — ${STEPS.slice(0, shown).join(' / ')}`);
+  },
+});
+</script>

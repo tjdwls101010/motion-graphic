@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / riders</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/cast/riders.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 탠덤 스팟의 다섯 라이더 IB.RIDERS(curls, visor, cap, bun, vents)와 그들의 리그 IB.rider, 날아가는 모자 IB.flyingCap. 라이더는 앉은 키 약 250px의 작은 인물이고(선 1.9px, 머리 반지름 22), 얼굴이 아니라 머리 모양이나 모자와 옷으로 구별된다. 리그는 IB.figure와 따로, 페달을 밟는 크랭크 축(bb)에 붙는다: 엉덩이는 축에서 24px 뒤 112px 위, 손잡이는 56px 앞 118px 위(원본에서 읽음). 포즈는 숫자 몇 개(lean, rise, tuck, nod, arms, eye, mouth, hair)이고 IB.rider.pose({...})로 기본 RIDE에서 바꿀 것만 준다(마지막 칸). 크랭크는 2프레임마다 한 장, 한 바퀴 12장(1초)이고 바람에 날리는 머리·턱수염·후드 끈만 opts.alt로 세 장을 돌려 붙잡은 포즈를 살린다. 장면은 원본 좌표를 1.5배로 확대해 보여 주지만 여기는 1:1이다. 동작은 cast/riders-moves와 cast/riders-handsoff에 있다. */
+// one rider on a one-seat IB.tandem, as tandem-riders-join draws them: wheelbase 170, the axles at y 750, the cranks turning on twos (12 drawings a turn), streaming hair on three drawings
+const AXLE = 750, PI = Math.PI;
+function ride(ctx, cx, f, pose, look, o = {}) {
+  const d2 = Math.floor(f / 2), crank = (d2 / 12) * PI * 2 - PI / 2, rx = cx - 85, fx = cx + 85, bb = [rx + 62, AXLE - 4];
+  const bike = { rx, fx, bbs: [bb], built: [true], crank, alt: IB.alternate(f, 2) };
+  IB.tandem(ctx, bike, { axle: AXLE });
+  IB.rider(ctx, bb, pose, { look, crank, alt: IB.loop(f, [0, 1, -0.6]), seed: 200, ...o });
+  return bb;
+}
+MG.scene({
+  title: 'cast / riders',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.RIDERS, IB.rider — POSE.ride, opts, IB.flyingCap (cast/riders.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(8, 4), fit = (i) => SAMPLE.fit(c[i], [960, AXLE + 50], 40), RIDE = IB.rider.POSE.ride;
+    Object.entries(IB.RIDERS).forEach(([name, look], i) => SAMPLE.cell(ctx, c[i], fit(i), () => ride(ctx, 960, f, RIDE, look), 'RIDERS.' + name));
+    SAMPLE.cell(ctx, c[5], fit(5), () => ride(ctx, 960, f, RIDE, IB.RIDERS.cap, { bare: true }), "RIDERS.cap, opts.bare");
+    // the cap that blows off: up and back over 36 frames on twos, turning 6.5 rad (tandem-riders-join), then 0.75 s without it
+    const u = Math.min(1, (Math.floor((f % 54) / 2) * 2) / 36);
+    SAMPLE.cell(ctx, c[6], [945 - c[6][2] / 2, 214, c[6][2], c[6][3]], () => { const x0 = 960 + 150, x = x0 - 330 * u, y = AXLE - 262 - 150 * Math.sin(u * 2.2) + 30 * u; IB.flyingCap(ctx, [x, y], { rot: -u * 6.5 }); }, 'IB.flyingCap(ctx, at, { rot })');
+    SAMPLE.cell(ctx, c[7], fit(7), () => ride(ctx, 960, f, IB.rider.pose({ lean: -30, nod: -0.24, mouth: 'open', arms: [[-6, -84], 'bar'], open: true }), IB.RIDERS.visor), "IB.rider.pose({ lean, arms, … })");
+  },
+});
+</script>

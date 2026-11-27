@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / windows</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/facade.js"></script>
+<script src="../../kit/sets/street.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 창 둘, 아파트 벽의 내리닫이창 한 짝(IB.windowFrame 뒤, IB.sashAndSill 앞)과 빌딩 면의 창 격자 IB.windowGrid. 내리닫이창은 너비 280px, 위 칸은 그려 내린 블라인드(납작한 회색)이고, 틀과 유리는 안에 있는 이의 뒤에, 아래 창살과 창턱(그 밑 분필 한 줄)은 앞에 그린다: 사이에 사람이나 고양이를 넣는다(여기서는 회색 자리 표시가 2프레임 단위로 올라왔다 내려간다). 창 높이는 y 283에 고정이라 벽 전체를 옮길 때는 IB.apartmentFacade의 shift를 쓴다. 창 격자는 1.5px 상자를 gx·gy마다 찍은 면의 질감이고, 금융가 세트(sets/street)의 왼쪽 탑(6×10)과 계단진 오른쪽 탑(6×8 위에 4×2) 그대로다. */
+const PEEK = [0, 0.35, 0.8, 1, 1, 1, 1, 1, 0.6, 0.2];   // how far the placeholder is up, by drawing
+MG.scene({
+  title: 'sets / windows',
+  duration: 2.5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'sets/facade.js, sets/street.js — windows');
+    const c = SAMPLE.grid(3, 3), V = (cx, top) => [cx - c[0][2] / 2, top, c[0][2], c[0][3]], u = IB.loop(IB.frame(t), PEEK, 2);
+    SAMPLE.cell(ctx, c[0], V(1208, 90), () => {
+      IB.windowFrame(ctx, 1068, { seed: 700 });
+      IB.ink(ctx, [[1130, 800], [1140, 760 - 260 * u], [1276, 760 - 260 * u], [1286, 800]], { closed: true, fill: '#c9c9c9', w: 3, seed: 5 });   // who is inside: a placeholder
+      IB.sashAndSill(ctx, 1068, { seed: 700 });
+    }, 'IB.windowFrame(x) | inside | IB.sashAndSill(x)');
+    SAMPLE.cell(ctx, c[1], V(310, 70), () => {
+      IB.box(ctx, 90, 96, 440, 664, { w: 3.4, seed: 100, fill: IB.C.bg });
+      IB.windowGrid(ctx, [122, 130], { cols: 6, rows: 10, w: 42, h: 40, gx: 64, gy: 56, seed: 110 });
+    }, 'IB.windowGrid(at, { cols: 6, rows: 10 })');
+    SAMPLE.cell(ctx, c[2], V(1615, 70), () => {
+      IB.box(ctx, 1400, 250, 430, 510, { w: 3.4, seed: 320, fill: IB.C.bg });
+      IB.box(ctx, 1470, 96, 290, 154, { w: 3, seed: 321, fill: IB.C.bg });
+      IB.windowGrid(ctx, [1430, 284], { cols: 6, rows: 8, w: 40, h: 38, gx: 64, gy: 56, seed: 330 });
+      IB.windowGrid(ctx, [1500, 122], { cols: 4, rows: 2, w: 40, h: 38, gx: 64, gy: 56, seed: 500 });
+    }, 'IB.windowGrid — stepped: 6 x 8 under 4 x 2');
+  },
+});
+</script>

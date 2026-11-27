@@ -1,0 +1,63 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>time / clocks</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 박자 견본: IBM 룩의 시계 IB.frame(24fps 1프레임 단위), IB.twos(2프레임마다 한 장, 12fps), IB.threes(3프레임마다, 8fps)와 박자 격자 IB.T(n) = n/12, IB.FPS, 정착 곡선 IB.settle, 박자부터 센 그림 수 IB.drawn. 그린 연기는 2프레임 단위로 바뀌고 그 사이는 완전히 멈추며, 느린 연기와 무거운 것은 3프레임 단위로 내려간다. 카피, 팬, 스크롤, 기계와 벨트는 1프레임 단위(날 t)다: 위 넓은 칸의 점 셋은 같은 초당 340px로 가지만 한 장의 간격이 14, 28, 43px로 다르다. 박자의 시각은 그 동작의 격자 위에 둔다(2프레임 연기는 1/12초, 3프레임 연기는 1/8초, 둘이 바뀌는 시각은 두 격자에 다 있는 0.25초의 배수): 격자를 벗어나면 박자마다 첫 장이 가는 비율이 달라진다. IB.settle은 지수 접근을 stop초에 정확히 1이 되게 늘린 것으로, 머리 카피 71px이 60, 48, 38, 31, 25, 20, 16, 13, 10…px 남기며 0.79초에 멈춘다(tau 0.2). 솟거나 내려앉는 그림은 2프레임 단위로 읽어(IB.settle(IB.twos(t) - at, 0.1)) 첫 장에 57%, 둘째 장에 82%를 간다. */
+const SPEED = 340, LABEL = '400 19px "JetBrains Mono"';
+const text = (ctx, s, x, y) => { ctx.fillStyle = '#6f6f6f'; ctx.font = LABEL; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); };
+MG.scene({
+  title: 'time / clocks',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'time.js — the clocks: IB.frame, IB.twos, IB.threes, IB.T, IB.settle');
+    const c = SAMPLE.grid(6, 3), wide = SAMPLE.span(c, 0, 2), win = (r) => [0, 0, r[2], r[3]];
+    // the same 340 px/s read on three clocks, with the drawings it has already shown behind it
+    const CLOCKS = [['IB.frame(t) / IB.FPS — ones', (u) => IB.frame(u) / IB.FPS, 1 / IB.FPS], ['IB.twos(t) — 12 fps', IB.twos, 1 / 12], ['IB.threes(t) — 8 fps', IB.threes, 1 / 8]];
+    SAMPLE.cell(ctx, wide, win(wide), () => CLOCKS.forEach(([name, clock, step], i) => {
+      const y = 90 + i * 120, u = t % 4, x = (v) => 380 + SPEED * v;
+      text(ctx, name, 30, y);
+      IB.seg(ctx, x(0), y + 34, x(4), y + 34, { w: 1.5, seed: 3 + i });
+      for (let k = 1; k <= 6; k++) if (clock(u) - k * step >= 0) IB.oval(ctx, x(clock(u) - k * step), y, 9, 9, { fill: IB.C.paper, w: 2, seed: 10 + k });
+      IB.oval(ctx, x(clock(u)), y, 16, 16, { fill: IB.C.royal, w: 3, seed: 5 + i });
+    }), `the same ${SPEED} px/s on ones, twos, threes — each drawing held until the next`);
+    // one second: a tick for every 24 fps frame, a long one for every beat on the 12 fps grid
+    SAMPLE.cell(ctx, c[3], win(c[3]), () => {
+      const x = (s) => 50 + s * 480, u = t % 1;
+      IB.seg(ctx, x(0), 220, x(1), 220, { w: 2, seed: 20 });
+      for (let k = 0; k <= IB.FPS; k++) IB.seg(ctx, x(k / IB.FPS), 220, x(k / IB.FPS), 236, { w: 1.5, seed: 21 + k });
+      for (let n = 0; n <= 12; n++) IB.seg(ctx, x(IB.T(n)), 180, x(IB.T(n)), 220, { w: 3, color: IB.C.royal, seed: 50 + n });
+      IB.oval(ctx, x(IB.twos(u)), 160, 10, 10, { fill: IB.C.royal, w: 2, seed: 70 });
+      text(ctx, `IB.T(n) = n / 12 — beat ${Math.round(IB.twos(u) * 12)}`, 50, 300);
+      text(ctx, `1 / IB.FPS = 1 / ${IB.FPS}`, 50, 340);
+    }, 'IB.T(n) on the frame ticks of IB.FPS');
+    // the head copy's 71 px closing on ones: the curve, its frames, and the block itself at 1:1
+    const HEAD = IB.TYPE.head, dt = (t % 2) - 0.1, left = (v) => HEAD.from * (1 - IB.settle(v, HEAD.tau, HEAD.stop));
+    SAMPLE.cell(ctx, c[4], win(c[4]), () => {
+      const x = (s) => 60 + s * 520, y = (px) => 330 - px * 3;
+      IB.seg(ctx, x(0), y(0), x(1), y(0), { w: 1.5, seed: 30 });
+      IB.ink(ctx, Array.from({ length: 41 }, (_, i) => [x(i / 40), y(left(i / 40))]), { w: 2.5, seed: 31 });
+      for (let k = 1; k <= 19; k++) IB.oval(ctx, x(k / 24), y(left(k / 24)), 4, 4, { fill: IB.C.ink, w: 0, n: 8 });
+      if (dt >= 0) IB.oval(ctx, x(Math.min(1, IB.frame(dt) / 24)), y(left(IB.frame(dt) / 24)), 10, 10, { fill: IB.C.royal, w: 2, seed: 32 });
+      IB.box(ctx, 140 - (dt >= 0 ? left(dt) : HEAD.from), 40, 200, 34, { fill: IB.C.paper, w: 3, seed: 33 });   // a stand-in for the block, sliding on ones
+      IB.seg(ctx, 140, 30, 140, 84, { w: 1.5, color: IB.C.royal, seed: 34 });
+    }, `IB.settle(dt, ${HEAD.tau}, ${HEAD.stop}) — 71 px on ones`);
+    // something drawn rising on twos with tau 0.1: 57% on its first drawing, 82% on its second
+    const at = 0.5, tt = IB.twos(t % 2), n = IB.drawn(tt, at), rise = IB.settle(tt - at, 0.1);
+    SAMPLE.cell(ctx, c[5], win(c[5]), () => {
+      const x = (s) => 50 + s * 600, y = (v) => 330 - v * 200;
+      IB.seg(ctx, x(0), y(0), x(0.7), y(0), { w: 1.5, seed: 40 }); IB.seg(ctx, x(0), y(1), x(0.7), y(1), { w: 1.5, seed: 41 });
+      for (let k = 0; k <= 8; k++) { const v = IB.settle(k / 12, 0.1); IB.seg(ctx, x(k / 12), y(v), x((k + 1) / 12), y(v), { w: 3, color: IB.C.royal, seed: 42 + k }); }
+      text(ctx, '57%', x(1 / 12) + 6, y(IB.settle(1 / 12, 0.1)) + 18); text(ctx, '82%', x(2 / 12) + 6, y(IB.settle(2 / 12, 0.1)) + 18);
+      IB.oval(ctx, 548, 360 - rise * 200, 26, 30, { fill: IB.C.yellow, w: 3, seed: 43 });   // a balloon rising to its place
+    }, `settle on twos, tau 0.1 — IB.drawn ${n}`);
+  },
+});
+</script>

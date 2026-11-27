@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / vehicles-heli-flyin</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 탈것, 원본 첫 설정 샷의 헬리콥터 비행 IB.heli.MOVE.flyIn을 IB.heliDrawing으로 한 장씩 그린다(2프레임마다 열아홉 장, 8프레임부터). 표의 한 줄은 [노란 면의 중심 x, y, 배율, 회전, facing]이고 원본 프레임에서 잰 값이라, heliDrawing은 몸통 원점이 아니라 노란 면의 중심에 놓는다; ['front', ...] 두 줄은 정면 IB.heliFront다. 렌즈 앞을 오른쪽 아래에서 지나며 화면보다 큰 세 장(첫 장은 1.3배 스미어), 정면 두 장, 그 뒤로는 떠 있지 않고 계속 작아지며(1.48에서 0.86) 수평을 찾는다(0.69에서 0.01 rad). 원본은 이것을 도시 세트(IB.stadiumCity) 맨 앞에 띄운다. 화면 밖까지 쓰는 경로라 칸 없이 전면이다. */
+const FLY = IB.play(IB.heli.MOVE.flyIn, 8);
+MG.scene({
+  title: 'props / vehicles-heli-flyin',
+  duration: 2.25, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), d = f >= 8 ? Math.floor((f - 8) / 2) : -1;
+    if (d >= 0) IB.heliDrawing(ctx, IB.held(FLY, f), d);
+    SAMPLE.caption(ctx, d < 0 ? 'IB.heli.MOVE.flyIn — nothing for the first 8 frames' : `IB.heliDrawing(ctx, IB.held(FLY, f), d) — drawing ${Math.min(d, 18) + 1} of 19`);
+  },
+});
+</script>

@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / palette</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 원본 프레임에서 뽑은 팔레트 IB.C의 색 열다섯과 피부색 다섯(IB.C.skin)을 붓펜 외곽선을 두른 면으로 늘어놓는다. 무대는 bg #f0f0f0 한 색이고 사람과 소품은 paper 흰 채움에 ink 검은 선이며, 한 샷의 색은 하나에서 셋이다(화면의 1~8%). royal #1e66f0은 태그라인과 로고에만, smear #2f6bea는 바닥의 분필 스미어에만 쓰고 인물과 소품에는 쓰지 않는다. red는 원본에 없는 색으로 시세가 떨어지는 창작 장면을 위해 blue·green과 같은 무게로 더했다. */
+MG.scene({
+  title: 'look / palette',
+  duration: 2, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.C — the palette (ink.js)');
+    const named = Object.entries(IB.C).filter(([, v]) => typeof v === 'string');
+    const swatches = [...named.map(([k, v]) => [`C.${k} ${v}`, v]), ...IB.C.skin.map((v, i) => [`C.skin[${i}] ${v}`, v])];
+    const c = SAMPLE.grid(swatches.length, 5);
+    swatches.forEach(([label, color], i) => {
+      const [, , w, h] = c[i];
+      SAMPLE.cell(ctx, c[i], [0, 0, w, h], () => IB.box(ctx, 24, 22, w - 48, h - 44, { fill: color, w: 3, seed: 10 + i }), label);
+    });
+  },
+});
+</script>

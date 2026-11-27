@@ -1,0 +1,77 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / office-desk</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 앉은 사람의 자리 — 앉은 포즈 IB.sit과 사무용 의자 IB.chair(엉덩이 관절은 바닥에서 IB.SEAT = 0.335 h), 옆에서 본 책상 한 칸 IB.workstation, 책상 IB.desk와 키보드 IB.keyboard, 탁상 전화 IB.phoneCradle과 수화기 IB.handset, 종이컵 IB.cup. 위 세 칸은 market/trading-desk-row의 세 자리(키 400 px) 그대로다: 타자 치는 손은 2프레임마다 8 px씩 엇갈리고, 통화하는 손은 3프레임마다 두 몸짓을 오가다 수화기를 내려놓고(phoneCradle의 rest), 늘어진 사람은 움직이지 않다가 컵을 책상에 내려놓는다. 그리는 순서가 계약이다: 의자 → 사람의 먼 쪽 → 책상 → 사람의 가까운 쪽 → 손에 든 것. 화면 내용이 중요하지 않은 줄 자리는 workstation(모니터를 옆에서 본 얇은 판)이고, 앉은 사람이 읽는 화면을 보여 줘야 하면 desk + keyboard에 정면 IB.monitor를 올린다(props/office-screens). 수화기는 머리 앞이 아니라 귀(머리 중심 0.035 h 뒤)에 댄다. 컵은 셋이다: cup은 키 400 px쯤의 사람이 쥐는 40 px 종이컵, 군중 속 작은 사람은 IB.smallCup, 뚜껑과 빨대가 있는 테이크아웃 컵은 IB.strawCup이다. 탁상 전화의 수화기는 handset, 휴대전화는 IB.mobilePhone이다. */
+const F = IB.FIG, FLOOR = 940, DESK = 778, H = 400, X = 220;   // market/trading-desk-row: one seat, its sitter's hip at X
+const WHO = [
+  { ...IB.PEOPLE.typist, h: H, dir: 1, seed: 100 },
+  { ...IB.PEOPLE.trader, h: H, dir: 1, seed: 200 },
+  { ...IB.PEOPLE.lounger, h: H, dir: 1, seed: 300 },
+];
+// the three seats' poses at drawing k (twos) and k3 (threes), as the scene builds them
+const typing = (look, k, lean = 0.1) => { const p = IB.sit(X, FLOOR, look), a = k % 2 ? -8 : 0, b = k % 2 ? 0 : -8; p.lean = lean; p.hands = [[p.hands[0][0], p.hands[0][1] + a], [p.hands[1][0], p.hands[1][1] + b]]; return p; };
+function caller(k, k3) {   // on the phone, then (from drawing 24 of each 48) typing with the handset put down
+  if (k % 48 >= 24) return { ...typing(WHO[1], k, 0.16), face: { mouth: 'smile', brow: 1 }, phoneDown: true };
+  const sit = IB.sit(X, FLOOR, WHO[1]);
+  return { ...sit, lean: -0.06, hands: [[X + 0.2 * H, sit.hip[1] - 0.16 * H - (k3 % 2 ? 16 : 0)], [X - 0.035 * H, sit.hip[1] - F.torso * H - 0.085 * H]], grip: [false, true], elbow: [1, -1], face: { mouth: k3 % 2 ? 'open' : 'flat' }, phone: true };
+}
+function lounger(k) {   // legs out, cup in hand, then (from drawing 24 of each 48) typing with the cup put down on the desk
+  const s3 = IB.sit(X, FLOOR, WHO[2]);
+  if (k % 48 < 24) return { ...s3, lean: -0.3, nod: 0.1, feet: [[X + 0.42 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2], [X + 0.36 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2]], hands: [[X + 0.1 * H, s3.hip[1] - 0.03 * H], [X + 0.12 * H, s3.hip[1] - 0.1 * H]], face: { eye: 'closed', mouth: 'smile' }, cup: true };
+  return { ...typing(WHO[2], k, 0.22), face: { mouth: 'flat', brow: 1 }, cupDown: true };
+}
+// one seat of the row: the scene's drawing order
+function seat(ctx, p, i) {
+  const look = { ...WHO[i], face: p.face || { mouth: 'flat' } };
+  IB.chair(ctx, X, FLOOR, H, 1, { seed: 700 + i * 10 });
+  IB.figure(ctx, p, look, 'far');
+  IB.workstation(ctx, [X, DESK], { floor: FLOOR, seed: 500 + i * 10 });
+  if (i === 1) IB.phoneCradle(ctx, [X + 236, DESK]);
+  const j = IB.figure(ctx, p, look, 'near');
+  if (p.phone) IB.handset(ctx, j.hands[1], { cradle: [X + 236, DESK] });
+  if (p.phoneDown) IB.phoneCradle(ctx, [X + 236, DESK], { rest: true });   // the handset back on the base, drawn over the sitter
+  if (p.cupDown) IB.cup(ctx, [X + 260, DESK - 6]);
+  if (p.cup) IB.cup(ctx, j.hands[1]);
+}
+MG.scene({
+  title: 'props / office-desk',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/office.js — seats, chair, desk, phone, cup');
+    const k = Math.round(IB.twos(t) * 12), k3 = Math.round(IB.threes(t) * 8), c = SAMPLE.grid(6, 3), view = (r) => SAMPLE.fit(r, [X + 186, FLOOR], 24);
+    SAMPLE.cell(ctx, c[0], view(c[0]), () => seat(ctx, { ...typing(WHO[0], k), face: { mouth: 'flat' } }, 0), 'IB.sit + IB.chair + IB.workstation');
+    SAMPLE.cell(ctx, c[1], view(c[1]), () => seat(ctx, caller(k, k3), 1), 'IB.handset({ cradle }), IB.phoneCradle({ rest })');
+    SAMPLE.cell(ctx, c[2], view(c[2]), () => seat(ctx, lounger(k), 2), 'IB.cup — in the hand, then on the desk');
+    // the chair alone, with the height a seat holds the hip at
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [X + 40, FLOOR], 24), () => {
+      IB.chair(ctx, X, FLOOR, H, 1, { seed: 700 });
+      const hy = FLOOR - IB.SEAT * H;
+      IB.seg(ctx, X - 140, hy, X + 190, hy, { w: 1.6, color: '#bdbdbd', seed: 1, grain: 0 });
+      IB.oval(ctx, X, hy, 6, 6, { fill: IB.C.blue, w: 2, seed: 2, n: 8 });
+    }, 'IB.chair — hip at floor − IB.SEAT × h');
+    // market/watched-chart-drops: the desk and keyboard a 520 px sitter types at
+    const wide = SAMPLE.span(c, 4, 5);
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [1130, 930], 24), () => {
+      const who = { ...IB.PEOPLE.trader, h: 520, dir: 1, seed: 30, face: { mouth: 'flat' } }, p = IB.sit(700, 930, who);
+      IB.chair(ctx, 700, 930, 520, 1);
+      IB.figure(ctx, p, who, 'far');
+      IB.desk(ctx, 800, 1560, 716, 930, { lw: 3.6 });
+      IB.keyboard(ctx, [800 + 24, 716]);
+      IB.figure(ctx, p, who, 'near');
+    }, 'IB.desk(ctx, 800, 1560, 716, 930) + IB.keyboard');
+  },
+});
+</script>

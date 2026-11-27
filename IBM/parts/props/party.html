@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / party</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/party.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 파티, 줄 달린 풍선 IB.balloon(한 가지 색 채움에 종이색 반사 호, 줄은 매듭 쪽으로 처짐), 미러볼 IB.discoBall, 바닥에 굴러다니다 차이는 풍선 IB.looseBalloon과 그 동작 IB.looseBalloon.MOVE.kicked, 작은 하트 풍선 IB.heartBalloon, 바닥 색종이 IB.confettiField·IB.confetti. 미러볼은 그 샷에서 유일하게 멈추지 않는 것이다: 3프레임마다 0.05rad씩 돌고 반짝임은 네 장(작게, 크게, 돌아서, 없음)씩 살다 다른 타일 모서리로 옮긴다. 차인 풍선은 늘어난 스미어 한 장으로 떠나 가라앉으며 한 바퀴 돌고, 눌렸다 두 번 흔들리며 멈춘다(바닥에서 57px 안으로 오면 밑에 분필이 자란다). 하트 풍선은 IB.settle(tau 0.45, 2.4초)을 2프레임 단위로 읽어 290px 떠오르고, 2프레임마다 두 장을 번갈아 흔들리며 첫 장만 옆에서 본 모습이다. 색종이는 원본의 두 색(#d1e2ee, #eadeac)이고 외곽선이 없다. 풍선 넷은 vignette/balloons-lift-chair에서 놓아준 자리, 나머지는 spot/folder-meets-document의 값이다. */
+const K = [960, 800], BALLOONS = [[-170, -190, 'yellow', 100], [-40, -270, 'lavender', 110], [100, -215, 'sky', 120], [215, -140, 'yellow', 130]];
+const CONFETTI = IB.confettiField();
+MG.scene({
+  title: 'props / party',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/party.js — balloons, disco ball, confetti');
+    const C = IB.C, f = IB.frame(t), tt = IB.twos(t), c = SAMPLE.grid(6, 3);
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], K), () => BALLOONS.forEach(([dx, dy, col, seed]) => IB.balloon(ctx, [K[0] + dx, K[1] + dy], { from: K, fill: C[col], seed })), 'IB.balloon(at, { from, fill })');
+    SAMPLE.cell(ctx, c[1], [1302 - 294, 0, 589, 432], () => IB.discoBall(ctx, [1302, 215], { f }, { r: 105 }), 'IB.discoBall(at, { f }, { r: 105 })');
+    SAMPLE.cell(ctx, c[2], [1460 - 294, 330, 589, 432], () => IB.heartBalloon(ctx, [1460, MG.lerp(690, 400, IB.settle(tt, 0.45, 2.4))], { sway: IB.alternate(f, 2) ? 1 : -1, edge: f < 2 }), 'IB.heartBalloon — floats 290 px on IB.settle');
+    const wide = SAMPLE.span(c, 3, 4);
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [735, 893]), () => { const b = SAMPLE.cycle(f, IB.looseBalloon.MOVE.kicked, 20); IB.looseBalloon(ctx, [b.x, b.y], b); }, 'IB.looseBalloon.MOVE.kicked');
+    SAMPLE.cell(ctx, c[5], [1060, 560, 589, 432], () => IB.confetti(ctx, CONFETTI), 'IB.confetti(IB.confettiField()) — part of it');
+  },
+});
+</script>

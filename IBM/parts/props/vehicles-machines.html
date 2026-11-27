@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / vehicles-machines</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 탈것, 컨베이어 IB.conveyor와 그 위의 도장 찍는 문 IB.stamper, 노란 택시 IB.cab, 종이비행기 IB.paperPlane. 기계는 낱장(1프레임)으로 움직이고 그 위에 탄 것과 사람은 2프레임 단위로 연기한다: 벨트는 travel = t × 230px/s로 롤러가 돌고 눈금이 흐르며, 택시는 520px/s로 달리고 바퀴는 spin = 간 거리 / 34(바퀴 반지름)로 돈다. 도장 패드는 2프레임마다 한 장씩 네 장이다(down 0.6 늘어난 한 장, 1 닿음, 0.55, 0.2): 닿는 장과 그다음 장에 충격선이 튀고 닿는 순간부터 램프가 초록이 된다. 종이비행기는 124px(× s) 라벤더 비행기이고 들어올 때 늘어난 스미어 한 장(stretch 1.5)을 쓰며, 원본 장면(variation/hall-whip-button)은 FLIGHT 여섯 줄 [x, y, s, rot, stretch]을 2프레임마다 한 장씩 점점 작게 소실점으로 날린다: 여기서는 그 여섯 장을 한 자리에 차례로 보이고, 복도 위를 실제로 나는 것은 sets/corridor에 있다. 값은 metaphor/parcels-board-conveyor, market/street-rush-hour, variation/hall-whip-button 그대로이고, 벨트 위 상자는 자리 표시다(원본은 IB.parcel). */
+const BELT = 690, BX0 = 880, FLOOR = 900, V = 230, SCAN = 1500, ROAD = 856;
+const FLIGHT = [[250, 800, 3.2, -0.34, 1.5], [540, 660, 2.2, -0.3, 1], [716, 590, 1.5, -0.24, 1], [826, 548, 1.0, -0.18, 1], [890, 524, 0.72, -0.12, 1], [922, 514, 0.56, -0.08, 1]];   // [x, y, s, rot, stretch] (variation/hall-whip-button)
+const BOX = { w: 190, h: 150 }, POSTER = 3.6;   // a box is under the pad on the poster (0.72 x 5 s)
+const boxX = (t, n) => SCAN + V * (t - POSTER) + 575 * n;   // boxes 575 px (2.5 s) apart, so a 5 s loop is seamless
+MG.scene({
+  title: 'props / vehicles-machines',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/vehicles.js — conveyor, stamper, paper plane, cab');
+    const C = IB.C, tt = IB.twos(t), L = [48, 96, 1110, 926], R = [1186, 96, 686, 500], Q = [1186, 658, 686, 364];
+    SAMPLE.cell(ctx, L, SAMPLE.fit(L, [BX0 - 25 + 1110 / 2, FLOOR]), () => {
+      IB.conveyor(ctx, [BX0, BELT], { travel: t * V }, { floor: FLOOR });
+      let pad = { down: 0, top: BELT - 150, hit: -1 };
+      for (let n = -1; n <= 2; n++) {
+        const x = boxX(t, n), k = IB.drawn(tt, POSTER - (575 * n) / V - 1 / 12);
+        if (x - BOX.w / 2 < BX0 || x - BOX.w / 2 > 1960) continue;
+        IB.box(ctx, x - BOX.w / 2, BELT - BOX.h, BOX.w, BOX.h, { fill: C.paper, w: 3.4, seed: 100 + n });
+        if (k >= 1) IB.box(ctx, x - 18, BELT - BOX.h + 40, 36, 36, { fill: C.green, w: 2.6, seed: 110 + n });   // stamped
+        if (k >= 0 && k < 4) pad = { down: [0.6, 1, 0.55, 0.2][k], top: BELT - BOX.h, hit: k };
+      }
+      IB.stamper(ctx, [SCAN, BELT], pad);
+    }, 'IB.conveyor(at, { travel }), IB.stamper(at, { down, top, hit })');
+    const k = Math.floor(IB.frame(t) / 2) % FLIGHT.length, [, , s, rot, stretch] = FLIGHT[k];
+    SAMPLE.cell(ctx, R, [960 - R[2] / 2, 500 - R[3] / 2, R[2], R[3]], () => IB.paperPlane(ctx, [960, 500], { s, rot, stretch }), `IB.paperPlane — FLIGHT[${k}] s ${s} rot ${rot} stretch ${stretch}`);
+    SAMPLE.cell(ctx, Q, [0, ROAD + 40 - Q[3], Q[2], Q[3]], () => {
+      const u = (((t - POSTER + 1.04) % 2.5) + 2.5) % 2.5;
+      IB.seg(ctx, -20, ROAD + 6, 720, ROAD + 6, { w: 3.4, seed: 661 });
+      IB.cab(ctx, [-200 + 520 * u, ROAD], { spin: (520 * u) / 34 });
+    }, 'IB.cab(at, { spin }) — 520 px/s on ones');
+  },
+});
+</script>

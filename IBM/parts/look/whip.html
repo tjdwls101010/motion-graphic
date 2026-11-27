@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / whip</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 두 샷을 잇는 스피드라인 휩 IB.whip의 한 장. 줄무늬는 세 가지다: 가는 검은 선(3~7px), 로열블루 선(3~8px), 폭 14~24px의 옅은 분필 띠. 그림 번호가 바뀔 때마다 배치를 완전히 새로 굴리므로 같은 번호를 주면 같은 그림이고, 장면은 그림 번호를 2프레임마다 바꾼다(1편 인서트의 휩은 2프레임씩 석 장, 0.25초). tint는 나가거나 들어오는 샷의 색 줄무늬를 섞는 것으로, 원본은 휩의 첫 장과 끝 장에만 섞는다(인서트는 피부색, hall-whip-button은 나갈 때 노랑과 라벤더). 휩은 디졸브 대신 쓰는 유일한 전환이고 길이는 0.25초(클로즈업 사이)에서 0.42초(와이드 사이)다. 나가는 샷을 밀고 흩뜨리는 것은 장면과 IB.whipBreakup(marks.js)의 몫이다. 화면 전체를 덮는 표시라 칸 없이 전면으로 보이고, 1초마다 옵션이 바뀐다. */
+const STAGES = [
+  ['IB.whip(ctx, drawn, { seed: 4 }) — streaks alone', {}],
+  ['{ tint: [C.yellow, C.lavender] } — the leaving shot\'s colours', { tint: [IB.C.yellow, IB.C.lavender] }],
+  ['{ density: 0.5 } — a lighter whip', { density: 0.5 }],
+];
+MG.scene({
+  title: 'look / whip',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), drawn = f - (f % 2), [label, o] = STAGES[Math.min(2, Math.floor(t))];   // a new drawing every two frames
+    IB.whip(ctx, drawn, { seed: 4, ...o });
+    SAMPLE.caption(ctx, `${label} — drawing ${drawn}`);
+  },
+});
+</script>

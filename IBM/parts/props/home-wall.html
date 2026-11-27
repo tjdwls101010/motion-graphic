@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / home-wall</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 방의 벽과 작은 세간 — 트로피 장 IB.trophyCabinet, 엇갈린 펜싱 검 IB.crossedFoils, 액자 IB.pictureFrame(210 × 160과 150 × 190), 펜던트 등 IB.hangingLamp, 나무 상자 IB.woodCrate, 생일 초 IB.candle의 네 상태. 벽 장식은 흰 종이에 붓펜 선만 촘촘하고 색은 액자의 겨자색 하나다: 걸어가는 배우 뒤로 "역사가 있는 곳"을 말하는 무대 장치라 배우의 색을 뺏지 않는다. 등과 상자는 어두운 방(metaphor/flashlight-finds-file)에 "어딘가"를 세우는 만큼만 있고, 상자 뒤에는 무언가가 숨을 수 있다. 초는 lit 0 꺼짐, 1 타는 중(불꽃 두 장 flicker 0·1을 3프레임마다 바꾼다), 2 입김에 눕는 한 장, 3 다시 붙는 한 장(터짐 표시와 함께)이고 x로 seed가 달라 한 줄로 세워도 서로 다르다. 케이크 위 초와 문, 식탁 의자는 props/home-room에 있다. */
+MG.scene({
+  title: 'props / home-wall',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/home.js — wall dressing, lamp, crate, candle');
+    const f = IB.frame(t), c = SAMPLE.grid(6, 3), around = (r, [x, y]) => [x - r[2] / 2, y - r[3] / 2, r[2], r[3]];
+    // acting/walk-cycle-bag's wall: the cabinet and the foils where the scene hangs them, the two frames moved side by side at the scene's sizes
+    SAMPLE.cell(ctx, c[0], around(c[0], [-430, 416]), () => IB.trophyCabinet(ctx, [-560, 240]), 'IB.trophyCabinet(topLeft)');
+    SAMPLE.cell(ctx, c[1], around(c[1], [-1500, 340]), () => IB.crossedFoils(ctx, [-1500, 330]), 'IB.crossedFoils(centre)');
+    SAMPLE.cell(ctx, c[2], around(c[2], [-1010, 340]), () => {
+      IB.pictureFrame(ctx, [-1230, 270], { w: 210, h: 160, seed: 700 });
+      IB.pictureFrame(ctx, [-930, 250], { w: 150, h: 190, seed: 710 });
+    }, 'IB.pictureFrame(topLeft, { w, h })');
+    // metaphor/flashlight-finds-file: the lamp hangs from above the frame
+    SAMPLE.cell(ctx, c[3], [1120 - c[3][2] / 2, 0, c[3][2], c[3][3]], () => IB.hangingLamp(ctx, [1120, 300]), 'IB.hangingLamp(shade bottom)');
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [1395, 930], 70), () => IB.woodCrate(ctx, [1395, 930], { w: 190, h: 170 }), 'IB.woodCrate(floor, { w: 190, h: 170 })');
+    SAMPLE.cell(ctx, c[5], around(c[5], [1080, 520]), () => {
+      [0, 1, 2, 3].forEach((lit, i) => IB.candle(ctx, [900 + i * 120, 500], { lit, flicker: IB.alternate(f, 3) }));
+    }, 'IB.candle({ lit: 0 | 1 | 2 | 3, flicker })');
+  },
+});
+</script>

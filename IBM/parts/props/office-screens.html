@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / office-screens</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 사무실의 화면과 벽 — 정면 모니터 IB.monitor(520 × 340) 위에서 자라는 선 차트 IB.lineChart, 오르내림 화살표 IB.arrow, 그린 차트의 두 축 IB.chartAxes, 벽시계 IB.wallClock, 책상에서 날아가는 종이 IB.flyingSheet. 모니터는 화면이 종이처럼 흰 면이고 빛나지 않으며, 돌려받은 화면 사각형 안에 그린다. 선 차트는 그린 것이라 그림 두 장(4프레임)마다 점 하나(17 px 간격, 6점/초)가 붙고, 창이 차면 17 px씩 밀린다: 칸 안의 오르내림은 market/watched-chart-drops의 박자 그대로다(지켜보면 3씩 내리고 실눈이면 4, 안 보면 3씩 오른다). 파랑은 오름, 빨강은 내림이고 두 색은 다른 뜻을 지지 않는다. 종이는 14장 동안 330 px 높이의 호를 그리며 구르다가 떨어진 자리에 납작하게 머문다: 내려놓은 것은 그 자리에 있다. 축은 장면에서 1580 × 750(눈금 130·165 px 간격)이고 여기서는 같은 간격으로 눈금 수만 줄였다. */
+const X = 220, FLOOR = 940, DESK = 778, H = 400;   // market/trading-desk-row, seat 1
+const TYPIST = { ...IB.PEOPLE.typist, h: H, dir: 1, seed: 100, face: { mouth: 'flat' } };
+// market/watched-chart-drops: what the sitter does from each drawing on, and what that does to the chart per step
+const BEATS = [[0, 'watch', 0], [18, 'stare', -3], [36, 'back', 3], [54, 'peek', -4], [60, 'back', 3], [69, 'peek', -4], [75, 'cover', 6]];
+function series(tt) {
+  const steps = Math.max(0, Math.floor((Math.round(tt * 12) - 6) / 2) + 1), v = [50];
+  for (let i = 1; i < steps; i++) { const d = IB.heldRow(BEATS, 6 + i * 2, BEATS[0])[2]; v.push(v[i - 1] + (d === 0 ? (i % 2 ? 1.5 : -1.5) : d)); }
+  return steps ? v : [];
+}
+MG.scene({
+  title: 'props / office-screens',
+  duration: 7, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/office.js — monitor, line chart, axes, clock, flying sheet');
+    const tt = IB.twos(t), n = Math.round(tt * 12), c = SAMPLE.grid(6, 3);
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [1270, 716], 20), () => {
+      const scr = IB.monitor(ctx, 1270, 716, 520, 340, { lw: 3.8, seed: 60 });
+      IB.lineChart(ctx, scr, series(tt));
+    }, 'IB.monitor + IB.lineChart(screen, values)');
+    SAMPLE.cell(ctx, c[1], [660, 300, c[1][2], c[1][3]], () => {
+      IB.arrow(ctx, [900, 500], { up: true, seed: 91 });
+      IB.arrow(ctx, [1060, 500], { up: false, seed: 92 });
+    }, 'IB.arrow({ up: true }), IB.arrow({ up: false })');
+    // the flying sheet needs the height of two rows: its arc and where it lands
+    const tall = [c[2][0], c[2][1], c[2][2], c[5][1] + c[5][3] - c[2][1]];
+    SAMPLE.cell(ctx, tall, SAMPLE.fit(tall, [X + 212, FLOOR], 60), () => {
+      const p = IB.sit(X, FLOOR, TYPIST);
+      IB.chair(ctx, X, FLOOR, H, 1, { seed: 700 });
+      IB.figure(ctx, p, TYPIST, 'far');
+      IB.flyingSheet(ctx, [X + 300, DESK - 20], [X + 470, FLOOR - 6], ((n + 18) % 30) - 6, { seed: 600 });   // flies 14 drawings of every 30, lies there 10, then is gone 6
+      IB.workstation(ctx, [X, DESK], { floor: FLOOR, seed: 500 });
+      IB.figure(ctx, p, TYPIST, 'near');
+    }, 'IB.flyingSheet(from, to, k) — 14 drawings, then lies');
+    // the scene's axes at their tick spacing (130 up, 165 across), with fewer ticks to fit a cell
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [490, 900], 40), () => IB.chartAxes(ctx, [220, 900], { top: 540, right: 760, yTicks: 2, xTicks: 3 }), 'IB.chartAxes(origin, { yTicks, xTicks })');
+    SAMPLE.cell(ctx, c[4], [1740 - c[4][2] / 2, 260 - c[4][3] / 2, c[4][2], c[4][3]], () => IB.wallClock(ctx, [1740, 260]), 'IB.wallClock(at, { r: 54, hands })');
+  },
+});
+</script>

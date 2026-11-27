@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / closeup-poses</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/cast/closeup.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 철망 얼굴의 이름 붙은 포즈 전부(IB.boldFace.POSE: rest, narrow, frown, glare, scowl, IB.worriedFace.POSE: squint, alarmed), 철망 IB.maskMesh만 따로, 그리고 다른 자리에 놓은 작은 인서트(opts.at·s·flip: 얼굴과 철망이 1920×1080 틀째 옮겨지고 그 틀 밖은 잘린다). 얼굴은 화면을 채우는 그림이라 칸마다 1920×1080 전체를 0.25배로 줄여 보이므로 선이 원래보다 가늘다: 실제 굵기와 동작은 cast/closeup에서 1:1로 본다. 포즈의 zoom·rot·dy는 IB.closeup이 적용한다(scowl은 0.018rad 기울고 14px 내려앉은 1.02배, squint는 0.97배에 24px 낮게 들어온다). 얼굴과 철망에는 같은 opts를 준다. */
+const A = IB.boldFace, B = IB.worriedFace, FRAME = [0, 0, 1920, 1080];
+const shot = (ctx, face, p) => IB.closeup(ctx, p, () => { face(ctx, p); IB.maskMesh(ctx); });
+MG.scene({
+  title: 'cast / closeup-poses',
+  duration: 2, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.boldFace, IB.worriedFace — POSE, mesh, opts (cast/closeup.js)');
+    const c = SAMPLE.grid(9, 3);
+    Object.entries(A.POSE).forEach(([name, p], i) => SAMPLE.cell(ctx, c[i], FRAME, () => shot(ctx, A, p), `boldFace.POSE.${name}`));
+    Object.entries(B.POSE).forEach(([name, p], i) => SAMPLE.cell(ctx, c[5 + i], FRAME, () => shot(ctx, B, p), `worriedFace.POSE.${name}`));
+    SAMPLE.cell(ctx, c[7], FRAME, () => { ctx.fillStyle = IB.MASK.skin; ctx.fillRect(...FRAME); IB.maskMesh(ctx); }, 'IB.maskMesh over IB.MASK.skin');
+    SAMPLE.cell(ctx, c[8], FRAME, () => {
+      A(ctx, A.POSE.glare, { at: [520, 540], s: 0.42 }); IB.maskMesh(ctx, { at: [520, 540], s: 0.42 });
+      B(ctx, B.POSE.alarmed, { at: [1400, 540], s: 0.42, flip: true }); IB.maskMesh(ctx, { at: [1400, 540], s: 0.42, flip: true });
+    }, 'opts { at, s: 0.42, flip }');
+  },
+});
+</script>

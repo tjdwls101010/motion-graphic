@@ -1,0 +1,26 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / street</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/street.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 금융가 거리 IB.financeStreet, 먼 스카이라인, 탑 둘(창 격자 IB.windowGrid), 기둥과 박공의 증권거래소, 연석과 가로등과 소화전과 빈 간판을 한 장의 멈춘 선화로 그린다. 1.5–4px 선, 채움 없음(모든 면이 무대 색), 창이 질감이고, 움직이는 것은 거래소 지붕의 깃발 하나다(state.flap 0/1을 3프레임마다 번갈아). 길의 가까운 가장자리는 y 862이고, 살아 있는 것은 다른 시계로 그 앞에 둔다: 길(y 856) 위의 택시는 낱장(IB.cab, props/vehicles-machines), 보도 아래 군중은 2프레임 단위(market/street-rush-hour). */
+MG.scene({
+  title: 'sets / street',
+  duration: 2, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const flap = IB.alternate(IB.frame(t), 3);
+    IB.financeStreet(ctx, { flap });
+    SAMPLE.caption(ctx, `IB.financeStreet({ flap: ${flap} }) — only the flag moves, on threes`);
+  },
+});
+</script>

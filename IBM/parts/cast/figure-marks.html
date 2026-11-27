@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / figure-marks</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 인물 곁에 붙는 말풍선 IB.bubble, 화면 밖에서 들어오는 손가락 IB.pointer와 팔 IB.reachArm, 떨림 표시 IB.shake. 말풍선은 원본에 없는 것을 원본의 규칙으로 그린 것이라 페이드가 없다: 2프레임마다 꼬리 끝에서 55%, 88%, 100%로 세 장 자라고 세 번째 장부터 글자가 있으며, 꼼짝 않다가 until에 하드 컷으로 사라진다(여기 인물은 bars-rise-climber의 키 210px와 그 자리). IB.pointer는 인서트 크기(손가락 굵기 92px, hall-whip-button)가 기본이고 와이드 샷에서는 scale 0.44·lw 3.4(dominoes-chain-stop)로 줄이며, flip은 회전 뒤에 거울상을 만든다. IB.reachArm은 와이드 크기의 팔(소매 42px)로 쓰는 동안만 그린다(들어오며 네 장, 나가며 세 장, balloons-lift-chair). IB.shake는 떨리거나 막 멈춘 것 옆의 짧은 호 두세 개이고, 그림마다 seed를 바꾸면 깜빡이며 보통 네 장 뒤 사라진다(인서트 칸: 망설이는 손가락 끝 위의 떨림). */
+const C = IB.C, FLOOR = 930, H = 210;
+const WHO = { ...IB.PEOPLE.climber, h: H, dir: 1, seed: 90 };
+const POKE = [900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20];   // hall-whip-button: in, short stop, back off, in again, hovering, on twos
+MG.scene({
+  title: 'cast / figure-marks',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.bubble, IB.pointer, IB.reachArm, IB.shake (figure.js)');
+    const k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(8, 4), block = [c[0][0], c[0][1], c[1][0] + c[1][2] - c[0][0], c[4][1] + c[4][3] - c[0][1]];
+
+    // the insert-size finger and its tremble (shake marks flicker while it hesitates); offset so the 0.72 poster lands on the tremble
+    const n = (k + 14) % 20, gap = POKE[Math.min(POKE.length - 1, n)], tip = [960 + gap, 560 + gap * 0.16];
+    SAMPLE.cell(ctx, block, [960 - 150, 560 - 280, block[2], block[3]], () => {
+      IB.pointer(ctx, tip, { seed: 540 });
+      if (n >= 3 && n < 12) IB.shake(ctx, tip[0] + 30, tip[1] - 70, 30, { a: -1.9, n: 2, w: 6, gap: 20, seed: 548 + n, span: 0.3 });
+    }, 'IB.pointer(ctx, tip) — insert size, + IB.shake');
+
+    // a bubble over a figure, bars-rise-climber's placement: in at 0.5 s, hard cut at 3.5 s
+    const X = 1060;
+    SAMPLE.cell(ctx, c[2], SAMPLE.window([X - 100, FLOOR], c[2][2], c[2][3], 30), () => {
+      IB.smear(ctx, X, FLOOR - 9, 220, { h: 14, seed: 9 });
+      IB.figure(ctx, IB.stand(X, FLOOR, WHO), { ...WHO, face: { mouth: 'open' } });
+      IB.bubble(ctx, ['다 왔다!'], t, 0.5, { tip: [X - 36, FLOOR - 0.93 * H], x: X - 210, y: FLOOR - 1.2 * H, until: 3.5, seed: 500 });
+    }, 'IB.bubble(ctx, lines, t, at, opts)');
+
+    // the arm from off-screen right: four drawings in, held, three out, gone (balloons-lift-chair)
+    const r = k % 16, HAND = [1000, 600], hand = r < 3 ? [[1700, 1380, 1180][r], HAND[1] + (3 - r) * 14] : r < 10 ? HAND : r < 13 ? [HAND[0] + [220, 560, 900][r - 10], HAND[1] + 20] : null;
+    SAMPLE.cell(ctx, c[3], [HAND[0] - 120, HAND[1] - 216, c[3][2], c[3][3]], () => { if (hand) IB.reachArm(ctx, hand); }, 'IB.reachArm(ctx, hand)');
+
+    // the wide-shot finger: dominoes-chain-stop's flick from the left (flip) and the press from above (rot -PI / 2), on twos
+    const g = [150, 60, 14, 0, 120, 420, 420, 420][k % 8];
+    SAMPLE.cell(ctx, c[6], [760, 420, c[6][2], c[6][3]], () => IB.pointer(ctx, [1110 - g, 600 + g * 0.1], { scale: 0.44, flip: true, lw: 3.4, seed: 540 }), 'scale: 0.44, flip');
+    const d = [330, 130, 30, 30, 30, 30, 90, 420][k % 8];
+    SAMPLE.cell(ctx, c[7], [760, 420, c[7][2], c[7][3]], () => IB.pointer(ctx, [880, 800 - d], { scale: 0.44, rot: -Math.PI / 2, lw: 3.4, seed: 560 }), 'scale: 0.44, rot: -PI / 2');
+  },
+});
+</script>

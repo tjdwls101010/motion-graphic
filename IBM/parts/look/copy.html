@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / copy</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 카피 블록 IB.copy와 원본에서 잰 글자 크기 IB.TYPE(spot, head, body), 글꼴 IB.FONT(Pretendard). 카피는 첫 프레임부터 완전히 불투명하게 제자리의 from px 왼쪽에 나타나 IB.settle로 1프레임 단위로 정착하고, 아랫줄은 윗줄보다 한 프레임씩 늦게 나온다: 페이드하지 않는다. 문구가 바뀌면 at을 새로 주어 블록 전체를 다시 들인다. 잰 값: 15초 스팟 카피는 글자 80px, 줄 간격 95, 왼쪽 여백 90, 첫 줄 윗선 y 351, 37px에서 0.7초에 정착(spot), 첫 카드의 큰 질문은 118px·128·200·412, 71px에서 0.79초(head), 이어지는 카드는 80px·108·200·447(body). 굵기는 가는 300이다. 칸마다 그 크기의 잰 자리를 1:1로 보이고 2초마다 다시 들어온다. 엔드카드 한 줄(tag)은 look/endcard에 있다. 문구는 원본이 아니라 자리 표시다. */
+const LINES = { spot: ['카피는 왼쪽 여백 90,', '가는 굵기로', '세 줄까지.'], head: ['큰 질문 하나?', '두 줄로.'], body: ['이어지는 카드는', '조금 작게,', '줄 간격 108.'] };
+MG.scene({
+  title: 'look / copy',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.copy, IB.TYPE, IB.FONT (ink.js)');
+    const c = SAMPLE.grid(4, 2), at = Math.floor(t / 2) * 2;   // the block re-enters every 2 s
+    ['spot', 'head', 'body'].forEach((size, i) => {
+      const ty = IB.TYPE[size], [, , w, h] = c[i];
+      SAMPLE.cell(ctx, c[i], [ty.x - 60, ty.top - 50, w, h], () => IB.copy(ctx, LINES[size], t, at, { size }), `IB.copy(…, { size: '${size}' }) — ${ty.px} px, from ${ty.from}, ${ty.stop} s`);
+    });
+    const [, , w, h] = c[3];
+    SAMPLE.cell(ctx, c[3], [0, 0, w, h], () => {
+      ctx.fillStyle = IB.C.ink; ctx.textBaseline = 'alphabetic';
+      [300, 400, 600].forEach((weight, i) => { ctx.font = `${weight} 64px ${IB.FONT}`; ctx.fillText(`${weight} 가는 굵기 Aa`, 40, 110 + i * 110); });
+    }, `IB.FONT '${IB.FONT}' — copy is 300`);
+  },
+});
+</script>

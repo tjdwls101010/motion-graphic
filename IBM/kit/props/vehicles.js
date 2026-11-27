@@ -130,7 +130,7 @@
     for (let i = 0; i < 9; i++) { const l = span * (0.6 + r() * 0.4), k = (r() - 0.5) * 0.16; IB.seg(ctx, x - l, y - l * k + (r() - 0.5) * 14, x + l * (0.5 + r() * 0.5), y + l * k * 0.6 + (r() - 0.5) * 14, { w: lw, wob: 0, seed: 710 + i + d * 9 }); }
   };
 
-  /* heli(ctx, at, opts) — the yellow helicopter seen from the side, nose right, drawn about the centre of its cabin at `at`: s scales it, rot tips it, facing -1 flips it nose left (and -1.3 also stretches it: the smear drawing it enters on), d is the drawing number (re-rolls the rotor). The rotor does not tip with the body: 85% of the body's turn is taken back out about the mast. Line width thins with the square root of the scale. The reference paints a brand mark and a word on the cabin: left out. */
+  /* heli(ctx, at, opts) — the yellow helicopter seen from the side, nose right, drawn about the centre of its cabin at `at`: s scales it, rot tips it, facing -1 flips it nose left (and -1.3 also stretches it: the smear drawing it enters on), d is the drawing number (re-rolls the rotor). The rotor does not tip with the body: 85% of the body's turn is taken back out about the mast. Line width thins with the square root of the scale. The reference paints a brand mark and a word on the cabin: left out. (establish/city-stadium-flyin). */
   // 성진: only a side view and a front view exist, so the oblique drawings of a turn are the side view scaled and rotated. Draw the in-between angles in the upgrade round (plan 4-3).
   IB.heli = (ctx, [x, y], o = {}) => {
     const { s = 1, rot = 0, facing = 1, d = 0 } = o;
@@ -176,7 +176,7 @@
     [10, [414, 581, 1.48, 0.69, 1]], [12, [339, 567, 1.43, 0.39, 1]], [14, [315, 567, 1.37, 0.29, 1]], [16, [293, 566, 1.27, 0.18, 1]], [18, [283, 565, 1.23, 0.14, 1]], [20, [278, 561, 1.18, 0.09, 1]],
     [22, [285, 560, 1.1, 0.085, 1]], [24, [288, 559, 1.1, 0.06, 1]], [26, [298, 558, 1.025, 0.04, 1]], [28, [304, 558, 1.0, 0.025, 1]], [30, [320, 557, 0.95, 0.02, 1]], [32, [332, 555, 0.93, 0.01, 1]], [34, [338, 555, 0.91, 0.01, 1]], [36, [354, 556, 0.86, 0.01, 1]],
   ] };
-  /* heliDrawing(ctx, row, d) — draw one row of a flight table like heli.MOVE.flyIn as drawing number d: a side-view row is placed by the centre of its yellow shape (which sits (-47.9, -14.1) x scale from the craft's own origin), a 'front' row by its cabin. */
+  /* heliDrawing(ctx, row, d) — draw one row of a flight table like heli.MOVE.flyIn as drawing number d: a side-view row is placed by the centre of its yellow shape (which sits (-47.9, -14.1) x scale from the craft's own origin), a 'front' row by its cabin. (establish/city-stadium-flyin). */
   IB.heliDrawing = (ctx, k, d) => {
     if (k[0] === 'front') return IB.heliFront(ctx, [k[1], k[2]], { sx: k[3], sy: k[4], d });
     const [x, y, sc, rot, facing] = k, c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * facing, oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
@@ -184,7 +184,7 @@
   };
 
   /* ---------- the tandem of the reference's fifth spot ---------- */
-  /* crank: the crank arm's length; r: the wheel's radius. A rider's feet (cast/riders.js) follow the same crank. */
+  /* crank: the crank arm's length; r: the wheel's radius. A rider's feet (cast/riders.js) follow the same crank. (spot/tandem-riders-join). */
   IB.TANDEM = { crank: 21, r: 50 };
   /* bikeWheel(ctx, at, opts) — a wheel centred on the axle at `at`: a thick tyre, a thin rim line, four grey arcs standing in for spokes that jump between two drawings (alt 0 / 1), a hub. */
   IB.bikeWheel = (ctx, [x, AXLE], o = {}) => {
@@ -206,7 +206,7 @@
     for (const s of [-1, 1]) IB.ink(ctx, IB.ellipse(bb[0], bb[1] + 6, 27 + alt * 5, 30 + alt * 5, 4, s > 0 ? 0.25 : 2.35, s > 0 ? 0.8 : 2.9), { w: 1.3, color: '#8a8a8a', seed: seed + 9 + alt + s });   // spin marks
     ctx.restore();
   };
-  /* tandem(ctx, state, opts) — a tandem that grows a seat at a time. state: rx, fx (the two axles' x), bbs (every rider's bottom bracket, rear to front), built (which of them have their seat and crank yet: a newcomer's are not there on the first drawing of a join), crank (the crank angle), alt (0 / 1, the wheels' and cranks' two drawings). opts.axle is the axles' y; opts.layer 'wheels' or 'frame' draws only that, so the dust off the rear wheel can go between them. The frame is blue tubing; each seat behind the front one gets a stoker bar bracketed off the seat tube ahead; a grey chain line keeps every crank in step. */
+  /* tandem(ctx, state, opts) — a tandem that grows a seat at a time. state: rx, fx (the two axles' x), bbs (every rider's bottom bracket, rear to front), built (which of them have their seat and crank yet: a newcomer's are not there on the first drawing of a join), crank (the crank angle), alt (0 / 1, the wheels' and cranks' two drawings). opts.axle is the axles' y; opts.layer 'wheels' or 'frame' draws only that, so the dust off the rear wheel can go between them. The frame is blue tubing; each seat behind the front one gets a stoker bar bracketed off the seat tube ahead; a grey chain line keeps every crank in step. (spot/tandem-riders-join). */
   IB.tandem = (ctx, st, o = {}) => {
     const { rx, fx, bbs, built, crank = 0, alt = 0 } = st, { axle: AXLE = 750, layer = null } = o;
     ctx.save();

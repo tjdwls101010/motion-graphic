@@ -1,4 +1,4 @@
-/* cast/closeup.js — the two faces behind fencing masks from the reference's first spot, as full-frame inserts: everything is drawn in a 1920x1080 frame and the mesh of the mask lies over it. Their acting is brows and lids only, on twos, while the whole frame (head and mask as one) tilts and sinks. Forms were read off the reference on a 100 px grid (STYLE.md "insert"). Needs ink.js and marks.js; adds to the global IB. */
+/* cast/closeup.js — the two faces behind fencing masks from the reference's first spot, as full-frame inserts: everything is drawn in a 1920x1080 frame and the mesh of the mask lies over it. Their acting is brows and lids only, on twos, while the whole frame (head and mask as one) tilts and sinks. Forms were read off the reference on a 100 px grid (STYLE.md "insert"). Needs ink.js and marks.js; adds to the global IB. Used by insert/mesh-eyes-whip. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const SKIN = '#cfbba0', SHADE = '#867968', MESH = '#d9d7d6', BROW_B = '#948da1';

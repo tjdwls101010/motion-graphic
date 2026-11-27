@@ -93,7 +93,7 @@
     IB.ink(ctx, [[0, -170], [0, 0]], { w: 3.4, seed: seed + 3, smooth: false });
     ctx.restore();
   };
-  /* logTop(ctx, at, opts) — the round top face of a whole standing log, 168 px above its base at `at`. */
+  /* logTop(ctx, at, opts) — the round top face of a whole standing log, 168 px above its base at `at`. (acting/axe-windup-smear). */
   IB.logTop = (ctx, [x, y], o = {}) => {
     const { seed = 360 } = o;
     ctx.save();

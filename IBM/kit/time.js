@@ -35,8 +35,8 @@
   IB.play = (move, f0) => move.map(([k, d]) => [f0 + k, d]);
   /* inbetween(ratios, n) — the mix ratio of drawing n of an in-between ([0.35, 0.75, 1]: two in-betweens and the pose); past the end the last ratio holds. Hand-set ratios read better in this look than an easing curve. */
   IB.inbetween = (ratios, n) => ratios[Math.min(ratios.length - 1, n)];
-  /* alternate(f, every = 3, from) — 0 or 1: two drawings swapping every `every` frames (a flag, a flame, a tail). With `from`, 0 before that frame and the second drawing (1) first from it. */
+  /* alternate(f, every = 3, from) — f counts from 0 (a scene clamps a count that can go negative, or gives `from`). 0 or 1: two drawings swapping every `every` frames (a flag, a flame, a tail). With `from`, 0 before that frame and the second drawing (1) first from it. */
   IB.alternate = (f, every = 3, from) => (from == null ? Math.floor(f / every) % 2 : f >= from ? (Math.floor((f - from) / every) + 1) % 2 : 0);
-  /* loop(f, drawings, every = 2) — a cycle of drawings that never stops, one per `every` frames: hair and cords streaming in the wind, a plant swaying. */
+  /* loop(f, drawings, every = 2) — f counts from 0. A cycle of drawings that never stops, one per `every` frames: hair and cords streaming in the wind, a plant swaying. */
   IB.loop = (f, drawings, every = 2) => drawings[Math.floor(f / every) % drawings.length];
 })(window);

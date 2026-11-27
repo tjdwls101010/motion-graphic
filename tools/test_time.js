@@ -56,5 +56,15 @@ const measured = [60, 48, 38, 31, 25, 20, 16, 13, 10];
 check('settle stays within 3 px of the measured copy slide', measured.every((px, i) => Math.abs(71 * (1 - IB.settle((i + 1) / 24, 0.2, 0.79)) - px) <= 3), true);
 check('settle is exactly still at its stop', IB.settle(0.79, 0.2, 0.79), 1);
 
+// frame: every frame's first instant counts as that frame (a seek to i / 24 must not land on the frame before)
+check('frame at each frame start', Array.from({ length: 240 }, (_, i) => IB.frame(i / 24) === i).every(Boolean), true);
+// settle: nothing has moved at its start, and with no stop given it is still after four time constants
+check('settle at its start', IB.settle(0, 0.2, 0.79), 0);
+check('settle before its start', IB.settle(-0.5, 0.2, 0.79), 0);
+check('settle is still after 4 tau by default', IB.settle(0.8, 0.2), 1);
+// alternate and loop count frames from 0: a negative frame is outside their contract (a scene clamps first, or gives alternate a `from`)
+check('alternate from frame 0', IB.alternate(0, 3), 0);
+check('loop from frame 0', IB.loop(0, ['p', 'q']), 'p');
+
 console.log(failed ? `${failed} failed` : 'ok');
 process.exit(failed ? 1 : 0);

@@ -36,7 +36,7 @@
     for (const [x, y] of i % 2 ? [[-22, -42]] : [[-30, -54], [-14, -30]]) { ctx.beginPath(); ctx.arc(x, y, 4.2, 0, 7); ctx.fill(); }
     ctx.restore();
   };
-  /* dominoRest(next, gap, w, h) — the angle (degrees from upright) at which a domino comes to rest on its right-hand neighbour when that neighbour is at `next` degrees; both pivot on their lower right corners `gap` apart, each w x h. Two ways they can touch: this one's top right corner on the neighbour's left face, or the neighbour's top left corner on this one's right face; the answer is the largest angle at which neither goes through. Leaning rigid things need this: an angle set by hand overlaps on some drawing. */
+  /* dominoRest(next, gap, w, h) — the angle (degrees from upright) at which a domino comes to rest on its right-hand neighbour when that neighbour is at `next` degrees; both pivot on their lower right corners `gap` apart, each w x h. Two ways they can touch: this one's top right corner on the neighbour's left face, or the neighbour's top left corner on this one's right face; the answer is the largest angle at which neither goes through. Leaning rigid things need this: an angle set by hand overlaps on some drawing. (metaphor/dominoes-chain-stop). */
   IB.dominoRest = (next, GAP, DW, DH) => {
     const DEG = Math.PI / 180;
     const b = next * DEG, un = [Math.sin(b), -Math.cos(b)], rn = [Math.cos(b), Math.sin(b)];   // the neighbour's up and right

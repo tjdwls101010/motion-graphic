@@ -2,7 +2,7 @@
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
 
-  /* burst(ctx, at, opts) — short lines radiating from an impact at `at`, from radius r0 to r1, squashed vertically by sy. Angles are a0 + i * da for i < n, or the list `angles`. Each line's seed is seed + i: pass seed + drawing * k so every drawing is new. Two drawings, the second a little further out (r0 + 12 to + 40 per drawing): metaphor/dominoes-chain-stop, bridge-plank-cross, parcels-board-conveyor, acting/axe-windup-smear, market/*, variation/hall-whip-button, vignette/trick-candle-relight. */
+  /* burst(ctx, at, opts) — short lines radiating from an impact at `at`, from radius r0 to r1, squashed vertically by sy. Angles are a0 + i * da for i < n, or the list `angles`. Each line's seed is seed + i: pass seed + drawing * k so every drawing is new. Two drawings, the second a little further out (r0 + 12 to + 40 per drawing): metaphor/dominoes-chain-stop, metaphor/bridge-plank-cross, acting/axe-windup-smear, market/chart-rollercoaster-rider, market/monitor-candles-breakout, variation/hall-whip-button; through IB.candle (vignette/trick-candle-relight) and IB.stamper (metaphor/parcels-board-conveyor). */
   IB.burst = (ctx, [cx, cy], o = {}) => {
     const { n = 4, a0 = -2.6, da = 0.5, angles = null, r0 = 40, r1 = r0 + 40, sy = 1, w = 2.8, color = C.ink, seed = 300 } = o;
     ctx.save();

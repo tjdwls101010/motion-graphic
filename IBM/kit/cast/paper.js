@@ -1,4 +1,4 @@
-/* cast/paper.js — the office paper that walks: the reference's folder and document (objects with thin legs, never a face) and their relatives in the creative scenes. Needs ink.js, marks.js, figure.js and solid.js; adds to the global IB. */
+/* cast/paper.js — the office paper that walks: the reference's folder and document (objects with thin legs, never a face) and their relatives in the creative scenes. Needs ink.js, marks.js, figure.js and solid.js; adds to the global IB. Used by spot/folder-meets-document (IB.folder, IB.doc and their arms) and metaphor/flashlight-finds-file (IB.hidingDoc, IB.docEyes). */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;

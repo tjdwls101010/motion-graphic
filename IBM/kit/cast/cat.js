@@ -1,4 +1,4 @@
-/* cast/cat.js — the cats of the IBM pieces, white with an ink outline, acting with ears, eyes and tail. Needs ink.js; adds to the global IB. */
+/* cast/cat.js — the cats of the IBM pieces, white with an ink outline, acting with ears, eyes and tail. Needs ink.js; adds to the global IB. Used by spot/dark-eyes-reveal (IB.windowCat) and vignette/balloons-lift-chair (IB.chairCat). */
 (function (g) {
   const IB = g.IB, C = IB.C;
 

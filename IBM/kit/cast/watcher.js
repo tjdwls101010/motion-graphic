@@ -1,4 +1,4 @@
-/* cast/watcher.js — the watcher of the reference's sixth spot: a pair of green eyes in the dark that turn out, at the cut, to belong to someone at a window with binoculars. Her drawings were read off the reference on a 4x enlarged grid and stay in its coordinates (the axis of her face at x 1206, the point between her lenses at y 462): to stage her somewhere else, translate the context. Needs ink.js; adds to the global IB. */
+/* cast/watcher.js — the watcher of the reference's sixth spot: a pair of green eyes in the dark that turn out, at the cut, to belong to someone at a window with binoculars. Her drawings were read off the reference on a 4x enlarged grid and stay in its coordinates (the axis of her face at x 1206, the point between her lenses at y 462): to stage her somewhere else, translate the context. Needs ink.js; adds to the global IB. Used by spot/dark-eyes-reveal. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const GREEN = '#4ca757', SKIRT = '#7cc47a', SKIN = C.skin[0], HX = 1206;   // HX: the axis her face is symmetric about

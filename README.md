@@ -28,6 +28,7 @@ tools/
   build_index.py  index.html 재생성, 썸네일 재렌더(--thumbs), 장면 메타데이터와 썸네일 점검(--check)
   check_pure.py   모든 장면의 render(t)가 시간의 순수 함수인지 검사
   same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
+  test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs)과 장면의 불러오기, 캐릭터 MOVE의 모양을 브라우저 없이 확인한다
 <ref>/      레퍼런스 영상 하나 (예: pstack/)
   README.md      출처, 원본과 다른 점
   STYLE.md       계열별 룩과 모션 규칙

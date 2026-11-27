@@ -5,7 +5,7 @@
   /* How high a seat holds the hip joint, as a fraction of the sitter's height: 0.05 h (half a thigh's thickness) above a seat whose top is 0.285 h off the floor. */
   IB.SEAT = 0.335;
 
-  /* sit(x, floor, look) — the pose of a figure sitting with its hip joint at x: thighs level, shins down, hands out in front at keyboard height (0.25 h ahead, 0.11 h above the hip, inside the arm's reach). Move the hands and the lean from here; the feet stay where they are while the sitter acts. */
+  /* sit(x, floor, look) — the pose of a figure sitting with its hip joint at x: thighs level, shins down, hands out in front at keyboard height (0.25 h ahead, 0.11 h above the hip, inside the arm's reach). Move the hands and the lean from here; the feet stay where they are while the sitter acts. (market/watched-chart-drops, market/trading-desk-row). */
   IB.sit = (x, floor, look) => {
     const h = look.h, d = look.dir || 1, hy = floor - IB.SEAT * h;
     return {
@@ -15,7 +15,7 @@
     };
   };
 
-  /* chair(ctx, x, floor, h, dir, opts) — an office chair for a sitter of height h whose hip is at x: a seat slab, a back on the side away from dir, a stem and a base on two casters. Draw it before the figure so the sitter covers the seat. */
+  /* chair(ctx, x, floor, h, dir, opts) — an office chair for a sitter of height h whose hip is at x: a seat slab, a back on the side away from dir, a stem and a base on two casters. Draw it before the figure so the sitter covers the seat. (market/watched-chart-drops, market/trading-desk-row). */
   IB.chair = (ctx, x, floor, h, dir = 1, o = {}) => {
     const { fill = C.paper, lw = IB.figLine(h), seed = 700 } = o, top = floor - (IB.SEAT - 0.05) * h, k = (dx) => x + dx * h * dir;
     IB.tube(ctx, [[k(-0.12), top - 0.02 * h], [k(-0.17), top - 0.16 * h], [k(-0.16), top - 0.3 * h]], { w: 0.045 * h, edge: lw, fill, smooth: true, seed });   // back
@@ -25,7 +25,7 @@
     IB.ink(ctx, [[k(-0.15), top], [k(0.13), top], [k(0.14), top + 0.05 * h], [k(-0.15), top + 0.05 * h]], { closed: true, smooth: false, fill, w: lw, seed: seed + 6 });   // seat
   };
 
-  /* desk(ctx, x0, x1, top, floor, opts) — a table seen from the side: a slab from x0 to x1 with its top face at `top`, a leg near each end, graphite under the slab. */
+  /* desk(ctx, x0, x1, top, floor, opts) — a table seen from the side: a slab from x0 to x1 with its top face at `top`, a leg near each end, graphite under the slab. (market/watched-chart-drops, market/trading-desk-row). */
   IB.desk = (ctx, x0, x1, top, floor, o = {}) => {
     const { fill = C.paper, lw = 3, thick = 16, seed = 720 } = o;
     for (const x of [x0 + 26, x1 - 26]) IB.box(ctx, x - 7, top + thick, 14, floor - top - thick, { fill, w: lw * 0.9, seed: seed + (x === x0 + 26 ? 1 : 2) });
@@ -33,7 +33,7 @@
     IB.box(ctx, x0, top, x1 - x0, thick, { fill, w: lw, seed });
   };
 
-  /* monitor(ctx, cx, bottom, w, h, opts) — a monitor facing the viewer, standing on `bottom`: a bezel, a white screen inset by `bezel` px, a neck and a foot. Returns the screen rectangle [x, y, w, h] to draw on; clip to it with IB.clipRect when what you draw can run off the screen's edge. */
+  /* monitor(ctx, cx, bottom, w, h, opts) — a monitor facing the viewer, standing on `bottom`: a bezel, a white screen inset by `bezel` px, a neck and a foot. Returns the screen rectangle [x, y, w, h] to draw on; clip to it with IB.clipRect when what you draw can run off the screen's edge. (market/monitor-candles-breakout, market/watched-chart-drops). */
   IB.monitor = (ctx, cx, bottom, w, h, o = {}) => {
     const { lw = 3, bezel = Math.max(8, w * 0.03), seed = 740, neck = h * 0.16 } = o, y = bottom - neck - h;
     IB.box(ctx, cx - w * 0.07, bottom - neck - 2, w * 0.14, neck, { fill: C.bg, w: lw, seed: seed + 1 });
@@ -44,7 +44,7 @@
     return r;
   };
 
-  /* candles(ctx, rect, data, n, opts) — a candlestick chart in `rect`. data is [[open, close, high, low], ...] in price units, scaled so opts.min..opts.max fills the rect's height. n is how many candles are there: a whole number draws that many, and a half more draws the next one's wick only, so stepping n by 0.5 per drawing puts each candle on in two drawings, wick then body. A rising candle is opts.up (blue) and a falling one opts.down (red), the market scenes' convention; a candle that closes where it opened counts as rising, and a body thinner than 1.5 line widths is drawn that thick, centred on its price. Returns { x(i), y(price) } for whatever the scene draws over it. */
+  /* candles(ctx, rect, data, n, opts) — a candlestick chart in `rect`. data is [[open, close, high, low], ...] in price units, scaled so opts.min..opts.max fills the rect's height. n is how many candles are there: a whole number draws that many, and a half more draws the next one's wick only, so stepping n by 0.5 per drawing puts each candle on in two drawings, wick then body. A rising candle is opts.up (blue) and a falling one opts.down (red), the market scenes' convention; a candle that closes where it opened counts as rising, and a body thinner than 1.5 line widths is drawn that thick, centred on its price. Returns { x(i), y(price) } for whatever the scene draws over it. (market/monitor-candles-breakout). */
   IB.candles = (ctx, [rx, ry, rw, rh], data, n, o = {}) => {
     const { min = 0, max = 1, lw = 3, up = C.blue, down = C.red, seed = 760, slot = rw / data.length } = o;
     const X = (i) => rx + slot * (i + 0.5), Y = (v) => ry + rh - ((v - min) / (max - min)) * rh;

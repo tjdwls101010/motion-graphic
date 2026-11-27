@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / folder-moves</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/cast/paper.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 파란 폴더 IB.folder의 나머지 동작 다섯(IB.folder.MOVE.hipOut, lunge, shiftWeight, walkOver, leanIn)과, 폴더와 서류 IB.doc가 서로에게 뻗는 팔 IB.folder.MOVE.reach·IB.doc.MOVE.reach(IB.paperReach가 두 팔을 몸 뒤에서 그리고, 손이 닿으면 IB.paperClasp가 맞잡은 손을 몸 위에 그린다). 아래 넓은 칸은 원본 스팟의 마지막 3.5초(195프레임부터)를 그대로 되돌린다. */
+const F = IB.folder, D = IB.doc, FLOOR = IB.PAPER.floor;
+const centre = (rows) => { const xs = rows.map(([, p]) => p.x); return (Math.min(...xs) + Math.max(...xs)) / 2; };
+// the end of the spot, from frame 195: the folder walks over, both reach, the hands meet and hold, both lean in
+const START = 195, END = 282, MEET = [1463, 738];
+const FOLDER = [[0, F.POSE.front], ...IB.play(F.MOVE.kick, 18), ...IB.play(F.MOVE.aboutFace, 60), ...IB.play(F.MOVE.groove, 75), ...IB.play(F.MOVE.groove, 87), ...IB.play(F.MOVE.hipOut, 99), ...IB.play(F.MOVE.lunge, 142), ...IB.play(F.MOVE.shiftWeight, 173), ...IB.play(F.MOVE.walkOver, 195), ...IB.play(F.MOVE.leanIn, 246)];
+const DOC = [[0, D.POSE.stand], ...IB.play(D.MOVE.spin, 83), ...IB.play(D.MOVE.armDance, 110), ...IB.play(D.MOVE.watch, 136), ...IB.play(D.MOVE.cross, 186), ...IB.play(D.MOVE.leanIn, 246)];   // the spot's own lists, so frame 195 on is the spot's
+const FARM = IB.play(F.MOVE.reach, 214), DARM = IB.play(D.MOVE.reach, 216);
+MG.scene({
+  title: 'cast / folder-moves',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.folder — MOVE, and the reach with IB.doc (cast/paper.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(8, 4), wide = SAMPLE.span(c, 5, 7);
+    ['hipOut', 'lunge', 'shiftWeight', 'walkOver', 'leanIn'].forEach((name, i) => {
+      const rows = F.MOVE[name];
+      SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [centre(rows), FLOOR]), () => F(ctx, SAMPLE.cycle(f, rows)), 'MOVE.' + name);
+    });
+    const g = START + (f % (END - START + 18));   // the last drawing holds 0.75 s before it starts again
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [1420, FLOOR]), () => {
+      const fp = IB.held(FOLDER, g), dp = IB.held(DOC, g);
+      const fa = g >= FARM[0][0] ? IB.held(FARM, g) : null, da = g >= DARM[0][0] ? IB.held(DARM, g) : null;
+      IB.paperReach(ctx, fp, dp, fa, da, MEET);
+      D(ctx, dp);
+      F(ctx, fp);
+      if (fa === 'clasp') IB.paperClasp(ctx, MEET, { held: g >= 258 });
+    }, 'MOVE.reach of both — IB.paperReach, IB.paperClasp');
+  },
+});
+</script>

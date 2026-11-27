@@ -4,6 +4,7 @@
    2. A scene or part sample loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
    3. Only ink.js (which creates IB) and time.js load first; every other kit file may load in any order, so none of them may read another file's IB.* name while it loads (const F = IB.FIG at the top of a file is undefined if figure.js comes later): outside a function body, a file reads only its own names and those of ink.js and time.js.
    4. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
+   5. Every IB.* part a kit file exports is used in the code of at least one part sample (<ref>/parts/), so the part sheet is the whole kit; naming a part in a sample's comment does not count. The few names with nothing to draw are listed in NOT_SHOWN with the reason.
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
 const fs = require('fs');
 const path = require('path');
@@ -15,6 +16,8 @@ const defines = (src) => new Set([...strip(src).matchAll(/\bIB\.(\w+)\s*=(?!=)/g
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
 
 let failed = 0;
+// 5: kit names that no part sample has to use, each with the reason
+const NOT_SHOWN = { IBM: {} };
 const fail = (msg) => { failed++; console.log('FAIL ' + msg); };
 
 for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROOT, d, 'kit')))) {
@@ -96,6 +99,13 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
         if (Array.isArray(rows[0]) && rows[0][0] !== 0) fail(`${name} starts at frame ${rows[0][0]}: a move counts from its own first drawing, 0`);
       }
     }
+  }
+  // 5. every exported part is on the part sheet (named in a sample's code or comment)
+  const sampleDir = path.join(ROOT, ref, 'parts');
+  if (fs.existsSync(sampleDir)) {
+    const shown = new Set(pages.filter(([kind]) => kind === 'parts').flatMap(([, fam, s]) => [...names(fs.readFileSync(path.join(sampleDir, fam, s), 'utf8'))]));
+    const missing = Object.keys(owner).filter((n) => !shown.has(n) && !(NOT_SHOWN[ref] || {})[n]).sort();
+    if (missing.length) fail(`${ref}: ${missing.length} parts are on no part sample: ${missing.map((n) => 'IB.' + n + ' (' + owner[n] + ')').join(', ')}`);
   }
 }
 

@@ -1,4 +1,4 @@
-/* sample.js — layout for the part samples in IBM/parts/ (not a kit part: it draws the page a part is shown on, not the look). A sample page is a grid of cells; each cell shows a window of a virtual 1920x1080 stage, so a part is drawn exactly as a scene would draw it (stage coordinates, same line widths) and the cell only frames it. Keep windows 1:1 (a window as large as its cell) where the part fits: shrinking a drawing thins its lines and changes its dust, and that is not the look. Exposes the global SAMPLE. */
+/* sample.js — layout for the part samples in IBM/parts/ (not a kit part: it draws the page a part is shown on, not the look). A sample page is a grid of cells; each cell shows a window of a virtual 1920x1080 stage, so a part is drawn exactly as a scene would draw it (stage coordinates, same line widths) and the cell only frames it. Keep windows 1:1 (a window as large as its cell: use fewer, larger cells, or S.span for a wide one) where the part fits: shrinking a drawing thins its lines and changes its dust, and that is not the look. A cell that has to shrink says so in its label (×0.64). Exposes the global SAMPLE. */
 (function (g) {
   const S = (g.SAMPLE = {});
   const W = 1920, H = 1080, INK = '#6f6f6f';
@@ -39,9 +39,15 @@
     ctx.save();
     ctx.strokeStyle = '#d6d6d6'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     ctx.fillStyle = INK; ctx.font = '400 19px "JetBrains Mono"'; ctx.textBaseline = 'top';
-    ctx.fillText(label, x + 2, y + h + 8);
+    ctx.fillText(Math.abs(s - 1) > 0.02 ? `${label}  ×${s.toFixed(2)}` : label, x + 2, y + h + 8);
     ctx.restore();
   };
+
+  /* span(cells, i, j) — one wide cell over cells i..j of a grid row. */
+  S.span = (cells, i, j) => [cells[i][0], cells[i][1], cells[j][0] + cells[j][2] - cells[i][0], cells[i][3]];
+
+  /* fit(rect, at, dy) — the 1:1 window of a cell `rect` with the floor point `at` dy px above its bottom edge. */
+  S.fit = (rect, at, dy = 40) => S.window(at, rect[2], rect[3], dy);
 
   /* window(at, w, h, dy) — a w x h window of the stage centred on x = at[0], with `at` (a floor point) dy px above its bottom edge. */
   S.window = (at, w, h, dy = 40) => [at[0] - w / 2, at[1] + dy - h, w, h];

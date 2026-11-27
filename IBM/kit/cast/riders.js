@@ -153,25 +153,25 @@
   };
   IB.rider.pose = po;
   IB.rider.POSE = { ride: RIDE };
-  /* MOVE. A join is four drawings on twos, and it throws every rider about: joinNew is the newcomer (curled up in the air, landing, sitting up with hands off, settled), joinBehind those behind it (lifted off the saddle, arms pulled straight, hair standing), joinAhead those ahead (pitched forward, then thrown back). These three are indexed by the join's drawing number 0-3, not by frame. The rest are [frame, pose] lists in frames from their first drawing. */
+  /* MOVE. A join is four drawings on twos, and it throws every rider about: joinNew is the newcomer (curled up in the air, landing, sitting up with hands off, settled), joinBehind those behind it (lifted off the saddle, arms pulled straight, hair standing), joinAhead those ahead (pitched forward, then thrown back). Like every MOVE they are [frame, pose] lists in frames from the move's first drawing; a join's four drawings are on twos (0, 2, 4, 6). */
   IB.rider.MOVE = {
     joinNew: [
-      po({ rise: 44, tuck: 1, nod: 0.5, arms: [[16, 34], [10, 36]], eye: 'closed', mouth: 'flat', sc: 0.86 }),
-      po({ rise: -5, tuck: 0.75, nod: 0.6, lean: 6, arms: [[20, 30], [14, 34]], eye: 'closed', mouth: 'flat' }),
-      po({ rise: 7, nod: -0.12, lean: -6, arms: [[30, 18], [24, 24]], eye: 'wide', mouth: 'o', hair: 0.8 }),
-      po({ rise: 2, nod: -0.05, hair: 0.4 }),
+      [0, po({ rise: 44, tuck: 1, nod: 0.5, arms: [[16, 34], [10, 36]], eye: 'closed', mouth: 'flat', sc: 0.86 })],
+      [2, po({ rise: -5, tuck: 0.75, nod: 0.6, lean: 6, arms: [[20, 30], [14, 34]], eye: 'closed', mouth: 'flat' })],
+      [4, po({ rise: 7, nod: -0.12, lean: -6, arms: [[30, 18], [24, 24]], eye: 'wide', mouth: 'o', hair: 0.8 })],
+      [6, po({ rise: 2, nod: -0.05, hair: 0.4 })],
     ],
     joinBehind: [
-      po({ rise: 5, lean: 8, nod: 0.1, hair: 0.4, eye: 'wide' }),
-      po({ rise: 21, lean: -8, nod: -0.15, hair: 1, eye: 'wide', mouth: 'o', arms: ['reach', 'reach'] }),
-      po({ rise: 8, lean: -4, nod: -0.08, hair: 1.25, eye: 'wide', mouth: 'o', arms: [[44, 14], 'bar'], open: true }),
-      po({ rise: 1, hair: 0.55 }),
+      [0, po({ rise: 5, lean: 8, nod: 0.1, hair: 0.4, eye: 'wide' })],
+      [2, po({ rise: 21, lean: -8, nod: -0.15, hair: 1, eye: 'wide', mouth: 'o', arms: ['reach', 'reach'] })],
+      [4, po({ rise: 8, lean: -4, nod: -0.08, hair: 1.25, eye: 'wide', mouth: 'o', arms: [[44, 14], 'bar'], open: true })],
+      [6, po({ rise: 1, hair: 0.55 })],
     ],
     joinAhead: [
-      po({ lean: 9, nod: 0.22, eye: 'closed' }),
-      po({ lean: 13, rise: -2, nod: 0.3, eye: 'closed', mouth: 'flat' }),
-      po({ lean: -5, rise: 10, nod: -0.1, eye: 'wide', mouth: 'o' }),
-      po({ rise: 3 }),
+      [0, po({ lean: 9, nod: 0.22, eye: 'closed' })],
+      [2, po({ lean: 13, rise: -2, nod: 0.3, eye: 'closed', mouth: 'flat' })],
+      [4, po({ lean: -5, rise: 10, nod: -0.1, eye: 'wide', mouth: 'o' })],
+      [6, po({ rise: 3 })],
     ],
     // glances back over the shoulder with a laugh: the front rider answering a call from behind
     lookBack: [

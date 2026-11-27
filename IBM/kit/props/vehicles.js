@@ -169,12 +169,12 @@
     IB.rotor(ctx, x, y - 132 * sy, 300 * sx, 1.6, d);
   };
 
-  /* heli.MOVE.flyIn — the reference's fly-in, one drawing per two frames (nineteen of them, never hovering): [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
+  /* heli.MOVE.flyIn — the reference's fly-in, nineteen drawings on twos as [frame, drawing], never hovering; each drawing is [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
   IB.heli.MOVE = { flyIn: [
-    [2090, 570, 4.6, -0.2, -1.3], [1400, 640, 4.4, -0.15, -1], [1200, 500, 3.7, -0.2, -1],
-    ['front', 660, 628, 1, 1], ['front', 549, 620, 0.67, 0.87],
-    [414, 581, 1.48, 0.69, 1], [339, 567, 1.43, 0.39, 1], [315, 567, 1.37, 0.29, 1], [293, 566, 1.27, 0.18, 1], [283, 565, 1.23, 0.14, 1], [278, 561, 1.18, 0.09, 1],
-    [285, 560, 1.1, 0.085, 1], [288, 559, 1.1, 0.06, 1], [298, 558, 1.025, 0.04, 1], [304, 558, 1.0, 0.025, 1], [320, 557, 0.95, 0.02, 1], [332, 555, 0.93, 0.01, 1], [338, 555, 0.91, 0.01, 1], [354, 556, 0.86, 0.01, 1],
+    [0, [2090, 570, 4.6, -0.2, -1.3]], [2, [1400, 640, 4.4, -0.15, -1]], [4, [1200, 500, 3.7, -0.2, -1]],
+    [6, ['front', 660, 628, 1, 1]], [8, ['front', 549, 620, 0.67, 0.87]],
+    [10, [414, 581, 1.48, 0.69, 1]], [12, [339, 567, 1.43, 0.39, 1]], [14, [315, 567, 1.37, 0.29, 1]], [16, [293, 566, 1.27, 0.18, 1]], [18, [283, 565, 1.23, 0.14, 1]], [20, [278, 561, 1.18, 0.09, 1]],
+    [22, [285, 560, 1.1, 0.085, 1]], [24, [288, 559, 1.1, 0.06, 1]], [26, [298, 558, 1.025, 0.04, 1]], [28, [304, 558, 1.0, 0.025, 1]], [30, [320, 557, 0.95, 0.02, 1]], [32, [332, 555, 0.93, 0.01, 1]], [34, [338, 555, 0.91, 0.01, 1]], [36, [354, 556, 0.86, 0.01, 1]],
   ] };
   /* heliDrawing(ctx, row, d) — draw one row of a flight table like heli.MOVE.flyIn as drawing number d: a side-view row is placed by the centre of its yellow shape (which sits (-47.9, -14.1) x scale from the craft's own origin), a 'front' row by its cabin. */
   IB.heliDrawing = (ctx, k, d) => {

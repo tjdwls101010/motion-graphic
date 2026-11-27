@@ -25,8 +25,8 @@ const CUT = 79;   // the first lit frame of the reference is frame 79 of this sc
 const CAM = [[79, 3.79, 1257, 488], [81, 1.92, 1223, 486], [83, 1.32, 1213, 474], [85, 1.15, 1206, 467], [87, 1.06, 1206, 464], [89, 1.016, 1206, 463], [91, 0.992, 1205, 463], [93, 1, 1206, 462]];
 
 
-// the eyes in the dark: irises [from frame, dx, dy, lid] held until the next entry, and the five drawings in which the pair shrinks before the cut
-const LOOK = IB.darkEyes.MOVE.look, ZOOM = IB.darkEyes.MOVE.shrink;
+// the eyes in the dark: they search and blink from the start, and shrink over five drawings from frame 69 to the cut
+const LOOK = IB.play(IB.darkEyes.MOVE.search, 0), ZOOM = IB.play(IB.darkEyes.MOVE.shrink, 69);
 
 /* The two actors' drawings: each move is the character's own (cast/watcher.js, cast/cat.js), placed at the frame the reference starts it on. The cat is not there from 171 to 204, and that gap is the gag. */
 const W = IB.watcher, K = IB.windowCat;
@@ -46,8 +46,7 @@ MG.scene({
     if (f < CUT) {
       IB.bg(ctx, '#000000');
       IB.crop(ctx, CROP);
-      const [, dx, dy, lid] = IB.heldRow(LOOK, f, LOOK[0]), s = IB.heldRow(ZOOM, f, [0, 1])[1];
-      IB.darkEyes(ctx, { dx, dy, lid, s });
+      IB.darkEyes(ctx, { ...IB.held(LOOK, f), s: f < ZOOM[0][0] ? 1 : IB.held(ZOOM, f).s });   // full size until the shrink starts
       return;
     }
     IB.bg(ctx);

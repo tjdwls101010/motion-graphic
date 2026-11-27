@@ -4,14 +4,14 @@
   const GREEN = '#4ca757', SKIRT = '#7cc47a', SKIN = C.skin[0], HX = 1206;   // HX: the axis her face is symmetric about
 
   /* darkEyes(ctx, state, opts) — the opening on black: two big eyes (white almond, black iris ringed green, a glint), with nothing else in the frame. state: dx, dy move the irises; lid 0 shut .. 1 open (at 0 nothing is drawn: a blink is an empty frame); s shrinks the pair toward opts.focus, which is how the shot zooms out: drawings, not a camera. opts.eyes are the two centres at s = 1.
-     MOVE.look: [frame, dx, dy, lid] rows held until the next, on the frames where the reference changes its drawing; MOVE.shrink: [frame, s], the five drawings before the cut (the cut's first lit drawing puts the lenses where the eyes were). */
+     MOVE.search: the eyes looking left and right and blinking, on the frames where the reference changes its drawing; MOVE.shrink: the five drawings in which the pair shrinks toward the cut (the cut's first lit drawing puts the lenses where the eyes were). Both [frame, state] from the move's start, like every MOVE. */
   IB.darkEyes = (ctx, st = {}, o = {}) => {
     const { dx = 0, dy = 0, lid = 1, s = 1 } = st, { focus: FOCUS = [1193, 438], eyes = [[1100, 541], [1568, 543]] } = o;
     if (lid > 0) for (const [ex, ey] of eyes) eye(ctx, FOCUS[0] + (ex - FOCUS[0]) * s, FOCUS[1] + (ey - FOCUS[1]) * s, s, dx, dy, lid);
   };
   IB.darkEyes.MOVE = {
-    look: [[0, 0, 0, 1], [8, -5, 0, 1], [10, -75, 0, 1], [12, -85, 0, 1], [24, 0, 0, 0], [26, -85, 4, 0.8], [28, -85, 0, 1], [37, 0, 0, 0], [39, 4, -11, 1], [41, 9, -27, 1], [53, 15, -18, 1], [55, 41, 19, 1], [57, 46, 26, 1]],
-    shrink: [[69, 0.98], [71, 0.9], [73, 0.8], [75, 0.65], [77, 0.46]],
+    search: [[0, { dx: 0, dy: 0, lid: 1 }], [8, { dx: -5, dy: 0, lid: 1 }], [10, { dx: -75, dy: 0, lid: 1 }], [12, { dx: -85, dy: 0, lid: 1 }], [24, { dx: 0, dy: 0, lid: 0 }], [26, { dx: -85, dy: 4, lid: 0.8 }], [28, { dx: -85, dy: 0, lid: 1 }], [37, { dx: 0, dy: 0, lid: 0 }], [39, { dx: 4, dy: -11, lid: 1 }], [41, { dx: 9, dy: -27, lid: 1 }], [53, { dx: 15, dy: -18, lid: 1 }], [55, { dx: 41, dy: 19, lid: 1 }], [57, { dx: 46, dy: 26, lid: 1 }]],
+    shrink: [[0, { s: 0.98 }], [2, { s: 0.9 }], [4, { s: 0.8 }], [6, { s: 0.65 }], [8, { s: 0.46 }]],
   };
   function eye(ctx, cx, cy, s, dx, dy, lid) {
     ctx.save();

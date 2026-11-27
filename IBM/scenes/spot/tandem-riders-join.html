@@ -34,7 +34,7 @@ const JOINS = RIDERS.map((r, i) => [r.join, i]).filter(([j]) => j >= 0).sort((a,
 const GROW = [0.3, 0.8, 1.06, 1];   // how much of its 120 px the frame has gained on each drawing of a join
 
 /* What a join does to each rider, by the join's drawing number k (0-3): the newcomer, those behind it, those ahead (cast/riders.js). */
-const M = IB.rider.MOVE, RIDE = IB.rider.POSE.ride, NEW = M.joinNew, BEHIND = M.joinBehind, AHEAD = M.joinAhead;
+const M = IB.rider.MOVE, RIDE = IB.rider.POSE.ride, NEW = M.joinNew.map((r) => r[1]), BEHIND = M.joinBehind.map((r) => r[1]), AHEAD = M.joinAhead.map((r) => r[1]);   // by the join's drawing number
 /* What each rider does when no join is throwing them about: the rider's own moves, placed at the frames the reference starts them on. Between joins only one or two riders act at a time. */
 const ACT = {
   vents: [[0, RIDE], ...IB.play(M.lookBack, 58), ...IB.play(M.handsOff.vents, 222)],

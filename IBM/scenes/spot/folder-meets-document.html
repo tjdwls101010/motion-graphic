@@ -35,7 +35,7 @@ const F = IB.folder, D = IB.doc;
 const FOLDER = [[0, F.POSE.front], ...IB.play(F.MOVE.kick, 18), ...IB.play(F.MOVE.aboutFace, 60), ...IB.play(F.MOVE.groove, 75), ...IB.play(F.MOVE.groove, 87), ...IB.play(F.MOVE.hipOut, 99), ...IB.play(F.MOVE.lunge, 142), ...IB.play(F.MOVE.shiftWeight, 173), ...IB.play(F.MOVE.walkOver, 195), ...IB.play(F.MOVE.leanIn, 246)];
 const DOC = [[0, D.POSE.stand], ...IB.play(D.MOVE.spin, 83), ...IB.play(D.MOVE.armDance, 110), ...IB.play(D.MOVE.watch, 136), ...IB.play(D.MOVE.cross, 186), ...IB.play(D.MOVE.leanIn, 246)];
 // the arms that find each other, and the balloon the folder kicks at frame 0
-const FARM = IB.play(F.MOVE.reach, 214), DARM = IB.play(D.MOVE.reach, 216), BALLOON = IB.looseBalloon.MOVE.kicked.map((row) => [row[0], row]);
+const FARM = IB.play(F.MOVE.reach, 214), DARM = IB.play(D.MOVE.reach, 216), BALLOON = IB.play(IB.looseBalloon.MOVE.kicked, 0);
 const MEET = [1463, 738];   // where the two hands hold
 
 MG.scene({
@@ -51,8 +51,8 @@ MG.scene({
     IB.confetti(ctx, CONFETTI);
     IB.discoBall(ctx, [1302, 215], 105, { f });
     IB.partyCorner(ctx);
-    const [, bx, by, rx, ry, turn, knot] = IB.held(BALLOON, f);
-    IB.looseBalloon(ctx, [bx, by], { rx, ry, turn, knot });
+    const b = IB.held(BALLOON, f);
+    IB.looseBalloon(ctx, [b.x, b.y], b);
     // impact: two arcs off the toe for the two drawings of the kick
     if (f >= 22 && f < 26) IB.shake(ctx, 1010, 846, 20, { a: PI * 0.92, n: 2, w: 2.2, gap: 8, seed: 18 + Math.floor(f / 2) });
 

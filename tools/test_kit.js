@@ -2,6 +2,7 @@
 /* Contract of every <ref>/kit/ file and every scene that loads them, checked without a browser. Run: node tools/test_kit.js (exit 1 on failure).
    1. A kit file's first comment says what else it needs ("Needs ink.js, time.js and marks.js"): every IB.* name it uses and does not define itself must be defined by one of those files. A part that calls another file's part only on some path (a candle's relight burst) breaks a new scene that loads the file on the strength of its comment alone.
    2. A scene loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
+   3. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
 const fs = require('fs');
 const path = require('path');
@@ -50,6 +51,28 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
     }
     const script = html.split('<script>').slice(1).join('\n');
     for (const n of names(script)) { const o = owner[n]; if (o && !loaded.includes(o)) fail(`${name} uses IB.${n} from kit/${o} without loading it`); }
+  }
+  // 3. MOVE tables: load the whole kit (no canvas is needed to load it) and look at every IB.<part>.MOVE
+  const vm = require('vm'), box = { console };
+  box.window = box;
+  vm.createContext(box);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'core', 'motion.js'), 'utf8'), box);
+  const first = ['ink.js', 'time.js'], rest = Object.keys(kit).filter((f) => !first.includes(f)).sort();
+  for (const f of [...first, ...rest]) vm.runInContext(kit[f].src, box, { filename: f });
+  for (const [part, v] of Object.entries(box.IB)) {
+    if (!v || !v.MOVE) continue;
+    for (const [move, table] of Object.entries(v.MOVE)) {
+      const tables = Array.isArray(table) ? { '': table } : table;   // a move a cast plays one way per member (IB.rider.MOVE.handsOff.vents)
+      for (const [who, rows] of Object.entries(tables)) {
+        const name = `IB.${part}.MOVE.${move}${who ? '.' + who : ''}`;
+        if (!Array.isArray(rows) || !rows.length) { fail(`${name} is not a list of [frame, state] rows`); continue; }
+        rows.forEach((r, i) => {
+          if (!Array.isArray(r) || r.length !== 2 || typeof r[0] !== 'number' || r[1] == null) fail(`${name} row ${i} is not [frame, state]`);
+          else if (i && r[0] < rows[i - 1][0]) fail(`${name} row ${i}: frame ${r[0]} comes before the previous row's ${rows[i - 1][0]}`);
+        });
+        if (Array.isArray(rows[0]) && rows[0][0] !== 0) fail(`${name} starts at frame ${rows[0][0]}: a move counts from its own first drawing, 0`);
+      }
+    }
   }
 }
 

@@ -54,7 +54,7 @@
   };
 
   /* looseBalloon(ctx, at, state, opts) — a balloon lying loose on the floor that can be kicked: `at` is its centre, state { rx, ry, turn (of its long axis), knot (where the knot sits, rad round the body) }; a chalk mark grows under it within 57 px of resting on `floor`.
-     looseBalloon.MOVE.kicked — the reference's kick, one drawing per row [frame from the kick's start, x, y, rx, ry, turn, knot] in the reference's stage coordinates: it leaves as a single stretched smear, turns once as it sinks, and comes to rest with a squash and two small rocks. */
+     looseBalloon.MOVE.kicked — the reference's kick, [frame from the kick's start, { x, y, rx, ry, turn, knot }] in the reference's stage coordinates (x, y is the centre to draw it at): it leaves as a single stretched smear, turns once as it sinks, and comes to rest with a squash and two small rocks. */
   IB.looseBalloon = (ctx, [x, y], st = {}, o = {}) => {
     const { rx = 40, ry = 33, turn = 0, knot = -0.45 } = st, { floor = 893 } = o, clamp = MG.clamp;
     if (y > floor - 57) { const k = clamp((y - (floor - 57)) / 30); IB.puddle(ctx, [x, floor + 16], 70 * k, { rx: 30 * k, ry: 3.2, n: 10, wob: 1.2, h: 7, rise: 6, seed: 15 }); }   // its chalk mark grows as it nears the floor
@@ -67,16 +67,16 @@
     ctx.restore();
   };
   IB.looseBalloon.MOVE = { kicked: [
-    [0, 960, 855, 40, 33, 0, -0.45],
-    [22, 953, 851, 33, 37, 0, -0.5],
-    [24, 874, 722, 61, 24, 0.99, 0.9],
-    [26, 812, 646, 34, 41, 0.3, 1.25], [28, 778, 624, 36, 39, 0.1, 1.5], [30, 758, 618, 39, 35, 0, 1.6], [32, 742, 616, 40, 33, 0, 1.75],
-    [34, 727, 617, 40, 33, 0, 2.0], [36, 712, 620, 40, 33, 0, 2.3], [38, 698, 626, 40, 33, 0, 2.6], [40, 685, 634, 40, 33, 0, 2.95], [42, 672, 644, 40, 33, 0, 3.3],
-    [44, 660, 656, 40, 33, 0, 3.65], [46, 648, 670, 40, 33, 0, 4.0], [48, 636, 686, 40, 33, 0, 4.35], [50, 624, 704, 40, 33, 0, 4.7], [52, 612, 723, 40, 33, 0, 5.0],
-    [54, 600, 744, 40, 33, 0, 5.3], [56, 588, 766, 40, 33, 0, 5.55], [58, 576, 789, 40, 33, 0, 5.75], [60, 565, 812, 40, 33, 0, 5.9], [62, 555, 834, 40, 33, 0, 6.02],
-    [64, 546, 854, 40, 33, 0, 6.1], [66, 538, 868, 41, 32, 0, 6.15],
-    [68, 532, 876, 44, 29, 0, 6.18], [70, 527, 868, 39, 34, 0, 6.12], [72, 522, 864, 40, 33, 0, 6.05], [74, 517, 868, 40, 33, 0, 5.98], [76, 512, 872, 42, 31, 0, 5.94], [78, 508, 872, 40, 33, 0, 5.9],
-    [82, 502, 872, 40, 33, 0, 5.82], [86, 497, 872, 40, 33, 0, 5.9], [92, 494, 872, 40, 33, 0, 5.84], [100, 492, 872, 40, 33, 0, 5.87],
+    [0, { x: 960, y: 855, rx: 40, ry: 33, turn: 0, knot: -0.45 }],
+    [22, { x: 953, y: 851, rx: 33, ry: 37, turn: 0, knot: -0.5 }],
+    [24, { x: 874, y: 722, rx: 61, ry: 24, turn: 0.99, knot: 0.9 }],
+    [26, { x: 812, y: 646, rx: 34, ry: 41, turn: 0.3, knot: 1.25 }], [28, { x: 778, y: 624, rx: 36, ry: 39, turn: 0.1, knot: 1.5 }], [30, { x: 758, y: 618, rx: 39, ry: 35, turn: 0, knot: 1.6 }], [32, { x: 742, y: 616, rx: 40, ry: 33, turn: 0, knot: 1.75 }],
+    [34, { x: 727, y: 617, rx: 40, ry: 33, turn: 0, knot: 2.0 }], [36, { x: 712, y: 620, rx: 40, ry: 33, turn: 0, knot: 2.3 }], [38, { x: 698, y: 626, rx: 40, ry: 33, turn: 0, knot: 2.6 }], [40, { x: 685, y: 634, rx: 40, ry: 33, turn: 0, knot: 2.95 }], [42, { x: 672, y: 644, rx: 40, ry: 33, turn: 0, knot: 3.3 }],
+    [44, { x: 660, y: 656, rx: 40, ry: 33, turn: 0, knot: 3.65 }], [46, { x: 648, y: 670, rx: 40, ry: 33, turn: 0, knot: 4.0 }], [48, { x: 636, y: 686, rx: 40, ry: 33, turn: 0, knot: 4.35 }], [50, { x: 624, y: 704, rx: 40, ry: 33, turn: 0, knot: 4.7 }], [52, { x: 612, y: 723, rx: 40, ry: 33, turn: 0, knot: 5.0 }],
+    [54, { x: 600, y: 744, rx: 40, ry: 33, turn: 0, knot: 5.3 }], [56, { x: 588, y: 766, rx: 40, ry: 33, turn: 0, knot: 5.55 }], [58, { x: 576, y: 789, rx: 40, ry: 33, turn: 0, knot: 5.75 }], [60, { x: 565, y: 812, rx: 40, ry: 33, turn: 0, knot: 5.9 }], [62, { x: 555, y: 834, rx: 40, ry: 33, turn: 0, knot: 6.02 }],
+    [64, { x: 546, y: 854, rx: 40, ry: 33, turn: 0, knot: 6.1 }], [66, { x: 538, y: 868, rx: 41, ry: 32, turn: 0, knot: 6.15 }],
+    [68, { x: 532, y: 876, rx: 44, ry: 29, turn: 0, knot: 6.18 }], [70, { x: 527, y: 868, rx: 39, ry: 34, turn: 0, knot: 6.12 }], [72, { x: 522, y: 864, rx: 40, ry: 33, turn: 0, knot: 6.05 }], [74, { x: 517, y: 868, rx: 40, ry: 33, turn: 0, knot: 5.98 }], [76, { x: 512, y: 872, rx: 42, ry: 31, turn: 0, knot: 5.94 }], [78, { x: 508, y: 872, rx: 40, ry: 33, turn: 0, knot: 5.9 }],
+    [82, { x: 502, y: 872, rx: 40, ry: 33, turn: 0, knot: 5.82 }], [86, { x: 497, y: 872, rx: 40, ry: 33, turn: 0, knot: 5.9 }], [92, { x: 494, y: 872, rx: 40, ry: 33, turn: 0, knot: 5.84 }], [100, { x: 492, y: 872, rx: 40, ry: 33, turn: 0, knot: 5.87 }],
   ] };
 
   /* heartBalloon(ctx, at, state) — a small yellow heart balloon on a wavy string, the last small thing left moving in a spot: `at` is its centre. state.sway 1 / -1 are its two drawings (alternate them on twos) and state.edge: true is its first drawing, seen edge-on as if it turned into view. Float it up on IB.settle read on twos (spot/folder-meets-document: 290 px, tau 0.45, 2.4 s). */

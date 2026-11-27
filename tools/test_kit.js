@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Contract of every <ref>/kit/ file and every scene that loads them, checked without a browser. Run: node tools/test_kit.js (exit 1 on failure).
    1. A kit file's first comment says what else it needs ("Needs ink.js, time.js and marks.js"): every IB.* name it uses and does not define itself must be defined by one of those files. A part that calls another file's part only on some path (a candle's relight burst) breaks a new scene that loads the file on the strength of its comment alone.
-   2. A scene loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
+   2. A scene or part sample loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
    3. Only ink.js (which creates IB) and time.js load first; every other kit file may load in any order, so none of them may read another file's IB.* name while it loads (const F = IB.FIG at the top of a file is undefined if figure.js comes later): outside a function body, a file reads only its own names and those of ink.js and time.js.
    4. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
@@ -42,9 +42,14 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
   }
 
   // 2. each scene loads what its kit files need and what it uses
-  const sceneDir = path.join(ROOT, ref, 'scenes');
-  for (const fam of fs.readdirSync(sceneDir)) for (const s of fs.readdirSync(path.join(sceneDir, fam)).filter((x) => x.endsWith('.html'))) {
-    const html = fs.readFileSync(path.join(sceneDir, fam, s), 'utf8'), name = `${ref}/scenes/${fam}/${s}`;
+  const pages = [];   // scenes and part samples load kit files the same way
+  for (const kind of ['scenes', 'parts']) {
+    const dir = path.join(ROOT, ref, kind);
+    if (!fs.existsSync(dir)) continue;
+    for (const fam of fs.readdirSync(dir).filter((d) => fs.statSync(path.join(dir, d)).isDirectory())) for (const s of fs.readdirSync(path.join(dir, fam)).filter((x) => x.endsWith('.html'))) pages.push([kind, fam, s]);
+  }
+  for (const [kind, fam, s] of pages) {
+    const html = fs.readFileSync(path.join(ROOT, ref, kind, fam, s), 'utf8'), name = `${ref}/${kind}/${fam}/${s}`;
     const loaded = [...html.matchAll(/<script src="\.\.\/\.\.\/kit\/([^"]+)"><\/script>/g)].map((m) => m[1]);
     for (const f of loaded) {
       if (!kit[f]) { fail(`${name} loads kit/${f}, which does not exist`); continue; }

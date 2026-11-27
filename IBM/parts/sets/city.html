@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / city</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/city.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 도시와 경기장 IB.stadiumCity가 레이어 넷으로 쌓인다(sky: 구름과 새, skyline: 고층 건물 IB.tower와 그 발치의 덩어리, stadium: IB.stadium, front: 지붕 블록 IB.roofBlock과 전경의 나무). 레이어를 따로 부를 수 있어서 배우를 그 사이에 세운다(원본에서는 헬리콥터가 맨 앞). 그림은 멈춰 있고 색은 경기장의 파란 띠 하나다. 원본 첫 설정 샷을 100px 격자에서 읽은 배치이고, 다른 자리에는 opts.shift로 옮긴다. */
+const LAYERS = ['sky', 'skyline', 'stadium', 'front'];
+MG.scene({
+  title: 'sets / city',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const shown = Math.min(LAYERS.length, 1 + Math.floor(t / 1));   // one more layer every second, then the whole set holds
+    LAYERS.slice(0, shown).forEach((layer) => IB.stadiumCity(ctx, { layer }));
+    SAMPLE.caption(ctx, `IB.stadiumCity — layers: ${LAYERS.slice(0, shown).join(' + ')}`);
+  },
+});
+</script>

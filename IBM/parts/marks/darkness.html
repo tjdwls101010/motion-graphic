@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>marks / darkness</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/cast/paper.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 효과 표시 견본: 어두운 장면 IB.darkness는 검정 한 면이고, 빛줄기는 번짐 없이 또렷한 삼각형으로 그 면을 도려낸다(원본 6편의 암전). 빛줄기는 2프레임마다 한 장씩 돌고, 어둠 속에서 보여야 하는 것(숨은 서류의 눈 IB.docEyes)은 어둠 위에 다시 그린다. 3초에 붙잡은 포즈 위로 하드 컷해 밝아지면 같은 빛줄기는 IB.lightBeam의 옅은 종이색 삼각형이 된다. 화면 전체를 덮는 표시라 칸 없이 전면으로 보인다. */
+const FLOOR = 930, LENS = [380, 560];
+const beam = (tt) => (-24 + 52 * (0.5 - 0.5 * Math.cos(Math.min(1, tt / 2.5) * Math.PI))) * (Math.PI / 180);   // sweeps down and right over 2.5 s
+MG.scene({
+  title: 'marks / darkness',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), a = beam(tt), dark = t < 3;
+    IB.hangingLamp(ctx, [1120, 300]);
+    IB.pottedPlant(ctx, [1640, FLOOR], IB.PLANTS.tall);
+    IB.woodCrate(ctx, [1180, FLOOR], { w: 190, h: 170 });
+    IB.docEyes(ctx, [1060, 700], { dx: -4, dy: 1 });
+    if (dark) {
+      IB.darkness(ctx, { beam: { from: LENS, a } });
+      IB.docEyes(ctx, [1060, 700], { dx: -4, dy: 1 });   // eyes show in the dark
+    } else IB.lightBeam(ctx, LENS, a);
+    SAMPLE.caption(ctx, dark ? 'IB.darkness({ beam }) — a hard triangle cut out of flat black' : 'IB.lightBeam — the same beam in a lit room', dark);
+  },
+});
+</script>

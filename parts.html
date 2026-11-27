@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>모션그래픽 레퍼런스 부품</title>
+<style>
+  body { margin: 0; padding: 40px 48px 80px; background: #101010; color: #e8e8e8; font: 15px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 20px; margin: 48px 0 0; } h3 { font-size: 16px; margin: 28px 0 12px; color: #bcb8f8; } code { color: #8a8a8a; font-size: 13px; }
+  p.lead { color: #9a9a9a; margin: 0; } p.lead a { color: #bcb8f8; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card { display: block; padding: 10px 10px 14px; border: 1px solid #2c2c2c; border-radius: 12px; background: #181818; color: inherit; text-decoration: none; }
+  .card:hover, .card:focus-visible { border-color: #bcb8f8; outline: none; }
+  .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 7px; background: #0b0b0b; margin-bottom: 12px; }
+  .thumb img, .thumb iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  .thumb iframe { opacity: 0; transition: opacity 0.12s; pointer-events: none; }   /* clicks fall through to the card link */
+  .thumb iframe.on { opacity: 1; }
+  .card b { display: block; padding: 0 6px; font: 600 14px ui-monospace, monospace; }
+  .card span { display: block; padding: 0 6px; color: #8a8a8a; font-size: 12px; }
+  .card p { margin: 8px 0 0; padding: 0 6px; color: #b5b5b5; font-size: 13px; }
+</style>
+<h1>모션그래픽 레퍼런스 부품</h1>
+<p class="lead">부품 견본 4장 · 장면을 조립하는 kit 부품의 상태와 동작 · 카드에 마우스를 올리면 재생 · <a href="index.html">장면 시트</a></p>
+<h2>IBM</h2><h3>출연진 <code>cast</code></h3><div class="grid"><a class="card" href="IBM/parts/cast/folder.html"><div class="thumb"><img src="IBM/thumbs/parts-cast-folder.jpg" alt="" loading="lazy"></div><b>folder</b><span>견본 · 8s</span><p>출연진 견본: 파란 폴더 IB.folder의 이름 붙은 포즈 넷(IB.folder.POSE)과 동작 여덟(IB.folder.MOVE: kick, aboutFace, groove, hipOut, lunge, shiftWeight, walkOver, leanIn).</p></a></div><h3>소품 <code>props</code></h3><div class="grid"><a class="card" href="IBM/parts/props/nature.html"><div class="thumb"><img src="IBM/thumbs/parts-props-nature.jpg" alt="" loading="lazy"></div><b>nature</b><span>견본 · 4s</span><p>소품 견본: 화분 두 가지(IB.pottedPlant와 IB.PLANTS.tall·bushy), 창턱 화분 IB.sillPlant(잎이 2프레임마다 흔들림), 구름 셋(IB.cloud, IB.bandCloud, IB.wispCloud), 나무 덩어리 IB.clump, 새 IB.bird, 풀과 돌 IB.tuft·IB.stones.</p></a></div><h3>배경 세트 <code>sets</code></h3><div class="grid"><a class="card" href="IBM/parts/sets/city.html"><div class="thumb"><img src="IBM/thumbs/parts-sets-city.jpg" alt="" loading="lazy"></div><b>city</b><span>견본 · 6s</span><p>배경 세트 견본: 도시와 경기장 IB.stadiumCity가 레이어 넷으로 쌓인다(sky: 구름과 새, skyline: 고층 건물 IB.tower와 그 발치의 덩어리, stadium: IB.stadium, front: 지붕 블록 IB.roofBlock과 전경의 나무).</p></a></div><h3>효과 표시 <code>marks</code></h3><div class="grid"><a class="card" href="IBM/parts/marks/darkness.html"><div class="thumb"><img src="IBM/thumbs/parts-marks-darkness.jpg" alt="" loading="lazy"></div><b>darkness</b><span>견본 · 5s</span><p>효과 표시 견본: 어두운 장면 IB.darkness는 검정 한 면이고, 빛줄기는 번짐 없이 또렷한 삼각형으로 그 면을 도려낸다(원본 6편의 암전).</p></a></div>
+<script>
+  const live = new Map();   // iframe window -> iframe element, for matching the scene's "ready" message
+  addEventListener('message', (e) => {
+    const frame = live.get(e.source);
+    if (frame && e.data && e.data.mg === 'ready') frame.classList.add('on');
+  });
+  for (const card of document.querySelectorAll('.card')) {
+    const thumb = card.querySelector('.thumb');
+    let frame = null;
+    const start = () => {
+      if (frame) return;
+      frame = document.createElement('iframe');
+      frame.src = card.getAttribute('href') + '?embed';
+      frame.tabIndex = -1;
+      frame.setAttribute('aria-hidden', 'true');
+      thumb.append(frame);
+      live.set(frame.contentWindow, frame);
+    };
+    const stop = () => {
+      if (!frame) return;
+      live.delete(frame.contentWindow);
+      frame.remove();
+      frame = null;
+    };
+    card.addEventListener('mouseenter', start);
+    card.addEventListener('mouseleave', stop);
+    card.addEventListener('focus', start);
+    card.addEventListener('blur', stop);
+    addEventListener('pagehide', stop);
+  }
+</script>

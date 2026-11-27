@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / folder</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/cast/paper.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 파란 폴더 IB.folder의 이름 붙은 포즈 넷(IB.folder.POSE)과 동작 여덟(IB.folder.MOVE: kick, aboutFace, groove, hipOut, lunge, shiftWeight, walkOver, leanIn). 동작은 원본 스팟의 그림 목록 그대로이고, 칸마다 반복 재생한다(마지막 그림을 0.75초 붙잡고 다시). 포즈와 발은 원본 무대 좌표라 칸은 그 자리를 비추고, 다른 자리에 놓을 때는 opts.at·s·flip(IB.place)을 쓴다. 팔이 서로 닿는 동작(MOVE.reach)은 cast/folder-and-doc에 있다. */
+const F = IB.folder, FLOOR = IB.PAPER.floor;
+const centre = (rows) => { const xs = rows.map(([, p]) => p.x); return (Math.min(...xs) + Math.max(...xs)) / 2; };
+MG.scene({
+  title: 'cast / folder',
+  duration: 8, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.folder — POSE and MOVE (cast/paper.js)');
+    const f = IB.frame(t), cells = SAMPLE.grid(12, 4);
+    const poses = Object.entries(F.POSE), moves = Object.entries(F.MOVE).filter(([name]) => name !== 'reach');
+    poses.forEach(([name, p], i) => SAMPLE.cell(ctx, cells[i], SAMPLE.window([p.x, FLOOR], 600, 420), () => F(ctx, p), 'POSE.' + name));
+    moves.forEach(([name, rows], i) => SAMPLE.cell(ctx, cells[4 + i], SAMPLE.window([centre(rows), FLOOR], 600, 420), () => F(ctx, SAMPLE.cycle(f, rows)), 'MOVE.' + name));
+  },
+});
+</script>

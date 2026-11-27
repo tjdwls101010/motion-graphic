@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>acting / wave-then-point</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script>
+/* 포니테일의 사람이 복도를 걸어 들어오다 멈춰 서서, 화면 밖 누군가에게 손을 흔들고, 그쪽에 대고 노란 문을 손가락으로 가리키며 "저기!" 한다. 원본에 없는 창작 장면으로, 인물 리그의 손 네 가지(늘어뜨림, 편 손, 가리킴)와 한 장 늦게 따라오는 머리채(pose.prev)를 한 연기 안에서 보여 주는 견본 겸 장면이다. 전달하는 생각: 멈춤과 손짓 사이의 준비 한 장이 몸짓을 읽히게 한다.
+   Motion notes: one locked shot, 7 s, figure 330 px tall (line 3 px), dir 1. All on twos as one walk and a list of drawings, every drawing passing the one before as pose.prev except through the wave (a wave swings back and forth every drawing: a lag would blur it). Walk in for 28 drawings at IB.walkLen / 12 a drawing, so the planted foot never slides, and stop on phase 1/3 (one foot planted under the body, the other in the air, put down where it is). The stop: one drawing thrown forward (lean 0.14), then upright, and her ponytail swings forward and back by one drawing. Hold 0.42 s. The wave: an anticipation drawing with the far hand dropped to the hip, then the open hand up past where it waves (one drawing), then the wave on twos: side, middle, other side, middle, three times (12 drawings); the hand comes down through a half-way drawing. Hold 0.33 s. The point: the near arm draws back (anticipation), shoots out past its mark in one drawing with the index finger out, settles on the door; the head turns toward it on the same drawing (nod 0.06). Bubble at 5.25 s; from 5.75 s everything holds dead still. Two colours: the mint top and the yellow door. */
+const F = IB.FIG, FLOOR = 900, H = 330, WHO = { ...IB.PEOPLE.passenger, h: H, dir: 1, seed: 70 };
+const PACE = IB.walkLen(WHO) / 12, X0 = 260, IN = 28, XS = X0 + IN * PACE, PH = (IN / 12) % 1;   // 28 drawings in; phase 1/3 to stop on
+
+const stopped = () => ({ ...IB.stand(XS, FLOOR, WHO), feet: IB.walk(XS, FLOOR, WHO, PH).feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]) });
+const S = stopped(), HY = S.hip[1], SH = HY - F.torso * H;
+// hand targets, far hand first, all within the arm's reach (0.29 h) of the shoulder
+const holding = (hands, more = {}) => ({ ...S, hands: [hands[0] || S.hands[0], hands[1] || S.hands[1]], ...more });
+const DRAW = {
+  thrown: { ...S, lean: 0.14, hip: [XS + 6, HY + 2] },
+  hipDrop: holding([[XS + 0.02 * H, HY + 0.02 * H]]),                                                        // the wave's anticipation: the far hand goes down first
+  waveHigh: holding([[XS + 0.14 * H, SH - 0.26 * H]], { hand: ['open', 'relax'], face: { eye: 'wide', mouth: 'open' } }),   // up past where it waves
+  waveA: holding([[XS + 0.18 * H, SH - 0.2 * H]], { hand: ['open', 'relax'], face: { mouth: 'open' } }),
+  waveM: holding([[XS + 0.13 * H, SH - 0.215 * H]], { hand: ['open', 'relax'], face: { mouth: 'open' } }),
+  waveB: holding([[XS + 0.08 * H, SH - 0.21 * H]], { hand: ['open', 'relax'], face: { mouth: 'open' } }),
+  waveDown: holding([[XS + 0.1 * H, SH - 0.02 * H]], { hand: ['open', 'relax'], face: { mouth: 'smile' } }),
+  pullBack: holding([null, [XS - 0.06 * H, SH + 0.1 * H]], { hand: ['relax', 'grip'], face: { mouth: 'smile' } }),   // the point's anticipation
+  pointPast: holding([null, [XS + 0.3 * H, SH - 0.05 * H]], { hand: ['relax', 'point'], nod: 0.06, lean: 0.06, face: { eye: 'wide', mouth: 'open' } }),
+  point: holding([null, [XS + 0.27 * H, SH - 0.02 * H]], { hand: ['relax', 'point'], nod: 0.06, lean: 0.03, face: { mouth: 'open' } }),
+};
+// after the walk, [frame at 24 fps, drawing]
+const W0 = IN * 2;   // the frame the walk ends on
+const ACT = [[W0, DRAW.thrown], [W0 + 2, S], [W0 + 12, DRAW.hipDrop], [W0 + 14, DRAW.waveHigh]];
+for (let i = 0; i < 12; i++) ACT.push([W0 + 16 + i * 2, [DRAW.waveA, DRAW.waveM, DRAW.waveB, DRAW.waveM][i % 4]]);   // side, middle, side, middle: on twos
+ACT.push([W0 + 40, DRAW.waveDown], [W0 + 42, S], [W0 + 50, DRAW.pullBack], [W0 + 52, DRAW.pointPast], [W0 + 54, DRAW.point]);
+const WAVE = [W0 + 16, W0 + 40];   // frames of the wave itself: no prev there
+
+function poseOn(f) {
+  if (f < W0) { const k = f >> 1; return { ...IB.walk(X0 + k * PACE, FLOOR, WHO, (k / 12) % 1), face: { mouth: 'smile' } }; }
+  return IB.held(ACT, f);
+}
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)), p = poseOn(f), waving = f >= WAVE[0] && f < WAVE[1]; return { ...p, prev: f > 0 && !waving ? poseOn(f - 2) : undefined }; };
+IB.actors = (t) => ({ walker: poseAt(t) });
+
+MG.scene({
+  title: 'acting / wave-then-point',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const p = poseAt(t);
+    IB.pictureFrame(ctx, [700, 330], { w: 180, h: 140, seed: 700 });
+    IB.door(ctx, [1460, FLOOR]);
+    IB.pottedPlant(ctx, [1820, FLOOR], IB.PLANTS.tall);
+    IB.smear(ctx, (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 9, 300, { h: 14, seed: 9 });
+    IB.figure(ctx, p, { ...WHO, face: p.face });
+    IB.bubble(ctx, ['저기!'], t, 5.25, { tip: [XS + 30, SH - 0.32 * H], x: XS + 60, y: SH - 0.55 * H, seed: 500 });
+  },
+});
+</script>

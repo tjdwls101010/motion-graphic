@@ -13,7 +13,7 @@
 <script src="../../kit/sets/corridor.js"></script>
 <script>
 /* 흑백 선화로 빽빽하게 그린 복도 안쪽으로 연보라 종이비행기 하나가 날아 들어가고, 스피드라인 휩이 화면을 쓸면 큰 버튼 앞에서 망설이던 손가락이 꾹 눌러 불이 켜진다. 원본에 없는 창작 장면으로, 원본의 설정 샷·휩 전환·클로즈업 인서트 세 계열을 다른 장소로 이어 붙인 변주다. 전달하는 생각: 장소를 한 장으로 알리고, 곧바로 손끝의 한 동작으로 들어간다.
-   Motion notes: two shots joined by a whip, 6.5 s. Shot A (0-2.75 s) is an establishing shot: one-point perspective drawn dense in 1.5-5 px lines, no fills except two colours (the yellow door at the far end, the lavender plane). The drawing never moves; the camera pushes in 4.5% on ones about the vanishing point; the plane is the one moving thing, on twos: nothing for 0.33 s, then it crosses in front of the lens 3.2x too large with its first drawing stretched 1.5x as a smear, shrinks into the depth over 5 drawings and hovers, drifting 1 px per drawing. Whip (2.75-3.17 s, 10 frames on ones, the wide-shot length): 2 frames of shot A shoved left (-1150, -1500 px) and breaking into bars, 4 frames of streaks alone, 4 frames of shot B arriving from the right (1500, 1100, 600, 180 px); the streaks carry the two colours of the shot they leave. Shot B is an insert: the subject fills the frame, lines 7-9 px. The finger comes in on twos, stops 34 px short, backs off 26 px, comes again (holds of 3 and 4 frames: the hesitation is the acting), presses at 4.5 s. The button sinks 10 px and lights in one drawing, a six-line burst lasts 2 drawings, the finger leaves in 2 drawings at 5.25 s and the last 1.2 s is dead still. */
+   Motion notes: two shots joined by a whip, 6.5 s. Shot A (0-2.75 s) is an establishing shot: one-point perspective drawn dense in 1.5-5 px lines, no fills except two colours (the yellow door at the far end, the lavender plane). The drawing never moves; the camera pushes in 4.5% on ones about the vanishing point; the plane is the one moving thing, on twos: nothing for 0.33 s, then it crosses in front of the lens 3.2x too large with its first drawing stretched 1.5x as a smear, shrinks into the depth over 5 drawings and hovers, drifting 1 px per drawing. Whip (2.75-3.17 s, 10 frames on ones, the wide-shot length): 2 frames of shot A shoved left (-1150, -1500 px) and breaking into bars, 4 frames of streaks alone, 4 frames of shot B arriving from the right (1500, 1100, 600, 180 px); the streaks carry the two colours of the shot they leave. Shot B is an insert: the subject fills the frame, lines 7-9 px. The finger comes in on twos, stops 34 px short, backs off 26 px, comes again (holds of 3 and 4 drawings, then it creeps to 20 px and waits 3 more: the hesitation is the acting), presses at 4.5 s, 8 px deeper on the first drawing of the press than where it rests. The button sinks 10 px and lights in one drawing, a six-line burst lasts 2 drawings, the finger leaves in 2 drawings at 5.25 s and the last 1.08 s is dead still. */
 const { clamp } = MG;
 const C = IB.C, VP = [960, 500], WHIP = 66, B_IN = 72, B_SET = 76;
 
@@ -30,14 +30,18 @@ function shotA(ctx, t, dx) {
 }
 
 /* ---------- shot B: the button ---------- */
+// the finger's distance from its press point on the drawing at tt (2400: off-screen)
+function fingerGap(tt) {
+  const k = IB.drawn(tt, 3.25), away = IB.drawn(tt, 5.25), pressed = tt >= 4.5;
+  return away >= 0 ? IB.inbetween([300, 900, 2400], away) : k < 0 ? 2400 : pressed ? (IB.drawn(tt, 4.5) === 0 ? -14 : -6) : IB.inbetween([900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20], k);
+}
 const BTN = [860, 560];
 function shotB(ctx, t, dx, dy) {
   const tt = IB.twos(t), pressed = tt >= 4.5;
   ctx.save(); ctx.translate(dx, dy);
   IB.callButton(ctx, BTN, { pressed });
   // the finger, on twos: in, short stop, back off, in again, press, hold, away
-  const k = IB.drawn(tt, 3.25), away = IB.drawn(tt, 5.25);
-  const gap = away >= 0 ? IB.inbetween([300, 900, 2400], away) : k < 0 ? 2400 : pressed ? -6 : IB.inbetween([900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20], k);
+  const k = IB.drawn(tt, 3.25), gap = fingerGap(tt);
   const F = [BTN[0] + 96 + gap, BTN[1] + 40 + gap * 0.16];   // fingertip
   if (gap < 2000) {
     IB.pointer(ctx, F, { seed: 540 });
@@ -47,6 +51,9 @@ function shotB(ctx, t, dx, dy) {
   if (b >= 0 && b < 2) IB.burst(ctx, BTN, { n: 6, a0: -3.0, da: 0.42, r0: 200 + b * 40, r1: 200 + b * 40 + 80 - b * 20, w: 8, seed: 560 + b * 7 });
   ctx.restore();
 }
+
+// the finger's distance from the button, for tools/drawings.py
+IB.actors = (t) => { const tt = IB.twos(t), k = IB.drawn(tt, 3.25), g = fingerGap(tt); return { finger: t < 3.17 || g >= 2000 ? null : [g, k >= 3 && k < 12 && tt < 4.5 ? k : null] }; };   // what is drawn: its distance and the tremble's drawing
 
 MG.scene({
   title: 'variation / hall-whip-button',

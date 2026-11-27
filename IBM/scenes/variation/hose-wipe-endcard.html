@@ -19,11 +19,12 @@ const WHO = { ...IB.PEOPLE.chopper, bottom: C.bg, h: 520, dir: 1, seed: 10 };   
 const H = WHO.h, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, AY = FLOOR - F.ankle * H;
 const SPREAD = [3, 4, 5, 6, 7, 8, 8, 12, 18, 26, 38, 55, 80];   // half-angle of the stream per drawing after the burst; then full frame
 
+// both hands on the nozzle and within the arms' reach (0.29 h from the shoulder), so the rig puts the hands where the nozzle is drawn
 function pose(tt) {
   // braced; one drawing before the burst she digs in (back -0.3: further forward and lower); thrown back on the burst, rebounds a little forward, settles
   const k = IB.drawn(tt, BURST), back = k < -1 ? 0 : k === -1 ? -0.3 : k === 0 ? 1 : k === 1 ? 0.6 : 0.7;
   const hip = [X0 - 0.04 * H * back, HIPY + 0.06 * H + (back < 0 ? 18 : 0)], lean = lerp(0.12, -0.14, back);   // digging in also sinks the hips 18 px
-  return { hip, lean, nod: -0.1 * back, feet: [[X0 + 0.17 * H, AY, 0], [X0 - 0.15 * H, AY - IB.footLift(0.3 * Math.max(0, back), H), 0.3 * Math.max(0, back)]], hands: [[hip[0] + 0.4 * H, hip[1] - 0.07 * H - 16 * back], [hip[0] + 0.27 * H, hip[1] - 0.05 * H - 14 * back]], grip: [true, true], face: k < 0 ? { mouth: 'smile' } : k < 3 ? { eye: 'wide', mouth: 'open' } : { mouth: 'smile', brow: 1 } };
+  return { hip, lean, nod: -0.1 * back, feet: [[X0 + 0.17 * H, AY, 0], [X0 - 0.15 * H, AY - IB.footLift(0.3 * Math.max(0, back), H), 0.3 * Math.max(0, back)]], hands: [[hip[0] + 0.262 * H, hip[1] - 0.122 * H - 15 * back], [hip[0] + 0.2 * H, hip[1] - 0.1 * H - 14 * back]], grip: [true, true], face: k < 0 ? { mouth: 'smile' } : k < 3 ? { eye: 'wide', mouth: 'open' } : { mouth: 'smile', brow: 1 } };
 }
 // the hose from off-screen left up to the hands, and the nozzle's tip and angle
 function hose(p) {

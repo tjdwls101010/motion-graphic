@@ -14,7 +14,7 @@
 <script src="../../kit/props/party.js"></script>
 <script>
 /* 책상에 앉은 사람이 목표선을 향해 오르는 차트를 지켜보다, 선에 닿은 차트가 숨을 멈춘 듯 한 박자 멈춘 뒤 뚫고 올라가자 웅크렸다가 두 손을 번쩍 들고, 모니터 뒤에서 풍선이 떠오른다. 원본에 없는 창작 장면이자 부품 시트의 조립 시험(계획 5단계)으로, 다섯 장면에서 온 부품만으로 지었다: 앉은 사람·의자·책상·키보드·모니터·선 차트(market/watched-chart-drops), 점선 목표선(market/monitor-candles-breakout), 풍선(vignette/balloons-lift-chair), 하트 풍선(spot/folder-meets-document), 펼친 손(cast/figure-hands). 전달하는 생각: 목표에 닿는 순간보다 그 직전의 멈춤이 더 길다.
-   Motion notes: one locked shot, 7.5 s, figure 520 px tall seated (IB.sit), line 3.7 px. All acting on twos as one list of drawings (ACT), every drawing passing the one before as pose.prev. Beats: watching 0-1.5 s; leans in at 1.5 s in one in-between, one drawing 10% past and the hold. The chart gains a point every 2 drawings from 0.5 s (17 px apart), climbing with small dips toward a dashed target line drawn on in 4 drawings at 0.25 s. At 2.75 s the last point touches the line and nothing moves for 0.42 s (the face goes wide on the same drawing: the hold is the suspense). 3.17 s: the breakout point arrives in one drawing 12 px over the line's top, a four-line burst at the chart's end for 2 drawings; on that same drawing the sitter sinks over the keyboard (the anticipation), then throws both hands up open, one drawing higher than where they hold, and holds. Two balloons rise from behind the monitor one drawing apart (IB.settle tau 0.3 s), tied to its top corners, bob once (damped, cut 1 s after) and are still. 5.0 s: leans back with the hands behind the head in one in-between and an overshoot; bubble 5.5-6.5 s. 6.25 s the heart balloon rises from behind the desk (one narrow drawing as it turns into view, then tau 0.45 s) with its string flicking side to side on twos: from 6.5 s it is the only thing that moves. Three colours: the two balloons' lavender and sky, the chart's blue; the sitter is in white and charcoal so the balloons carry the colour. */
+   Motion notes: one locked shot, 7.5 s, figure 520 px tall seated (IB.sit), line 3.7 px. All acting on twos as one list of drawings (ACT), every drawing passing the one before as pose.prev. Beats: watching 0-1.5 s; leans in at 1.5 s in one in-between, one drawing 10% past and the hold. The chart gains a point every 2 drawings from 0.5 s (17 px apart), climbing with small dips toward a dashed target line drawn on in 4 drawings at 0.25 s. At 2.67 s the last point touches the line; on the next drawing the face goes wide, and from 2.83 s to 3.17 s nothing moves at all (the chart has stopped 0.5 s): the hold is the suspense. 3.17 s: the breakout point arrives in one drawing, 41 px above the line on screen, a four-line burst at the chart's end for 2 drawings; on that same drawing the sitter sinks over the keyboard with both fists on it (the anticipation), then throws both hands up open, one drawing higher than where they hold (rising off the seat), and holds. Two balloons rise from behind the monitor one drawing apart (IB.settle tau 0.3 s), tied to its top corners, bob once (damped, cut 1 s after) and are still. 5.0 s: leans back with the hands behind the head in one in-between and an overshoot; bubble 5.5-6.5 s. 6.25 s the heart balloon rises from behind the desk (one narrow drawing as it turns into view, then tau 0.45 s) with its string flicking side to side on twos: from 6.5 s it is the only thing that moves. Colours: the two balloons' lavender and sky and the heart balloon's yellow, and the chart's blue rising (red on the drawings where a point dips, as IB.lineChart draws a falling step); the sitter is in white and charcoal so the balloons carry the colour. */
 const { lerp } = MG;
 const FLOOR = 930, X0 = 640, DESK = 716;
 const WHO = { ...IB.PEOPLE.typist, h: 520, dir: 1, seed: 30 };
@@ -26,12 +26,12 @@ const POSE = {
   watch: { ...P0, face: { mouth: 'flat' } },
   lean: { ...P0, lean: 0.3, nod: 0.05, hands: [[X0 + 0.27 * H, HY - 0.1 * H - 6], [X0 + 0.23 * H, HY - 0.09 * H - 8]], face: { eye: 'dot', mouth: 'flat', brow: 1 } },
   tense: { ...P0, lean: 0.32, nod: 0.08, hands: [[X0 + 0.27 * H, HY - 0.1 * H - 6], [X0 + 0.23 * H, HY - 0.09 * H - 8]], face: { eye: 'wide', mouth: 'flat', brow: 1 } },
-  sink: { ...P0, hip: [X0, HY + 6], lean: 0.42, nod: 0.18, hands: [[X0 + 0.21 * H, HY - 0.03 * H], [X0 + 0.18 * H, HY - 0.01 * H]], hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'flat' } },
+  sink: { ...P0, hip: [X0, HY + 6], lean: 0.42, nod: 0.18, hands: [[800, 700], [786, 703]], hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'flat' } },
   up: { ...P0, lean: -0.12, nod: -0.22, hands: [[X0 + 0.12 * H, HY - 0.49 * H], [X0 + 0.02 * H, HY - 0.48 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },
   back: { ...P0, lean: -0.26, nod: -0.1, hands: [[X0 - 0.16 * H, HY - 0.33 * H], [X0 - 0.13 * H, HY - 0.31 * H]], elbow: [-1, -1], face: { eye: 'closed', mouth: 'smile' } },
 };
 const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), hand: (u < 0.5 ? a : b).hand, elbow: (u < 0.5 ? a : b).elbow, face: (u < 0.5 ? a : b).face });
-const upHigh = { ...POSE.up, hands: POSE.up.hands.map(([x, y]) => [x + 4, y - 16]), lean: -0.16 };   // the drawing past the hold: hands higher, back further
+const upHigh = { ...POSE.up, hip: [X0, HY - 10], hands: POSE.up.hands.map(([x, y]) => [x + 2, y - 14]), lean: -0.16 };   // the drawing past the hold: the body rises 10 px off the seat so both hands go higher within reach
 // [frame at 24 fps, drawing]: each holds until the next
 const ACT = [
   [0, POSE.watch],
@@ -40,7 +40,7 @@ const ACT = [
   [76, POSE.sink], [78, upHigh], [80, POSE.up],
   [120, mix(POSE.up, POSE.back, 0.45)], [122, mix(POSE.up, POSE.back, 1.08)], [124, POSE.back],
 ];
-const poseAt = (t) => { const f = IB.frame(IB.twos(t)); return { ...IB.held(ACT, f), prev: f > 0 ? IB.held(ACT, f - 1) : undefined }; };
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)); return { ...IB.held(ACT, f), prev: IB.held(ACT, Math.max(0, f - 1)) }; };
 
 /* ---------- the chart ---------- */
 const TARGET = 72, MIN = 20, SPAN = 70;
@@ -57,7 +57,7 @@ const MON = [1180, DESK, 520, 340];   // the monitor: centre x, bottom, width, h
 const bob = IB.bob;   // kit/time.js
 const BALLOONS = [{ at: 82, to: [-150, -170], fill: IB.C.lavender, seed: 110, knot: -0.42 }, { at: 84, to: [70, -205], fill: IB.C.sky, seed: 120, knot: 0.42 }];
 
-IB.actors = (t) => { const tt = IB.twos(t), f = IB.frame(tt); return { sitter: poseAt(t), chart: series(f).length, balloons: BALLOONS.map((b) => (f < b.at ? null : [IB.settle(tt - b.at / 24, 0.3), bob(tt - b.at / 24 - 0.5, 10, 1.0)])) }; };
+IB.actors = (t) => { const tt = IB.twos(t), f = IB.frame(tt); return { heart: tt < 6.25 - 1e-6 ? null : IB.settle(tt - 6.25, 0.45, 2.4), sitter: poseAt(t), chart: series(f).length, balloons: BALLOONS.map((b) => (f < b.at ? null : [IB.settle(tt - b.at / 24, 0.3), bob(tt - b.at / 24 - 0.5, 10, 1.0)])) }; };
 
 MG.scene({
   title: 'market / target-hit-balloons',

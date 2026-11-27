@@ -11,7 +11,7 @@
 <script src="../../kit/props/office.js"></script>
 <script>
 /* 책상에 앉은 사람이 모니터를 노려보면 차트가 내려가고, 포기하고 뒤로 기대 눈을 감으면 오르고, 실눈을 뜰 때마다 다시 꺾이더니 두 손으로 눈을 가리자 화면 위로 치솟아 "안 봐야 오르네." 한다. 원본에 없는 창작 장면으로, 원본 스팟의 "같은 박자를 되풀이하다 뒤집기"와 얼굴만 바뀌는 연기를 투자자의 징크스 개그로 옮겼다. 전달하는 생각: 들여다본다고 오르지 않는다. 상승은 파랑, 하락은 빨강이다.
-   Motion notes: one locked shot, 9 s, figure 520 px tall, seated (IB.sit). The chart is the second actor and it only ever reacts: it gains one point every 2 drawings (6 per second, 17 px apart; once the window is full it steps 17 px each time a point is added), and the direction of each new point is decided by where the eyes are on that drawing: watched, it falls 3 a step (4 on a peek); unwatched, it climbs 3, then 6 once the eyes are covered. A change of pose is one in-between (poseMix 0.5) and then a hold; the face changes on the same drawing as the pose. Beats: watch 0.5-1.5 s (flat), lean in and stare 1.5-3.0 s (falls), lean back with the hands behind the head and the eyes shut 3.0-4.5 s (climbs), peek 4.5-5.0 (falls), shut 5.0-5.75 (climbs), peek 5.75-6.25 (falls), both hands over the eyes from 6.25 s: the line climbs out of the top of the screen, the bubble comes at 7.0 s, and for the last 2 s the pose is dead still and only the line keeps stepping. The dot at the line's end and the arrow in the screen's corner are blue while it rises and red while it falls: with the yellow top that is the shot's three colours. */
+   Motion notes: one locked shot, 9 s, figure 520 px tall, seated (IB.sit). The chart is the second actor and it only ever reacts: it gains one point every 2 drawings (6 per second, 17 px apart; once the window is full it steps 17 px each time a point is added), and the direction of each new point is decided by where the eyes are on that drawing: watched, it falls 3 a step (4 on a peek); unwatched, it climbs 3, then 6 once the eyes are covered. A change of pose is one in-between (poseMix 0.5), one drawing 10% past the new pose, and then a hold; the head trails each change by one drawing (pose.prev); the face changes on the same drawing as the pose. Beats: watch 0.5-1.5 s (flat), lean in and stare 1.5-3.0 s (falls), lean back with the hands behind the head and the eyes shut 3.0-4.5 s (climbs), peek 4.5-5.0 (falls), shut 5.0-5.75 (climbs), peek 5.75-6.25 (falls), both hands over the eyes from 6.25 s: the line climbs out of the top of the screen, the bubble comes at 7.0 s, and for the last 2 s the pose is dead still and only the line keeps stepping. The dot at the line's end and the arrow in the screen's corner are blue while it rises and red while it falls: with the yellow top that is the shot's three colours. */
 const FLOOR = 930, X0 = 700, DESK = 716;
 const WHO = { ...IB.PEOPLE.trader, h: 520, dir: 1, seed: 30 };
 const H = WHO.h;
@@ -29,9 +29,10 @@ function pose(kind) {
 }
 function poseAt(tt) {
   const n = Math.round(tt * 12), b = IB.heldRow(BEATS, n, BEATS[0]), cur = pose(b[1]);
-  if (n !== b[0] || b[0] === 0) return cur;
-  const prev = pose(IB.heldRow(BEATS, n - 1, BEATS[0])[1]);   // the drawing a beat starts on is halfway there
-  return { ...IB.poseMix(prev, cur, 0.5), elbow: cur.elbow, face: cur.face };
+  if (n - b[0] > 1 || b[0] === 0) return cur;
+  // the drawing a beat starts on is halfway there, the next one goes 10% past the new pose, then it holds
+  const prev = pose(IB.heldRow(BEATS, b[0] - 1, BEATS[0])[1]);
+  return { ...IB.poseMix(prev, cur, n === b[0] ? 0.5 : 1.1), elbow: cur.elbow, face: cur.face };
 }
 // the chart's values: one new point every two drawings from 0.5 s, its direction set by the beat it lands in
 function series(tt) {
@@ -40,13 +41,17 @@ function series(tt) {
   return steps ? v : [];
 }
 
+// the sitter's drawing with the one before as prev (the head trails each change of pose)
+const drawnAt = (t) => { const tt = IB.twos(t); return { ...poseAt(tt), prev: tt > 0 ? poseAt(IB.twos(tt - 1e-4)) : undefined }; };
+IB.actors = (t) => ({ trader: poseAt(IB.twos(t)) });
+
 MG.scene({
   title: 'market / watched-chart-drops',
   duration: 9, ref: null, fps: 24,
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), p = poseAt(tt), look = { ...WHO, face: p.face };
+    const tt = IB.twos(t), p = drawnAt(t), look = { ...WHO, face: p.face };
     IB.smear(ctx, X0 + 20, FLOOR - 6, 330, { h: 12, seed: 9 });
     IB.smear(ctx, 1180, FLOOR - 4, 700, { h: 11, seed: 10 });
     IB.chair(ctx, X0, FLOOR, H, 1);

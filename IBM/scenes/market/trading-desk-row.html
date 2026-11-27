@@ -13,7 +13,7 @@
 <script src="../../kit/sets/trading.js"></script>
 <script>
 /* 시세판 아래 책상 세 개에 나란히 앉아 한 명은 타자를 치고 한 명은 통화하고 한 명은 늘어져 있다가, 시세판이 왼쪽부터 차례로 파란 화살표로 넘어가자 가운데 사람이 벌떡 일어나 "매수!" 하고 셋 다 자판에 달려든다. 원본에 없는 창작 장면으로, 원본의 "저마다 다른 박자로 연기하다 한 사건에 차례로 반응한다"를 증권사 사무실에 옮겼다. 전달하는 생각: 조용하던 사무실이 숫자 하나에 한꺼번에 움직인다. 상승은 파랑, 하락은 빨강이다.
-   Motion notes: one locked shot, 7.5 s, figures 400 px tall, seated (IB.sit). Before the event each worker keeps a different clock so the row never moves in unison: the typist's hands swap every drawing on twos (8 px), the caller's free hand flips between two gestures on threes, the lounger does not move at all. The board is a drawing that changes by hard cuts: one cell flips direction every 0.5 s until 3.0 s. The event is a wave, not a cut: from 3.0 s the twelve cells turn to the blue up arrow one drawing apart, left to right and top row first (1 s for the board), and the reactions are staggered three drawings apart as it passes: 3.25 s the typist's head comes up, 3.5 s the caller is on their feet in 2 drawings (the feet stay where they were under the desk, the hip goes up and forward over them), 3.75 s the lounger is on the keyboard in 2 drawings. On their feet the caller throws the far fist up behind the head and holds the handset out in front, so the face stays clear. Bubble 3.92-4.75 s over the held standing pose, after the lounger has landed on the keyboard; the caller sits again in 2 drawings at 4.75 s the handset goes back on its cradle and the lounger's cup stands on the desk (a prop that is put down stays in the picture), and all three type on twos, from 5.0 s with shake marks re-rolled each drawing, while three sheets leave the desks at 4.75, 5.0 and 5.33 s, 14 drawings each on an arc, and lie where they land. Three colours: the caller's yellow top, and the board's two data colours. */
+   Motion notes: one locked shot, 7.5 s, figures 400 px tall, seated (IB.sit). Before the event each worker keeps a different clock so the row never moves in unison: the typist's hands swap every drawing on twos (8 px), the caller's free hand flips between two gestures on threes, the lounger does not move at all. The board is a drawing that changes by hard cuts: one cell flips direction every 0.5 s until 3.0 s. The event is a wave, not a cut: from 3.0 s the twelve cells turn to the blue up arrow one drawing apart, left to right and top row first (1 s for the board), and the reactions are staggered three drawings apart as it passes: 3.25 s the typist's head comes up, 3.5 s the caller is on their feet in 2 drawings (the feet stay where they were under the desk, the hip goes up and forward over them), 3.75 s the lounger is on the keyboard in 2 drawings. On their feet the caller throws the far fist up behind the head and holds the handset out in front, so the face stays clear. Every reaction has a drawing past its pose: the typist's head comes up half-way, goes 0.08 rad past and holds, and comes down through half-way; the caller rises a drawing past standing; the lounger lands a drawing past the typing pose. Each figure passes its drawing before as pose.prev, so heads and hair trail the reactions. Bubble 3.92-4.75 s over the held standing pose, after the lounger has landed on the keyboard; the caller sits again in 2 drawings at 4.75 s the handset goes back on its cradle and the lounger's cup stands on the desk (a prop that is put down stays in the picture), and all three type on twos, from 5.0 s with shake marks re-rolled each drawing, while three sheets leave the desks at 4.75, 5.0 and 5.33 s, 14 drawings each on an arc, and lie where they land. Three colours: the caller's yellow top, and the board's two data colours. */
 const F = IB.FIG, FLOOR = 940, DESK = 778, H = 400;
 const SEATS = [220, 760, 1300];
 const WHO = [
@@ -29,22 +29,28 @@ function poses(t) {
   const tt = IB.twos(t), k = Math.round(tt * 12), k3 = Math.round(IB.threes(t) * 8), n = (t0) => IB.drawn(tt, t0);
   // 1: the typist, who looks up at 3.25 s for six drawings and then types on
   const a = typing(SEATS[0], WHO[0], k);
-  if (n(IB.T(39)) >= 0 && n(IB.T(39)) < 6) { a.nod = -0.3; a.face = { eye: 'wide', mouth: 'open' }; } else a.face = { mouth: n(IB.T(45)) >= 0 ? 'smile' : 'flat' };
+  // the look: up half-way, past it, held, and down through half-way before the typing goes on
+  const look = n(IB.T(39));
+  if (look >= 0 && look < 7) { a.nod = [-0.15, -0.38, -0.3, -0.3, -0.3, -0.3, -0.12][look]; a.face = { eye: look ? 'wide' : 'dot', mouth: look && look < 6 ? 'open' : 'flat' }; } else a.face = { mouth: n(IB.T(45)) >= 0 ? 'smile' : 'flat' };
   // 2: the caller: on the phone, up on their feet, down again, typing
   const x = SEATS[1], sit = IB.sit(x, FLOOR, WHO[1]), sh = (p) => [p.hip[0], p.hip[1] - F.torso * H];
   const call = { ...sit, lean: -0.06, hands: [[x + 0.2 * H, sit.hip[1] - 0.16 * H - (k3 % 2 ? 16 : 0)], [x - 0.035 * H, sit.hip[1] - F.torso * H - 0.085 * H]], grip: [false, true], elbow: [1, -1], face: { mouth: k3 % 2 ? 'open' : 'flat' }, phone: true };   // the handset at the ear, behind the face; the elbow folds back so the forearm does not cross the eyes
   const up = IB.stand(x + 0.24 * H, FLOOR, WHO[1]); up.feet = sit.feet;
   up.hands = [[up.hip[0] + 0.1 * H, sh(up)[1] - 0.24 * H], [up.hip[0] + 0.21 * H, sh(up)[1] + 0.02 * H]]; up.grip = [true, true]; up.face = { eye: 'wide', mouth: 'open' }; up.phone = true;
   let b = call;
-  if (n(IB.T(42)) >= 0) b = n(IB.T(42)) === 0 ? { ...IB.poseMix(call, up, 0.5), grip: [true, true], face: up.face, phone: true } : up;
+  if (n(IB.T(42)) >= 0) b = n(IB.T(42)) === 0 ? { ...IB.poseMix(call, up, 0.5), grip: [true, true], face: up.face, phone: true } : n(IB.T(42)) === 1 ? { ...IB.poseMix(call, up, 1.08), grip: [true, true], face: up.face, phone: true } : up;   // up, a drawing past standing, standing
   if (n(IB.T(57)) >= 0) { const ty = typing(x, WHO[1], k, 0.16); b = n(IB.T(57)) === 0 ? { ...IB.poseMix(up, ty, 0.5), face: { mouth: 'smile' }, phone: true } : { ...ty, face: { mouth: 'smile', brow: 1 }, phoneDown: true }; }
   // 3: the lounger: legs out, cup in hand, until the wave reaches the right-hand cells
   const y = SEATS[2], s3 = IB.sit(y, FLOOR, WHO[2]);
   const lounge = { ...s3, lean: -0.3, nod: 0.1, feet: [[y + 0.42 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2], [y + 0.36 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2]], hands: [[y + 0.1 * H, s3.hip[1] - 0.03 * H], [y + 0.12 * H, s3.hip[1] - 0.1 * H]], face: { eye: 'closed', mouth: 'smile' }, cup: true };
   let c = lounge;
-  if (n(IB.T(45)) >= 0) { const ty = typing(y, WHO[2], k, 0.22); c = n(IB.T(45)) === 0 ? { ...IB.poseMix(lounge, ty, 0.5), feet: [[y + 0.34 * H, FLOOR - F.ankle * H - 0.08 * H, 0], [y + 0.28 * H, FLOOR - F.ankle * H - 0.07 * H, 0]], face: { eye: 'wide', mouth: 'open' }, cup: true } : { ...ty, face: { mouth: 'flat', brow: 1 }, cupDown: true }; }
+  if (n(IB.T(45)) >= 0) { const ty = typing(y, WHO[2], k, 0.22); c = n(IB.T(45)) === 1 ? { ...IB.poseMix(lounge, ty, 1.1), face: { eye: 'wide', mouth: 'open' }, cupDown: true } : n(IB.T(45)) === 0 ? { ...IB.poseMix(lounge, ty, 0.5), feet: [[y + 0.34 * H, FLOOR - F.ankle * H - 0.08 * H, 0], [y + 0.28 * H, FLOOR - F.ankle * H - 0.07 * H, 0]], face: { eye: 'wide', mouth: 'open' }, cup: true } : { ...ty, face: { mouth: 'flat', brow: 1 }, cupDown: true }; }
   return [a, b, c];
 }
+
+// each worker's drawing with the one before as prev (heads and hair trail the reactions)
+const drawn = (t) => { const tt = IB.twos(t), now = poses(t), was = tt > 0 ? poses(tt - 1e-4) : []; return now.map((p, i) => ({ ...p, prev: was[i] })); };
+IB.actors = (t) => { const [typist, caller, lounger] = poses(t); return { typist, caller, lounger }; };
 
 // which of the board's twelve cells show an up arrow at time tt
 function cells(tt) {
@@ -64,7 +70,7 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), k = Math.round(tt * 12), ps = poses(t);
+    const tt = IB.twos(t), k = Math.round(tt * 12), ps = drawn(t);
     IB.tickerBoard(ctx, [320, 160], { up: cells(tt) });   // hung low, leaving a band above the heads for the bubble
     IB.wallClock(ctx, [1740, 260]);
     IB.smear(ctx, 960, FLOOR - 4, 1760, { h: 14, seed: 9 });

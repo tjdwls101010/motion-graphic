@@ -185,7 +185,7 @@
       IB.ink(ctx, [[-238, -26, 30], [-226, -26, 30], [-226, 26, 30], [-238, 26, 30]].map(P), { closed: true, smooth: false, fill: C.yellow, w: lw, seed: seed + 2 });
     }]);
     // skids: the far one first
-    for (const side of [-1, 1]) parts.push([depth([0, side * 44]) - 1, () => {
+    for (const side of [-1, 1]) parts.push([depth([0, side * 44]) - 1000, () => {   // both skids before the cabin: they hang under it, so the cabin covers the part of the near one it is in front of
       IB.tube(ctx, [[-58, side * 44, -64], [78, side * 44, -64]].map(P), { w: 8 * s, edge: 1.8 * Math.sqrt(s), fill: '#b9b9b9', seed: seed + 3 + side });
       for (const lx of [-34, 44]) IB.tube(ctx, [[lx, side * 26, -44], [lx - 8, side * 44, -64]].map(P), { w: 6 * s, edge: 1.6 * Math.sqrt(s), fill: '#b9b9b9', seed: seed + 5 + side + lx });
     }]);
@@ -195,9 +195,11 @@
       IB.ink(ctx, hull(pts), { closed: true, fill: C.yellow, w: lw, seed: seed + 9 });
       // windscreen: the front of the egg above its waist, while the nose faces the lens
       if (sn > 0.12) {
-        const ws = []; for (let i = 0; i <= 8; i++) ws.push(egg(-0.9 + (i / 8) * 1.8, 0.95)); for (let i = 8; i >= 0; i--) ws.push(egg(-0.9 + (i / 8) * 1.8, 0.28));
-        IB.ink(ctx, ws.map(P), { closed: true, fill: C.paper, w: lw, seed: seed + 10 });
-        IB.ink(ctx, [egg(0, 0.97), egg(0, 0.26)].map(P), { w: lw * 0.8, seed: seed + 11 });
+        // only the part of the windscreen on the side of the egg that faces the lens: the normal (cos u, sin u) of each column against the view's direction (sin yaw, cos yaw)
+        const us = []; for (let i = 0; i <= 16; i++) { const u = -0.9 + (i / 16) * 1.8; if (Math.cos(u) * sn + Math.sin(u) * c > 0.05) us.push(u); }
+        const ws = us.map((u) => egg(u, 0.95)).concat(us.slice().reverse().map((u) => egg(u, 0.28)));
+        if (us.length > 1) IB.ink(ctx, ws.map(P), { closed: true, fill: C.paper, w: lw, seed: seed + 10 });
+        if (us[0] < 0 && us[us.length - 1] > 0) IB.ink(ctx, [egg(0, 0.97), egg(0, 0.26)].map(P), { w: lw * 0.8, seed: seed + 11 });   // the frame down its middle, when the middle shows
       }
       // side window on the side that faces the lens
       const side = c >= 0 ? 1 : -1;   // the craft's left (y > 0) faces the lens while cos(yaw) > 0

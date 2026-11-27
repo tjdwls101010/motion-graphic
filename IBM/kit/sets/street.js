@@ -2,8 +2,9 @@
 (function (g) {
   const IB = g.IB, C = IB.C;
 
-  /* windowGrid(ctx, x, y, cols, rows, w, h, gx, gy, seed) — rows x cols of small window boxes w x h, one every gx / gy px from (x, y): the texture of a tower face. 1.5 px lines. */
-  IB.windowGrid = (ctx, x, y, cols, rows, w, h, gx, gy, seed) => {
+  /* windowGrid(ctx, at, opts) — opts.rows x opts.cols of small window boxes w x h, one every gx / gy px from `at` (the top left one's corner): the texture of a tower face. 1.5 px lines. */
+  IB.windowGrid = (ctx, [x, y], o = {}) => {
+    const { cols = 6, rows = 8, w = 40, h = 38, gx = 64, gy = 56, seed = 110 } = o;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) IB.box(ctx, x + c * gx, y + r * gy, w, h, { w: 1.5, seed: seed + r * 17 + c, wob: 0.4 });
   };
 
@@ -15,14 +16,14 @@
     for (const [x, w, top] of [[40, 150, 150], [330, 120, 60], [560, 90, 210], [1290, 110, 130], [1480, 170, 40], [1760, 140, 190]]) { IB.ink(ctx, [[x, 760], [x, top], [x + w, top], [x + w, 760]], { w: 1.6, smooth: false, seed: 10 + x }); for (let i = 1; i < 6; i++) IB.seg(ctx, x + 8, top + i * 46, x + w - 8, top + i * 46, { w: 1.2, seed: 20 + x + i }); }
     // left tower
     IB.box(ctx, 90, 96, 440, 664, { w: 3.4, seed: 100, fill: C.bg });
-    IB.windowGrid(ctx, 122, 130, 6, 10, 42, 40, 64, 56, 110);
+    IB.windowGrid(ctx, [122, 130], { cols: 6, rows: 10, w: 42, h: 40, gx: 64, gy: 56, seed: 110 });
     IB.box(ctx, 250, 690, 120, 70, { w: 2.6, seed: 300 }); IB.seg(ctx, 310, 690, 310, 760, { w: 2, seed: 301 });
     IB.ink(ctx, [[226, 690], [394, 690], [410, 664], [210, 664]], { closed: true, smooth: false, w: 2.6, seed: 302, fill: C.bg });
     // right tower, stepped
     IB.box(ctx, 1400, 250, 430, 510, { w: 3.4, seed: 320, fill: C.bg });
     IB.box(ctx, 1470, 96, 290, 154, { w: 3, seed: 321, fill: C.bg });
-    IB.windowGrid(ctx, 1430, 284, 6, 8, 40, 38, 64, 56, 330);
-    IB.windowGrid(ctx, 1500, 122, 4, 2, 40, 38, 64, 56, 500);
+    IB.windowGrid(ctx, [1430, 284], { cols: 6, rows: 8, w: 40, h: 38, gx: 64, gy: 56, seed: 330 });
+    IB.windowGrid(ctx, [1500, 122], { cols: 4, rows: 2, w: 40, h: 38, gx: 64, gy: 56, seed: 500 });
     IB.wallClock(ctx, [1615, 60], { r: 26, hands: [[0, -16], [11, 6]], fill: C.bg, lw: 2.6, hw: 2, n: 14, seed: 520 });
     // the exchange: steps, six columns, entablature, pediment, flag
     IB.box(ctx, 600, 300, 720, 460, { w: 3.6, seed: 540, fill: C.bg });

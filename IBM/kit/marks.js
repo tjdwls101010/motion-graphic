@@ -93,9 +93,9 @@
     ctx.restore();
   };
 
-  /* puddle(ctx, at, w, opts) — the chalk under a character's shoes as the reference packs it: a flat ragged core, solid in the middle, under IB.smear's dust. `at` = [centre x, the floor line]; w is the smear's width (84 px plus the distance between two planted feet). It is a puddle round the shoes, not a line under them: the smear starts `rise` px above the floor line. opts rx, ry, n, wob shape the core (a small one under a balloon that has come to rest: spot/folder-meets-document). */
-  IB.puddle = (ctx, [cx, floor], w, o = {}) => {
-    const { rx = w * 0.4, ry = 5.5, n = 14, wob = 2.4, h = 14, rise = 11, seed = 9 } = o;
+  /* puddle(ctx, at, opts) — the chalk under a character's shoes as the reference packs it: a flat ragged core, solid in the middle, under IB.smear's dust. `at` = [centre x, the floor line]; opts.w is the smear's width (84 px plus the distance between two planted feet). It is a puddle round the shoes, not a line under them: the smear starts `rise` px above the floor line. opts rx, ry, n, wob shape the core (a small one under a balloon that has come to rest: spot/folder-meets-document). */
+  IB.puddle = (ctx, [cx, floor], o = {}) => {
+    const { w = 84, rx = w * 0.4, ry = 5.5, n = 14, wob = 2.4, h = 14, rise = 11, seed = 9 } = o;
     ctx.save();
     IB.ink(ctx, IB.ellipse(cx, floor - 3, rx, ry, n), { closed: true, fill: C.smear, w: 0, wob, seed });
     IB.smear(ctx, cx, floor - rise, w, { h, seed });
@@ -110,8 +110,9 @@
     ctx.restore();
   };
 
-  /* wheelDust(ctx, at, d) — a puff of dust off a rear wheel: two small ovals that drift back over three drawings, then three drawings without. `at` = [the axle's x, the axle's y]; d is the drawing number (frame / 2) (spot/tandem-riders-join). */
-  IB.wheelDust = (ctx, [rx, AXLE], d2) => {
+  /* wheelDust(ctx, at, state) — a puff of dust off a rear wheel: two small ovals that drift back over three drawings, then three drawings without. `at` = [the axle's x, the axle's y]; state.d is the drawing number (frame / 2) (spot/tandem-riders-join). */
+  IB.wheelDust = (ctx, [rx, AXLE], st = {}) => {
+    const { d: d2 = 0 } = st;
     ctx.save();
     if (d2 % 6 < 3) for (let k = 0; k < 2; k++) IB.oval(ctx, rx - 70 - k * 28 - (d2 % 3) * 14, AXLE + 30 + k * 6 - (d2 % 3) * 3, 12 - k * 5 - (d2 % 3) * 2, 7 - k * 3, { w: 1.6, seed: 90 + k, n: 7, fill: C.bg });
     ctx.restore();

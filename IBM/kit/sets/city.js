@@ -16,9 +16,10 @@
     ctx.restore();
   };
 
-  /* roofBlock(ctx, q, h, seed, tex) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop h px. tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
+  /* roofBlock(ctx, q, opts) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop opts.h px. opts.tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
   // 성진: the reference steps some of these roofs (an L with a notch); here every roof is four points. Redraw them stepped in the upgrade round (plan 4-3).
-  IB.roofBlock = (ctx, q, h, seed, tex = 'v') => {
+  IB.roofBlock = (ctx, q, o = {}) => {
+    const { h = 60, seed = 500, tex = 'v' } = o;
     ctx.save();
     const down = (p) => [p[0], p[1] + h];
     IB.ink(ctx, [q[0], q[3], down(q[3]), down(q[0])], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 });
@@ -87,22 +88,22 @@
     const C1 = (list) => list.forEach(([x, y, rx, ry], i) => IB.clump(ctx, [x, y], [rx, ry], { seed: 500 + layer * 40 + i }));
     if (layer === 0) {   // behind the stadium: the feet of the towers
       C1([[150, 612, 70, 26], [300, 620, 90, 30], [460, 628, 80, 30], [1440, 620, 70, 34], [1600, 690, 70, 30], [1800, 640, 110, 40], [1860, 720, 80, 40]]);
-      IB.roofBlock(ctx, [[1650, 628], [1692, 618], [1735, 628], [1692, 638]], 86, 590, 'v');   // the small round tower, drawn as a box
+      IB.roofBlock(ctx, [[1650, 628], [1692, 618], [1735, 628], [1692, 638]], { h: 86, seed: 590, tex: 'v' });   // the small round tower, drawn as a box
       return;
     }
     C1([[110, 700, 110, 48], [200, 780, 120, 44], [1700, 770, 110, 36]]);
-    IB.roofBlock(ctx, [[228, 672], [400, 642], [545, 656], [380, 696]], 26, 520);
-    IB.roofBlock(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], 30, 525, 'none');
-    IB.roofBlock(ctx, [[1400, 742], [1512, 708], [1590, 724], [1470, 760]], 118, 510, 'u');
+    IB.roofBlock(ctx, [[228, 672], [400, 642], [545, 656], [380, 696]], { h: 26, seed: 520 });
+    IB.roofBlock(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], { h: 30, seed: 525, tex: 'none' });
+    IB.roofBlock(ctx, [[1400, 742], [1512, 708], [1590, 724], [1470, 760]], { h: 118, seed: 510, tex: 'u' });
     C1([[150, 900, 150, 60], [1640, 880, 80, 30], [1520, 900, 60, 24]]);
-    IB.roofBlock(ctx, [[1690, 828], [1800, 806], [1850, 820], [1735, 845]], 92, 530, 'h');
-    IB.roofBlock(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], 92, 540, 'band');
+    IB.roofBlock(ctx, [[1690, 828], [1800, 806], [1850, 820], [1735, 845]], { h: 92, seed: 530, tex: 'h' });
+    IB.roofBlock(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], { h: 92, seed: 540, tex: 'band' });
     C1([[920, 862, 150, 30], [820, 846, 60, 22], [1030, 854, 50, 20], [380, 1010, 120, 40], [1790, 970, 150, 60], [1905, 915, 60, 50]]);
-    IB.roofBlock(ctx, [[1060, 948], [1380, 870], [1612, 896], [1300, 976]], 120, 550);
-    IB.roofBlock(ctx, [[1215, 922], [1340, 898], [1405, 912], [1280, 938]], 24, 560, 'none');
+    IB.roofBlock(ctx, [[1060, 948], [1380, 870], [1612, 896], [1300, 976]], { h: 120, seed: 550 });
+    IB.roofBlock(ctx, [[1215, 922], [1340, 898], [1405, 912], [1280, 938]], { h: 24, seed: 560, tex: 'none' });
     for (let i = 0; i < 3; i++) IB.seg(ctx, 1322 + i * 12, 940 - i * 3, 1332 + i * 12, 937 - i * 3, { w: 2, seed: 565 + i });
-    IB.roofBlock(ctx, [[508, 1020], [832, 923], [988, 950], [648, 1050]], 62, 570, 'none');
-    IB.roofBlock(ctx, [[636, 972], [686, 958], [696, 964], [646, 980]], 42, 575, 'h');
+    IB.roofBlock(ctx, [[508, 1020], [832, 923], [988, 950], [648, 1050]], { h: 62, seed: 570, tex: 'none' });
+    IB.roofBlock(ctx, [[636, 972], [686, 958], [696, 964], [646, 980]], { h: 42, seed: 575, tex: 'h' });
     C1([[1010, 1040, 90, 36], [1720, 1070, 200, 44], [90, 1030, 130, 50]]);
   }
 

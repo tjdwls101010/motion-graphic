@@ -59,7 +59,7 @@ function walker(ctx, w, k) {
   const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
   if (prop === 'case') IB.briefcase(ctx, j.hands[0], { h: w.h, fill: w.bottom === C.ink ? C.charcoal : C.paper, lw, seed: w.seed + 20 });
   if (prop === 'cup') IB.smallCup(ctx, j.hands[1], { d, lw: lw * 0.85, seed: w.seed + 22 });
-  if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1]; IB.phone(ctx, [hx + (prop === 'look' ? 6 : -2) * d, hy - (prop === 'look' ? 30 : 26)], { up: phone === 1, lw: lw * 0.85, seed: w.seed + 23 }); }
+  if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1]; IB.mobilePhone(ctx, [hx + (prop === 'look' ? 6 : -2) * d, hy - (prop === 'look' ? 30 : 26)], { up: phone === 1, lw: lw * 0.85, seed: w.seed + 23 }); }
   return { x, j, phone };
 }
 

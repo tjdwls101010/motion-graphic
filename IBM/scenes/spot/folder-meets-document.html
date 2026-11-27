@@ -49,7 +49,7 @@ MG.scene({
     ctx.translate(pan(f), 0);
 
     IB.confetti(ctx, CONFETTI);
-    IB.discoBall(ctx, [1302, 215], 105, { f });
+    IB.discoBall(ctx, [1302, 215], { f }, { r: 105 });
     IB.partyCorner(ctx);
     const b = IB.held(BALLOON, f);
     IB.looseBalloon(ctx, [b.x, b.y], b);
@@ -59,7 +59,7 @@ MG.scene({
     const fp = IB.held(FOLDER, f), dp = IB.held(DOC, f);
     // the arms that reach for each other are drawn first, so that each one's root is behind its body's edge
     const fa = f >= FARM[0][0] ? IB.held(FARM, f) : null, da = f >= DARM[0][0] ? IB.held(DARM, f) : null;
-    IB.reachArms(ctx, fp, dp, fa, da, MEET);
+    IB.paperReach(ctx, fp, dp, fa, da, MEET);
     IB.doc(ctx, dp);
     IB.folder(ctx, fp);
     if (fa === 'clasp') IB.paperClasp(ctx, MEET, { held: f >= 258 });

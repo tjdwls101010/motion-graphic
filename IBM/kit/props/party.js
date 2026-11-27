@@ -14,9 +14,9 @@
     ctx.restore();
   };
 
-  /* discoBall(ctx, at, R, opts) — a mirror ball of radius R centred on `at`, on a string from y `from` (above the frame): a real sphere seen from 3 radii away, so the rows of tiles bow the way the reference draws them. The tiles keep their colours (warm and white up where the light is, blues underneath) and ride round with it, 0.05 rad every three frames of f: the one thing in its shot that never holds. Glints live four drawings each (small, big, turned, gone) and jump to another tile corner (spot/folder-meets-document). */
-  IB.discoBall = (ctx, [cx, cy], R, o = {}) => {
-    const { f = 0, from = -10 } = o, PI = Math.PI, hash = MG.hash, clamp = MG.clamp;
+  /* discoBall(ctx, at, state, opts) — a mirror ball of radius opts.r centred on `at`, on a string from y opts.from (above the frame): a real sphere seen from 3 radii away, so the rows of tiles bow the way the reference draws them. The tiles keep their colours (warm and white up where the light is, blues underneath) and ride round with it, 0.05 rad every three frames of state.f: the one thing in its shot that never holds. Glints live four drawings each (small, big, turned, gone) and jump to another tile corner (spot/folder-meets-document). */
+  IB.discoBall = (ctx, [cx, cy], st = {}, o = {}) => {
+    const { f = 0 } = st, { r: R = 105, from = -10 } = o, PI = Math.PI, hash = MG.hash, clamp = MG.clamp;
     ctx.save();
     IB.seg(ctx, cx, from, cx, cy - R, { w: 3, seed: 50 });
     // a real sphere seen from 3 radii away, so the rows bow the way the reference draws them; the tiles keep their colours and ride round with it on threes
@@ -57,7 +57,7 @@
      looseBalloon.MOVE.kicked — the reference's kick, [frame from the kick's start, { x, y, rx, ry, turn, knot }] in the reference's stage coordinates (x, y is the centre to draw it at): it leaves as a single stretched smear, turns once as it sinks, and comes to rest with a squash and two small rocks. */
   IB.looseBalloon = (ctx, [x, y], st = {}, o = {}) => {
     const { rx = 40, ry = 33, turn = 0, knot = -0.45 } = st, { floor = 893 } = o, clamp = MG.clamp;
-    if (y > floor - 57) { const k = clamp((y - (floor - 57)) / 30); IB.puddle(ctx, [x, floor + 16], 70 * k, { rx: 30 * k, ry: 3.2, n: 10, wob: 1.2, h: 7, rise: 6, seed: 15 }); }   // its chalk mark grows as it nears the floor
+    if (y > floor - 57) { const k = clamp((y - (floor - 57)) / 30); IB.puddle(ctx, [x, floor + 16], { w: 70 * k, rx: 30 * k, ry: 3.2, n: 10, wob: 1.2, h: 7, rise: 6, seed: 15 }); }   // its chalk mark grows as it nears the floor
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(turn);

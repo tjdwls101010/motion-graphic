@@ -47,7 +47,7 @@
     const down = feet.filter((q) => q[1] > ANKLE - 9);
     if (down.length) {   // a puddle around the shoes, not a line under them: it starts above the soles and stretches to span a wide stance
       const x0 = Math.min(...down.map((q) => q[0])), x1 = Math.max(...down.map((q) => q[0]));
-      IB.puddle(ctx, [(x0 + x1) / 2, FLOOR], 84 + (x1 - x0), { seed });
+      IB.puddle(ctx, [(x0 + x1) / 2, FLOOR], { w: 84 + (x1 - x0), seed });
     }
     feet.forEach((foot, i) => {
       const via = p.via && p.via[i] ? [p.via[i][0], ANKLE + p.via[i][1]] : null;
@@ -69,7 +69,7 @@
   /* folder(ctx, pose, opts) — the blue folder: two stiff covers hinged along the bottom, the tab always on the cover that is behind (which is what the reference draws from either side). It never squashes: it turns (yaw; PI = its back to us), tips (roll), lifts, and opens, and when it opens past 0.07 rad the far cover shows beyond the near one with graphite in the gap.
      pose: x, lift, roll, yaw, open, feet [[x, dy], [x, dy]], bow [2], toe [2], frot [2], via [2] (see the note above).
      POSE: front, back (turned to face the other way: the tab is now on the left), and the two places it stands later in the spot (centre, byDoc).
-     MOVE: its acting in the spot, each a list of drawings in frames from its first: kick, aboutFace, groove (one 12-frame bar: play it twice), hipOut, lunge, shiftWeight, walkOver, leanIn; reach is its arm finding the document's (rows for IB.paperArm relative to IB.folder.reachRoot, ending in 'clasp'). */
+     MOVE: its acting in the spot, each a list of drawings in frames from its first: kick, aboutFace, groove (one 12-frame bar: play it twice), hipOut, lunge, shiftWeight, walkOver, leanIn; reach is its arm finding the document's (rows for IB.paperArm relative to IB.folder.reachRoot, ending in 'clasp'; IB.paperReach draws both arms). */
   IB.folder = (ctx, p, o = {}) => {
     const { seed = 200 } = o;
     ctx.save();
@@ -317,13 +317,13 @@
     ],
   };
 
-  /* reachArms(ctx, folderPose, docPose, fa, da, meet) — the two arms that find each other, drawn before the bodies so that each one's root is behind its body's edge. fa / da are the rows in force of IB.folder.MOVE.reach / IB.doc.MOVE.reach (null before they start); when they say 'clasp' both arms run to `meet`, where IB.paperClasp draws the hands over the bodies. */
-  IB.reachArms = (ctx, fp, dp, fa, da, H) => {
+  /* paperReach(ctx, folderPose, docPose, fa, da, meet) — the two arms that find each other, drawn before the bodies so that each one's root is behind its body's edge. fa / da are the rows in force of IB.folder.MOVE.reach / IB.doc.MOVE.reach (null before they start); when they say 'clasp' both arms run to `meet`, where IB.paperClasp draws the hands over the bodies. */
+  IB.paperReach = (ctx, fp, dp, fa, da, meet) => {
     const fRoot = IB.folder.reachRoot(fp), dRoot = IB.doc.reachRoot(dp);
     ctx.save();
     if (fa === 'clasp') {
-      IB.paperArm(ctx, fRoot, [H[0] - 9, H[1] - 3], { bow: -5, seed: 400 });
-      IB.paperArm(ctx, dRoot, [H[0] + 9, H[1] - 3], { bow: 5, seed: 420 });
+      IB.paperArm(ctx, fRoot, [meet[0] - 9, meet[1] - 3], { bow: -5, seed: 400 });
+      IB.paperArm(ctx, dRoot, [meet[0] + 9, meet[1] - 3], { bow: 5, seed: 420 });
     } else {
       if (fa) IB.paperArm(ctx, fRoot, [fRoot[0] + fa.to[0], fRoot[1] + fa.to[1]], { ...fa, flip: -1, seed: 400 });
       if (da) IB.paperArm(ctx, dRoot, [dRoot[0] + da.to[0], dRoot[1] + da.to[1]], { ...da, flip: 1, seed: 420 });
@@ -331,5 +331,5 @@
     ctx.restore();
   };
   /* paperClasp(ctx, meet, opts) — their two hands holding at `meet`: tilted 0.12 rad on the drawings before they stand straight, level once `held`. */
-  IB.paperClasp = (ctx, H, o = {}) => IB.clasp(ctx, H, { seed: 440, s: 1.3, rot: o.held ? 0 : 0.12 });
+  IB.paperClasp = (ctx, meet, o = {}) => IB.clasp(ctx, meet, { seed: 440, s: 1.3, rot: o.held ? 0 : 0.12 });
 })(window);

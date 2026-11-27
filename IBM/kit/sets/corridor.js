@@ -3,8 +3,9 @@
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp } = MG;
 
-  /* corridor(ctx, vp) — the corridor seen down its length, vanishing at `vp`: floor boards and ceiling lights receding, a far wall with a yellow door, framed pictures on the left wall, doors, a notice board and a bench on the right, lines thickening toward the lens. Everything is placed on the corridor's shell by (side, z, v): side -1 / 1 = left / right wall, z = 1 at the far end growing toward the lens, v = 0 floor .. 1 ceiling. Push the camera in by scaling about vp on ones (1 to 1.045 over 2.75 s) and let one small coloured thing fly through on twos (variation/hall-whip-button). */
-  IB.corridor = (ctx, VP = [960, 500]) => {
+  /* corridor(ctx, opts) — the corridor seen down its length, vanishing at opts.vp: floor boards and ceiling lights receding, a far wall with a yellow door, framed pictures on the left wall, doors, a notice board and a bench on the right, lines thickening toward the lens. Everything is placed on the corridor's shell by (side, z, v): side -1 / 1 = left / right wall, z = 1 at the far end growing toward the lens, v = 0 floor .. 1 ceiling. Push the camera in by scaling about vp on ones (1 to 1.045 over 2.75 s) and let one small coloured thing fly through on twos (variation/hall-whip-button). */
+  IB.corridor = (ctx, o = {}) => {
+    const { vp: VP = [960, 500] } = o;
     const wall = (side, z, v) => [VP[0] + side * 140 * z, VP[1] + lerp(140, -100, v) * z];
     const quad = (ctx, side, z0, z1, v0, v1, o) => IB.ink(ctx, [wall(side, z0, v0), wall(side, z1, v0), wall(side, z1, v1), wall(side, z0, v1)], { closed: true, smooth: false, ...o });
     ctx.save();

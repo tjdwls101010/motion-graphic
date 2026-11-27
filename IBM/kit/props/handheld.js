@@ -109,7 +109,7 @@
     ctx.restore();
   };
 
-  /* handset(ctx, hand, opts) — a phone handset held in the hand at `hand` (the wrist IB.figure returns), upright beside the head; cradle = [the base's left edge, the desk top's y] draws its cord back to an IB.phoneCradle. Hold it at the ear (0.035 h behind the head centre), not in front of the face (market/trading-desk-row). */
+  /* handset(ctx, hand, opts) — a desk phone's handset (a mobile is IB.mobilePhone) held in the hand at `hand` (the wrist IB.figure returns), upright beside the head; cradle = [the base's left edge, the desk top's y] draws its cord back to an IB.phoneCradle. Hold it at the ear (0.035 h behind the head centre), not in front of the face (market/trading-desk-row). */
   IB.handset = (ctx, [hx, hy], o = {}) => {
     const { cradle = null, seed = 521 } = o;
     ctx.save();
@@ -118,7 +118,7 @@
     ctx.restore();
   };
 
-  /* cup(ctx, hand, opts) — a paper cup 40 px tall held at `hand` (the wrist), or standing on a surface when `hand` is 6 px above it (market/trading-desk-row). */
+  /* cup(ctx, hand, opts) — a paper cup 40 px tall for a figure about 400 px tall, held at `hand` (the wrist), or standing on a surface when `hand` is 6 px above it; for a small walker in a crowd use IB.smallCup, for a takeaway cup with a lid and straw IB.strawCup (market/trading-desk-row). */
   IB.cup = (ctx, [hx, hy], o = {}) => {
     const { seed = 523 } = o;
     ctx.save();
@@ -172,15 +172,15 @@
     IB.box(ctx, hx - 0.09 * h, hy + 16, 0.18 * h, 0.12 * h, { fill, w: lw, seed: seed + 1 });
     ctx.restore();
   };
-  /* smallCup(ctx, hand, opts) — a small paper cup (36 px) carried in front of the body by a walker in a crowd: `hand` is the wrist, d the way they face (1 right, -1 left) (market/street-rush-hour). */
+  /* smallCup(ctx, hand, opts) — a small paper cup (36 px) carried in front of the body by a walker in a crowd (about 250 px tall; IB.cup is the larger one): `hand` is the wrist, d the way they face (1 right, -1 left) (market/street-rush-hour). */
   IB.smallCup = (ctx, [hx, hy], o = {}) => {
     const { d = 1, lw = 2.2, seed = 822 } = o;
     ctx.save();
     IB.ink(ctx, [[hx - 9 + 8 * d, hy - 30], [hx + 9 + 8 * d, hy - 30], [hx + 6 + 8 * d, hy + 6], [hx - 6 + 8 * d, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: lw, seed });
     ctx.restore();
   };
-  /* phone(ctx, at, opts) — a mobile phone 18 x 32: `at` = [its centre x, its top edge]. up: true shows a small blue up arrow on its screen (good news) (market/street-rush-hour). */
-  IB.phone = (ctx, [px, py], o = {}) => {
+  /* mobilePhone(ctx, at, opts) — a mobile phone 18 x 32 (a desk phone is IB.handset on IB.phoneCradle): `at` = [its centre x, its top edge]. up: true shows a small blue up arrow on its screen (good news) (market/street-rush-hour). */
+  IB.mobilePhone = (ctx, [px, py], o = {}) => {
     const { up = false, lw = 2.2, seed = 823 } = o;
     ctx.save();
     IB.box(ctx, px - 9, py, 18, 32, { fill: C.paper, w: lw, seed });

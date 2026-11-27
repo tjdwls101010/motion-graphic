@@ -56,9 +56,9 @@
     ctx.restore();
   };
 
-  /* wispCloud(ctx, at, w, opts) — a small flat cloud w px wide with a level base, for a wide shot with a horizon: `at` is the middle of its base. Let it drift on ones, slowly (spot/tandem-riders-join: 3 px/s). */
-  IB.wispCloud = (ctx, [x, y], w, o = {}) => {
-    const { seed = 60 } = o;
+  /* wispCloud(ctx, at, opts) — a small flat cloud opts.w px wide with a level base, for a wide shot with a horizon: `at` is the middle of its base. Let it drift on ones, slowly (spot/tandem-riders-join: 3 px/s). */
+  IB.wispCloud = (ctx, [x, y], o = {}) => {
+    const { w = 150, seed = 60 } = o;
     ctx.save();
     IB.ink(ctx, [[x - w / 2, y], [x - w * 0.2, y - w * 0.12], [x + w * 0.05, y - w * 0.16], [x + w * 0.3, y - w * 0.08], [x + w / 2, y], [x, y + 3]], { closed: true, w: 2, seed, fill: C.bg });
     ctx.restore();

@@ -2,13 +2,15 @@
 (function (g) {
   const IB = g.IB, C = IB.C;
 
-  /* windowFrame(ctx, x, seed) / sashAndSill(ctx, x, seed) — one sash window 280 px wide whose frame's left edge is at x (its top at y 283): the frame and panes go behind whoever is inside, the lower sash rail and the sill in front of them. */
-  IB.windowFrame = (ctx, x, seed) => {
+  /* windowFrame(ctx, x, opts) / sashAndSill(ctx, x, opts) — one sash window 280 px wide whose frame's left edge is at x (its top at y 283, as in the reference: move the whole wall with apartmentFacade's shift): the frame and panes go behind whoever is inside, the lower sash rail and the sill in front of them. */
+  IB.windowFrame = (ctx, x, o = {}) => {
+    const { seed = 700 } = o;
     IB.box(ctx, x, 283, 280, 507, { fill: C.paper, w: 2.8, seed });
     IB.box(ctx, x + 15, 297, 250, 478, { fill: C.paper, w: 2.5, seed: seed + 1 });
     IB.box(ctx, x + 15, 297, 250, 71, { fill: '#e9e9e9', w: 2.5, seed: seed + 2 });      // the upper pane is a drawn blind: flat grey
   };
-  IB.sashAndSill = (ctx, x, seed) => {
+  IB.sashAndSill = (ctx, x, o = {}) => {
+    const { seed = 700 } = o;
     IB.box(ctx, x + 15, 520, 250, 15, { fill: C.paper, w: 2.5, seed: seed + 3 });        // the lower sash rail passes in front of whoever is inside
     IB.box(ctx, x + 15, 750, 250, 25, { fill: C.paper, w: 2.5, seed: seed + 4 });
     IB.box(ctx, x - 6, 791, 294, 55, { fill: C.paper, w: 2.8, seed: seed + 5 });
@@ -31,11 +33,11 @@
     bricks(1686, 160, 610);
     bricks(1090, 955, 630);
     for (const x of [1068, 1470]) { IB.box(ctx, x - 6, -40, 294, 66, { fill: C.paper, w: 3, seed: 650 + x }); IB.smear(ctx, x + 140, 28, 270, { h: 5, seed: 660 + x }); }
-      IB.windowFrame(ctx, 1068, 700);
+      IB.windowFrame(ctx, 1068, { seed: 700 });
     }
     if (on('middle')) {
-      IB.sashAndSill(ctx, 1068, 700);
-      IB.windowFrame(ctx, 1470, 720);
+      IB.sashAndSill(ctx, 1068, { seed: 700 });
+      IB.windowFrame(ctx, 1470, { seed: 720 });
     // the far corner, a shelf unit on the right wall, a framed picture on the left
     IB.seg(ctx, 1485, 368, 1662, 368, { w: 2.4, seed: 400 });
     IB.seg(ctx, 1662, 368, 1734, 330, { w: 2.4, seed: 401 });
@@ -54,7 +56,7 @@
     IB.seg(ctx, 1508, 424, 1620, 424, { w: 2.2, seed: 423 });
     IB.shade(ctx, 1532, 400, 44, 12, { from: 'top', seed: 424, alpha: 0.16 });
     }
-    if (on('front')) IB.sashAndSill(ctx, 1470, 720);
+    if (on('front')) IB.sashAndSill(ctx, 1470, { seed: 720 });
     ctx.restore();
   };
 })(window);

@@ -24,7 +24,7 @@ function shotA(ctx, t, dx) {
   const z = 1 + 0.045 * clamp(t / 2.75), f = IB.frame(t);
   ctx.save();
   ctx.translate(VP[0] + dx, VP[1]); ctx.scale(z, z); ctx.translate(-VP[0], -VP[1]);
-  IB.corridor(ctx, VP);
+  IB.corridor(ctx, { vp: VP });
   if (f >= 8) { const k = Math.floor((f - 8) / 2), P = FLIGHT[Math.min(k, FLIGHT.length - 1)], drift = Math.max(0, k - FLIGHT.length + 1); IB.paperPlane(ctx, [P[0] + drift, P[1] - drift * 0.4], { s: P[2], rot: P[3], stretch: P[4] }); }
   ctx.restore();
 }

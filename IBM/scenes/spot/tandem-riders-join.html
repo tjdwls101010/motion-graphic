@@ -69,8 +69,8 @@ MG.scene({
     IB.crop(ctx, CROP);
     const f = IB.frame(t), d2 = Math.floor(f / 2), alt2 = IB.alternate(f, 2), flow = IB.loop(f, [0, 1, -0.6]);
     // clouds drift, ground props scroll (ones)
-    IB.wispCloud(ctx, [1372 - t * 3, 185], 150, { seed: 60 });
-    IB.wispCloud(ctx, [866 - t * 3, 306], 62, { seed: 61 });
+    IB.wispCloud(ctx, [1372 - t * 3, 185], { w: 150, seed: 60 });
+    IB.wispCloud(ctx, [866 - t * 3, 306], { w: 62, seed: 61 });
     for (const q of PROPS) {
       const x = q.x + 900 - t * 332;
       if (x < -80 || x > 2000) continue;
@@ -93,15 +93,15 @@ MG.scene({
     const built = RIDERS.map((r, i) => pres[i] >= 0.5);   // a newcomer's seat and crank are not there on the first drawing of a join: at 30% they would sit inside the rear wheel
     const bike = { rx, fx, bbs, built, crank, alt: alt2 };
     IB.tandem(ctx, bike, { axle: AXLE, layer: 'wheels' });
-    IB.wheelDust(ctx, [rx, AXLE], d2);   // a puff of dust off the rear wheel: three drawings drifting back, then three without
+    IB.wheelDust(ctx, [rx, AXLE], { d: d2 });   // a puff of dust off the rear wheel: three drawings drifting back, then three without
     IB.tandem(ctx, bike, { axle: AXLE, layer: 'frame' });
     // riders, rear first so the one in front overlaps
     const capOff = f >= 240;
-    RIDERS.forEach((r, i) => { if (on[i]) IB.rider(ctx, r, bbs[i], poseOf(i, f), { crank, alt: flow, seed: 200 + i * 150, bare: r.who === 'cap' && capOff }); });
+    RIDERS.forEach((r, i) => { if (on[i]) IB.rider(ctx, bbs[i], poseOf(i, f), { look: r, crank, alt: flow, seed: 200 + i * 150, bare: r.who === 'cap' && capOff }); });
     // the cap that blows off: up and back on twos, turning as it goes
     if (capOff) {
       const u = Math.min(1, (d2 * 2 - 240) / 36), x0 = bbs[2][0] - 20, x = lerp(x0, x0 - 330, u), y = AXLE - 262 - 150 * Math.sin(u * 2.2) + 30 * u;
-      IB.flyingCap(ctx, [x, y], -u * 6.5);
+      IB.flyingCap(ctx, [x, y], { rot: -u * 6.5 });
     }
     ctx.restore();
   },

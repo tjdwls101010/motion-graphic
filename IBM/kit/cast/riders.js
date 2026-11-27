@@ -98,9 +98,9 @@
   const po = (o) => ({ ...RIDE, ...o });
 
   /* Joints relative to the bottom bracket bb they pedal: hip 24 px behind and 112 above it (read off the reference), hands on a grip 56 px ahead and 118 above; the riding pose then has the shoulder 181 above and the head centre 218 above. */
-  /* rider(ctx, look, bb, pose, opts) — one rider on the saddle above the bottom bracket bb. look is one of IB.RIDERS; opts.crank is the crank angle (every crank of a tandem turns in phase), opts.alt (-0.6, 0 or 1) which of three drawings whatever streams in the wind is on (IB.loop(f, [0, 1, -0.6])): the only thing redrawn over a held pose; opts.bare draws the cap rider without the cap. */
-  IB.rider = (ctx, r, bb, p, o = {}) => {
-    const { crank = 0, alt = 0, seed = 200, bare = false } = o, CRANK = IB.TANDEM.crank;
+  /* rider(ctx, bb, pose, opts) — one rider on the saddle above the bottom bracket bb. opts.look is one of IB.RIDERS; opts.crank is the crank angle (every crank of a tandem turns in phase), opts.alt (-0.6, 0 or 1) which of three drawings whatever streams in the wind is on (IB.loop(f, [0, 1, -0.6])): the only thing redrawn over a held pose; opts.bare draws the cap rider without the cap. */
+  IB.rider = (ctx, bb, p, o = {}) => {
+    const { look: r = IB.RIDERS.vents, crank = 0, alt = 0, seed = 200, bare = false } = o, CRANK = IB.TANDEM.crank;
     ctx.save();
     const k = p.sc, hip = [bb[0] - 24, bb[1] - 112 - p.rise], lean = p.lean - p.tuck * 4;
     // the spine turns about the hip: 0.37 rad forward when riding, and `lean` px of shoulder travel either way from there, so leaning back also brings the shoulders down
@@ -244,8 +244,9 @@
     },
   };
 
-  /* flyingCap(ctx, at, rot) — the cap that blows off a rider's head, turning as it goes: up and back on twos (spot/tandem-riders-join: 330 px back over 36 frames, 6.5 rad). */
-  IB.flyingCap = (ctx, [x, y], rot = 0) => {
+  /* flyingCap(ctx, at, state) — the cap that blows off a rider's head, turning by state.rot as it goes: up and back on twos (spot/tandem-riders-join: 330 px back over 36 frames, 6.5 rad). */
+  IB.flyingCap = (ctx, [x, y], st = {}) => {
+    const { rot = 0 } = st;
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
     IB.ink(ctx, IB.ellipse(0, 0, 24, 20, 8, PI, PI * 2).concat([[44, 2], [20, 3]]), { closed: true, fill: C.paper, w: LW, seed: 900 });
     ctx.restore();

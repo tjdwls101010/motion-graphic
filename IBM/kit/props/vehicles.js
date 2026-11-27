@@ -123,9 +123,9 @@
     ctx.restore();
   };
 
-  /* rotor(ctx, x, y, span, lw, d) — a helicopter's spinning rotor: a fan of nine thin straight strokes through the mast at (x, y), re-rolled for every drawing d. It stays within a few degrees of level whatever the body is doing. */
-  IB.rotor = (ctx, x, y, span, lw, d) => {
-    const rng = MG.rng;
+  /* rotor(ctx, at, opts) — a helicopter's spinning rotor: a fan of nine thin straight strokes opts.span long through the mast at `at`, re-rolled for every drawing opts.d. It stays within a few degrees of level whatever the body is doing. */
+  IB.rotor = (ctx, [x, y], o = {}) => {
+    const { span = 300, lw = 1.6, d = 0 } = o, rng = MG.rng;
     const r = rng(700 + d);
     for (let i = 0; i < 9; i++) { const l = span * (0.6 + r() * 0.4), k = (r() - 0.5) * 0.16; IB.seg(ctx, x - l, y - l * k + (r() - 0.5) * 14, x + l * (0.5 + r() * 0.5), y + l * k * 0.6 + (r() - 0.5) * 14, { w: lw, wob: 0, seed: 710 + i + d * 9 }); }
   };
@@ -149,7 +149,7 @@
     IB.seg(ctx, 17, -50, 17, -60, { w: lw * 1.4, seed: 610 });
     // the rotor does not tip with the body: most of the body's turn is taken back out about the mast
     ctx.translate(17, -62); ctx.rotate(-rot * 0.85 * Math.sign(facing)); ctx.translate(-17, 62);
-    ctx.scale(1 / s, 1 / s); IB.rotor(ctx, 17 * s, -62 * s, 280 * s, 1.6 * Math.sqrt(s), d); 
+    ctx.scale(1 / s, 1 / s); IB.rotor(ctx, [17 * s, -62 * s], { span: 280 * s, lw: 1.6 * Math.sqrt(s), d }); 
     ctx.restore();
   };
 
@@ -166,7 +166,7 @@
     IB.seg(ctx, 0, -88, 0, -14, { w: 2, seed: 628 });
     IB.seg(ctx, 0, -116, 0, -132, { w: 4, seed: 629 });
     ctx.restore();
-    IB.rotor(ctx, x, y - 132 * sy, 300 * sx, 1.6, d);
+    IB.rotor(ctx, [x, y - 132 * sy], { span: 300 * sx, lw: 1.6, d });
   };
 
   /* heli.MOVE.flyIn — the reference's fly-in, nineteen drawings on twos as [frame, drawing], never hovering; each drawing is [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */

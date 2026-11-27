@@ -12,7 +12,7 @@
 <script src="../../kit/props/metaphor.js"></script>
 <script>
 /* 걸어오던 사람이 끊긴 틈 앞에서 휘청 멈춰 아래를 내려다보는데, 건너편에서 널빤지를 멘 사람이 와서 틈에 걸쳐 놓자 그 위를 건너가 손을 마주치며 "고마워!" 한다. 원본에 없는 창작 장면으로, 멈춘 무대를 가로지르는 원본의 걷기(2프레임에 한 장)와 스미어 한 장짜리 큰 동작을 두 인물에 나눠 썼다. 전달하는 생각: 혼자서는 못 건너는 틈을 다른 쪽에서 온 도움이 잇는다.
-   Motion notes: one locked shot, 9 s, figures 330 px tall (line 3 px). Walking across a still stage: the body moves 23.1 px per drawing (IB.walkLen / 12 = 0.84 h per 12-drawing cycle), so the planted foot stays where it was put. The same rule decides where a walk may stop and start: a walk is ended on a drawing where one foot is planted under the body and the other is in the air (phase 1/3 or 5/6), the foot in the air is put down where it is, and the walk starts again from that same phase, so no planted foot ever jumps. A walks in for 34 drawings and stops at the edge at 2.83 s: two drawings thrown forward on one leg with the arms back (the teeter), then upright, then the head tips down 3.25-4.5 s. B walks in from the right for 28 drawings from 2.17 s carrying the plank on a shoulder, stops at 4.5 s; both hold 0.25 s. The plank goes down in ONE drawing at 4.75 s: B is already in a deep squat with both hands on it, and the plank is drawn halfway through its swing and stretched (a wedge 22 degrees wide instead of an 18 px board) with two speed arcs; on the next drawing it lies across the gap with a burst at its far end for 2 drawings. B stays squatting 0.42 s, hands on the plank's end, then stands. A crosses 5.5-7.5 s (24 drawings): any foot whose shoe reaches over the plank stands the plank's 18 px higher, the hip and the hands rising 9 px per foot less half the dip. The plank rests on the two platform edges and dips in a V under a planted foot over the gap, up to 7 px in mid-span and less within 120 px of an edge; every foot on it rests on the highest point of the plank under its shoe (heel, ankle or toe), so no shoe sinks into the plank. Raised hands meet at 7.58 s (2 drawings up), shake marks for 2 drawings, bubble at 7.83 s, still to the end. Three colours: A's yellow top, B's lavender top, the mustard plank; the platforms are white. */
+   Motion notes: one locked shot, 9 s, figures 330 px tall (line 3 px). Walking across a still stage: the body moves 23.1 px per drawing (IB.walkLen / 12 = 0.84 h per 12-drawing cycle), so the planted foot stays where it was put. The same rule decides where a walk may stop and start: a walk is ended on a drawing where one foot is planted under the body and the other is in the air (phase 1/3 or 5/6), the foot in the air is put down where it is, and the walk starts again from that same phase, so no planted foot ever jumps. A walks in for 34 drawings and stops at the edge at 2.83 s: two drawings thrown forward on one leg (the teeter: arms back, then further forward with the arms windmilling up), one drawing rocked back past upright (lean -0.11), then upright; the head tips down 3.25-4.5 s, going down and coming up through a half-way drawing. Every drawing passes the one before as pose.prev. B walks in from the right for 28 drawings from 2.17 s carrying the plank on a shoulder, stops at 4.5 s; both hold 0.25 s. The plank goes down in ONE drawing at 4.75 s: B is already in a deep squat with both hands on it, and the plank is drawn halfway through its swing and stretched (a wedge 22 degrees wide instead of an 18 px board) with two speed arcs; on the next drawing it lies across the gap with a burst at its far end for 2 drawings. B stays squatting 0.42 s, hands on the plank's end, then stands in two in-betweens (0.4, 0.85). A crosses 5.5-7.5 s (24 drawings): any foot whose shoe reaches over the plank stands the plank's 18 px higher, the hip and the hands rising 9 px per foot less half the dip. The plank rests on the two platform edges and dips in a V under a planted foot over the gap, up to 7 px in mid-span and less within 120 px of an edge; every foot on it rests on the highest point of the plank under its shoe (heel, ankle or toe), so no shoe sinks into the plank. Raised hands meet at 7.58 s (2 drawings up, the second past the meeting point, back on the third), shake marks for 2 drawings, bubble at 7.83 s, still to the end. Three colours: A's yellow top, B's lavender top, the mustard plank; the platforms are white. */
 const { lerp } = MG;
 const F = IB.FIG, TOP = 700, LEFT = 700, RIGHT = 1220;
 const A = { ...IB.PEOPLE.climber, h: 330, dir: 1, seed: 20 };
@@ -45,10 +45,13 @@ function poseA(tt) {
   const n = (t0) => IB.drawn(tt, t0);
   if (n(IB.T(A_IN)) < 0) { const k = n(0); return { ...IB.walk(AX - (A_IN - k) * PACE, TOP, A, (k / 12) % 1), face: { mouth: 'smile' } }; }
   const stand = stopped(AX, A, PH_A);
-  if (n(IB.T(A_IN)) < 2) { const w = IB.walk(AX, TOP, A, PH_A); return { ...w, hip: [AX + 14, w.hip[1] + 6], lean: 0.34, hands: [[AX - 46, w.hip[1] - 86], [AX - 52, w.hip[1] - 60]], face: { eye: 'wide', mouth: 'open' } }; }
-  if (n(IB.T(66)) < 0) return { ...stand, lean: -0.03, nod: tt >= IB.T(39) - 1e-6 && tt < IB.T(54) - 1e-6 ? 0.45 : 0, face: { eye: tt < IB.T(54) - 1e-6 ? 'wide' : 'dot', mouth: tt < IB.T(58) - 1e-6 ? 'flat' : 'smile' } };
+  // the teeter, two drawings: thrown forward with the arms back, then further forward with the arms windmilling up
+  if (n(IB.T(A_IN)) < 2) { const w = IB.walk(AX, TOP, A, PH_A), k = n(IB.T(A_IN)); return { ...w, hip: [AX + 14 + 4 * k, w.hip[1] + 6], lean: 0.34 + 0.06 * k, hands: k ? [[AX - 20, w.hip[1] - 150], [AX - 64, w.hip[1] - 96]] : [[AX - 46, w.hip[1] - 86], [AX - 52, w.hip[1] - 60]], face: { eye: 'wide', mouth: 'open' } }; }
+  // out of the teeter she rocks back one drawing past upright before she stands; the head goes down and comes up through a half-way drawing
+  const nod = n(IB.T(39)) < 0 ? 0 : n(IB.T(39)) === 0 ? 0.25 : n(IB.T(54)) < 0 ? 0.45 : n(IB.T(54)) === 0 ? 0.2 : 0;
+  if (n(IB.T(66)) < 0) return { ...stand, lean: n(IB.T(A_IN)) === 2 ? -0.11 : -0.03, nod, face: { eye: tt < IB.T(54) - 1e-6 ? 'wide' : 'dot', mouth: tt < IB.T(58) - 1e-6 ? 'flat' : 'smile' } };
   if (n(IB.T(66 + CROSS)) < 0) { const k = n(IB.T(66)); return { ...onPlank(IB.walk(AX + k * PACE, TOP, A, ((A_IN + k) / 12) % 1)), face: { mouth: 'smile' } }; }
-  const done = onPlank(stopped(A_END, A, ((A_IN + CROSS) / 12) % 1)), up = n(IB.T(91)) < 0 ? 0 : IB.inbetween([0.5, 1], n(IB.T(91)));
+  const done = onPlank(stopped(A_END, A, ((A_IN + CROSS) / 12) % 1)), up = n(IB.T(91)) < 0 ? 0 : IB.inbetween([0.45, 1.1, 1], n(IB.T(91)));   // the raised hand goes past the meeting point and comes back to it
   done.hands = [done.hands[0], [lerp(done.hands[1][0], MEET - 4, up), lerp(done.hands[1][1], HIGH, up)]];
   return { ...done, face: { mouth: up ? 'open' : 'smile' } };
 }
@@ -63,11 +66,18 @@ function poseB(tt) {
   // a deep squat that brings the shoulders within an arm's length of the plank's near end
   const squat = { ...stand, hip: [BX + 10, stand.hip[1] + 133], lean: 0.7, grip: [true, true] };
   if (n(IB.T(57)) === 0) return { ...squat, hands: [[PLANK[1] - 34, TOP - 52], [PLANK[1] - 19, TOP - 33]], plank: 'swing', face: { mouth: 'open' } };
-  if (n(IB.T(63)) < 0) return { ...squat, hands: [[PLANK[1] - 8, TOP - THICK - 8], [PLANK[1] + 6, TOP - THICK - 4]], plank: 'down', face: { eye: 'closed', mouth: 'flat' } };
-  const up = n(IB.T(91)) < 0 ? 0 : IB.inbetween([0.5, 1], n(IB.T(91)));
+  const laid = { ...squat, hands: [[PLANK[1] - 8, TOP - THICK - 8], [PLANK[1] + 6, TOP - THICK - 4]] };   // squatting with both hands on the plank's end
+  if (n(IB.T(63)) < 0) return { ...laid, plank: 'down', face: { eye: 'closed', mouth: 'flat' } };
+  // standing up from the squat in two in-betweens
+  if (n(IB.T(63)) < 2) return { ...IB.poseMix(laid, stand, [0.4, 0.85][n(IB.T(63))]), plank: 'down', face: { mouth: 'flat' } };
+  const up = n(IB.T(91)) < 0 ? 0 : IB.inbetween([0.45, 1.1, 1], n(IB.T(91)));
   stand.hands = [stand.hands[0], [lerp(stand.hands[1][0], MEET + 4, up), lerp(stand.hands[1][1], HIGH, up)]];
   return { ...stand, plank: 'down', face: { mouth: up ? 'open' : 'smile' } };
 }
+
+// each figure's drawing with the one before it as prev: heads and A's bun trail the teeter, the squat and the stand-up by one drawing
+const withPrev = (pose, tt, at) => (pose && tt > 0 ? { ...pose, prev: at(IB.twos(tt - 1e-4)) || undefined } : pose);
+IB.actors = (t) => { const tt = IB.twos(t), b = poseB(tt); return { a: poseA(tt), b: b ? { ...b, plank: undefined } : null }; };
 
 MG.scene({
   title: 'metaphor / bridge-plank-cross',
@@ -75,7 +85,7 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), a = poseA(tt), b = poseB(tt);
+    const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), a = withPrev(poseA(tt), tt, poseA), b = withPrev(poseB(tt), tt, poseB);
     IB.ledge(ctx, [LEFT, TOP], { side: 'left' }); IB.ledge(ctx, [RIGHT, TOP], { side: 'right' });
     if (b && b.plank === 'down') IB.plank(ctx, { lie: true, sag: a.sag || null }, { ends: PLANK, edges: [LEFT, RIGHT], top: TOP, thick: THICK });
     IB.smear(ctx, (a.feet[0][0] + a.feet[1][0]) / 2, TOP - 7, 190, { h: 10, seed: 9, alpha: a.hip[0] > PLANK[0] ? 0 : 1 });

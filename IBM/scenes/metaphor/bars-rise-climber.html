@@ -11,7 +11,7 @@
 <script src="../../kit/props/metaphor.js"></script>
 <script>
 /* 바닥에서 막대가 하나씩 솟을 때마다 작은 사람이 그 위로 뛰어올라 계단처럼 다섯 칸을 오르고, 가장 높은 파란 막대 꼭대기에 깃발을 꽂고 "다 왔다!" 한다. 원본에 없는 창작 장면으로, 막대그래프를 무대 소품으로 삼아 원본의 "사건마다 한 박자, 사이는 정지"를 옮겼다. 전달하는 생각: 성장은 한 칸씩 딛고 올라간 결과다.
-   Motion notes: one locked shot, 7 s, figure 210 px tall (wide-shot size, line 2.55 px). A beat every 1.0 s, every time on the 12 fps grid: a bar rises (0.42 s on twos, IB.settle tau 0.1: 57% of its height on its first drawing, 82% on its second, done on the fifth), 0.08 s of nothing, then the hop. Hop = 4 drawings over 0.33 s: crouch (hip down 0.11 h, spine 0.35 rad), two airborne drawings at 33% and 72% of the way on an arc 90 px above the straight line with the legs tucked, a landing crouch, then the standing pose held dead still for 0.67 s while the next bar rises. The bars never move again once up. Colour: bars are white with graphite at the foot, only the last and tallest is blue; with the climber's yellow top and the green flag that makes the shot's three colours. Ending: pole drawn on in 2 drawings at 5.5 s, bubble at 6.0 s, and in the last second the only thing that moves is the flag, two drawings alternating on threes (8 fps). */
+   Motion notes: one locked shot, 7 s, figure 210 px tall (wide-shot size, line 2.55 px). A beat every 1.0 s, every time on the 12 fps grid: a bar rises (0.42 s on twos, IB.settle tau 0.1: 57% of its height on its first drawing, 82% on its second, done on the fifth), 0.08 s of nothing, then the hop. Hop = one anticipation drawing (a small dip with the arms swung back, 0.08 s before the hop) then 5 drawings over 0.42 s: crouch (hip down 0.11 h, spine 0.35 rad), two airborne drawings at 33% and 72% of the way on an arc 90 px above the straight line with the legs tucked, a landing crouch, one drawing up past standing (hip 0.015 h high, arms still swinging forward), then the standing pose held dead still for 0.5 s while the next bar rises. Each drawing passes the one before as pose.prev, so her bun and head trail the hop by one drawing. The bars never move again once up. Colour: bars are white with graphite at the foot, only the last and tallest is blue; with the climber's yellow top and the green flag that makes the shot's three colours. Ending: pole drawn on in 2 drawings at 5.5 s, bubble at 6.0 s, and in the last second the only thing that moves is the flag, two drawings alternating on threes (8 fps). */
 const { lerp } = MG;
 const C = IB.C, FLOOR = 910;
 const WHO = { ...IB.PEOPLE.climber, h: 210, dir: 1, seed: 90 };
@@ -26,19 +26,28 @@ function pose(kind, x, y) {
   if (kind === 'crouch') { p.hip = [x - 0.02 * H, hy + 0.11 * H]; p.lean = 0.35; p.hands = [[x - 0.13 * H, hy + 0.06 * H], [x - 0.16 * H, hy + 0.04 * H]]; }
   if (kind === 'air') { p.lean = 0.18; p.feet = [[x + 0.13 * H, hy + 0.33 * H, 0.3], [x - 0.02 * H, hy + 0.38 * H, 0.5]]; p.hands = [[x + 0.17 * H, hy - 0.37 * H], [x + 0.1 * H, hy - 0.41 * H]]; }
   if (kind === 'land') { p.hip = [x + 0.01 * H, hy + 0.09 * H]; p.lean = 0.25; p.hands = [[x + 0.16 * H, hy - 0.02 * H], [x + 0.12 * H, hy]]; }
+  if (kind === 'wind') { p.hip = [x - 0.01 * H, hy + 0.04 * H]; p.lean = 0.12; p.hands = [[x - 0.17 * H, hy - 0.02 * H], [x - 0.2 * H, hy - 0.04 * H]]; }   // the anticipation: a small dip with the arms swung back
+  if (kind === 'rise') { p.hip = [x + 0.005 * H, hy - 0.015 * H]; p.lean = -0.04; p.hands = [[x + 0.06 * H, hy + 0.02 * H], [x + 0.03 * H, hy + 0.03 * H]]; }   // the overshoot out of the landing: up past standing, arms still swinging forward
   if (kind === 'flag') { p.hands = [[x + 0.26 * H, hy - 0.2 * H], p.hands[1]]; p.grip = [true, false]; }
   return p;
 }
 function poseAt(t) {
   const tt = IB.twos(t);
   let k = -1; while (k + 1 < BARS.length && tt >= BARS[k + 1].hop) k++;
+  const next = BARS[k + 1];
+  if (next && IB.drawn(tt, next.hop) === -1) return pose('wind', ...spot(k));   // one drawing before each hop
   if (k < 0) return pose('stand', ...START);
   const step = IB.drawn(tt, BARS[k].hop), A = spot(k - 1), B = spot(k);
   if (step === 0) return pose('crouch', ...A);
   if (step < 3) { const u = [0.33, 0.72][step - 1]; return pose('air', lerp(A[0], B[0], u), lerp(A[1], B[1], u) - 90 * Math.sin(u * Math.PI)); }
   if (step === 3) return pose('land', ...B);
+  if (step === 4) return pose('rise', ...B);
   return pose(k === BARS.length - 1 && tt >= 5.5 ? 'flag' : 'stand', ...B);
 }
+
+// the drawing on screen at t with the one before it as prev (her bun and head trail each hop by one drawing)
+const drawn = (t) => { const tt = IB.twos(t); return { ...poseAt(t), prev: tt > 0 ? poseAt(tt - 1e-4) : undefined }; };
+IB.actors = (t) => ({ climber: drawn(t) });
 
 MG.scene({
   title: 'metaphor / bars-rise-climber',
@@ -54,7 +63,7 @@ MG.scene({
     if (tt >= 5.5) {
       IB.flag(ctx, [px, top[1]], { grown: IB.inbetween([0.5, 1], IB.drawn(tt, 5.5)), flap: tt >= 68 / 12 - 1e-6 ? IB.alternate(IB.frame(t), 3) : null });
     }
-    IB.figure(ctx, poseAt(t), { ...WHO, face: { mouth: tt >= 5.5 ? 'open' : 'smile' } });
+    IB.figure(ctx, drawn(t), { ...WHO, face: { mouth: tt >= 5.5 ? 'open' : 'smile' } });
     IB.bubble(ctx, ['다 왔다!'], t, 6.0, { tip: [top[0] - 36, top[1] - 0.93 * H], x: top[0] - 210, y: top[1] - 1.2 * H, seed: 500 });
   },
 });

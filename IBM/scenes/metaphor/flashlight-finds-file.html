@@ -16,31 +16,38 @@
 <script src="../../kit/props/handheld.js"></script>
 <script>
 /* 캄캄한 화면에 눈 한 쌍만 깜빡이고, 손전등 빛의 원뿔이 위아래로 훑다가 상자 뒤에 숨은 서류에 멈추면 화면이 한 번에 밝아지며 "찾았다!", 서류가 다리로 걸어 나와 손을 흔든다. 원본에 없는 창작 장면으로, 원본 6편의 검은 화면과 하드 컷, 카피 카드의 손전등 원뿔을 찾기 은유로 옮겼다. 전달하는 생각: 어디 있는지 모르던 것을 빛을 비춰 찾아낸다.
-   Motion notes: 7.5 s, one cut. Dark half (0-4.0 s): the stage is drawn fully lit and then covered with black (#000000) everywhere except the beam, a hard-edged triangle 26 degrees wide: no glow, no gradient, no fade, the beam is a flat shape like everything else. The beam is on twos because a hand holds it: off until 0.5 s, then 22 to -24 degrees in 1 s (inOutQuad), hold 0.25 s, down to 30 degrees in 1 s, hold 0.5 s, then it snaps to the target in a single drawing at 3.25 s and stays on it 0.75 s. The only other thing visible in the dark is a pair of eyes (the reference's dark spot): pupils step toward the beam on twos, one blink of 2 frames at 1.75 s. The hider ducks 120 px behind the crate whenever the sweeping beam comes within 15 degrees of it, so each slow pass finds nothing; the snap is too fast to duck and catches the eyes wide. Cut to light at 4.0 s is a hard cut on a held pose: nothing else changes on that frame. After the cut the beam stays for 1 s as a translucent white triangle (paper at 55%), the way the reference draws light on a pale stage, and nothing moves under the bubble, which shows 4.17-5.0 s and leaves on a hard cut. Only then does the arm drop (2 drawings from 5.0 s) and the document walk out: 210 px in 12 drawings (17.5 px each, tilt +-0.04 rad every 3 drawings), an arm drawn on in 2 drawings at 6.17 s, and from 6.33 s to the end only its hand moves, two drawings alternating on threes. Three colours: yellow lamp, lavender on the document, the figure's navy top. */
+   Motion notes: 7.5 s, one cut. Dark half (0-4.0 s): the stage is drawn fully lit and then covered with black (#000000) everywhere except the beam, a hard-edged triangle 26 degrees wide: no glow, no gradient, no fade, the beam is a flat shape like everything else. The beam is on twos because a hand holds it: off until 0.5 s, then 22 to -24 degrees in 1 s (inOutQuad), hold 0.25 s, down to 30 degrees in 1 s, hold 0.5 s, then it snaps to the target in a single drawing at 3.25 s, 3 degrees past it, comes back onto it on the next drawing and stays 0.67 s. The only other thing visible in the dark is a pair of eyes (the reference's dark spot): pupils step toward the beam on twos, one blink of 2 frames at 1.75 s. The hider ducks 120 px behind the crate whenever the sweeping beam comes within 15 degrees of it (down in two drawings, 80 then 120 px; back up through 50 px and one drawing popped 8 px above standing), so each slow pass finds nothing; the snap is too fast to duck and catches the eyes wide. Cut to light at 4.0 s is a hard cut on a held pose: nothing else changes on that frame. After the cut the beam stays for 1 s as a translucent white triangle (paper at 55%), the way the reference draws light on a pale stage, and nothing moves under the bubble, which shows 4.17-5.0 s and leaves on a hard cut. Only then does the arm drop (2 drawings from 5.0 s) and the document walk out: 210 px in 12 drawings (17.5 px each, tilt +-0.04 rad every 3 drawings), an arm drawn on in 2 drawings at 6.17 s, and from 6.33 s to the end only its hand moves, two drawings alternating on threes. Three colours: yellow lamp, lavender on the document, the figure's navy top. */
 const { lerp, kf, clamp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 500, CUT = 4;
 const WHO = { ...IB.PEOPLE.searcher, h: 500, dir: 1, seed: 30 };
 const H = WHO.h, DEG = Math.PI / 180, DOC0 = 1392, DOC1 = 1182, LEG = 74;
 const TARGET = 8.5;   // degrees: where the beam finds the eyes
 
-const beamAt = (tt) => (tt >= 3.25 ? TARGET : kf(tt, [[0.5, 22], [1.5, -24, 'inOutQuad'], [1.75, -24], [2.75, 30, 'inOutQuad']]));
+// the snap onto the eyes goes 3 degrees past them for one drawing and comes back
+const beamAt = (tt) => (tt >= 3.25 + 1 / 12 - 1e-6 ? TARGET : tt >= 3.25 - 1e-6 ? TARGET + 3 : kf(tt, [[0.5, 22], [1.5, -24, 'inOutQuad'], [1.75, -24], [2.75, 30, 'inOutQuad']]));
 // the hider drops behind the crate while the beam sweeps near it; the final snap catches it
 const ducked = (tt) => tt < 3.25 && tt >= 0.5 && Math.abs(beamAt(tt) - TARGET) < 15;
+// how far down it is on the drawing at tt: down in two drawings (fast, it is scared), up through one drawing that pops 8 px past standing
+const downAt = (tt) => { const was = (k) => ducked(tt - k / 12); return was(0) ? (was(1) ? 120 : 80) : was(1) ? 50 : was(2) ? -8 : 0; };
 function who(t) {
   const tt = IB.twos(t), p = IB.stand(X0, FLOOR, WHO), sh = [X0 + 2, p.hip[1] - (F.torso - 0.012) * H];
-  const down = tt < 5 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 5));   // the arm drops after the find
+  const down = tt < 5 - 1e-6 ? 0 : IB.inbetween([0.4, 1.08, 1], IB.drawn(tt, 5));   // the arm drops after the find, a little past its rest and back
   const a = lerp(beamAt(tt), 62, down) * DEG, u = [Math.cos(a), Math.sin(a)];
   p.hands = [[X0 + 40, p.hip[1] - 6], [sh[0] + u[0] * 150, sh[1] + u[1] * 150]];
   p.grip = [false, true];
   p.lean = 0.05;
-  return { pose: p, a, lens: [sh[0] + u[0] * 246, sh[1] + u[1] * 246], wrist: p.hands[1], on: tt >= 0.5 && down === 0, face: { mouth: tt >= CUT ? 'smile' : 'flat', eye: tt >= CUT ? 'dot' : 'wide' } };
+  return { pose: p, a, lens: [sh[0] + u[0] * 246, sh[1] + u[1] * 246], wrist: p.hands[1], on: tt >= 0.5 && tt < 5 - 1e-6, face: { mouth: tt >= CUT ? 'smile' : 'flat', eye: tt >= CUT ? 'dot' : 'wide' } };
 }
 /* The hiding document: a rigid sheet on two thin legs, with eyes because it has to be seen in the dark. */
 function docState(t) {
   const tt = IB.twos(t), k = clamp(IB.drawn(tt, 5), 0, 12), walking = k > 0 && k < 12, step = IB.alternate(k, 3);
-  return { down: ducked(tt) ? 120 : 0, x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 74 / 12)), wave: IB.alternate(IB.frame(t), 3, 152) };   // 152 = frame of 76/12 s; the hand changes on that very frame
+  return { down: downAt(tt), x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 74 / 12)), wave: IB.alternate(IB.frame(t), 3, 152) };   // 152 = frame of 76/12 s; the hand changes on that very frame
 }
 const eyesAt = (d) => [d.x - 26, FLOOR - 12 - LEG - 150 + d.down];
+// the searcher's drawing with the one before as prev (the head trails the find and the arm's drop)
+const searcher = (t) => { const tt = IB.twos(t); return { ...who(t).pose, prev: tt > 0 ? who(tt - 1e-4).pose : undefined }; };
+IB.actors = (t) => ({ searcher: who(t).pose, hider: docState(t) });
+
 MG.scene({
   title: 'metaphor / flashlight-finds-file',
   duration: 7.5, ref: null, fps: 24,
@@ -61,9 +68,10 @@ MG.scene({
     const blink = IB.frame(t) >= 42 && IB.frame(t) < 44;
     if (!d.down) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink && dark });
     IB.smear(ctx, X0, FLOOR - 9, 300, { h: 14, seed: 9 });
-    IB.figure(ctx, W.pose, look, 'far');
+    const P = searcher(t);
+    IB.figure(ctx, P, look, 'far');
     IB.torch(ctx, W.wrist, W.a);
-    IB.figure(ctx, W.pose, look, 'near');
+    IB.figure(ctx, P, look, 'near');
 
     if (dark) {
       // black over everything but the beam; then the eyes again, which show in the dark

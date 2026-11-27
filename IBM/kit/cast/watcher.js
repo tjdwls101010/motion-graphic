@@ -58,11 +58,12 @@
 
   /* watcher(ctx, pose) — her at the window, from the waist up, behind its glass (she is clipped to the window's opening: sleeves that reach its edges end there).
    pose: arms 'up': hx, hy shift hands and binoculars and carry the head with them at 0.55 of that; a large negative hx also turns the binoculars, so the right barrel shows its side; big enlarges the lenses; eye is where her eye sits inside each lens (px off its centre); lens is what shows in the glass: 'eye' (white almond, green iris), 'dark' (a blink), 'squint' (an arc), 'wide' (round, the green ring of the opening). arms 'down': drop lowers hands and binoculars (px), fore 0..1 foreshortens the barrels (1 = full length), face is 'wide' | 'half' | 'closed'.
-     POSE: up (binoculars at her eyes, looking straight out). MOVE, in frames from each one's first drawing: scanRight, swingLeft, find, lower. IB.watcher.FOCUS is the point between her lenses, for a camera that pulls back from them. */
-  IB.watcher = (ctx, p) => {
+     POSE: up (binoculars at her eyes, looking straight out). MOVE, in frames from each one's first drawing: scanRight, swingLeft, find, lower. IB.watcher.FOCUS is the point between her lenses, for a camera that pulls back from them; opts.at puts it elsewhere, with opts.s and opts.flip (IB.place). */
+  IB.watcher = (ctx, p, o = {}) => {
     const isUp = p.arms === 'up', hx = isUp ? p.hx : 0, hy = isUp ? p.hy : 0;
     const mir = (pts) => pts.map(([x, y]) => [2 * HX - x, y]), H = (pts, k = 0.55) => pts.map(([x, y]) => [x + hx * k, y + hy * k]);
     ctx.save();
+    IB.place(ctx, IB.watcher.FOCUS, o);
     ctx.beginPath(); ctx.rect(1083, 368, 250, 407); ctx.clip();   // she is inside the window: sleeves that reach its edges end there
 
     // ---- below the rail: skirt, sweater, and when the arms are down the arms, hands and binoculars

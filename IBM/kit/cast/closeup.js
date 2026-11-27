@@ -5,7 +5,15 @@
   /* The colours of these inserts: skin under the mask, the shadow above the eye line, the mesh, the paler face's brow. A scene tints its whip with skin and shade. */
   IB.MASK = { skin: SKIN, shade: SHADE, mesh: MESH, brow: BROW_B };
 
-  /* closeup(ctx, pose, draw, dx) — frame an insert: the whole drawing (face and mesh together) scaled by pose.zoom about the frame's centre, tilted pose.rot, shifted pose.dx / pose.dy, plus dx for the sideways shove of a whip. draw() paints the 1920x1080 frame inside. */
+  /* A face and its mesh fill a 1920 x 1080 frame (the face paints the shadow colour far beyond its skin), so when one is moved (opts.at, opts.s, opts.flip) the frame goes with it and nothing is drawn outside it: a smaller insert. */
+  const frame = (ctx, o) => {
+    if (o.at == null && (o.s == null || o.s === 1) && !o.flip) return;
+    IB.place(ctx, [960, 540], o);
+    IB.clipRect(ctx, [0, 0, 1920, 1080]);
+  };
+
+  /* Both faces and the mesh fill a 1920 x 1080 frame about its centre [960, 540]; opts.at, opts.s and opts.flip move that centre and clip to the moved frame, for a face in a window or a smaller insert. Give the face and the mesh the same opts.
+     closeup(ctx, pose, draw, dx) — frame an insert: the whole drawing (face and mesh together) scaled by pose.zoom about the frame's centre, tilted pose.rot, shifted pose.dx / pose.dy, plus dx for the sideways shove of a whip. draw() paints the 1920x1080 frame inside. */
   IB.closeup = (ctx, p, draw, dx = 0) => {
     ctx.save();
     ctx.translate(960 + p.dx + dx, 540 + p.dy); ctx.rotate(p.rot); ctx.scale(p.zoom, p.zoom); ctx.translate(-960, -540);
@@ -14,8 +22,9 @@
   };
 
   /* maskMesh(ctx) — the fencing mask's wire mesh over a full-frame face: lines 11 px wide about 125 px apart, bowed outward like a lens. It is fixed to the mask, so draw it inside the same IB.closeup as the face. */
-  IB.maskMesh = (ctx) => {
+  IB.maskMesh = (ctx, o = {}) => {
     ctx.save();
+    frame(ctx, o);
     const bow = (v, o) => 1 + 0.07 * (1 - Math.pow(o / 760, 2)) * (Math.abs(v) / 960);
     for (let i = -9; i <= 9; i++) {
       const x0 = i * 125 + 40, pts = [];
@@ -45,8 +54,9 @@
 
   /* boldFace(ctx, pose) — the confident fencer: dark heavy brows, grey whites in the mask's shadow. pose.scowl 0..1 lowers the brows (inner ends 24 px) and the upper lids until they cut across the iris.
      POSE: rest, and the three drawings of the scowl going in. MOVE.scowl (frames from its first drawing): three drawings in, the head tilting 0.018 rad and sinking 14 then 10 px more, a hold of 4 frames, and back out through the same drawings. */
-  IB.boldFace = (ctx, p) => {
+  IB.boldFace = (ctx, p, o = {}) => {
     ctx.save();
+    frame(ctx, o);
     const CX = 934, M = IB.mirror(CX), k = p.scowl, VISOR = 445;
     skin(ctx, [[130, VISOR], [1845, VISOR], [1880, 560], [1902, 700], [1910, 1200], [14, 1200], [20, 930], [70, 680]]);
     for (const side of [0, 1]) {
@@ -77,8 +87,9 @@
 
   /* worriedFace(ctx, pose) — the anxious fencer: a little smaller and lower in frame, pale outlined brows, freckles, white eyes. pose.lids 0..1 opens the eyes from slits; pose.worry 0..1 raises the brows into an arch (inner ends 110 px); pose.drop is the length of the sweat drop hanging from a fixed point on the temple (0 for none).
      POSE: squint (how it enters) and alarmed. MOVE.alarm (frames from its first drawing): the eyes widen and the brows rise over three drawings, then the face is dead still while only the drop grows on twos, 74 to 160 px. */
-  IB.worriedFace = (ctx, p) => {
+  IB.worriedFace = (ctx, p, o = {}) => {
     ctx.save();
+    frame(ctx, o);
     const CX = 960, M = IB.mirror(CX), VISOR = 470;
     skin(ctx, [[130, VISOR], [1760, VISOR], [1850, 600], [1918, 740], [1904, 1200], [40, 1200], [10, 650], [60, 540]]);
     for (const side of [0, 1]) {

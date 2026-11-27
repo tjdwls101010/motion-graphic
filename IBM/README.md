@@ -23,7 +23,7 @@ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i 
 
 ```
 ink.js     붓펜 선과 질감: 팔레트(IB.C), 무대(IB.bg), 선과 채움(IB.ink, IB.box, IB.oval, IB.seg, IB.line, IB.tube, IB.pipe), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
-           화면 자르기(IB.crop, IB.clipRect), 점 목록 도구(IB.ellipse, IB.rect, IB.along, IB.mirror), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
+           화면 자르기(IB.crop, IB.clipRect), 원래 무대 좌표의 캐릭터 옮기기(IB.place), 점 목록 도구(IB.ellipse, IB.rect, IB.along, IB.mirror), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
            밀려 들어와 멈추는 카피(IB.copy, IB.TYPE, 글꼴 IB.FONT)
 time.js    시계와 그림 목록: 24fps(IB.FPS), 12fps·8fps 양자화(IB.twos, IB.threes), 프레임 번호(IB.frame), 정착 곡선(IB.settle), 12fps 격자(IB.T, IB.drawn),
            그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop)
@@ -69,7 +69,7 @@ sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이�
   - `ink.js`·`figure.js`·`solid.js`와 옛 `desk.js`에서 온 함수(`IB.smear`, `IB.shade`, `IB.shake`, `IB.chair`, `IB.desk`, `IB.monitor`, `IB.candles` 등)는 원래의 위치 인자를 그대로 둔다.
   - 기준점 하나로 놓이지 않는 부품은 기준점 다음에 그 값을 받는다. 방향(각도)은 `IB.torch`, `IB.nozzle`, `IB.waterJet`, `IB.axe`, `IB.woodChip`, `IB.lightBeam`, `IB.crankset`, 두 점은 `IB.flyingSheet(ctx, from, to, k)`, 경로나 레일은 `IB.gardenHose`, `IB.coasterTrack`, `IB.coasterCart`, `IB.coasterSpeedLines`, 붙는 대상은 `IB.coasterClack(ctx, cart, k)`, 범위는 `IB.clump(ctx, at, [rx, ry])`, `IB.dashLine(ctx, at, len)`가 그렇다. 그림 한 장을 통째로 받는 `IB.heliDrawing(ctx, row, d)`와 두 배우의 팔을 함께 그리는 `IB.paperReach(ctx, folderPose, docPose, folderArm, docArm, meet)`도 같다. 정확한 인자는 각 부품 머리 주석의 첫머리에 있다.
 - **원본에서 좌표째 옮긴 그림은 원본의 무대 좌표로 그린다.** 옮기는 방법은 종류마다 다르다.
-  - 캐릭터는 컨텍스트를 옮긴다(`ctx.translate`): 폴더와 서류(`IB.folder`, `IB.doc`), 관찰자(`IB.watcher`), 창가 고양이(`IB.windowCat`), 철망 얼굴(`IB.boldFace`, `IB.worriedFace`). 포즈의 발 좌표가 무대 기준이어야 디딘 발이 미끄러지지 않기 때문에 `at`을 받지 않는다.
+  - 캐릭터는 `at`, `s`, `flip` 옵션을 받는다(`IB.place`): 폴더와 서류(`IB.folder`, `IB.doc`), 관찰자(`IB.watcher`), 창가 고양이(`IB.windowCat`), 철망 얼굴(`IB.boldFace`, `IB.worriedFace`). `at`은 캐릭터의 기준점(`ORIGIN`, 예: `IB.folder.ORIGIN`)이 놓일 자리이고, 기본값이면 원래 자리 그대로다. 포즈 안의 좌표(발, 몸의 x)는 원래 무대 좌표 그대로 적는다: 발 좌표가 무대 기준이어야 디딘 발이 미끄러지지 않는다. 폴더와 서류를 팔까지 함께 옮길 때는 컨텍스트를 옮긴다(`IB.paperReach`, `IB.paperClasp`는 무대 좌표로 그린다).
   - 세트와 큰 소품은 `shift` 옵션을 받는다: `IB.stadiumCity`, `IB.stadium`, `IB.financeStreet`, `IB.apartmentFacade`, `IB.partyCorner`, `IB.sillPlant`.
 - **연기는 `[프레임, 상태]` 표로 적고 `IB.held`로 읽는다.** 캐릭터의 `MOVE`는 모두 그 동작의 첫 그림을 0으로 센 `[프레임, 상태]` 목록이다(`node tools/test_kit.js`가 확인한다). `[[0, IB.folder.POSE.front], ...IB.play(IB.folder.MOVE.kick, 18)]`처럼 시작 프레임에 끼워 넣는다. 다음 키까지가 그대로 정지 구간이다. 첫 키 전에도 첫 그림이 보이므로, 그 전에 다른 값이 필요하면 장면이 가드한다(`spot/dark-eyes-reveal`의 `shrink`).
 - **장면에 남는 것은 표와 조립뿐이다.** 아래 명령의 출력이 0줄이어야 한다. `IB.smear`, `IB.shade`, `IB.shake`, `IB.flyer`, `IB.figure`, `IB.bubble`처럼 이름 붙은 부품을 장면이 놓는 것은 조립이다.

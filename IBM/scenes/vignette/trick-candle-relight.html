@@ -16,7 +16,13 @@
 const F = IB.FIG, FLOOR = 930, TABLE = 690, X0 = 720;
 const WHO = { ...IB.PEOPLE.kid, h: 440, dir: 1, seed: 60 };
 const H = WHO.h, CANDLES = [1010, 1062, 1114], WICK = TABLE - 8 - 112 - 72;
-const kid = (lean, face) => { const p = IB.stand(X0, FLOOR, WHO); p.lean = lean; p.hip[0] += -Math.sin(lean) * F.torso * H * 0.6; p.hands = [[X0 + 70, TABLE - 8], [X0 + 54, TABLE - 6]]; p.face = face; return p; };
+const kid = (lean, face) => {
+  const p = IB.stand(X0, FLOOR, WHO); p.lean = lean; p.hip[0] += -Math.sin(lean) * F.torso * H * 0.6; p.hands = [[X0 + 70, TABLE - 8], [X0 + 54, TABLE - 6]]; p.face = face;
+  // shifting the hip over can take it further from a foot than the leg reaches, and the rig would then lift that foot off the floor: sink the hip until both feet are in reach
+  const reach = (F.thigh + F.shin) * H - 1, far = Math.max(...p.feet.map(([fx, fy]) => Math.hypot(fx - p.hip[0], fy - p.hip[1])));
+  if (far > reach) { const dy = Math.max(...p.feet.map(([fx, fy]) => { const dx = fx - p.hip[0]; return fy - Math.sqrt(Math.max(0, reach * reach - dx * dx)); })) - p.hip[1]; p.hip[1] += dy; p.hands = p.hands.map(([x, y]) => [x, y]); }
+  return p;
+};
 const SMILE = { mouth: 'smile' }, FLAT = { mouth: 'flat' }, PUFF = { eye: 'closed', mouth: 'open' }, WIDE = { eye: 'wide', mouth: 'flat', brow: -1 }, IN = { eye: 'closed', mouth: 'flat', brow: 1 };
 
 // the two rounds: [inhale at, blow at, relight at, lean back, lean forward, relight stagger in drawings]

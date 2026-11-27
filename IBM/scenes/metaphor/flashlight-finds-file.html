@@ -5,14 +5,22 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/cast/paper.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/props/handheld.js"></script>
 <script>
 /* 캄캄한 화면에 눈 한 쌍만 깜빡이고, 손전등 빛의 원뿔이 위아래로 훑다가 상자 뒤에 숨은 서류에 멈추면 화면이 한 번에 밝아지며 "찾았다!", 서류가 다리로 걸어 나와 손을 흔든다. 원본에 없는 창작 장면으로, 원본 6편의 검은 화면과 하드 컷, 카피 카드의 손전등 원뿔을 찾기 은유로 옮겼다. 전달하는 생각: 어디 있는지 모르던 것을 빛을 비춰 찾아낸다.
    Motion notes: 7.5 s, one cut. Dark half (0-4.0 s): the stage is drawn fully lit and then covered with black (#000000) everywhere except the beam, a hard-edged triangle 26 degrees wide: no glow, no gradient, no fade, the beam is a flat shape like everything else. The beam is on twos because a hand holds it: off until 0.5 s, then 22 to -24 degrees in 1 s (inOutQuad), hold 0.25 s, down to 30 degrees in 1 s, hold 0.5 s, then it snaps to the target in a single drawing at 3.25 s and stays on it 0.75 s. The only other thing visible in the dark is a pair of eyes (the reference's dark spot): pupils step toward the beam on twos, one blink of 2 frames at 1.75 s. The hider ducks 120 px behind the crate whenever the sweeping beam comes within 15 degrees of it, so each slow pass finds nothing; the snap is too fast to duck and catches the eyes wide. Cut to light at 4.0 s is a hard cut on a held pose: nothing else changes on that frame. After the cut the beam stays for 1 s as a translucent white triangle (paper at 55%), the way the reference draws light on a pale stage, and nothing moves under the bubble, which shows 4.17-5.0 s and leaves on a hard cut. Only then does the arm drop (2 drawings from 5.0 s) and the document walk out: 210 px in 12 drawings (17.5 px each, tilt +-0.04 rad every 3 drawings), an arm drawn on in 2 drawings at 6.17 s, and from 6.33 s to the end only its hand moves, two drawings alternating on threes. Three colours: yellow lamp, lavender on the document, the figure's navy top. */
 const { lerp, kf, clamp } = MG;
-const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 500, CUT = 4;
-const WHO = { h: 500, dir: 1, skin: C.skin[2], top: C.navy, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 30 };
-const H = WHO.h, DEG = Math.PI / 180, CRATE = [1300, FLOOR - 170, 190, 170], DOC0 = 1392, DOC1 = 1182, LEG = 74;
+const F = IB.FIG, FLOOR = 930, X0 = 500, CUT = 4;
+const WHO = { ...IB.PEOPLE.searcher, h: 500, dir: 1, seed: 30 };
+const H = WHO.h, DEG = Math.PI / 180, DOC0 = 1392, DOC1 = 1182, LEG = 74;
 const TARGET = 8.5;   // degrees: where the beam finds the eyes
 
 const beamAt = (tt) => (tt >= 3.25 ? TARGET : kf(tt, [[0.5, 22], [1.5, -24, 'inOutQuad'], [1.75, -24], [2.75, 30, 'inOutQuad']]));
@@ -20,72 +28,19 @@ const beamAt = (tt) => (tt >= 3.25 ? TARGET : kf(tt, [[0.5, 22], [1.5, -24, 'inO
 const ducked = (tt) => tt < 3.25 && tt >= 0.5 && Math.abs(beamAt(tt) - TARGET) < 15;
 function who(t) {
   const tt = IB.twos(t), p = IB.stand(X0, FLOOR, WHO), sh = [X0 + 2, p.hip[1] - (F.torso - 0.012) * H];
-  const down = tt < 5 - 1e-6 ? 0 : [0.5, 1][Math.min(1, Math.round((tt - 5) * 12))];   // the arm drops after the find
+  const down = tt < 5 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 5));   // the arm drops after the find
   const a = lerp(beamAt(tt), 62, down) * DEG, u = [Math.cos(a), Math.sin(a)];
   p.hands = [[X0 + 40, p.hip[1] - 6], [sh[0] + u[0] * 150, sh[1] + u[1] * 150]];
   p.grip = [false, true];
   p.lean = 0.05;
   return { pose: p, a, lens: [sh[0] + u[0] * 246, sh[1] + u[1] * 246], wrist: p.hands[1], on: tt >= 0.5 && down === 0, face: { mouth: tt >= CUT ? 'smile' : 'flat', eye: tt >= CUT ? 'dot' : 'wide' } };
 }
-const cone = (ctx, lens, a) => { ctx.moveTo(lens[0], lens[1]); for (const s of [-1, 1]) ctx.lineTo(lens[0] + Math.cos(a + s * 13 * DEG) * 2400, lens[1] + Math.sin(a + s * 13 * DEG) * 2400); ctx.closePath(); };
-
-function torch(ctx, w, a) {
-  ctx.save(); ctx.translate(w[0], w[1]); ctx.rotate(a);
-  IB.box(ctx, -34, -13, 90, 26, { fill: '#d9d9d9', w: 3, seed: 200 });
-  IB.ink(ctx, [[56, -13], [84, -24], [96, -24], [96, 24], [84, 24], [56, 13]], { closed: true, smooth: false, fill: '#d9d9d9', w: 3, seed: 201 });
-  for (let i = 0; i < 3; i++) IB.seg(ctx, -22 + i * 12, -12, -22 + i * 12, 12, { w: 1.8, seed: 202 + i });
-  ctx.restore();
-}
-
 /* The hiding document: a rigid sheet on two thin legs, with eyes because it has to be seen in the dark. */
 function docState(t) {
-  const tt = IB.twos(t), k = clamp(Math.round((tt - 5) * 12), 0, 12), walking = k > 0 && k < 12, step = Math.floor(k / 3) % 2;
-  return { down: ducked(tt) ? 120 : 0, x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : [0.5, 1][Math.min(1, Math.round((tt - 74 / 12) * 12))], wave: IB.frame(t) >= 152 ? (Math.floor((IB.frame(t) - 152) / 3) + 1) % 2 : 0 };   // 152 = frame of 76/12 s; the hand changes on that very frame
+  const tt = IB.twos(t), k = clamp(IB.drawn(tt, 5), 0, 12), walking = k > 0 && k < 12, step = IB.alternate(k, 3);
+  return { down: ducked(tt) ? 120 : 0, x: lerp(DOC0, DOC1, k / 12), tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]], arm: tt < 74 / 12 - 1e-6 ? 0 : IB.inbetween([0.5, 1], IB.drawn(tt, 74 / 12)), wave: IB.alternate(IB.frame(t), 3, 152) };   // 152 = frame of 76/12 s; the hand changes on that very frame
 }
 const eyesAt = (d) => [d.x - 26, FLOOR - 12 - LEG - 150 + d.down];
-function eyes(ctx, d, look, shut) {
-  const [ex, ey] = eyesAt(d);
-  for (const i of [0, 1]) {
-    const x = ex + i * 52;
-    if (shut) { IB.seg(ctx, x - 13, ey, x + 13, ey, { w: 3, seed: 240 + i, color: C.paper }); continue; }
-    IB.oval(ctx, x, ey, 15, look.wide ? 17 : 12, { fill: C.paper, w: 2.6, seed: 242 + i, n: 10 });
-    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x + look.dx, ey + look.dy, 5.5, 0, 7); ctx.fill();
-  }
-}
-function doc(ctx, d) {
-  const by = FLOOR - 12 - LEG;
-  d.feet.forEach(([dx, dy], i) => IB.peg(ctx, [d.x + (i ? 26 : -26), by - 3], [d.x + dx, FLOOR - 12 + dy], { seed: 250 + i * 9, dir: -1 }));
-  if (d.arm > 0) {   // one thin arm, drawn on, with a mitten that waves
-    const root = [d.x - 76, by - 120], hand = [root[0] - 70 * d.arm, root[1] - (96 + d.wave * 16) * d.arm + d.wave * 0];
-    IB.limb(ctx, [root, [lerp(root[0], hand[0], 0.5) - 14, lerp(root[1], hand[1], 0.5) + 6], hand], [13, 10, 8], { fill: C.paper, lw: 2.8, seed: 270 });
-    if (d.arm === 1) IB.oval(ctx, hand[0] - 4 - d.wave * 8, hand[1] - 10, 12, 14, { fill: C.paper, w: 2.6, seed: 272 + d.wave, n: 9 });
-  }
-  ctx.save(); ctx.translate(d.x, by + d.down); ctx.rotate(d.tilt);
-  IB.box(ctx, -78, -200, 156, 200, { fill: C.paper, w: 3.6, seed: 260 });
-  IB.box(ctx, -58, -112, 74, 80, { fill: C.lavender, w: 2, seed: 261 });
-  for (let i = 0; i < 4; i++) IB.seg(ctx, 28, -104 + i * 17, 60, -104 + i * 17, { w: 2.2, seed: 262 + i });
-  ctx.restore();
-}
-
-function stage(ctx) {
-  // a hanging lamp, a crate and a plant: just enough to be somewhere
-  IB.seg(ctx, 1120, -10, 1120, 210, { w: 3, seed: 300 });
-  IB.ink(ctx, [[1040, 300], [1076, 214], [1164, 214], [1200, 300]], { closed: true, smooth: false, fill: C.yellow, w: 3.4, seed: 301 });
-  IB.ink(ctx, IB.ellipse(1120, 302, 30, 18, 6, 0, Math.PI), { w: 3, seed: 302, fill: C.paper, closed: true });
-  IB.smear(ctx, 1640, FLOOR - 3, 140, { h: 9, seed: 31 });
-  const leaf = (a, len, seed) => { ctx.save(); ctx.translate(1640, FLOOR - 130); ctx.rotate(a); IB.ink(ctx, [[0, 0], [16, -len * 0.45], [0, -len], [-16, -len * 0.45]], { closed: true, w: 2.6, seed, fill: C.bg }); IB.seg(ctx, 0, -6, 0, -len * 0.8, { w: 1.5, seed: seed + 1 }); ctx.restore(); };
-  [[-0.9, 150], [-0.45, 220], [0.05, 270], [0.5, 210], [0.95, 140]].forEach(([a, l], i) => leaf(a, l, 310 + i * 2));
-  IB.ink(ctx, [[1590, FLOOR - 132], [1690, FLOOR - 132], [1676, FLOOR], [1604, FLOOR]], { closed: true, smooth: false, w: 3.2, seed: 330, fill: C.bg });
-}
-function crate(ctx) {
-  const [x, y, w, h] = CRATE;
-  IB.smear(ctx, x + w / 2, FLOOR - 4, w * 1.25, { h: 11, seed: 32 });
-  IB.box(ctx, x, y, w, h, { fill: C.bg, w: 3.8, seed: 340 });
-  for (const yy of [0.34, 0.67]) IB.seg(ctx, x, y + h * yy, x + w, y + h * yy, { w: 2.4, seed: 341 + yy * 10 });
-  IB.seg(ctx, x + 8, y + 8, x + w - 8, y + h - 8, { w: 2.2, seed: 345 });
-  IB.shade(ctx, x + 3, FLOOR - 36, w - 6, 34, { from: 'bottom', seed: 33, alpha: 0.45 });
-}
-
 MG.scene({
   title: 'metaphor / flashlight-finds-file',
   duration: 7.5, ref: null, fps: 24,
@@ -93,32 +48,28 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), W = who(t), d = docState(t), dark = t < CUT, found = tt >= 3.25, look = { ...WHO, face: W.face };
-    stage(ctx);
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, MG.W, FLOOR); ctx.clip();   // a ducked document is taller than the crate: what would stick out under the floor line is not drawn
-    doc(ctx, d);
+    // a hanging lamp, a crate and a plant: just enough to be somewhere
+    IB.hangingLamp(ctx, [1120, 300]);
+    IB.pottedPlant(ctx, [1640, FLOOR], IB.PLANTS.tall);
+    ctx.save(); IB.clipRect(ctx, [0, 0, MG.W, FLOOR]);   // a ducked document is taller than the crate: what would stick out under the floor line is not drawn
+    IB.hidingDoc(ctx, [d.x, FLOOR - 12 - LEG], d, { ground: FLOOR - 12 });
     ctx.restore();
-    crate(ctx);
+    IB.woodCrate(ctx, [1395, FLOOR], { w: 190, h: 170 });
     // where the eyes look: toward the lens until the light is on them
     const [ex, ey] = eyesAt(d), dx = W.lens[0] - ex, dy = W.lens[1] - ey, n = Math.hypot(dx, dy) || 1;
     const gaze = found ? { dx: -2, dy: 0, wide: true } : { dx: (dx / n) * 6, dy: (dy / n) * 5 + (beamAt(tt) < 0 ? -3 : 2), wide: false };
     const blink = IB.frame(t) >= 42 && IB.frame(t) < 44;
-    if (!d.down) eyes(ctx, d, gaze, blink && dark);
+    if (!d.down) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink && dark });
     IB.smear(ctx, X0, FLOOR - 9, 300, { h: 14, seed: 9 });
     IB.figure(ctx, W.pose, look, 'far');
-    torch(ctx, W.wrist, W.a);
+    IB.torch(ctx, W.wrist, W.a);
     IB.figure(ctx, W.pose, look, 'near');
 
     if (dark) {
       // black over everything but the beam; then the eyes again, which show in the dark
-      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.rect(0, 0, MG.W, MG.H);
-      if (W.on) cone(ctx, W.lens, W.a);
-      ctx.fill('evenodd');
-      ctx.restore();
-      if (!d.down) eyes(ctx, d, gaze, blink);
-    } else if (W.on) {
-      ctx.save(); ctx.globalAlpha = 0.55; ctx.fillStyle = C.paper; ctx.beginPath(); cone(ctx, W.lens, W.a); ctx.fill(); ctx.restore();
-    }
+      IB.darkness(ctx, { beam: W.on ? { from: W.lens, a: W.a } : null });
+      if (!d.down) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink });
+    } else if (W.on) IB.lightBeam(ctx, W.lens, W.a);
     IB.bubble(ctx, ['찾았다!'], t, 50 / 12, { tip: [X0 + 62, FLOOR - 0.9 * H], x: X0 + 240, y: FLOOR - 1.13 * H, until: 5, seed: 500 });
   },
 });

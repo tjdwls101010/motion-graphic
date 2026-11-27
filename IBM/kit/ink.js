@@ -1,4 +1,4 @@
-/* ink.js — the brush-pen look of the IBM spots on a 2D canvas: flat grey stage, black ink outlines over white fills, one or two flat colours, the blue chalk smear that stands in for the floor, copy that slides in and settles, and the speed-line whip between shots. Immediate mode: a scene's render(t) repaints everything. Every measured number in ../STYLE.md lives here once. Exposes the global IB. */
+/* ink.js — the brush-pen look of the IBM spots on a 2D canvas: flat grey stage, black ink outlines over white fills, one or two flat colours, the blue chalk smear that stands in for the floor, copy that slides in and settles, and the speed-line whip between shots. Immediate mode: a scene's render(t) repaints everything. Every measured number in ../STYLE.md lives here once. Needs time.js (IB.copy reads IB.settle and IB.frame at call time); exposes the global IB. */
 (function (g) {
   const MG = g.MG;
   const IB = (g.IB = {});
@@ -12,15 +12,6 @@
     skin: ['#f6c398', '#ddbb9c', '#d2b99b', '#b59674', '#a07d5a'],
   };
   IB.FONT = 'Pretendard';
-
-  /* ---------- time ---------- */
-  /* Drawn animation updates every 2 frames of the 24 fps reference (12 fps) and holds dead still in between; slow acting drops to every 3 frames (8 fps). Copy, pans and scrolls stay on ones: pass them the raw t. */
-  IB.FPS = 24;
-  IB.twos = (t) => MG.onTwos(t, 12);
-  IB.threes = (t) => MG.onTwos(t, 8);
-  IB.frame = (t) => Math.floor(t * IB.FPS + 1e-6);
-  /* settle(dt, tau, stop) — 0..1, the curve copy and the end card arrive on: an exponential approach (time constant tau) rescaled so it lands exactly on 1 at `stop` seconds and is truly still afterwards. Fitted to the reference frame by frame: 71 px of head copy closes 60, 48, 38, 31, 25, 20, 16, 13, 10 ... px and is still after 0.79 s with tau 0.2. */
-  IB.settle = (dt, tau = 0.2, stop = tau * 4) => (dt <= 0 ? 0 : dt >= stop ? 1 : (1 - Math.exp(-dt / tau)) / (1 - Math.exp(-stop / tau)));
 
   /* ---------- stage ---------- */
   IB.bg = (ctx, color = IB.C.bg) => {
@@ -36,6 +27,9 @@
     ctx.setTransform(s, 0, 0, s, -x * s, -y * s);
     return s;
   };
+
+  /* clipRect(ctx, [x, y, w, h]) — clip everything drawn until the matching ctx.restore() to a rectangle: a monitor's screen, the part of the stage above the floor line. Call ctx.save() first. */
+  IB.clipRect = (ctx, [x, y, w, h]) => { ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); };
 
   /* ---------- dust ---------- */
   /* Every grain of dust (edge dust, graphite shading, chalk) goes through here, for two reasons found the hard way with tools/check_pure.py.
@@ -177,6 +171,10 @@
   /* Point lists for the common shapes, ready for IB.ink. */
   IB.line = (x1, y1, x2, y2) => [[x1, y1], [x2, y2]];
   IB.rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  /* along(path, u) — the point a fraction u (0..1, clamped) of the way along a polyline, counting each segment as one equal step (not by length): where a bulge travelling down a hose is. */
+  IB.along = (path, u) => { const x = MG.clamp(u) * (path.length - 1), i = Math.min(path.length - 2, Math.floor(x)), v = x - i; return [MG.lerp(path[i][0], path[i + 1][0], v), MG.lerp(path[i][1], path[i + 1][1], v)]; };
+  /* mirror(cx) — a function that reflects point lists about the vertical line x = cx: draw one side of a face and mirror it for the other. */
+  IB.mirror = (cx) => (pts) => pts.map(([x, y]) => [2 * cx - x, y]);
   IB.ellipse = (cx, cy, rx, ry = rx, n = 14, a0 = 0, a1 = Math.PI * 2) => {
     const full = Math.abs(a1 - a0) >= Math.PI * 2 - 1e-6, out = [];
     for (let i = 0; i < (full ? n : n + 1); i++) {
@@ -199,6 +197,9 @@
   };
 
   /* ---------- chalk ---------- */
+  /* pipe(ctx, pts, opts) — the lavender tubing the reference builds stands and frames from (the party's hoop stand): IB.tube 13 px wide with a 2.75 px ink edge. Also the legs and gantry of the creative scenes' machines. */
+  IB.pipe = (ctx, pts, o = {}) => IB.tube(ctx, pts, { w: 13, edge: 2.75, fill: IB.C.lavender, ...o });
+
   /* smear(ctx, cx, y, w, opts) — the blue chalk floor mark under feet and under the end-card line: a crisp top edge at y, a dense core, dust falling away below and thinning toward both ends. w is the width of the dense core (dust feathers out ~15% further on each side); the end-card smear is w=1000, h=34, a foot smear w≈110, h≈10. */
   IB.smear = (ctx, cx, y, w, o = {}) => {
     const { h = Math.max(6, w * 0.034), color = IB.C.smear, seed = 5, alpha = 1 } = o;

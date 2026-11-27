@@ -5,8 +5,10 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
-<script src="../../kit/desk.js"></script>
+<script src="../../kit/props/office.js"></script>
 <script>
 /* 화면을 가득 채운 모니터에 캔들이 하나씩 그려지며 저항선 아래에서 오르내리다가, 잠깐 멈춘 뒤 긴 파란 양봉 하나가 선을 뚫고 솟고 커서가 그 봉을 짚는다. 원본에 없는 창작 장면으로, 원본의 클로즈업 인서트(대상이 화면을 채움, 굵은 선)에 "긴 정지 뒤 한 장의 큰 동작"을 차트로 옮겼다. 전달하는 생각: 지루한 횡보 끝에 한 번의 돌파가 온다. 상승은 파랑, 하락은 빨강이다.
    Motion notes: insert, 6 s, lines 5-8 px (bezel 8, candle bodies 7, wicks, tag and cursor 6, axis and dashes 5), the screen is flat white and nothing glows. Thirteen candles go on one after another from 0.75 s, each in two drawings on twos (wick, then body), 6 candles per second, wandering under a dashed resistance line that was drawn on in 5 drawings at 0.25 s. Then nothing moves for 0.67 s (2.83-3.5 s): the hold is what makes the next candle read as an event. The breakout candle arrives in ONE drawing at 3.5 s drawn 14% too tall with three speed lines beside it (the smear), is its true size on the next drawing with a five-line burst above it for 2 drawings, and the resistance line is drawn broken where it went through. Four more candles follow at the same two-drawings pace; the last one is live and from 4.33 s its body flips between two closes on threes, the only thing still moving at the end besides the cursor's half second. The price tag on the right edge steps to each new close on twos. The cursor is interface, not drawing: it travels on ones, 0.5 s on IB.settle (tau 0.14), and a tag pops beside the candle on the drawing after it lands. Two colours and they are the data: blue rises, red falls (the red is the kit's added colour, not a reference colour). */
@@ -19,7 +21,7 @@ const FIRST = 0.75, HOLD_END = 3.5, BREAK = 13;
 
 // how many candles are on at time tt (a half = wick only), and whether this is the smear drawing
 function shown(tt) {
-  const k = Math.round((tt - FIRST) * 12), b = Math.round((tt - HOLD_END) * 12);
+  const k = IB.drawn(tt, FIRST), b = IB.drawn(tt, HOLD_END);
   if (b < 0) return { n: clamp((k + 1) / 2, 0, BREAK), smear: false };
   if (b === 0) return { n: BREAK, smear: true };
   if (b < 3) return { n: BREAK + 1, smear: false };
@@ -32,47 +34,34 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), f = IB.frame(t), { n, smear } = shown(tt), b = Math.round((tt - HOLD_END) * 12);
+    const tt = IB.twos(t), f = IB.frame(t), { n, smear } = shown(tt), b = IB.drawn(tt, HOLD_END);
     IB.shade(ctx, 520, 1012, 880, 30, { from: 'top', seed: 4, alpha: 0.5 });
     IB.monitor(ctx, 960, 1010, 1560, 830, { lw: 8, bezel: 34, seed: 10 });
     // faint grid and the price axis ticks: drawn, grey, never moving
     const [cx, cy, cw, ch] = CHART, Y = (v) => cy + ch - ((v - MIN) / (MAX - MIN)) * ch;
-    for (const v of [30, 50, 70, 90]) { IB.seg(ctx, cx, Y(v), cx + cw + 40, Y(v), { w: 2, color: '#d9d9d9', seed: 20 + v, grain: 0 }); IB.seg(ctx, cx + cw + 60, Y(v), cx + cw + 96, Y(v), { w: 5, seed: 30 + v }); }
-    IB.seg(ctx, cx + cw + 50, cy - 20, cx + cw + 50, cy + ch + 20, { w: 5, seed: 40 });
-    IB.seg(ctx, cx - 20, cy + ch + 20, cx + cw + 50, cy + ch + 20, { w: 5, seed: 41 });
+    IB.priceGrid(ctx, CHART, { min: MIN, max: MAX, levels: [30, 50, 70, 90] });
 
     // the live candle's close flips on threes once its body is on
     const data = DATA.map((d) => d.slice()), last = DATA.length - 1;
-    if (n >= DATA.length && Math.floor(f / 3) % 2) data[last][1] = 94;
+    if (n >= DATA.length && IB.alternate(f, 3)) data[last][1] = 94;
     const at = IB.candles(ctx, CHART, data, n, { min: MIN, max: MAX, lw: 7, up: C.blue, down: C.red, seed: 100 });
 
     // the resistance line: dashes drawn on left to right, broken where the breakout went through
-    const dashes = 18, drawn = clamp(Math.round((tt - 0.25) * 12) + 1, 0, 5) / 5 * dashes;
-    for (let i = 0; i < drawn; i++) { const x0 = cx + (i / dashes) * (cw + 40), x1 = x0 + (cw + 40) / dashes * 0.56; if (b >= 1 && x1 > at.x(BREAK) - 40 && x0 < at.x(BREAK) + 40) continue; IB.seg(ctx, x0, Y(LINE), x1, Y(LINE), { w: 5, seed: 60 + i }); }
+    IB.dashLine(ctx, [cx, Y(LINE)], cw + 40, { drawn: clamp(IB.drawn(tt, 0.25) + 1, 0, 5) / 5 * 18, gap: b >= 1 ? [at.x(BREAK) - 40, at.x(BREAK) + 40] : null });
 
-    if (smear) {
-      // one drawing: the candle too tall, with speed lines, before it is itself
-      const [op, cl, hi, lo] = DATA[BREAK], x = at.x(BREAK), top = at.y(cl) - (at.y(op) - at.y(cl)) * 0.14;
-      IB.seg(ctx, x, top - 30, x, at.y(lo), { w: 5.6, seed: 200 });
-      IB.box(ctx, x - 19, top, 38, at.y(op) - top, { fill: C.blue, w: 7, seed: 201 });
-      for (const dx of [-62, -44, 46]) IB.seg(ctx, x + dx, at.y(op) - 20, x + dx, at.y(op) - 150 - Math.abs(dx), { w: 5, seed: 203 + dx });
-    }
-    if (b >= 1 && b < 3) for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i - 2) * 0.42, r0 = 50 + (b - 1) * 22, r1 = r0 + 54, x = at.x(BREAK), y = at.y(DATA[BREAK][2]) - 10; IB.seg(ctx, x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1, { w: 6, seed: 210 + i + b * 7 }); }
+    // one drawing: the candle too tall, with speed lines, before it is itself
+    if (smear) IB.candleSmear(ctx, at.x(BREAK), { open: at.y(DATA[BREAK][0]), close: at.y(DATA[BREAK][1]), low: at.y(DATA[BREAK][3]) });
+    if (b >= 1 && b < 3) IB.burst(ctx, [at.x(BREAK), at.y(DATA[BREAK][2]) - 10], { angles: [0, 1, 2, 3, 4].map((i) => -Math.PI / 2 + (i - 2) * 0.42), r0: 50 + (b - 1) * 22, r1: 50 + (b - 1) * 22 + 54, w: 6, seed: 210 + b * 7 });
 
     // price tag on the axis at the newest finished close
     const done = Math.max(0, Math.floor(n) - 1), close = n >= 1 ? DATA[done][1] : DATA[0][0];   // the tag steps to each close once and does not follow the live flicker
-    IB.ink(ctx, [[cx + cw + 62, Y(close)], [cx + cw + 88, Y(close) - 26], [cx + cw + 164, Y(close) - 26], [cx + cw + 164, Y(close) + 26], [cx + cw + 88, Y(close) + 26]], { closed: true, smooth: false, fill: C.paper, w: 6, seed: 70 });
-    IB.seg(ctx, cx + cw + 104, Y(close), cx + cw + 146, Y(close), { w: 6, seed: 71 });
+    IB.priceTag(ctx, [cx + cw, Y(close)]);
 
     // the cursor: on ones, it comes to rest on the breakout candle; a tag pops on the next drawing
     if (t >= 4.5) {
       const u = IB.settle(t - 4.5, 0.14, 0.5), px = lerp(1320, at.x(BREAK) + 16, u), py = lerp(700, at.y(64), u);
-      if (tt >= 5 + 1 / 12 - 1e-6) {
-        IB.box(ctx, at.x(BREAK) - 250, at.y(64) - 150, 200, 110, { fill: C.paper, w: 6, seed: 80 });
-        IB.ink(ctx, [[at.x(BREAK) - 222, at.y(64) - 78], [at.x(BREAK) - 196, at.y(64) - 122], [at.x(BREAK) - 170, at.y(64) - 78]], { closed: true, smooth: false, fill: C.blue, w: 5, seed: 81 });
-        for (const dy of [-112, -88]) IB.seg(ctx, at.x(BREAK) - 148, at.y(64) + dy, at.x(BREAK) - 76, at.y(64) + dy, { w: 6, seed: 82 + dy });
-      }
-      IB.ink(ctx, [[px, py], [px, py + 74], [px + 20, py + 56], [px + 34, py + 88], [px + 48, py + 82], [px + 34, py + 50], [px + 58, py + 50]], { closed: true, smooth: false, fill: C.paper, w: 6, seed: 90, wob: 0 });
+      if (tt >= 5 + 1 / 12 - 1e-6) IB.popupTag(ctx, [at.x(BREAK), at.y(64)]);
+      IB.cursor(ctx, [px, py]);
     }
   },
 });

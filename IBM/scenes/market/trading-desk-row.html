@@ -5,81 +5,57 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
 <script src="../../kit/figure.js"></script>
-<script src="../../kit/desk.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/sets/trading.js"></script>
 <script>
 /* 시세판 아래 책상 세 개에 나란히 앉아 한 명은 타자를 치고 한 명은 통화하고 한 명은 늘어져 있다가, 시세판이 왼쪽부터 차례로 파란 화살표로 넘어가자 가운데 사람이 벌떡 일어나 "매수!" 하고 셋 다 자판에 달려든다. 원본에 없는 창작 장면으로, 원본의 "저마다 다른 박자로 연기하다 한 사건에 차례로 반응한다"를 증권사 사무실에 옮겼다. 전달하는 생각: 조용하던 사무실이 숫자 하나에 한꺼번에 움직인다. 상승은 파랑, 하락은 빨강이다.
    Motion notes: one locked shot, 7.5 s, figures 400 px tall, seated (IB.sit). Before the event each worker keeps a different clock so the row never moves in unison: the typist's hands swap every drawing on twos (8 px), the caller's free hand flips between two gestures on threes, the lounger does not move at all. The board is a drawing that changes by hard cuts: one cell flips direction every 0.5 s until 3.0 s. The event is a wave, not a cut: from 3.0 s the twelve cells turn to the blue up arrow one drawing apart, left to right and top row first (1 s for the board), and the reactions are staggered three drawings apart as it passes: 3.25 s the typist's head comes up, 3.5 s the caller is on their feet in 2 drawings (the feet stay where they were under the desk, the hip goes up and forward over them), 3.75 s the lounger is on the keyboard in 2 drawings. On their feet the caller throws the far fist up behind the head and holds the handset out in front, so the face stays clear. Bubble 3.92-4.75 s over the held standing pose, after the lounger has landed on the keyboard; the caller sits again in 2 drawings at 4.75 s the handset goes back on its cradle and the lounger's cup stands on the desk (a prop that is put down stays in the picture), and all three type on twos, from 5.0 s with shake marks re-rolled each drawing, while three sheets leave the desks at 4.75, 5.0 and 5.33 s, 14 drawings each on an arc, and lie where they land. Three colours: the caller's yellow top, and the board's two data colours. */
-const { lerp, clamp } = MG;
-const C = IB.C, F = IB.FIG, FLOOR = 940, DESK = 778, H = 400, T = (n) => n / 12;
+const F = IB.FIG, FLOOR = 940, DESK = 778, H = 400;
 const SEATS = [220, 760, 1300];
 const WHO = [
-  { h: H, dir: 1, skin: C.skin[3], top: C.bg, topKind: 'long', bottom: C.charcoal, shoe: C.ink, hair: 'bun', seed: 100 },
-  { h: H, dir: 1, skin: C.skin[1], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short', seed: 200 },
-  { h: H, dir: 1, skin: C.skin[4], top: C.bg, bottom: C.ink, shoe: C.paper, hair: 'curly', seed: 300 },
+  { ...IB.PEOPLE.typist, h: H, dir: 1, seed: 100 },
+  { ...IB.PEOPLE.trader, h: H, dir: 1, seed: 200 },
+  { ...IB.PEOPLE.lounger, h: H, dir: 1, seed: 300 },
 ];
 const RALLY = 3;   // seconds: the board starts to turn
 
 // typing: the two hands swap heights on every drawing
 const typing = (x, look, k, lean = 0.1) => { const p = IB.sit(x, FLOOR, look), a = k % 2 ? -8 : 0, b = k % 2 ? 0 : -8; p.lean = lean; p.hands = [[p.hands[0][0], p.hands[0][1] + a], [p.hands[1][0], p.hands[1][1] + b]]; return p; };
 function poses(t) {
-  const tt = IB.twos(t), k = Math.round(tt * 12), k3 = Math.round(IB.threes(t) * 8), n = (t0) => Math.round((tt - t0) * 12);
+  const tt = IB.twos(t), k = Math.round(tt * 12), k3 = Math.round(IB.threes(t) * 8), n = (t0) => IB.drawn(tt, t0);
   // 1: the typist, who looks up at 3.25 s for six drawings and then types on
   const a = typing(SEATS[0], WHO[0], k);
-  if (n(T(39)) >= 0 && n(T(39)) < 6) { a.nod = -0.3; a.face = { eye: 'wide', mouth: 'open' }; } else a.face = { mouth: n(T(45)) >= 0 ? 'smile' : 'flat' };
+  if (n(IB.T(39)) >= 0 && n(IB.T(39)) < 6) { a.nod = -0.3; a.face = { eye: 'wide', mouth: 'open' }; } else a.face = { mouth: n(IB.T(45)) >= 0 ? 'smile' : 'flat' };
   // 2: the caller: on the phone, up on their feet, down again, typing
   const x = SEATS[1], sit = IB.sit(x, FLOOR, WHO[1]), sh = (p) => [p.hip[0], p.hip[1] - F.torso * H];
   const call = { ...sit, lean: -0.06, hands: [[x + 0.2 * H, sit.hip[1] - 0.16 * H - (k3 % 2 ? 16 : 0)], [x - 0.035 * H, sit.hip[1] - F.torso * H - 0.085 * H]], grip: [false, true], elbow: [1, -1], face: { mouth: k3 % 2 ? 'open' : 'flat' }, phone: true };   // the handset at the ear, behind the face; the elbow folds back so the forearm does not cross the eyes
   const up = IB.stand(x + 0.24 * H, FLOOR, WHO[1]); up.feet = sit.feet;
   up.hands = [[up.hip[0] + 0.1 * H, sh(up)[1] - 0.24 * H], [up.hip[0] + 0.21 * H, sh(up)[1] + 0.02 * H]]; up.grip = [true, true]; up.face = { eye: 'wide', mouth: 'open' }; up.phone = true;
   let b = call;
-  if (n(T(42)) >= 0) b = n(T(42)) === 0 ? { ...IB.poseMix(call, up, 0.5), grip: [true, true], face: up.face, phone: true } : up;
-  if (n(T(57)) >= 0) { const ty = typing(x, WHO[1], k, 0.16); b = n(T(57)) === 0 ? { ...IB.poseMix(up, ty, 0.5), face: { mouth: 'smile' }, phone: true } : { ...ty, face: { mouth: 'smile', brow: 1 }, phoneDown: true }; }
+  if (n(IB.T(42)) >= 0) b = n(IB.T(42)) === 0 ? { ...IB.poseMix(call, up, 0.5), grip: [true, true], face: up.face, phone: true } : up;
+  if (n(IB.T(57)) >= 0) { const ty = typing(x, WHO[1], k, 0.16); b = n(IB.T(57)) === 0 ? { ...IB.poseMix(up, ty, 0.5), face: { mouth: 'smile' }, phone: true } : { ...ty, face: { mouth: 'smile', brow: 1 }, phoneDown: true }; }
   // 3: the lounger: legs out, cup in hand, until the wave reaches the right-hand cells
   const y = SEATS[2], s3 = IB.sit(y, FLOOR, WHO[2]);
   const lounge = { ...s3, lean: -0.3, nod: 0.1, feet: [[y + 0.42 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2], [y + 0.36 * H, FLOOR - F.ankle * H - IB.footLift(-0.2, H), -0.2]], hands: [[y + 0.1 * H, s3.hip[1] - 0.03 * H], [y + 0.12 * H, s3.hip[1] - 0.1 * H]], face: { eye: 'closed', mouth: 'smile' }, cup: true };
   let c = lounge;
-  if (n(T(45)) >= 0) { const ty = typing(y, WHO[2], k, 0.22); c = n(T(45)) === 0 ? { ...IB.poseMix(lounge, ty, 0.5), feet: [[y + 0.34 * H, FLOOR - F.ankle * H - 0.08 * H, 0], [y + 0.28 * H, FLOOR - F.ankle * H - 0.07 * H, 0]], face: { eye: 'wide', mouth: 'open' }, cup: true } : { ...ty, face: { mouth: 'flat', brow: 1 }, cupDown: true }; }
+  if (n(IB.T(45)) >= 0) { const ty = typing(y, WHO[2], k, 0.22); c = n(IB.T(45)) === 0 ? { ...IB.poseMix(lounge, ty, 0.5), feet: [[y + 0.34 * H, FLOOR - F.ankle * H - 0.08 * H, 0], [y + 0.28 * H, FLOOR - F.ankle * H - 0.07 * H, 0]], face: { eye: 'wide', mouth: 'open' }, cup: true } : { ...ty, face: { mouth: 'flat', brow: 1 }, cupDown: true }; }
   return [a, b, c];
 }
 
-/* The board: twelve cells, each a pair of bars standing in for a name and a price, and an arrow. */
-function board(ctx, tt) {
-  ctx.save(); ctx.translate(0, 50);   // hung low, leaving a band above the heads for the bubble
-  IB.shade(ctx, 330, 392, 1260, 14, { from: 'top', seed: 5, alpha: 0.5 });
-  IB.box(ctx, 320, 110, 1280, 280, { fill: C.paper, w: 3.6, seed: 400 });
-  IB.seg(ctx, 320, 156, 1600, 156, { w: 2.6, seed: 401 });
-  for (let i = 0; i < 3; i++) IB.oval(ctx, 350 + i * 28, 134, 7, 7, { w: 2, seed: 402 + i, n: 8 });
-  const half = Math.floor(tt * 2 + 1e-6);
+// which of the board's twelve cells show an up arrow at time tt
+function cells(tt) {
+  const half = Math.floor(tt * 2 + 1e-6), up = [];
   for (let i = 0; i < 12; i++) {
-    const col = i % 6, row = Math.floor(i / 6), x = 344 + col * 208, y = 176 + row * 100;
     let upArrow = MG.hash(i, 7) < 0.4;
     for (let m = 1; m <= Math.min(half, RALLY * 2 - 1); m++) if ((m * 5) % 12 === i) upArrow = !upArrow;   // the idle market: one cell flips every half second
     if (tt >= RALLY + i / 12 - 1e-6) upArrow = true;                                                        // the wave
-    IB.box(ctx, x, y, 190, 82, { w: 2, seed: 410 + i });
-    IB.seg(ctx, x + 16, y + 28, x + 84 + (i % 3) * 10, y + 28, { w: 5, seed: 430 + i });
-    IB.seg(ctx, x + 16, y + 54, x + 64 + (i % 2) * 20, y + 54, { w: 3, seed: 450 + i, color: '#8a8a8a' });
-    const ax = x + 150, ay = y + 41;
-    IB.ink(ctx, upArrow ? [[ax - 18, ay + 15], [ax, ay - 17], [ax + 18, ay + 15]] : [[ax - 18, ay - 15], [ax, ay + 17], [ax + 18, ay - 15]], { closed: true, smooth: false, fill: upArrow ? C.blue : C.red, w: 2.6, seed: 470 + i });
+    up.push(upArrow);
   }
-  ctx.restore();
-}
-function station(ctx, x, i) {
-  IB.desk(ctx, x + 70, x + 440, DESK, FLOOR, { lw: 3.2, seed: 500 + i * 10 });
-  IB.box(ctx, x + 94, DESK - 10, 130, 10, { fill: C.bg, w: 2.4, seed: 503 + i * 10 });                                         // keyboard
-  IB.box(ctx, x + 330, DESK - 8, 70, 8, { fill: C.bg, w: 2.6, seed: 504 + i * 10 });                                          // the monitor, seen edge on
-  IB.seg(ctx, x + 365, DESK - 8, x + 372, DESK - 60, { w: 4, seed: 505 + i * 10 });
-  IB.ink(ctx, [[x + 348, DESK - 200], [x + 366, DESK - 204], [x + 388, DESK - 46], [x + 370, DESK - 42]], { closed: true, smooth: false, fill: C.bg, w: 3.2, seed: 506 + i * 10 });
-  IB.seg(ctx, x + 350, DESK - 190, x + 370, DESK - 52, { w: 2, color: C.paper, seed: 507 + i * 10, grain: 0 });
-}
-// a sheet of paper that leaves a desk at `at`, flies 14 drawings and lies where it lands
-function sheet(ctx, tt, at, from, to, seed) {
-  const k = clamp(Math.round((tt - at) * 12), -1, 14); if (k < 0) return;
-  const u = k / 14, x = lerp(from[0], to[0], u), y = lerp(from[1], to[1], u * u) - 330 * Math.sin(Math.PI * Math.min(1, u * 1.15)) * (1 - u * 0.5);
-  ctx.save(); ctx.translate(x, y); ctx.rotate(u < 1 ? k * 0.7 + seed : 0.1);
-  IB.box(ctx, -32, u < 1 ? -42 : -6, 64, u < 1 ? 84 : 12, { fill: C.paper, w: 2.4, seed });
-  if (u < 1) for (let i = 0; i < 3; i++) IB.seg(ctx, -20, -24 + i * 18, 18, -24 + i * 18, { w: 1.6, seed: seed + 1 + i });
-  ctx.restore();
+  return up;
 }
 
 MG.scene({
@@ -89,32 +65,29 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), k = Math.round(tt * 12), ps = poses(t);
-    board(ctx, tt);
-    IB.oval(ctx, 1740, 260, 54, 54, { fill: C.paper, w: 3.4, seed: 480, n: 18 }); IB.seg(ctx, 1740, 260, 1740, 226, { w: 3, seed: 481 }); IB.seg(ctx, 1740, 260, 1762, 272, { w: 3, seed: 482 });
+    IB.tickerBoard(ctx, [320, 160], { up: cells(tt) });   // hung low, leaving a band above the heads for the bubble
+    IB.wallClock(ctx, [1740, 260]);
     IB.smear(ctx, 960, FLOOR - 4, 1760, { h: 14, seed: 9 });
-    sheet(ctx, tt, T(57), [SEATS[0] + 300, DESK - 20], [SEATS[0] + 470, FLOOR - 6], 600);
-    sheet(ctx, tt, T(60), [SEATS[1] + 290, DESK - 20], [SEATS[1] + 500, FLOOR - 6], 610);
-    sheet(ctx, tt, T(64), [SEATS[2] + 280, DESK - 20], [SEATS[2] + 500, FLOOR - 6], 620);
+    // a sheet leaves each desk as its sitter joins in, flies 14 drawings and lies where it lands
+    IB.flyingSheet(ctx, [SEATS[0] + 300, DESK - 20], [SEATS[0] + 470, FLOOR - 6], IB.drawn(tt, IB.T(57)), { seed: 600 });
+    IB.flyingSheet(ctx, [SEATS[1] + 290, DESK - 20], [SEATS[1] + 500, FLOOR - 6], IB.drawn(tt, IB.T(60)), { seed: 610 });
+    IB.flyingSheet(ctx, [SEATS[2] + 280, DESK - 20], [SEATS[2] + 500, FLOOR - 6], IB.drawn(tt, IB.T(64)), { seed: 620 });
     SEATS.forEach((x, i) => {
       const p = ps[i], look = { ...WHO[i], face: p.face };
       IB.chair(ctx, x, FLOOR, H, 1, { seed: 700 + i * 10 });
       IB.figure(ctx, p, look, 'far');
-      station(ctx, x, i);
-      if (i === 1) IB.box(ctx, x + 236, DESK - 22, 74, 22, { fill: C.bg, w: 2.6, seed: 520 });   // the phone's cradle
+      IB.workstation(ctx, [x, DESK], { floor: FLOOR, seed: 500 + i * 10 });
+      if (i === 1) IB.phoneCradle(ctx, [x + 236, DESK]);
       const j = IB.figure(ctx, p, look, 'near');
-      if (p.phone) {   // the handset in the near hand, its cord back to the cradle
-        const [hx, hy] = j.hands[1];
-        IB.ink(ctx, [[hx + 10, hy + 18], [hx + 60, hy + 70], [x + 250, DESK - 60], [x + 262, DESK - 22]], { w: 2, seed: 521 });
-        IB.ink(ctx, [[hx - 9, hy - 20], [hx + 3, hy - 22], [hx + 9, hy + 16], [hx - 3, hy + 20]], { closed: true, fill: C.charcoal, w: 2.6, seed: 522 });
-      }
-      if (p.phoneDown) IB.ink(ctx, [[x + 240, DESK - 34], [x + 306, DESK - 34], [x + 308, DESK - 22], [x + 238, DESK - 22]], { closed: true, fill: C.charcoal, w: 2.6, seed: 522 });   // back on the cradle
-      if (p.cupDown) IB.ink(ctx, [[x + 256, DESK - 40], [x + 282, DESK - 40], [x + 278, DESK], [x + 260, DESK]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 523 });       // put down on the desk
-      if (p.cup) { const [hx, hy] = j.hands[1]; IB.ink(ctx, [[hx - 4, hy - 34], [hx + 22, hy - 34], [hx + 18, hy + 6], [hx, hy + 6]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: 523 }); }
+      if (p.phone) IB.handset(ctx, j.hands[1], { cradle: [x + 236, DESK] });   // the handset in the near hand, its cord back to the cradle
+      if (p.phoneDown) IB.phoneCradle(ctx, [x + 236, DESK], { rest: true });     // back on the cradle
+      if (p.cupDown) IB.cup(ctx, [x + 260, DESK - 6]);                            // put down on the desk
+      if (p.cup) IB.cup(ctx, j.hands[1]);
       // everyone hammering the keys: marks above each keyboard, re-rolled on every drawing
-      if (tt >= T(60) - 1e-6 && !p.phone && !p.cup) { IB.shake(ctx, x + 124, DESK - 40, 14, { a: -Math.PI / 2 - 0.5, n: 2, seed: 800 + i * 40 + k, w: 2.4 }); IB.shake(ctx, x + 196, DESK - 40, 14, { a: -Math.PI / 2 + 0.5, n: 2, seed: 820 + i * 40 + k, w: 2.4 }); }
+      if (tt >= IB.T(60) - 1e-6 && !p.phone && !p.cup) { IB.shake(ctx, x + 124, DESK - 40, 14, { a: -Math.PI / 2 - 0.5, n: 2, seed: 800 + i * 40 + k, w: 2.4 }); IB.shake(ctx, x + 196, DESK - 40, 14, { a: -Math.PI / 2 + 0.5, n: 2, seed: 820 + i * 40 + k, w: 2.4 }); }
     });
     const b = ps[1];
-    IB.bubble(ctx, ['매수!'], t, T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 512, until: T(57), seed: 900 });
+    IB.bubble(ctx, ['매수!'], t, IB.T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 512, until: IB.T(57), seed: 900 });
   },
 });
 </script>

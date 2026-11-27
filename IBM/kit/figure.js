@@ -1,4 +1,4 @@
-/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the limbs of objects that walk (IB.peg, IB.hose, IB.boot) and their hands (IB.mitt, IB.clasp), speech bubbles (IB.bubble), the pointing hand from off-screen (IB.pointer) and shake marks (IB.shake). Needs ink.js; adds to the global IB. */
+/* figure.js — a jointed side-view person in the look of the IBM spots: long legs, a small head in profile, flat garment shapes with an ink outline, graphite only where a limb leaves a garment. A scene gives joint targets (hip, ankles, wrists) in stage px and the rig solves knees and elbows, so a pose is a handful of numbers that can be keyed, mixed and held on twos. Proportions were measured on the reference's wide acting shots and the production stills (../STYLE.md "인물 리그"). Also here: the limbs of objects that walk (IB.peg, IB.hose, IB.boot) and their hands (IB.mitt, IB.clasp), speech bubbles (IB.bubble), the pointing hand from off-screen (IB.pointer) and shake marks (IB.shake). Needs ink.js and time.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;
@@ -340,6 +340,17 @@
     for (const [x, y] of [[250, 168], [300, 262], [372, 338]]) IB.ink(ctx, [[x, y], [x + 60, y - 44], [x + 130, y - 36]], { w: w * 0.875, seed: seed + 2 + x });
     IB.tube(ctx, [[300, 80], [150, 34], [44, 8]], { w: 92, edge: w, fill: skin, smooth: true, seed: seed + 6 });
     IB.ink(ctx, [[12, -18], [60, -26], [96, -14]], { w: w * 0.75, seed: seed + 7 });
+    ctx.restore();
+  };
+
+  /* reachArm(ctx, hand, opts) — an arm from off-screen right that holds a string or a small thing: a long sleeve swept in from x `from`, a cuff, and a closed hand with three finger lines, the hand's knuckles at `hand` facing left. Coloured like the other off-screen arm (IB.pointer) but at wide-shot size: sleeve 42 px. Use it only while the arm is used: four drawings in, three out (vignette/balloons-lift-chair). New, not measured. */
+  IB.reachArm = (ctx, [hx, hy], o = {}) => {
+    const { from = 2000, sleeve = C.bg, skin = C.skin[1], seed = 400 } = o;
+    ctx.save();
+    IB.tube(ctx, [[from, hy + 70], [hx + 150, hy + 26], [hx + 36, hy + 4]], { w: 42, edge: 3.2, fill: sleeve, smooth: true, seed });
+    IB.ink(ctx, [[hx + 44, hy - 20], [hx + 30, hy - 22], [hx + 28, hy + 30], [hx + 44, hy + 30]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: seed + 1 });   // cuff
+    IB.ink(ctx, [[hx + 30, hy - 16], [hx + 4, hy - 20], [hx - 16, hy - 8], [hx - 18, hy + 10], [hx + 2, hy + 22], [hx + 30, hy + 24]], { closed: true, fill: skin, w: 3, seed: seed + 2 });
+    for (const dy of [-6, 4, 13]) IB.ink(ctx, [[hx - 14, hy + dy], [hx + 2, hy + dy - 1]], { w: 2, seed: seed + 4 + dy });
     ctx.restore();
   };
 

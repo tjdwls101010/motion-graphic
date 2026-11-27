@@ -5,180 +5,19 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/sets/city.js"></script>
 <script>
 /* 화면을 가득 채운 흑백 선화 도시 한가운데 경기장이 있고, 노란 헬리콥터 한 대가 오른쪽 아래에서 렌즈 앞을 스치듯 들어와 꼬리를 치켜들고 돌아선 뒤 경기장 쪽으로 멀어진다. 전달하는 생각: 이제 벌어질 일의 장소를 한 장으로 알린다.
-   Motion notes: 1.9 s. The drawing never moves and is far denser than any other family: line widths 1.5-4.5 px mixed, windows and trusses as texture, almost no fills, and every gap between buildings stuffed with cauliflower foliage (clump). Colour only in two places, the yellow craft and the pale blue seating, plus one bright strip at the stadium's foot.
+   Motion notes: 1.9 s. The drawing never moves and is far denser than any other family: line widths 1.5-4.5 px mixed, windows and trusses as texture, almost no fills, and every gap between buildings stuffed with cauliflower foliage (IB.clump). Colour only in two places, the yellow craft and the pale blue seating, plus one bright strip at the stadium's foot.
    The city is read off the reference frame on a 100 px grid: the stadium (a drum with a rounded shoulder, a band of nine V trusses over a band of nine crosses between posts, an opening whose far stand shows four ring lines above the dark bowl), 22 towers with their widths, heights and which third of each carries window marks (the reference leaves much of every tower white), the foreground blocks, clouds and birds. Foliage is placed by hand as ellipses and generated inside them (open strings of bumps about 24 px across over a blank fill), so its bumps are not the reference's; the foreground blocks have four-point roofs where the reference steps some of them.
-   The craft is the one moving thing, on twos (CRAFT, 19 drawings from frame 8): nothing for the first 0.33 s, then three drawings larger than the frame as it crosses in front of the lens (the first stretched 1.3x as a smear), two facing the lens with the boom rising behind the cabin, and from then on it never hovers: every drawing is smaller and more level than the last as it flies off toward the stadium, drifting 136 px left then 76 px back right. The rotor is a fan of straight strokes re-rolled on every drawing; it stays near level while the body tips. The craft's painted eye and lettering are left out. */
-const { lerp, rng } = MG;
-const C = IB.C;
-
-/* The skyline, far to near: [x0, x1, top, texture, from, to, cap]. Read off the reference frame on a 100 px grid. texture: 'dots' (columns of short window dashes), 'v' (vertical lines), 'h' (horizontal lines), 'grid', '' (blank); from / to = the part of the width that carries it (the reference leaves a third of most towers white); cap = a narrower block on the roof, [x0, x1, top]. Bases run down behind the stadium and the trees. */
-const TOWERS = [
-  [1272, 1410, 90, 'v', 0.68, 0.72], [632, 700, 108, 'h', 0.25, 0.95], [452, 580, 153, 'v', 0.66, 1], [880, 1005, 150, 'h', 0.55, 1], [1190, 1310, 152, 'dots', 0.34, 0.95],
-  [783, 852, 182, 'v', 0.1, 0.5], [598, 760, 212, 'dots', 0.42, 0.98], [818, 942, 212, 'dots', 0.42, 0.98, [840, 860, 238]], [360, 440, 215, 'dots', 0.3, 0.95], [1505, 1612, 213, 'v', 0.45, 0.95],
-  [1065, 1188, 272, 'h', 0.06, 0.94, [1092, 1172, 242]], [395, 518, 272, 'v', 0.12, 0.55], [1312, 1492, 335, 'grid', 0.08, 1], [298, 368, 335, 'dots', 0.1, 0.9, [305, 352, 322]], [945, 990, 335, 'h', 0.2, 0.9],
-  [1703, 1788, 360, 'h', 0.05, 0.95], [1522, 1650, 392, 'dots', 0.1, 0.6], [780, 945, 395, 'v', 0.05, 0.95], [100, 285, 435, 'bays', 0.05, 0.75], [518, 640, 452, 'dots', 0.2, 0.7], [1465, 1705, 540, 'v', 0.1, 0.6], [1725, 1845, 478, 'h', 0.3, 0.95],
-];
-const BIRDS = [[230, 415], [262, 466], [1020, 405], [1555, 95], [1520, 148], [1735, 108], [1672, 438]];
-/* Clouds: thick-outlined blobs, [x0, x1, y, height], with a graphite smudge inside. */
-const CLOUDS = [[725, 1072, 55, 40], [1068, 1228, 80, 25], [300, 618, 145, 58], [133, 285, 286, 28], [1678, 1843, 196, 21], [1442, 1560, 4, 16]];
-
-function tower(ctx, [x0, x1, top, tex, from = 0, to = 1, cap], i) {
-  const base = 700, seed = 100 + i * 13, lw = { w: 1.6, wob: 0.5, taper: false }, a = lerp(x0, x1, from), b = lerp(x0, x1, to);
-  if (cap) IB.box(ctx, cap[0], cap[2], cap[1] - cap[0], top - cap[2] + 4, { fill: C.bg, w: 2.6, seed: seed + 1 });
-  IB.ink(ctx, [[x0, base], [x0, top], [x1, top], [x1, base]], { smooth: false, fill: C.bg, w: 3, seed, closed: true });
-  if (tex === 'dots') for (let x = a + 8; x < b - 4; x += 15) for (let y = top + 22; y < base; y += 21) IB.seg(ctx, x, y, x, y + 8, { w: 2.6, wob: 0, seed: seed + x + y });
-  if (tex === 'v' || tex === 'grid') for (let x = a + 4; x < b - 2; x += tex === 'grid' ? 42 : 13) IB.seg(ctx, x, top + 8, x, base, { ...lw, seed: seed + x });
-  if (tex === 'h' || tex === 'grid') for (let y = top + (tex === 'grid' ? 42 : 16); y < base; y += tex === 'grid' ? 40 : 15) IB.seg(ctx, a, y, b, y + 1, { ...lw, seed: seed + y });
-  if (tex === 'bays') for (let k = 0; k < 4; k++) { const x = a + 8 + k * 36; IB.box(ctx, x, top + 38, 20, 140, { w: 2, seed: seed + k }); for (let y = top + 60; y < top + 178; y += 22) IB.seg(ctx, x, y, x + 20, y, { ...lw, seed: seed + k * 9 + y }); }
-}
-function cloud(ctx, [x0, x1, y, h], seed) {
-  const w = x1 - x0, cx = (x0 + x1) / 2, pts = [];
-  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a); pts.push([cx + Math.sign(c) * Math.pow(Math.abs(c), 0.55) * (w / 2), y + Math.sign(sn) * Math.pow(Math.abs(sn), 0.8) * (h / 2) * (i % 3 === 1 ? 1.15 : 0.9)]); }
-  IB.ink(ctx, pts, { closed: true, fill: C.bg, w: 4.5, seed });
-  for (let i = 0; i < 3; i++) IB.ink(ctx, [[cx - w * 0.3, y + 2 - i * 2], [cx - w * 0.18, y + 4 - i * 2], [cx - w * 0.06, y + 2 - i * 2]], { w: Math.max(4, h * 0.2) - i, color: 'rgba(40, 40, 40, 0.13)', seed: seed + 1 + i, grain: 0 });   // graphite inside the cloud
-}
-
-/* Foliage: the reference fills every gap between buildings with cauliflower masses, an outline of bumps of uneven size with a curl inside here and there. clump covers the ellipse (cx, cy, rx, ry) and paints over what is behind it. */
-function clump(ctx, cx, cy, rx, ry, seed) {
-  const r = rng(seed), n = Math.max(8, Math.round((Math.PI * (rx + ry)) / 24)), base = [], lobes = [];
-  for (let i = 0; i < n; i++) { const a = ((i + (r() - 0.5) * 0.5) / n) * Math.PI * 2; base.push([cx + Math.cos(a) * rx * 0.92, cy + Math.sin(a) * ry * 0.92, a]); }
-  // each bump is a round arc from one base point to the next, bulging away from the centre
-  for (let i = 0; i < n; i++) {
-    const p = base[i], q = base[(i + 1) % n], mx = (p[0] + q[0]) / 2 - cx, my = (p[1] + q[1]) / 2 - cy, d = Math.hypot(mx, my) || 1, chord = Math.hypot(q[0] - p[0], q[1] - p[1]), bulge = chord * (0.45 + r() * 0.25), arc = [];
-    for (let k = 0; k <= 6; k++) { const u = k / 6, h = Math.pow(Math.sin(Math.PI * u), 0.75) * bulge; arc.push([lerp(p[0], q[0], u) + (mx / d) * h, lerp(p[1], q[1], u) + (my / d) * h]); }
-    lobes.push({ arc, up: my / d < 0.45, skip: r() < 0.14 });
-  }
-  // the mass hides what is behind it but has no outline of its own: only the bumps along its top and sides are inked, as open strokes with a gap here and there
-  IB.ink(ctx, lobes.flatMap((l) => l.arc.slice(0, 6)), { closed: true, smooth: false, fill: C.bg, w: 0, wob: 0 });
-  lobes.forEach((l, i) => { if (l.up && !l.skip) IB.ink(ctx, l.arc, { w: 2.6, seed: seed + i, wob: 0.6 }); });
-  for (let i = 0; i < Math.round(n / 7); i++) { const x = cx + (r() - 0.5) * rx * 1.1, y = cy + (r() - 0.5) * ry * 0.7, q = 6 + r() * 5; IB.ink(ctx, [[x + q, y - q * 0.6], [x - q * 0.2, y - q], [x - q, y], [x - q * 0.3, y + q * 0.8]], { w: 2.2, seed: seed + 40 + i }); }   // a curl where two bumps meet inside the mass
-}
-
-function stadium(ctx) {
-  // a drum seen from a little above: a rounded shoulder, a band of big V trusses, a band of crosses between posts, a bright strip at its foot
-  const cx = 965, RX = 425, arc = (cy, ry, a0, a1, n = 28) => IB.ellipse(cx, cy, RX, ry, n, a0, a1);
-  const shoulder = [[545, 800], [545, 660], [560, 600], [600, 560], [700, 515], [830, 492], [960, 487], [1100, 492], [1220, 512], [1320, 550], [1370, 600], [1392, 650], [1392, 800]];
-  IB.ink(ctx, shoulder.concat(arc(790, 95, 0.02, Math.PI - 0.02)), { closed: true, fill: C.paper, w: 4.5, seed: 300 });
-  // the strip at the foot, right of centre
-  const s0 = arc(790, 95, 0.27, 1.28, 14), s1 = IB.ellipse(cx, 822, RX, 95, 14, 0.27, 1.28);
-  IB.ink(ctx, s0.concat(s1.slice().reverse()), { closed: true, fill: '#3b98e6', w: 0, wob: 0.5 });
-  for (let i = 1; i < s0.length * 2 - 1; i++) { const u = i / (s0.length * 2 - 1), k = u * (s0.length - 1), j = Math.min(s0.length - 2, Math.floor(k)), v = k - j; IB.seg(ctx, lerp(s0[j][0], s0[j + 1][0], v), lerp(s0[j][1], s0[j + 1][1], v) + 2, lerp(s1[j][0], s1[j + 1][0], v), lerp(s1[j][1], s1[j + 1][1], v), { w: 1.7, wob: 0, seed: 380 + i, color: '#17406e' }); }
-  IB.ink(ctx, arc(790, 95, 0.02, Math.PI - 0.02), { w: 4.5, seed: 303 });
-  // lower band: posts at equal angles round the drum, a cross in every bay
-  const mid = (a) => [cx + Math.cos(a) * RX, 650 + Math.sin(a) * 90], foot = (a) => [cx + Math.cos(a) * RX, 790 + Math.sin(a) * 95];
-  const N = 9, at = (i) => Math.PI * (0.06 + (0.88 * i) / N);
-  for (let i = 0; i <= N; i++) { IB.ink(ctx, [mid(at(i)), foot(at(i))], { w: 2.6, seed: 330 + i, smooth: false }); if (i < N) { IB.ink(ctx, [mid(at(i) + 0.02), foot(at(i + 1) - 0.02)], { w: 2.3, seed: 345 + i, smooth: false }); IB.ink(ctx, [mid(at(i + 1) - 0.02), foot(at(i) + 0.02)], { w: 2.3, seed: 360 + i, smooth: false }); } }
-  IB.ink(ctx, arc(650, 90, 0.03, Math.PI - 0.03), { w: 4, seed: 301 });
-  // upper band: V trusses hanging from under the lip
-  const lip = (a) => [cx + Math.cos(a) * RX * 0.97, 562 + Math.sin(a) * 84], M = 9;
-  for (let i = 0; i < M; i++) { const a0 = Math.PI * (0.07 + (0.86 * i) / M), a1 = Math.PI * (0.07 + (0.86 * (i + 1)) / M), b = mid((a0 + a1) / 2); IB.ink(ctx, [lip(a0 + 0.02), [b[0], b[1] - 8], lip(a1 - 0.02)], { w: 2.8, seed: 310 + i, smooth: false }); }
-  // the roof: ticks round the white rim, pale seating with four ring lines, the dark bowl under the far stand
-  const open = IB.ellipse(966, 575, 320, 58, 30);
-  for (let i = 0; i < 15; i++) { const a = Math.PI * (1.04 + (0.92 * i) / 14), o = [cx + Math.cos(a) * RX * 0.93, 590 + Math.sin(a) * 96], q = [966 + Math.cos(a) * 320 * 1.05, 575 + Math.sin(a) * 58 * 1.12]; IB.ink(ctx, [[lerp(q[0], o[0], 0.2), lerp(q[1], o[1], 0.2)], [lerp(q[0], o[0], 0.75), lerp(q[1], o[1], 0.75)]], { w: 2.2, seed: 370 + i, smooth: false }); }
-  IB.ink(ctx, open, { closed: true, fill: C.sky, w: 0, seed: 305 });
-  ctx.save();
-  IB.clip(ctx, open);
-  for (const ry of [42, 30, 19, 9]) IB.ink(ctx, IB.ellipse(966, 578, 316, ry, 22, Math.PI, Math.PI * 2), { w: 2.2, seed: 306 + ry });
-  IB.ink(ctx, IB.ellipse(966, 610, 290, 38, 20, Math.PI, Math.PI * 2).concat([[1256, 660], [676, 660]]), { closed: true, smooth: false, fill: C.ink, w: 0, wob: 0 });
-  ctx.restore();
-  IB.ink(ctx, open, { closed: true, w: 4, seed: 304 });
-}
-
-/* A flat-roofed block seen from above: the roof is the four points given (left, back, right, front), the two near faces drop h px. tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face. The reference steps some of these roofs (an L with a notch); here every roof is four points. */
-function block(ctx, q, h, seed, tex = 'v') {
-  const down = (p) => [p[0], p[1] + h];
-  IB.ink(ctx, [q[0], q[3], down(q[3]), down(q[0])], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 });
-  IB.ink(ctx, [q[3], q[2], down(q[2]), down(q[3])], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 2 });
-  IB.ink(ctx, q, { closed: true, smooth: false, fill: C.bg, w: 3.2, seed });
-  const face = (a, b, kind) => {
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (kind === 'v') for (let i = 1; i < Math.floor(len / 17); i++) { const u = i / Math.floor(len / 17), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + 12, x, y + Math.min(h - 8, 12 + h * 0.55), { w: 1.7, wob: 0.4, seed: seed + i * 7 }); }
-    if (kind === 'band') { for (const k of [0.36, 0.7]) IB.seg(ctx, a[0] + 3, a[1] + h * k, b[0] - 3, b[1] + h * k, { w: 1.8, wob: 0.4, seed: seed + k * 100 }); for (let i = 1; i < Math.floor(len / 20); i++) { const u = i / Math.floor(len / 20), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + h * 0.44, x, y + h * 0.62, { w: 2, wob: 0, seed: seed + i * 7 }); } }
-    if (kind === 'h') for (let y = 16; y < h - 6; y += 15) IB.seg(ctx, a[0] + 5, a[1] + y, b[0] - 5, b[1] + y, { w: 1.7, wob: 0.4, seed: seed + y });
-    if (kind === 'u') for (let i = 1; i < 4; i++) for (let y = 26; y < h - 14; y += 30) { const u = i / 4, x = lerp(a[0], b[0], u), yy = lerp(a[1], b[1], u) + y; IB.ink(ctx, [[x - 4, yy - 5], [x - 3, yy + 3], [x + 3, yy + 3], [x + 4, yy - 5]], { w: 2, seed: seed + i * 5 + y }); }
-  };
-  if (tex === 'v') { face(q[0], q[3], 'v'); face(q[3], q[2], 'v'); }
-  if (tex === 'band') { face(q[0], q[3], 'band'); face(q[3], q[2], 'band'); }
-  if (tex === 'h') face(q[3], q[2], 'h');
-  if (tex === 'u') { face(q[0], q[3], 'u'); face(q[3], q[2], 'h'); }
-}
-
-/* Everything in front of the skyline, far to near. Foliage goes in as it comes, so that each clump hides the foot of what stands behind it. */
-function ground(ctx, layer) {
-  const C1 = (list) => list.forEach(([x, y, rx, ry], i) => clump(ctx, x, y, rx, ry, 500 + layer * 40 + i));
-  if (layer === 0) {   // behind the stadium: the feet of the towers
-    C1([[150, 612, 70, 26], [300, 620, 90, 30], [460, 628, 80, 30], [1440, 620, 70, 34], [1600, 690, 70, 30], [1800, 640, 110, 40], [1860, 720, 80, 40]]);
-    block(ctx, [[1650, 628], [1692, 618], [1735, 628], [1692, 638]], 86, 590, 'v');   // the small round tower, drawn as a box
-    return;
-  }
-  C1([[110, 700, 110, 48], [200, 780, 120, 44], [1700, 770, 110, 36]]);
-  block(ctx, [[228, 672], [400, 642], [545, 656], [380, 696]], 26, 520);
-  block(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], 30, 525, 'none');
-  block(ctx, [[1400, 742], [1512, 708], [1590, 724], [1470, 760]], 118, 510, 'u');
-  C1([[150, 900, 150, 60], [1640, 880, 80, 30], [1520, 900, 60, 24]]);
-  block(ctx, [[1690, 828], [1800, 806], [1850, 820], [1735, 845]], 92, 530, 'h');
-  block(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], 92, 540, 'band');
-  C1([[920, 862, 150, 30], [820, 846, 60, 22], [1030, 854, 50, 20], [380, 1010, 120, 40], [1790, 970, 150, 60], [1905, 915, 60, 50]]);
-  block(ctx, [[1060, 948], [1380, 870], [1612, 896], [1300, 976]], 120, 550);
-  block(ctx, [[1215, 922], [1340, 898], [1405, 912], [1280, 938]], 24, 560, 'none');
-  for (let i = 0; i < 3; i++) IB.seg(ctx, 1322 + i * 12, 940 - i * 3, 1332 + i * 12, 937 - i * 3, { w: 2, seed: 565 + i });
-  block(ctx, [[508, 1020], [832, 923], [988, 950], [648, 1050]], 62, 570, 'none');
-  block(ctx, [[636, 972], [686, 958], [696, 964], [646, 980]], 42, 575, 'h');
-  C1([[1010, 1040, 90, 36], [1720, 1070, 200, 44], [90, 1030, 130, 50]]);
-}
-
-/* The craft, one drawing per two frames from frame 8: [x, y of the centre of its yellow shape, scale, rotation, facing (negative = nose left; -1.3 also stretches it into a smear)], or ['front', x, y, sx, sy] for the two drawings where it faces the lens. Measured on the reference: position = centroid of its yellow pixels, scale = square root of their area against this drawing's own at scale 1 (11631 px), rotation = the principal axis of that area. The first three are larger than the frame and cut off by it, so their numbers are fitted by eye. It comes past the lens from the lower right, swings round to face us with its tail up for two drawings, and then never hovers: it keeps shrinking (1.48 to 0.86) and levelling out (0.69 to 0.01 rad) while it drifts 136 px left and 76 px back right, flying away toward the stadium. */
-const CRAFT = [
-  [2090, 570, 4.6, -0.2, -1.3], [1400, 640, 4.4, -0.15, -1], [1200, 500, 3.7, -0.2, -1],
-  ['front', 660, 628, 1, 1], ['front', 549, 620, 0.67, 0.87],
-  [414, 581, 1.48, 0.69, 1], [339, 567, 1.43, 0.39, 1], [315, 567, 1.37, 0.29, 1], [293, 566, 1.27, 0.18, 1], [283, 565, 1.23, 0.14, 1], [278, 561, 1.18, 0.09, 1],
-  [285, 560, 1.1, 0.085, 1], [288, 559, 1.1, 0.06, 1], [298, 558, 1.025, 0.04, 1], [304, 558, 1.0, 0.025, 1], [320, 557, 0.95, 0.02, 1], [332, 555, 0.93, 0.01, 1], [338, 555, 0.91, 0.01, 1], [354, 556, 0.86, 0.01, 1],
-];
-
-/* The rotor: a fan of thin straight strokes through the mast at (x, y), re-rolled on every drawing. It stays within a few degrees of level whatever the body is doing. */
-function rotor(ctx, x, y, span, lw, d) {
-  const r = rng(700 + d);
-  for (let i = 0; i < 9; i++) { const l = span * (0.6 + r() * 0.4), k = (r() - 0.5) * 0.16; IB.seg(ctx, x - l, y - l * k + (r() - 0.5) * 14, x + l * (0.5 + r() * 0.5), y + l * k * 0.6 + (r() - 0.5) * 14, { w: lw, wob: 0, seed: 710 + i + d * 9 }); }
-}
-
-/* The craft facing the lens, cabin centred on (x, y): the boom rises behind it to the tail fin, the skids hang level under it. sx, sy squeeze it as it turns on. The reference paints an eye and a word on the cabin: left out. */
-function heliFront(ctx, x, y, sx, sy, d) {
-  ctx.save();
-  ctx.translate(x, y); ctx.scale(sx, sy);
-  const lw = 2.6;
-  IB.ink(ctx, [[-22, -100], [-12, -400], [-40, -404], [-40, -420], [40, -420], [40, -404], [12, -400], [22, -100]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 620 });   // boom and tail fin
-  for (const s of [-1, 1]) { IB.tube(ctx, [[s * 58, 96], [s * 74, 126]], { w: 8, edge: 2, fill: '#b9b9b9', seed: 622 + s }); IB.tube(ctx, [[s * 108, 118], [s * 74, 128], [s * 50, 122]], { w: 9, edge: 2, fill: '#b9b9b9', smooth: true, seed: 624 + s }); }   // skids
-  IB.ink(ctx, [[-80, -104], [0, -116], [80, -104], [106, -40], [112, 30], [84, 96], [0, 112], [-84, 96], [-112, 30], [-106, -40]], { closed: true, fill: C.yellow, w: lw, seed: 626 });   // cabin
-  IB.ink(ctx, [[-70, -78], [0, -88], [70, -78], [84, -24], [0, -14], [-84, -24]], { closed: true, fill: C.paper, w: lw, seed: 627 });   // windscreen, two panes
-  IB.seg(ctx, 0, -88, 0, -14, { w: 2, seed: 628 });
-  IB.seg(ctx, 0, -116, 0, -132, { w: 4, seed: 629 });
-  ctx.restore();
-  rotor(ctx, x, y - 132 * sy, 300 * sx, 1.6, d);
-}
-
-/* The one coloured thing in the shot. Drawn nose-right about the cabin's centre; `facing` -1 flips it. The reference paints a brand mark and a word on the cabin: left out. */
-function heli(ctx, x, y, s, rot, facing, d) {
-  ctx.save();
-  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s * facing, s);
-  const lw = 2.4 / Math.sqrt(s);
-  IB.tube(ctx, [[-55, 52], [76, 58]], { w: 9, edge: 2, fill: '#b9b9b9', seed: 600 });                      // skid
-  IB.tube(ctx, [[-30, 36], [-40, 52]], { w: 7, edge: 1.8, fill: '#b9b9b9', seed: 601 });
-  IB.tube(ctx, [[40, 38], [50, 56]], { w: 7, edge: 1.8, fill: '#b9b9b9', seed: 602 });
-  IB.ink(ctx, [[-216, -118], [-204, -116], [-196, -20], [-212, -12]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 603 });      // tail fin
-  IB.ink(ctx, [[-228, -64], [-186, -58], [-186, -49], [-228, -52]], { closed: true, smooth: false, fill: C.yellow, w: lw, seed: 604 });        // stabiliser
-  IB.ink(ctx, [[-198, -61], [-75, -43], [10, -50], [22, -36], [50, -17], [83, 27], [74, 41], [-25, 36], [-75, -5], [-198, -43]], { closed: true, fill: C.yellow, w: lw, seed: 605 });   // boom and cabin in one shape
-  IB.ink(ctx, [[19, -13], [60, -9], [63, 17], [22, 14]], { closed: true, smooth: false, fill: C.paper, w: lw, seed: 606 });                    // side window, four panes
-  IB.seg(ctx, 40, -11, 42, 15, { w: lw * 0.8, seed: 607 }); IB.seg(ctx, 20, 0, 61, 4, { w: lw * 0.8, seed: 608 });
-  IB.ink(ctx, [[65, -5], [77, 12], [67, 15]], { closed: true, smooth: false, fill: C.paper, w: lw * 0.8, seed: 609 });
-  IB.seg(ctx, 17, -50, 17, -60, { w: lw * 1.4, seed: 610 });
-  // the rotor does not tip with the body: most of the body's turn is taken back out about the mast
-  ctx.translate(17, -62); ctx.rotate(-rot * 0.85 * Math.sign(facing)); ctx.translate(-17, 62);
-  ctx.scale(1 / s, 1 / s); rotor(ctx, 17 * s, -62 * s, 280 * s, 1.6 * Math.sqrt(s), d); 
-  ctx.restore();
-}
+   The craft is the one moving thing, on twos (IB.heli.MOVE.flyIn, 19 drawings from frame 8): nothing for the first 0.33 s, then three drawings larger than the frame as it crosses in front of the lens (the first stretched 1.3x as a smear), two facing the lens with the boom rising behind the cabin, and from then on it never hovers: every drawing is smaller and more level than the last as it flies off toward the stadium, drifting 136 px left then 76 px back right. The rotor is a fan of straight strokes re-rolled on every drawing; it stays near level while the body tips. The craft's painted eye and lettering are left out. */
+const FLY = IB.play(IB.heli.MOVE.flyIn, 8);   // the craft's drawings, on twos from frame 8
 
 MG.scene({
   title: 'establish / city-stadium-flyin',
@@ -186,22 +25,10 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    CLOUDS.forEach((c, i) => cloud(ctx, c, 700 + i * 3));
-    for (const [x, y] of BIRDS) IB.ink(ctx, [[x - 9, y - 3], [x - 3, y + 2], [x + 2, y - 2], [x + 9, y - 4]], { w: 2, seed: 720 + x });
-    TOWERS.forEach((b, i) => tower(ctx, b, i));
-    ground(ctx, 0);
-    stadium(ctx);
-    ground(ctx, 1);
+    IB.stadiumCity(ctx);
     // the one moving thing, on twos from frame 8
     const f = IB.frame(t), d = Math.floor((f - 8) / 2);
-    if (d >= 0) {
-      const k = CRAFT[Math.min(d, CRAFT.length - 1)];
-      if (k[0] === 'front') heliFront(ctx, k[1], k[2], k[3], k[4], d);
-      else {
-        const [x, y, sc, rot, facing] = k, c = Math.cos(rot), sn = Math.sin(rot), ox = -47.9 * sc * facing, oy = -14.1 * sc;   // (ox, oy): where the yellow shape's centroid sits relative to the craft's own origin
-        heli(ctx, x - (ox * c - oy * sn), y - (ox * sn + oy * c), sc, rot, facing, d);
-      }
-    }
+    if (d >= 0) IB.heliDrawing(ctx, IB.held(FLY, f), d);   // d keeps counting after the last drawing: it re-rolls the rotor
   },
 });
 </script>

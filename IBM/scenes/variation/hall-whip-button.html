@@ -5,103 +5,46 @@
 <script src="../../../core/motion.js"></script>
 <script src="../../../core/stage.js"></script>
 <script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/sets/corridor.js"></script>
 <script>
 /* 흑백 선화로 빽빽하게 그린 복도 안쪽으로 연보라 종이비행기 하나가 날아 들어가고, 스피드라인 휩이 화면을 쓸면 큰 버튼 앞에서 망설이던 손가락이 꾹 눌러 불이 켜진다. 원본에 없는 창작 장면으로, 원본의 설정 샷·휩 전환·클로즈업 인서트 세 계열을 다른 장소로 이어 붙인 변주다. 전달하는 생각: 장소를 한 장으로 알리고, 곧바로 손끝의 한 동작으로 들어간다.
    Motion notes: two shots joined by a whip, 6.5 s. Shot A (0-2.75 s) is an establishing shot: one-point perspective drawn dense in 1.5-5 px lines, no fills except two colours (the yellow door at the far end, the lavender plane). The drawing never moves; the camera pushes in 4.5% on ones about the vanishing point; the plane is the one moving thing, on twos: nothing for 0.33 s, then it crosses in front of the lens 3.2x too large with its first drawing stretched 1.5x as a smear, shrinks into the depth over 5 drawings and hovers, drifting 1 px per drawing. Whip (2.75-3.17 s, 10 frames on ones, the wide-shot length): 2 frames of shot A shoved left (-1150, -1500 px) and breaking into bars, 4 frames of streaks alone, 4 frames of shot B arriving from the right (1500, 1100, 600, 180 px); the streaks carry the two colours of the shot they leave. Shot B is an insert: the subject fills the frame, lines 7-9 px. The finger comes in on twos, stops 34 px short, backs off 26 px, comes again (holds of 3 and 4 frames: the hesitation is the acting), presses at 4.5 s. The button sinks 10 px and lights in one drawing, a six-line burst lasts 2 drawings, the finger leaves in 2 drawings at 5.25 s and the last 1.2 s is dead still. */
-const { lerp, clamp, prog } = MG;
+const { clamp } = MG;
 const C = IB.C, VP = [960, 500], WHIP = 66, B_IN = 72, B_SET = 76;
 
 /* ---------- shot A: the corridor ---------- */
-// a point on the corridor's shell: side -1 / 1 = left / right wall, z = 1 at the far end growing toward the lens, v = 0 floor .. 1 ceiling
-const wall = (side, z, v) => [VP[0] + side * 140 * z, VP[1] + lerp(140, -100, v) * z];
-const quad = (ctx, side, z0, z1, v0, v1, o) => IB.ink(ctx, [wall(side, z0, v0), wall(side, z1, v0), wall(side, z1, v1), wall(side, z0, v1)], { closed: true, smooth: false, ...o });
-function corridor(ctx) {
-  const lw = (z) => 1.4 + z * 0.55;   // lines thicken toward the lens
-  // floor boards and ceiling lights recede
-  for (const z of [1.25, 1.6, 2.1, 2.8, 3.8, 5.2, 7.2]) IB.seg(ctx, ...wall(-1, z, 0), ...wall(1, z, 0), { w: lw(z) * 0.7, seed: 100 + z * 10 });
-  for (let i = -3; i <= 3; i++) IB.seg(ctx, VP[0] + i * 40, VP[1] + 140, VP[0] + i * 40 * 8, VP[1] + 140 * 8, { w: 1.6, seed: 120 + i });
-  for (const z of [1.5, 2.2, 3.3, 5]) { IB.oval(ctx, VP[0], VP[1] - 100 * z, 26 * z, 6 * z, { w: lw(z), seed: 130 + z * 10, n: 12, fill: C.bg }); IB.oval(ctx, VP[0], VP[1] - 100 * z + 2 * z, 15 * z, 3 * z, { w: lw(z) * 0.6, seed: 140 + z * 10, n: 10 }); }
-  // the far end: a wall with a yellow door
-  IB.ink(ctx, [wall(-1, 1, 0), wall(1, 1, 0), wall(1, 1, 1), wall(-1, 1, 1)], { closed: true, smooth: false, w: 3, seed: 150 });
-  IB.box(ctx, VP[0] - 52, VP[1] - 56, 104, 196, { fill: C.yellow, w: 2.6, seed: 151 });
-  IB.box(ctx, VP[0] - 38, VP[1] - 40, 76, 70, { w: 1.6, seed: 152 }); IB.box(ctx, VP[0] - 38, VP[1] + 44, 76, 80, { w: 1.6, seed: 153 });
-  IB.oval(ctx, VP[0] + 36, VP[1] + 40, 4, 4, { w: 1.6, seed: 154, n: 8, fill: C.paper });
-  IB.box(ctx, VP[0] - 22, VP[1] - 86, 44, 16, { w: 1.6, seed: 155 });
-  // the four long edges, baseboards and a picture rail
-  for (const side of [-1, 1]) {
-    for (const v of [0, 1]) IB.seg(ctx, ...wall(side, 1, v), ...wall(side, 8, v), { w: 4.6, seed: 160 + side + v * 3 });
-    IB.seg(ctx, ...wall(side, 1, 0.07), ...wall(side, 8, 0.07), { w: 2, seed: 166 + side });
-    IB.seg(ctx, ...wall(side, 1, 0.86), ...wall(side, 8, 0.86), { w: 1.6, seed: 169 + side });
-  }
-  // left wall: framed pictures, each a quad in perspective with a scribble inside
-  [[1.25, 1.55, 0.4, 0.74], [1.75, 2.3, 0.34, 0.78], [2.7, 3.7, 0.3, 0.8], [4.3, 6.1, 0.3, 0.8]].forEach(([z0, z1, v0, v1], i) => {
-    quad(ctx, -1, z0, z1, v0, v1, { w: lw(z1), seed: 200 + i * 9, fill: C.bg });
-    quad(ctx, -1, lerp(z0, z1, 0.14), lerp(z0, z1, 0.86), v0 + 0.05, v1 - 0.05, { w: lw(z1) * 0.6, seed: 201 + i * 9 });
-    const a = wall(-1, lerp(z0, z1, 0.25), v0 + 0.1), b = wall(-1, lerp(z0, z1, 0.5), v1 - 0.14), c = wall(-1, lerp(z0, z1, 0.62), v0 + 0.2), d = wall(-1, lerp(z0, z1, 0.8), v0 + 0.1);
-    IB.ink(ctx, [a, b, c, [lerp(c[0], d[0], 0.5), lerp(b[1], d[1], 0.4)], d], { w: lw(z1) * 0.6, smooth: false, seed: 202 + i * 9 });
-    for (let k = 0; k < 3; k++) IB.seg(ctx, ...wall(-1, lerp(z0, z1, 0.2 + k * 0.08), v1 - 0.1), ...wall(-1, lerp(z0, z1, 0.3 + k * 0.08), v1 - 0.1), { w: 1.4, seed: 204 + i * 9 + k });
-  });
-  // right wall: doors with knobs and transoms, a notice board, a bench
-  [[1.3, 1.62], [2.5, 3.3], [4.6, 6.4]].forEach(([z0, z1], i) => {
-    quad(ctx, 1, z0, z1, 0, 0.8, { w: lw(z1), seed: 260 + i * 9, fill: C.bg });
-    quad(ctx, 1, lerp(z0, z1, 0.14), lerp(z0, z1, 0.86), 0.42, 0.72, { w: lw(z1) * 0.6, seed: 261 + i * 9 });
-    quad(ctx, 1, lerp(z0, z1, 0.14), lerp(z0, z1, 0.86), 0.08, 0.34, { w: lw(z1) * 0.6, seed: 262 + i * 9 });
-    const k = wall(1, lerp(z0, z1, 0.2), 0.38); IB.oval(ctx, k[0], k[1], 3.2 * z1, 3.2 * z1, { w: lw(z1) * 0.7, seed: 263 + i * 9, n: 8, fill: C.paper });
-  });
-  quad(ctx, 1, 1.78, 2.3, 0.36, 0.7, { w: 2.4, seed: 300, fill: C.bg });
-  for (let r = 0; r < 3; r++) for (let c2 = 0; c2 < 3; c2++) quad(ctx, 1, 1.82 + c2 * 0.155, 1.94 + c2 * 0.155, 0.4 + r * 0.1, 0.47 + r * 0.1, { w: 1.3, seed: 301 + r * 3 + c2 });
-  const b0 = wall(1, 3.5, 0.2), b1 = wall(1, 4.4, 0.2);
-  IB.ink(ctx, [b0, b1, [b1[0] - 110, b1[1] + 10], [b0[0] - 84, b0[1] + 8]], { closed: true, smooth: false, w: 3.2, seed: 320, fill: C.bg });
-  for (const [p, dx] of [[b0, -84], [b1, -110]]) { IB.seg(ctx, p[0] + dx, p[1] + 8, p[0] + dx, wall(1, p === b0 ? 3.5 : 4.4, 0)[1] + 4, { w: 3, seed: 322 + dx }); IB.seg(ctx, p[0] - 6, p[1], p[0] - 6, wall(1, p === b0 ? 3.5 : 4.4, 0)[1], { w: 3, seed: 324 + dx }); }
-  IB.shade(ctx, b0[0] - 90, wall(1, 3.9, 0)[1] - 6, 300, 26, { from: 'top', seed: 31, alpha: 0.5 });
-}
-function plane(ctx, x, y, s, rot, stretch) {
-  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s * stretch, s);
-  const w = Math.max(1.6, 3 / s);
-  IB.ink(ctx, [[-60, -6], [64, 0], [-60, 30], [-40, 6]], { closed: true, smooth: false, fill: C.lavender, w, seed: 400 });
-  IB.ink(ctx, [[-60, -6], [64, 0], [-52, -34]], { closed: true, smooth: false, fill: '#d3c4f5', w, seed: 401 });
-  IB.seg(ctx, -40, 6, 64, 0, { w: w * 0.7, seed: 402 });
-  ctx.restore();
-}
 // the plane's drawings, one per two frames from frame 8: [x, y, scale, rot, stretch]
 const FLIGHT = [[250, 800, 3.2, -0.34, 1.5], [540, 660, 2.2, -0.3, 1], [716, 590, 1.5, -0.24, 1], [826, 548, 1.0, -0.18, 1], [890, 524, 0.72, -0.12, 1], [922, 514, 0.56, -0.08, 1]];
 function shotA(ctx, t, dx) {
   const z = 1 + 0.045 * clamp(t / 2.75), f = IB.frame(t);
   ctx.save();
   ctx.translate(VP[0] + dx, VP[1]); ctx.scale(z, z); ctx.translate(-VP[0], -VP[1]);
-  corridor(ctx);
-  if (f >= 8) { const k = Math.floor((f - 8) / 2), P = FLIGHT[Math.min(k, FLIGHT.length - 1)], drift = Math.max(0, k - FLIGHT.length + 1); plane(ctx, P[0] + drift, P[1] - drift * 0.4, P[2], P[3], P[4]); }
+  IB.corridor(ctx, { vp: VP });
+  if (f >= 8) { const k = Math.floor((f - 8) / 2), P = FLIGHT[Math.min(k, FLIGHT.length - 1)], drift = Math.max(0, k - FLIGHT.length + 1); IB.paperPlane(ctx, [P[0] + drift, P[1] - drift * 0.4], { s: P[2], rot: P[3], stretch: P[4] }); }
   ctx.restore();
 }
 
 /* ---------- shot B: the button ---------- */
 const BTN = [860, 560];
 function shotB(ctx, t, dx, dy) {
-  const tt = IB.twos(t), pressed = tt >= 4.5, lit = pressed;
+  const tt = IB.twos(t), pressed = tt >= 4.5;
   ctx.save(); ctx.translate(dx, dy);
-  IB.shade(ctx, 520, 968, 700, 34, { from: 'top', seed: 51, alpha: 0.5 });
-  IB.ink(ctx, [[1176, 154, 0], [544, 154, 1], [544, 916, 2], [1176, 916, 3]].flatMap(([x, y, q]) => IB.ellipse(x, y, 44, 44, 5, -q * Math.PI / 2, -(q + 1) * Math.PI / 2)), { closed: true, smooth: false, fill: C.paper, w: 9, seed: 500, wob: 1.2 });   // a plate with rounded corners
-  for (const [x, y] of [[560, 170], [1160, 170], [560, 900], [1160, 900]]) { IB.oval(ctx, x, y, 15, 15, { w: 5, seed: 510 + x + y, n: 9 }); IB.seg(ctx, x - 8, y - 6, x + 8, y + 6, { w: 4, seed: 511 + x + y }); }
-  // the indicator above the button: an arrow that lights with it
-  IB.box(ctx, 740, 196, 240, 96, { fill: lit ? C.mint : C.bg, w: 7, seed: 520 });
-  IB.ink(ctx, [[820, 262], [860, 220], [900, 262]], { w: 9, smooth: false, seed: 521 });
-  // the button: a collar, and a cap that sinks when pressed
-  IB.oval(ctx, BTN[0], BTN[1], 176, 176, { fill: C.bg, w: 9, seed: 530, n: 22 });
-  IB.shade(ctx, BTN[0] - 150, BTN[1] + 60, 300, 110, { from: 'bottom', seed: 53, alpha: 0.5 });
-  const sink = pressed ? 10 : 0;
-  IB.oval(ctx, BTN[0], BTN[1] + sink, 132 - sink * 0.6, 132 - sink * 0.6, { fill: lit ? C.blue : C.paper, w: 8, seed: 531, n: 20 });
-  IB.ink(ctx, IB.ellipse(BTN[0], BTN[1] + sink, 96, 96, 7, 3.5, 4.6), { w: 7, color: lit ? C.paper : '#d9d9d9', seed: 532 });
+  IB.callButton(ctx, BTN, { pressed });
   // the finger, on twos: in, short stop, back off, in again, press, hold, away
-  const k = Math.round((tt - 3.25) * 12), away = Math.round((tt - 5.25) * 12);
-  const gap = away >= 0 ? [300, 900, 2400][Math.min(2, away)] : k < 0 ? 2400 : pressed ? -6 : [900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20][Math.min(14, k)];
+  const k = IB.drawn(tt, 3.25), away = IB.drawn(tt, 5.25);
+  const gap = away >= 0 ? IB.inbetween([300, 900, 2400], away) : k < 0 ? 2400 : pressed ? -6 : IB.inbetween([900, 420, 150, 34, 34, 60, 60, 60, 34, 34, 34, 34, 20, 20, 20], k);
   const F = [BTN[0] + 96 + gap, BTN[1] + 40 + gap * 0.16];   // fingertip
   if (gap < 2000) {
     IB.pointer(ctx, F, { seed: 540 });
     if (k >= 3 && k < 12 && !pressed) IB.shake(ctx, F[0] + 30, F[1] - 70, 30, { a: -1.9, n: 2, w: 6, gap: 20, seed: 548 + k, span: 0.3 });   // the hesitation shows as a tremble above the fingertip
   }
-  const b = Math.round((tt - 4.5) * 12);
-  if (b >= 0 && b < 2) for (let i = 0; i < 6; i++) { const a = -3.0 + i * 0.42, r0 = 200 + b * 40, r1 = r0 + 80 - b * 20; IB.seg(ctx, BTN[0] + Math.cos(a) * r0, BTN[1] + Math.sin(a) * r0, BTN[0] + Math.cos(a) * r1, BTN[1] + Math.sin(a) * r1, { w: 8, seed: 560 + i + b * 7 }); }
+  const b = IB.drawn(tt, 4.5);
+  if (b >= 0 && b < 2) IB.burst(ctx, BTN, { n: 6, a0: -3.0, da: 0.42, r0: 200 + b * 40, r1: 200 + b * 40 + 80 - b * 20, w: 8, seed: 560 + b * 7 });
   ctx.restore();
 }
 
@@ -117,10 +60,7 @@ MG.scene({
     const k = f - WHIP, leaving = k < 2, arriving = f >= B_IN;
     if (leaving || arriving) {
       if (leaving) shotA(ctx, 2.75, [-1150, -1500][k]); else shotB(ctx, 3.2, [1500, 1100, 600, 180][f - B_IN], 0);
-      // the shot breaks up: bars of bare stage eat into it from the open side
-      const r = MG.rng(700 + f), open = leaving ? 1 : 0.25 + 0.75 * (1 - (f - B_IN) / 4);
-      ctx.fillStyle = C.bg;
-      for (let i = 0; i < Math.round(46 * open); i++) { const y = r() * 1080, h = 6 + r() * 30, w = 500 + r() * 1100; ctx.fillRect(leaving ? 1920 - w - 260 * r() : 0, y, w + 400, h); }
+      IB.whipBreakup(ctx, f, { leaving, open: leaving ? 1 : 0.25 + 0.75 * (1 - (f - B_IN) / 4) });   // the shot breaks up: bars of bare stage eat into it from the open side
     }
     IB.whip(ctx, f, { seed: 9, tint: leaving ? [C.yellow, C.lavender] : arriving ? [C.yellow] : [] });
   },

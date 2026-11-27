@@ -16,10 +16,10 @@
     ctx.restore();
   };
 
-  /* roofBlock(ctx, q, opts) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop opts.h px. opts.tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
-  // 성진: the reference steps some of these roofs (an L with a notch); here every roof is four points. Redraw them stepped in the upgrade round (plan 4-3).
+  /* roofBlock(ctx, q, opts) — a flat-roofed block seen from above: the roof is the four points q (left, back, right, front), the two near faces drop opts.h px. More than four points make a stepped roof (an L, a notch: the reference steps some roofs): every edge facing the viewer drops a wall, and tex patterns each wall. opts.tex: 'v' vertical lines on both faces, 'band' two horizontal lines with a row of dashes between them, 'h' horizontal lines on the right face, 'u' small window marks on the left face, 'none'. */
   IB.roofBlock = (ctx, q, o = {}) => {
     const { h = 60, seed = 500, tex = 'v' } = o;
+    if (q.length > 4) return stepped(ctx, q, h, seed, tex);
     ctx.save();
     const down = (p) => [p[0], p[1] + h];
     IB.ink(ctx, [q[0], q[3], down(q[3]), down(q[0])], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 });
@@ -38,6 +38,29 @@
     if (tex === 'u') { face(q[0], q[3], 'u'); face(q[3], q[2], 'h'); }
     ctx.restore();
   };
+
+  /* A roof of more than four points: an L or a notched block (the reference steps some roofs). Every edge whose outward side faces the viewer (down the screen) drops a wall h px, the walls far to near, then the roof over them; tex patterns every wall as roofBlock does its two. */
+  function stepped(ctx, q, h, seed, tex) {
+    ctx.save();
+    const n = q.length, area = q.reduce((a, p, i) => a + p[0] * q[(i + 1) % n][1] - q[(i + 1) % n][0] * p[1], 0), turn = area > 0 ? -1 : 1;
+    const walls = [];
+    for (let i = 0; i < n; i++) {
+      const a = q[i], b = q[(i + 1) % n], ny = turn * (b[0] - a[0]);   // y of the edge's outward normal: > 0 faces the viewer
+      if (ny > 0) walls.push([a, b, i]);
+    }
+    walls.sort((u, v) => Math.max(u[0][1], u[1][1]) - Math.max(v[0][1], v[1][1]));
+    for (const [a, b, i] of walls) {
+      IB.ink(ctx, [a, b, [b[0], b[1] + h], [a[0], a[1] + h]], { closed: true, smooth: false, fill: C.bg, w: 3, seed: seed + 1 + i });
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (tex === 'band' && len > 30) {
+        for (const k of [0.36, 0.7]) IB.seg(ctx, a[0] + 3, a[1] + h * k, b[0] - 3, b[1] + h * k, { w: 1.8, wob: 0.4, seed: seed + i * 13 + k * 100 });
+        for (let j = 1; j < Math.floor(len / 20); j++) { const u = j / Math.floor(len / 20), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + h * 0.45, x, y + h * 0.6, { w: 2.2, wob: 0, seed: seed + i * 17 + j }); }
+      }
+      if (tex === 'v') for (let j = 1; j < Math.floor(len / 17); j++) { const u = j / Math.floor(len / 17), x = lerp(a[0], b[0], u), y = lerp(a[1], b[1], u); IB.seg(ctx, x, y + 12, x, y + Math.min(h - 8, 12 + h * 0.55), { w: 1.7, wob: 0.4, seed: seed + i * 7 + j }); }
+    }
+    IB.ink(ctx, q, { closed: true, smooth: false, fill: C.bg, w: 3.2, seed });
+    ctx.restore();
+  }
 
   /* stadium(ctx, opts) — the stadium: a drum seen from a little above, with a rounded shoulder, a band of big V trusses, a band of crosses between posts, a blue strip at its foot (the shot's one colour apart from what flies through), and the open roof showing pale seating and the dark bowl. opts.shift = [dx, dy] moves it from where the reference has it (centre x 965, foot y 790). */
   IB.stadium = (ctx, o = {}) => {
@@ -92,12 +115,11 @@
       return;
     }
     C1([[110, 700, 110, 48], [200, 780, 120, 44], [1700, 770, 110, 36]]);
-    IB.roofBlock(ctx, [[228, 672], [400, 642], [545, 656], [380, 696]], { h: 26, seed: 520 });
-    IB.roofBlock(ctx, [[330, 772], [528, 736], [546, 746], [346, 792]], { h: 30, seed: 525, tex: 'none' });
+    IB.roofBlock(ctx, [[205, 672], [495, 637], [524, 652], [520, 664], [362, 698], [515, 726], [526, 738], [318, 772]], { h: 55, seed: 520 });   // one block whose roof is cut by a notch on its right (the reference's first frame)
     IB.roofBlock(ctx, [[1400, 742], [1512, 708], [1590, 724], [1470, 760]], { h: 118, seed: 510, tex: 'u' });
     C1([[150, 900, 150, 60], [1640, 880, 80, 30], [1520, 900, 60, 24]]);
     IB.roofBlock(ctx, [[1690, 828], [1800, 806], [1850, 820], [1735, 845]], { h: 92, seed: 530, tex: 'h' });
-    IB.roofBlock(ctx, [[205, 837], [432, 790], [756, 837], [416, 918]], { h: 92, seed: 540, tex: 'band' });
+    IB.roofBlock(ctx, [[198, 834], [420, 790], [755, 833], [408, 920], [255, 888], [360, 862]], { h: 96, seed: 540, tex: 'band' });   // an L: its near-left corner stepped back (read on the reference's first frame, 50 px grid)
     C1([[920, 862, 150, 30], [820, 846, 60, 22], [1030, 854, 50, 20], [380, 1010, 120, 40], [1790, 970, 150, 60], [1905, 915, 60, 50]]);
     IB.roofBlock(ctx, [[1060, 948], [1380, 870], [1612, 896], [1300, 976]], { h: 120, seed: 550 });
     IB.roofBlock(ctx, [[1215, 922], [1340, 898], [1405, 912], [1280, 938]], { h: 24, seed: 560, tex: 'none' });

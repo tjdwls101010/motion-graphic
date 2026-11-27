@@ -39,4 +39,6 @@
   IB.alternate = (f, every = 3, from) => (from == null ? Math.floor(f / every) % 2 : f >= from ? (Math.floor((f - from) / every) + 1) % 2 : 0);
   /* loop(f, drawings, every = 2) — f counts from 0. A cycle of drawings that never stops, one per `every` frames: hair and cords streaming in the wind, a plant swaying. */
   IB.loop = (f, drawings, every = 2) => drawings[Math.floor(f / every) % drawings.length];
+  /* bob(dt, amp, until) — how far past its place a float that has just arrived is, dt s after it starts bobbing: a damped wave (time constant 0.35 s, period 0.62 s) that the drawings move up to about 0.65 x amp, cut to exactly 0 from `until` s so the hold after it is dead still (an endless bob would be a boil the reference never has). Read it on the drawing grid: pass IB.twos(t) - start. (vignette/balloons-lift-chair, market/target-hit-balloons) */
+  IB.bob = (dt, amp, until) => (dt > 0 && dt < until ? amp * Math.exp(-dt / 0.35) * Math.sin((dt * 2 * Math.PI) / 0.62) : 0);
 })(window);

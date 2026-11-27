@@ -26,10 +26,10 @@ ink.js     붓펜 선과 질감: 팔레트(IB.C), 무대(IB.bg), 선과 채움(I
            화면 자르기(IB.crop, IB.clipRect), 원래 무대 좌표의 캐릭터 옮기기(IB.place), 점 목록 도구(IB.ellipse, IB.rect, IB.along, IB.mirror), 스피드라인 휩(IB.whip), 날벌레(IB.flyer),
            밀려 들어와 멈추는 카피(IB.copy, IB.TYPE, 글꼴 IB.FONT)
 time.js    시계와 그림 목록: 24fps(IB.FPS), 12fps·8fps 양자화(IB.twos, IB.threes), 프레임 번호(IB.frame), 정착 곡선(IB.settle), 12fps 격자(IB.T, IB.drawn),
-           그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop)
+           그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop), 도착한 것의 감쇠 출렁임(IB.bob)
 marks.js   효과 표시: 터짐선(IB.burst), 쿵(IB.thud), 입김(IB.breath), 연기(IB.smoke), 물방울과 튐(IB.drop, IB.splash), 어둠과 빛줄기(IB.darkness, IB.lightBeam),
            휩에 뜯기는 화면(IB.whipBreakup), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
-figure.js  옆모습 인물 리그(IB.figure, IB.stand, IB.walk, IB.walkLen, IB.poseMix, IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
+figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
            화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
 solid.js   입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
 cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동작(MOVE: 그 동작의 첫 그림부터 센 [프레임, 포즈] 목록)을 내보낸다
@@ -43,11 +43,11 @@ cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동�
 props/     소품
   nature.js   화분(IB.pottedPlant, IB.PLANTS), 창턱 화분(IB.sillPlant), 구름 셋(IB.cloud, IB.bandCloud, IB.wispCloud), 나무 덩어리(IB.clump), 새(IB.bird), 풀과 돌(IB.tuft, IB.stones)
   home.js     식탁 의자(IB.diningChair), 케이크 식탁과 초(IB.partyTable, IB.candle), 펜던트 등(IB.hangingLamp), 나무 상자(IB.woodCrate), 문(IB.door), 액자(IB.pictureFrame),
-              트로피 장식장(IB.trophyCabinet), 교차한 검(IB.crossedFoils), 호출 버튼(IB.callButton)
+              트로피 장식장(IB.trophyCabinet), 교차한 검(IB.crossedFoils), 호출 버튼(IB.callButton, opts.s로 와이드 크기)
   handheld.js 도끼와 그루터기·장작(IB.axe, IB.choppingBlock, IB.logHalf, IB.logTop, IB.woodChip), 손전등(IB.torch), 호스·노즐·물줄기(IB.gardenHose, IB.nozzle, IB.waterJet),
               종이 상자(IB.cardboardBox), 전화기(책상 전화의 수화기 IB.handset, 휴대전화 IB.mobilePhone), 컵(IB.cup, 군중용 작은 컵 IB.smallCup, 뚜껑과 빨대 IB.strawCup), 가방과 끈(IB.slingBag, IB.strap, IB.briefcase)
   party.js    풍선(IB.balloon, IB.looseBalloon, IB.heartBalloon), 미러볼(IB.discoBall), 색종이(IB.confettiField, IB.confetti)
-  vehicles.js 헬리콥터(IB.heli, IB.heliFront, IB.rotor, IB.heliDrawing), 탠덤(IB.tandem, IB.bikeWheel, IB.crankset, 크랭크·바퀴 치수 IB.TANDEM), 택시(IB.cab), 종이비행기(IB.paperPlane),
+  vehicles.js 헬리콥터(IB.heli, IB.heliFront, 3/4 각도 IB.heliTurn, IB.rotor, IB.heliDrawing), 탠덤(IB.tandem, IB.bikeWheel, IB.crankset, 크랭크·바퀴 치수 IB.TANDEM), 택시(IB.cab), 종이비행기(IB.paperPlane),
               롤러코스터(IB.rail, IB.coasterTrack, IB.coasterCart, 딸깍 표시 IB.coasterClack, 속도선 IB.coasterSpeedLines), 컨베이어와 스탬프 기계(IB.conveyor, IB.stamper)
   office.js   앉은 포즈(IB.sit, 좌석 높이 IB.SEAT), 의자·책상·모니터·자리(IB.chair, IB.desk, IB.monitor, IB.workstation, IB.keyboard), 캔들 차트와 선 차트(IB.candles, IB.lineChart, IB.priceGrid, IB.chartAxes,
               IB.dashLine, IB.candleSmear, IB.priceTag), 커서와 팝업(IB.cursor, IB.popupTag), 화살표(IB.arrow), 벽시계(IB.wallClock), 전화 받침(IB.phoneCradle), 날리는 종이(IB.flyingSheet)
@@ -64,7 +64,7 @@ sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이�
 부품을 쓰는 규칙은 다음과 같다.
 
 - **호출 모양은 `IB.<이름>(ctx, 기준점, 상태, 옵션)`이다.** 상태가 없는 부품은 `IB.<이름>(ctx, 기준점, 옵션)`이다. 기준점은 서 있는 것이면 바닥에 닿는 가운데, 떠 있는 것이면 중심이고, 정확히 어디인지는 머리 주석에 있다. 크기·시드·그림 번호는 옵션으로 받는다(아래 예외의 부품은 그 값을 인자로 받기도 한다). `seed`의 기본값은 원래 장면이 쓰던 값이라, 같은 부품을 한 화면에 둘 놓을 때는 `seed`를 달리 준다. 예외는 세 가지다.
-  - 세트를 이루는 조각은 위치를 다른 모양으로 받는다: `IB.tower(ctx, 행)`, `IB.roofBlock(ctx, 지붕 네 점, 옵션)`, `IB.windowFrame`·`IB.sashAndSill(ctx, x, 옵션)`.
+  - 세트를 이루는 조각은 위치를 다른 모양으로 받는다: `IB.tower(ctx, 행)`, `IB.roofBlock(ctx, 지붕 점 넷 또는 꺾인 지붕의 점들, 옵션)`, `IB.windowFrame`·`IB.sashAndSill(ctx, x, 옵션)`.
   - 폭으로 정해지는 구름은 구간을 받는다: `IB.cloud(ctx, [x0, x1, y, h])`, `IB.bandCloud(ctx, [x0, x1, y])`.
   - `ink.js`·`figure.js`·`solid.js`와 옛 `desk.js`에서 온 함수(`IB.smear`, `IB.shade`, `IB.shake`, `IB.chair`, `IB.desk`, `IB.monitor`, `IB.candles` 등)는 원래의 위치 인자를 그대로 둔다.
   - 기준점 하나로 놓이지 않는 부품은 기준점 다음에 그 값을 받는다. 방향(각도)은 `IB.torch`, `IB.nozzle`, `IB.waterJet`, `IB.axe`, `IB.woodChip`, `IB.lightBeam`, `IB.crankset`, 두 점은 `IB.flyingSheet(ctx, from, to, k)`, 경로나 레일은 `IB.gardenHose`, `IB.coasterTrack`, `IB.coasterCart`, `IB.coasterSpeedLines`, 붙는 대상은 `IB.coasterClack(ctx, cart, k)`, 범위는 `IB.clump(ctx, at, [rx, ry])`, `IB.dashLine(ctx, at, len)`가 그렇다. 그림 한 장을 통째로 받는 `IB.heliDrawing(ctx, row, d)`와 두 배우의 팔을 함께 그리는 `IB.paperReach(ctx, folderPose, docPose, folderArm, docArm, meet)`도 같다. 정확한 인자는 각 부품 머리 주석의 첫머리에 있다.

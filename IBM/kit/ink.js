@@ -28,6 +28,12 @@
     return s;
   };
 
+  /* place(ctx, origin, opts) — move a character drawn in the reference's own stage coordinates: its point `origin` lands on opts.at, scaled by opts.s about that point and mirrored when opts.flip. Lines scale with it, as the reference's do when a drawing is enlarged. With the defaults (at = origin, s = 1, no flip) it does nothing, so the original scene's pixels stay exactly the same. Call it right after ctx.save(). */
+  IB.place = (ctx, origin, o = {}) => {
+    const { at = origin, s = 1, flip = false } = o;
+    if (at[0] === origin[0] && at[1] === origin[1] && s === 1 && !flip) return;
+    ctx.translate(at[0], at[1]); ctx.scale(flip ? -s : s, s); ctx.translate(-origin[0], -origin[1]);
+  };
   /* clipRect(ctx, [x, y, w, h]) — clip everything drawn until the matching ctx.restore() to a rectangle: a monitor's screen, the part of the stage above the floor line. Call ctx.save() first. */
   IB.clipRect = (ctx, [x, y, w, h]) => { ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); };
 

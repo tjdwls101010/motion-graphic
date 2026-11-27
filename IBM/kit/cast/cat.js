@@ -54,9 +54,15 @@
 
   /* windowCat(ctx, pose) — a small white cat (head 37 px) on a window sill, in the reference's coordinates (the sill at y 749, the cat about x 1539): to stage it somewhere else, translate the context.
    pose: kind 'sit': side-on on the sill, head turned by `turn` (-1 profile left ... 1 back over its shoulder) and tipped by `tilt` (rad, - = nose up), ears [left, right] px lowered. 'crouch', 'slink', 'rump', 'tip': leaving. 'none': gone. 'ears', 'peek', 'watch', 'lower', 'rest': front-on behind the sill with its own binoculars; glass 'black' | 'slit' is what shows in them, dip lowers them (px), tail 0-3 is which swish drawing, face 'dot' | 'happy' | 'up' | 'side'.
-     POSE: sit. MOVE, in frames from each one's first drawing: earFlick, lookBack (it looks over its shoulder a beat before the watcher swings: the cat moves first), leave (off the sill in four drawings, then gone), comeBack (ear tips, binoculars on the sill, binoculars at its eyes, the tail swishing), lower (one drawing behind the watcher), followFly. */
-  IB.windowCat = (ctx, p) => {
+     opts.at puts its centre on the sill (IB.windowCat.ORIGIN) elsewhere, with opts.s and opts.flip (IB.place). POSE: sit. MOVE, in frames from each one's first drawing: earFlick, lookBack (it looks over its shoulder a beat before the watcher swings: the cat moves first), leave (off the sill in four drawings, then gone), comeBack (ear tips, binoculars on the sill, binoculars at its eyes, the tail swishing), lower (one drawing behind the watcher), followFly. */
+  IB.windowCat = (ctx, p, o = {}) => {
     ctx.save();
+    IB.place(ctx, IB.windowCat.ORIGIN, o);
+    windowCat(ctx, p);
+    ctx.restore();
+  };
+  IB.windowCat.ORIGIN = [CX, 749];   // its centre line on the sill
+  function windowCat(ctx, p) {
     const SILL = 749;
     if (p.kind === 'none') return;
     if (p.kind === 'sit' || p.kind === 'crouch') {
@@ -99,8 +105,7 @@
     IB.ink(ctx, [[1518, 752], [1522, 730], [1529, 712], [1549, 712], [1556, 730], [1560, 752]], { closed: true, fill: C.paper, w: 2.2, seed: 448 });
     catHead(ctx, CX + (p.face === 'side' ? 3 : 0), 698, { face: p.face === 'side' ? 'dot' : p.face, turn: p.face === 'side' ? 1 : 0, tilt: p.face === 'up' ? -0.22 : p.face === 'side' ? -0.12 : 0 });
     for (const s of [-1, 1]) catLens(ctx, CX + s * 12.5, p.sat === false ? 740 : 749, 11, 'black', 464 + s);
-    ctx.restore();
-  };
+  }
   const sit = (o) => ({ kind: 'sit', turn: -0.3, tilt: -0.15, ears: [0, 0], ...o });
   const watch = (o) => ({ kind: 'watch', glass: 'slit', tail: 0, dip: 0, ...o });
   const rest = (o) => ({ kind: 'rest', face: 'dot', tail: 0, ...o });

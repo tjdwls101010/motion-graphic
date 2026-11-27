@@ -36,7 +36,7 @@
   };
 
   /* ---------- the folder and the document of the reference's fourth spot ---------- */
-  /* Both are things with thickness that turn in depth (solid.js projects them and the same brush pen draws the result), on rubber-hose legs with boots, and arms that grow out from behind an edge only while they are needed. They are staged in the reference's own coordinates: floor line y 893, the folder starting at x 1093 and the document at x 1700. A pose's x and its feet are stage px, not offsets from the body: a planted foot keeps the same x from drawing to drawing while the body's x moves over it, which is what stops it skating. To stage them somewhere else, translate the context. */
+  /* Both are things with thickness that turn in depth (solid.js projects them and the same brush pen draws the result), on rubber-hose legs with boots, and arms that grow out from behind an edge only while they are needed. Their poses are in the reference's own coordinates: floor line y 893, the folder starting at x 1093 and the document at x 1700. A pose's x and its feet are stage px, not offsets from the body: a planted foot keeps the same x from drawing to drawing while the body's x moves over it, which is what stops it skating. To put one somewhere else give opts.at (where its ORIGIN lands), opts.s and opts.flip (IB.place); to move the pair together with the arms they reach out to each other with, translate the context instead: IB.paperReach and IB.paperClasp draw in the stage's coordinates. */
   const PI = Math.PI, FLOOR = 893, ANKLE = FLOOR - 12, HIP = 106;
   IB.PAPER = { floor: FLOOR, ankle: ANKLE, hip: HIP };
 
@@ -73,6 +73,7 @@
   IB.folder = (ctx, p, o = {}) => {
     const { seed = 200 } = o;
     ctx.save();
+    IB.place(ctx, IB.folder.ORIGIN, o);
     const S = IB.folder.space(p);
     const h = p.open / 2, cs = Math.cos(h), sn = Math.sin(h);
     // a cover leaning `side` of the hinge; the tab belongs to whichever cover is behind, which is what the reference draws from either side
@@ -96,6 +97,7 @@
     IB.ink(ctx, near.pts, { closed: true, smooth: false, fill: C.blue, w: 3.7, seed: 22 });
     ctx.restore();
   };
+  IB.folder.ORIGIN = [1093, FLOOR];   // where its first pose stands: opts.at puts this point elsewhere
   IB.folder.space = (p) => IB.space({ at: [p.x, ANKLE - HIP - p.lift], yaw: p.yaw, roll: p.roll, look: 0.22 });
   IB.folder.reachRoot = (p) => IB.folder.space(p)([-(FW / 2 - 8), -112, 0]);   // with its back to us its -x edge is the one on the right, toward the document
   IB.folder.POSE = { front: F0, back: FT, centre: FC, byDoc: FD };
@@ -215,6 +217,7 @@
   IB.doc = (ctx, p, o = {}) => {
     const { seed = 300 } = o;
     ctx.save();
+    IB.place(ctx, IB.doc.ORIGIN, o);
     const S = IB.doc.space(p);
     const B = IB.bend({ w: DW, h: DH, sway: p.sway, sag: p.sag, wave: p.wave, arch: p.arch, curl: p.curl, twist: p.twist });
     const M = (q) => S(B(q));
@@ -241,6 +244,7 @@
     IB.ink(ctx, clip.map((q) => M([...q, -3])), { w: 2.5, seed: 41 });
     ctx.restore();
   };
+  IB.doc.ORIGIN = [1700, FLOOR];
   IB.doc.space = (p) => IB.space({ at: [p.x, ANKLE - HIP - p.lift], yaw: p.yaw, pitch: p.pitch, roll: p.roll, look: 0.18 });
   IB.doc.reachRoot = (p) => IB.doc.space(p)([-(DW / 2 - 8), -122, 0]);
   IB.doc.POSE = { stand: D0, byFolder: DD };

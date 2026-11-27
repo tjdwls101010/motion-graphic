@@ -70,7 +70,7 @@ def collect(page, path, hold):
     got = page.evaluate(COLLECT, [round(dur * fps), fps])
     if got is None:
         return None
-    names = list(got['frames'][0]) if got['frames'] else []
+    names = list(dict.fromkeys(name for row in got['frames'] for name in row))   # every actor that shows at any frame, in order of first showing
     return {name: analyse([row.get(name) for row in got['frames']], fps, got['step'].get(name, 2), hold) for name in names}
 
 

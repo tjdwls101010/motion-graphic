@@ -58,7 +58,7 @@ var IB = { };
 const WALK = [[0, 'a'], [2, 'b'], [4, 'c'], [6, 'd'], [10, 'e'], [12, 'e2'], [24, 'f']];   // a 4-frame drawing at 6, a hold from 12
 const LIFT = [[0, 'x'], [3, 'y'], [6, 'z'], [9, 'w']];
 const at = (rows, f) => rows.filter(([k]) => k <= f).pop()[1];
-IB.actors = (t) => { const f = Math.floor(t * 24 + 1e-6); return { walker: { pose: at(WALK, f), x: 0.1 + 0.2 }, lifter: at(LIFT, f) }; };
+IB.actors = (t) => { const f = Math.floor(t * 24 + 1e-6), a = { walker: { pose: at(WALK, f), x: 0.1 + 0.2 }, lifter: at(LIFT, f) }; if (f >= 20) a.late = f >= 22 ? 'q' : 'p'; return a; };   // late enters at frame 20
 IB.actors.step = { lifter: 3 };
 MG.scene({ title: 'demo', duration: 1, ref: null, fps: 24, setup: (stage) => MG.canvas(stage), render(t, ctx) {} });
 </script>
@@ -73,7 +73,8 @@ with tempfile.TemporaryDirectory() as tmp:
     done = subprocess.run([sys.executable, str(root / 'tools' / 'drawings.py'), '--json', str(root / 'demo/scenes/fam/one.html'), str(root / 'demo/scenes/fam/none.html')], capture_output=True, text=True)
     out = json.loads(done.stdout or '{}')
     one, none = out.get('demo/fam/one', {}), out.get('demo/fam/none')
-    check('the tool reads every actor of the scene', sorted(one), ['lifter', 'walker'])
+    check('the tool reads every actor of the scene, also one that enters after frame 0', sorted(one), ['late', 'lifter', 'walker'])
+    check('before it enters an actor is absent, which counts as one drawing', one.get('late', {}).get('changes'), [20, 22])
     w, li = one.get('walker', {}), one.get('lifter', {})
     check('the walker: changes, its stale 4-frame drawing, its hold', (w.get('changes'), w.get('stale'), w.get('holds')), ([2, 4, 6, 10, 12], [[6, 4]], [[12, 12]]))
     check('the lifter is on threes as the scene declares', (li.get('step'), li.get('stale'), li.get('rate')), (3, [], 8.0))

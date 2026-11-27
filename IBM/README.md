@@ -19,7 +19,7 @@ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -i video4.mp4 -i video5.mp4 -i 
 
 장면에 보이는 것은 전부 여기 있는 부품이다: 캐릭터, 소품, 배경 세트, 효과 표시, 박자 도구. 장면 파일에는 데이터 표(포즈, 박자, 배치)와 조립 순서만 있고, 모양을 직접 그리는 코드는 없다. 새 장면도 그렇게 만든다: 부품을 고르고, 가장 가까운 장면의 표를 가져오고, 모자란 그림은 장면이 아니라 여기에 부품으로 더한다.
 
-전부 2D canvas에 그리고, 입체도 3D 렌더러 없이 투영한 점을 같은 붓펜으로 그린다. 장면은 공용 엔진(`../core/`) 다음에 `ink.js`(전역 `IB`를 만든다)와 `time.js`를 부르고, 그 뒤로 쓰는 파일을 `<script src>`로 나열한다. kit 파일끼리는 호출할 때만 서로를 부르므로 그 뒤의 순서는 상관없지만, 불러온 파일마다 첫 주석의 "Needs"에 적힌 파일도 함께 불러야 한다(`node tools/test_kit.js`가 확인한다). 부품마다 머리 주석에 무엇인지, 기준점, 상태 필드, 쓰는 장면이 적혀 있다.
+전부 2D canvas에 그리고, 입체도 3D 렌더러 없이 투영한 점을 같은 붓펜으로 그린다. 장면은 공용 엔진(`../core/`) 다음에 `ink.js`(전역 `IB`를 만든다)와 `time.js`를 부르고, 그 뒤로 쓰는 파일을 `<script src>`로 나열한다. kit 파일끼리는 호출할 때만 서로를 부르므로 그 뒤의 순서는 상관없지만, 불러온 파일마다 첫 주석의 "Needs"에 적힌 파일도 함께 불러야 한다. 새 부품도 불러오는 순간에는 `ink.js`·`time.js`와 자기 이름만 읽고, 다른 파일의 값은 그것을 쓰는 함수 안에서 읽는다. 셋 다 `node tools/test_kit.js`가 확인한다. 부품마다 머리 주석에 무엇인지, 기준점, 상태 필드, 쓰는 장면이 적혀 있다.
 
 ```
 ink.js     붓펜 선과 질감: 팔레트(IB.C), 무대(IB.bg), 선과 채움(IB.ink, IB.box, IB.oval, IB.seg, IB.line, IB.tube, IB.pipe), 흑연 음영(IB.shade), 분필 스미어(IB.smear),
@@ -63,10 +63,11 @@ sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이�
 
 부품을 쓰는 규칙은 다음과 같다.
 
-- **호출 모양은 `IB.<이름>(ctx, 기준점, 상태, 옵션)`이다.** 상태가 없는 부품은 `IB.<이름>(ctx, 기준점, 옵션)`이다. 기준점은 서 있는 것이면 바닥에 닿는 가운데, 떠 있는 것이면 중심이고, 정확히 어디인지는 머리 주석에 있다. 크기·시드·그림 번호는 옵션으로 받는다. `seed`의 기본값은 원래 장면이 쓰던 값이라, 같은 부품을 한 화면에 둘 놓을 때는 `seed`를 달리 준다. 예외는 세 가지다.
+- **호출 모양은 `IB.<이름>(ctx, 기준점, 상태, 옵션)`이다.** 상태가 없는 부품은 `IB.<이름>(ctx, 기준점, 옵션)`이다. 기준점은 서 있는 것이면 바닥에 닿는 가운데, 떠 있는 것이면 중심이고, 정확히 어디인지는 머리 주석에 있다. 크기·시드·그림 번호는 옵션으로 받는다(아래 예외의 부품은 그 값을 인자로 받기도 한다). `seed`의 기본값은 원래 장면이 쓰던 값이라, 같은 부품을 한 화면에 둘 놓을 때는 `seed`를 달리 준다. 예외는 세 가지다.
   - 세트를 이루는 조각은 위치를 다른 모양으로 받는다: `IB.tower(ctx, 행)`, `IB.roofBlock(ctx, 지붕 네 점, 옵션)`, `IB.windowFrame`·`IB.sashAndSill(ctx, x, 옵션)`.
   - 폭으로 정해지는 구름은 구간을 받는다: `IB.cloud(ctx, [x0, x1, y, h])`, `IB.bandCloud(ctx, [x0, x1, y])`.
   - `ink.js`·`figure.js`·`solid.js`와 옛 `desk.js`에서 온 함수(`IB.smear`, `IB.shade`, `IB.shake`, `IB.chair`, `IB.desk`, `IB.monitor`, `IB.candles` 등)는 원래의 위치 인자를 그대로 둔다.
+  - 기준점 하나로 놓이지 않는 부품은 기준점 다음에 그 값을 받는다. 방향(각도)은 `IB.torch`, `IB.nozzle`, `IB.waterJet`, `IB.axe`, `IB.woodChip`, `IB.lightBeam`, `IB.crankset`, 두 점은 `IB.flyingSheet(ctx, from, to, k)`, 경로나 레일은 `IB.gardenHose`, `IB.coasterTrack`, `IB.coasterCart`, `IB.coasterSpeedLines`, 붙는 대상은 `IB.coasterClack(ctx, cart, k)`, 범위는 `IB.clump(ctx, at, [rx, ry])`, `IB.dashLine(ctx, at, len)`가 그렇다. 그림 한 장을 통째로 받는 `IB.heliDrawing(ctx, row, d)`와 두 배우의 팔을 함께 그리는 `IB.paperReach(ctx, folderPose, docPose, folderArm, docArm, meet)`도 같다. 정확한 인자는 각 부품 머리 주석의 첫머리에 있다.
 - **원본에서 좌표째 옮긴 그림은 원본의 무대 좌표로 그린다.** 옮기는 방법은 종류마다 다르다.
   - 캐릭터는 컨텍스트를 옮긴다(`ctx.translate`): 폴더와 서류(`IB.folder`, `IB.doc`), 관찰자(`IB.watcher`), 창가 고양이(`IB.windowCat`), 철망 얼굴(`IB.boldFace`, `IB.worriedFace`). 포즈의 발 좌표가 무대 기준이어야 디딘 발이 미끄러지지 않기 때문에 `at`을 받지 않는다.
   - 세트와 큰 소품은 `shift` 옵션을 받는다: `IB.stadiumCity`, `IB.stadium`, `IB.financeStreet`, `IB.apartmentFacade`, `IB.partyCorner`, `IB.sillPlant`.

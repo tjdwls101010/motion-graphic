@@ -2,7 +2,8 @@
 /* Contract of every <ref>/kit/ file and every scene that loads them, checked without a browser. Run: node tools/test_kit.js (exit 1 on failure).
    1. A kit file's first comment says what else it needs ("Needs ink.js, time.js and marks.js"): every IB.* name it uses and does not define itself must be defined by one of those files. A part that calls another file's part only on some path (a candle's relight burst) breaks a new scene that loads the file on the strength of its comment alone.
    2. A scene loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
-   3. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
+   3. Only ink.js (which creates IB) and time.js load first; every other kit file may load in any order, so none of them may read another file's IB.* name while it loads (const F = IB.FIG at the top of a file is undefined if figure.js comes later): outside a function body, a file reads only its own names and those of ink.js and time.js.
+   4. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
 const fs = require('fs');
 const path = require('path');
@@ -50,9 +51,26 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
       for (const n of kit[f].needs) if (!loaded.includes(n)) fail(`${name} loads kit/${f} but not kit/${n}, which it needs`);
     }
     const script = html.split('<script>').slice(1).join('\n');
-    for (const n of names(script)) { const o = owner[n]; if (o && !loaded.includes(o)) fail(`${name} uses IB.${n} from kit/${o} without loading it`); }
+    for (const n of names(script)) {
+      const o = owner[n];
+      if (!o) fail(`${name} uses IB.${n}, which no kit file defines`);
+      else if (!loaded.includes(o)) fail(`${name} uses IB.${n} from kit/${o} without loading it`);
+    }
   }
-  // 3. MOVE tables: load the whole kit (no canvas is needed to load it) and look at every IB.<part>.MOVE
+  // 3. nothing but ink.js and time.js is read while a file loads: look at the lines at the file's top level (inside its (function (g) { ... })(window) wrapper, outside any function body)
+  for (const [f, k] of Object.entries(kit)) {
+    if (f === 'ink.js' || f === 'time.js') continue;
+    let depth = 0;
+    for (const line of strip(k.src).split('\n')) {
+      if (depth === 1) for (const m of line.matchAll(/\bIB\.(\w+)/g)) {
+        const n = m[1], o = owner[n];
+        if (o && o !== f && o !== 'ink.js' && o !== 'time.js' && !line.slice(0, m.index).match(/=>|function/)) fail(`${ref}/kit/${f} reads IB.${n} from ${o} while it loads; read it inside the function that needs it`);
+      }
+      for (const c of line) depth += c === '{' ? 1 : c === '}' ? -1 : 0;
+    }
+  }
+
+  // 4. MOVE tables: load the whole kit (no canvas is needed to load it) and look at every IB.<part>.MOVE
   const vm = require('vm'), box = { console };
   box.window = box;
   vm.createContext(box);

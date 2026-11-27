@@ -15,7 +15,7 @@
 <script src="../../kit/sets/street.js"></script>
 <script>
 /* 기둥 늘어선 거래소 건물과 고층 빌딩 선화 앞 인도를 사람들이 양쪽으로 바삐 지나가고 노란 택시가 가로지르는데, 연보라 옷 한 사람만 휴대폰을 보고 멈춰 서서 "올랐다!" 하고는 다시 인파에 섞인다. 원본에 없는 창작 장면으로, 원본의 설정 샷(빽빽한 흑백 선화에 색 한두 군데)에 멈춘 무대를 가로지르는 걷기를 여럿 겹쳐 금융가의 출근길을 그렸다. 전달하는 생각: 모두가 바삐 움직이는 거리에서 숫자 하나가 한 사람을 멈춰 세운다.
-   Motion notes: one locked shot, 7 s. Three layers, three clocks. The street is an establishing drawing that never moves: 1.5-4 px lines, no fills, windows as texture; only the flag on the roof flips between two drawings on threes. The cab is a machine and runs on ones, 520 px/s, crossing from 1.0 s with its spokes turning. The crowd walks on twos across the still pavement: every walker advances IB.walkLen / 12 per drawing (0.07 h: 16-19 px for these heights), so every planted foot stays put; thirteen walkers in two rows (floor y 930 and 985, heights 228-270; those heading left walk 14 px nearer than those heading right, so walkers who cross pass in front of one another), five of them a second wave that is still off-screen at the start, begin zero to five drawings out of phase so the crowd never steps in unison. The walker in lavender stops at 2.83 s on a drawing with one foot planted and one in the air (phase 5/6), brings the phone up in one in-between, the phone buzzes (shake marks, 4 drawings); bubble 3.5-4.75 s over a held pose while the crowd keeps passing in front and behind; walks on at 4.83 s from the same phase. Colour: yellow (the cab, one coat), lavender (the one who stops), blue for the small rising arrow on the phone; everyone else is white, charcoal or black. */
+   Motion notes: one locked shot, 7 s. Three layers, three clocks. The street is an establishing drawing that never moves: 1.5-4 px lines, no fills, windows as texture; only the flag on the roof flips between two drawings on threes. The cab is a machine and runs on ones, 520 px/s, crossing from 1.0 s with its spokes turning. The crowd walks on twos across the still pavement: every walker advances IB.walkLen / 12 per drawing (0.07 h: 16-19 px for these heights), so every planted foot stays put; thirteen walkers in two rows (floor y 930 and 985, heights 228-270; those heading left walk 14 px nearer than those heading right, so walkers who cross pass in front of one another), five of them a second wave that is still off-screen at the start, begin zero to five drawings out of phase so the crowd never steps in unison. The walker in lavender stops at 2.83 s on a drawing with one foot planted and one in the air (phase 5/6), thrown forward for one drawing (lean 0.14) before it stands upright, brings the phone up in one in-between and one drawing a little past the eyes, its head trailing by one drawing (pose.prev), the phone buzzes (shake marks, 4 drawings); bubble 3.5-4.75 s over a held pose while the crowd keeps passing in front and behind; walks on at 4.83 s from the same phase. Colour: yellow (the cab, one coat), lavender (the one who stops), blue for the small rising arrow on the phone; everyone else is white, charcoal or black. */
 const { lerp } = MG;
 const C = IB.C, F = IB.FIG, ROAD = 856;
 
@@ -40,21 +40,28 @@ const CROWD = [
 const ROWS = CROWD.map((w) => ({ ...w, floor: w.floor + (w.dir < 0 ? 14 : 0) })).sort((a, b) => a.floor - b.floor);
 const STOP = 34, GO = 58, PH_STOP = (STOP / 12) % 1;   // the hero stops on drawing 34 (2.83 s) and walks on at drawing 58 (4.83 s)
 
-function walker(ctx, w, k) {
+/* A walker's pose on drawing k, with what its hands hold. */
+function walkerPose(w, k) {
   const pace = IB.walkLen(w) / 12, d = w.dir;
   let p, x, phone = 0;
   if (w.hero && k >= STOP) {
     const moved = Math.max(0, k - GO);
     x = w.x0 + pace * (STOP + moved);
     p = IB.walk(x, w.floor, w, ((STOP + moved) / 12) % 1);
-    if (k < GO) { p.feet = p.feet.map((ft) => [ft[0], w.floor - F.ankle * w.h, 0]); p.hip[1] = IB.stand(x, w.floor, w).hip[1]; p.lean = 0.02; phone = k === STOP ? 0.5 : 1; }
+    // the stop: one drawing thrown forward, then upright; the phone comes up half-way, a little past the eyes, back
+    if (k < GO) { p.feet = p.feet.map((ft) => [ft[0], w.floor - F.ankle * w.h, 0]); p.hip[1] = IB.stand(x, w.floor, w).hip[1]; p.lean = k === STOP ? 0.14 : 0.02; phone = [0.5, 1.12][k - STOP] ?? 1; }
   } else { x = w.x0 + d * pace * k; p = IB.walk(x, w.floor, w, ((k + w.off) / 12) % 1); }
-  if (x < -160 || x > 2080) return null;
   const sh = [p.hip[0], p.hip[1] - F.torso * w.h], prop = phone ? 'look' : w.prop;
   // what the hands are busy with, each target inside the arm's reach
   if (prop === 'cup') p.hands = [p.hands[0], [sh[0] + 0.15 * w.h * d, sh[1] + 0.13 * w.h]];
   if (prop === 'phone') { p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]]; p.elbow = [1, -1]; }   // at the ear, behind the face, the elbow folded back so the forearm does not cross the eyes
-  if (prop === 'look') { const base = IB.stand(x, w.floor, w).hands[1]; p.hands = [p.hands[0], [lerp(base[0], sh[0] + 0.17 * w.h * d, phone), lerp(base[1], sh[1] - 0.02 * w.h, phone)]]; p.nod = 0.2 * phone; }
+  if (prop === 'look') { const base = IB.stand(x, w.floor, w).hands[1]; p.hands = [p.hands[0], [lerp(base[0], sh[0] + 0.17 * w.h * d, phone), lerp(base[1], sh[1] - 0.02 * w.h, phone)]]; p.nod = 0.2 * Math.min(1, phone); }
+  return { p, x, phone: Math.min(1, phone), prop };
+}
+function walker(ctx, w, k) {
+  const { p, x, phone, prop } = walkerPose(w, k), d = w.dir;
+  if (x < -160 || x > 2080) return null;
+  if (w.hero && k >= STOP && k <= GO + 1) p.prev = walkerPose(w, k - 1).p;   // the hero's head trails the stop and the look by one drawing; walking, no prev (the bun would lean back the whole walk)
   const face = phone === 1 ? { eye: 'wide', mouth: k >= STOP + 6 ? 'smile' : 'flat' } : { mouth: 'flat' };
   const j = IB.figure(ctx, p, { ...w, face, lw: IB.figLine(w.h) }), lw = IB.figLine(w.h);
   if (prop === 'case') IB.briefcase(ctx, j.hands[0], { h: w.h, fill: w.bottom === C.ink ? C.charcoal : C.paper, lw, seed: w.seed + 20 });
@@ -62,6 +69,9 @@ function walker(ctx, w, k) {
   if (prop === 'phone' || prop === 'look') { const [hx, hy] = j.hands[1]; IB.mobilePhone(ctx, [hx + (prop === 'look' ? 6 : -2) * d, hy - (prop === 'look' ? 30 : 26)], { up: phone === 1, lw: lw * 0.85, seed: w.seed + 23 }); }
   return { x, j, phone };
 }
+
+// the hero's drawings, for tools/drawings.py (the crowd is the walk cycle itself)
+IB.actors = (t) => { const k = Math.round(IB.twos(t) * 12), w = ROWS.find((v) => v.hero); return { hero: walkerPose(w, k).p }; };
 
 MG.scene({
   title: 'market / street-rush-hour',

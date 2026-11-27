@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / home-room</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 방에 서는 큰 세간 — 노란 문 IB.door, 정면 식탁 의자 IB.diningChair(opts.lift로 바닥에서 뜬다), 생일 케이크를 올린 곁탁자 IB.partyTable과 그 위의 초 IB.candle. 문은 선 그림뿐인 벽에서 하나만 색을 가진 것이라 걸음이 어디로 가는지 말한다(acting/walk-cycle-bag). 의자는 vignette/balloons-lift-chair의 들림 그대로다: 셋째 풍선에서 IB.settle(tau 0.2)로 46 px, 넷째에서 IB.settle(0.45, 1.4)로 150 px 더 뜬다. 바닥의 분필 자국과 다리 밑 흑연은 장면 것이라 의자가 떠도 남는다. 탁자는 vignette/trick-candle-relight의 그림 목록 그대로다: 초는 3프레임마다 두 불꽃을 바꾸고, 입김에 한 장 눕고(lit 2) 꺼졌다가, 다시 붙는 한 장(lit 3)에 터짐 표시가 붙는다. 둘째 판에서는 셋이 한꺼번에, 첫째 판에서는 그림 두 장(4프레임)씩 엇갈려 붙는다. 케이크 윗면은 탁자 윗면에서 120 px 위이고 초의 심지 끝은 거기서 72 px 위다. */
+const TABLE = 690, WICK = TABLE - 8 - 112 - 72, CANDLES = [1010, 1062, 1114];
+// vignette/trick-candle-relight: two rounds of blow and relight
+const ROUNDS = [{ blow: 1.25, relight: 2.5, stagger: 2 }, { blow: 4, relight: 5, stagger: 0 }];
+function flame(i, tt) {   // 0 out, 1 burning, 2 blown flat for one drawing, 3 the drawing it catches again
+  let s = 1;
+  for (const r of ROUNDS) {
+    const b = IB.drawn(tt, r.blow), l = IB.drawn(tt, r.relight + (i * r.stagger) / 12);
+    if (b === 1) s = 2; else if (b >= 2) s = 0;
+    if (l === 0) s = 3; else if (l > 0) s = 1;
+  }
+  return s;
+}
+// vignette/balloons-lift-chair: the chair rises when the third and the fourth balloon are let go
+const REL = [0.75 + 2 * 1.25 + 7 / 12, 0.75 + 3 * 1.25 + 7 / 12];
+const lift = (tt) => 46 * IB.settle(tt - REL[0], 0.2) + 150 * IB.settle(tt - REL[1], 0.45, 1.4);
+MG.scene({
+  title: 'props / home-room',
+  duration: 7, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/home.js — door, dining chair, party table and candles');
+    const tt = IB.twos(t), f = IB.frame(t), c = SAMPLE.grid(4, 4), wide = SAMPLE.span(c, 2, 3);
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [1427, 930], 60), () => IB.door(ctx, [1270, 930]), 'IB.door([left, floor])');
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [860, 900], 60), () => {
+      IB.smear(ctx, 860, 900 - 5, 300, { h: 12, seed: 9 });
+      IB.shade(ctx, 860 - 100, 900 - 9, 200, 12, { from: 'bottom', seed: 11, alpha: 0.45 });
+      IB.diningChair(ctx, [860, 900], { lift: lift(tt), seat: 160, back: 190 });
+    }, 'IB.diningChair({ lift })');
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [1062, 930], 60), () => {
+      IB.partyTable(ctx, [1062, 930]);
+      CANDLES.forEach((x, i) => IB.candle(ctx, [x, WICK], { lit: flame(i, tt), flicker: IB.alternate(f, 3) }));
+    }, 'IB.partyTable + IB.candle — blown out, relit');
+  },
+});
+</script>

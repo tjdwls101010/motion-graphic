@@ -5,7 +5,7 @@ For each scene the same three moments are captured twice: once seeking forward (
 
 Chrome does not rasterise the same frame bit-identically twice (gradients and antialiased edges move by 1-3 levels, up to ~16 on a pixel or two), so two captures count as different only when more than LIMIT pixels differ by more than LEVEL.
 
-  check_pure.py                         every scene of every reference
+  check_pure.py                         every scene and part sample of every reference
   check_pure.py pstack/scenes/sketch/*.html only these
 
 Exit 0 when all scenes pass, 1 otherwise. Requires: pip install playwright pillow, Google Chrome.
@@ -33,7 +33,7 @@ def main():
     if any(a in ('-h', '--help') for a in sys.argv[1:]):
         print(__doc__)
         return 0
-    paths = [Path(a) for a in sys.argv[1:]] or library.scenes()
+    paths = [Path(a) for a in sys.argv[1:]] or library.scenes() + library.samples()
     failed = []
     with sync_playwright() as p:
         browser = p.chromium.launch(channel='chrome', headless=True)

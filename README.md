@@ -11,12 +11,13 @@
 open index.html
 ```
 
-모든 레퍼런스의 장면이 레퍼런스 → 계열 순으로 한 시트에 모여 있다. 카드에 마우스를 올리면 그 자리에서 장면이 재생되고, 클릭하면 장면이 크게 열린다. 장면을 열면 아래에 재생 막대가 나온다. 스페이스로 재생·정지, 좌우 화살표로 한 프레임씩 이동한다. 주소에 `?t=3.2`를 붙이면 3.2초에서 멈춘 채 열린다.
+모든 레퍼런스의 장면이 레퍼런스 → 계열 순으로 한 시트에 모여 있다. 위쪽 링크의 `parts.html`(부품 시트)에는 장면을 조립하는 kit 부품이 묶음별 견본 페이지로 모여 있다. 칸마다 부품과 그 상태를 장면과 같은 크기로 그리고, 포즈와 동작을 반복 재생한다. 카드에 마우스를 올리면 그 자리에서 장면이 재생되고, 클릭하면 장면이 크게 열린다. 장면을 열면 아래에 재생 막대가 나온다. 스페이스로 재생·정지, 좌우 화살표로 한 프레임씩 이동한다. 주소에 `?t=3.2`를 붙이면 3.2초에서 멈춘 채 열린다.
 
 ## 구조
 
 ```
 index.html  모든 레퍼런스의 장면 시트 (build_index.py가 만든다)
+parts.html  모든 레퍼런스의 부품 시트: <ref>/parts/의 견본 카드 (build_index.py가 만든다)
 core/       영상과 무관한 공용 엔진. 모든 장면이 불러 쓴다
   motion.js   시간 함수: prog, kf, ease, rng, onTwos, typed
   stage.js    1920x1080 스테이지, 재생 막대, 캡처 훅 (MG.scene)
@@ -25,10 +26,10 @@ core/       영상과 무관한 공용 엔진. 모든 장면이 불러 쓴다
 tools/
   library.py      배치 규칙 (아래 <ref>/… 경로). 다른 도구가 이것으로 장면과 영상을 찾는다
   capture.py      스틸, 콘택트 시트, mp4, 원본 대조 시트 렌더
-  build_index.py  index.html 재생성, 썸네일 재렌더(--thumbs), 장면 메타데이터와 썸네일 점검(--check)
-  check_pure.py   모든 장면의 render(t)가 시간의 순수 함수인지 검사
+  build_index.py  index.html과 parts.html 재생성, 썸네일 재렌더(--thumbs), 장면·견본 메타데이터와 썸네일 점검(--check)
+  check_pure.py   모든 장면과 견본의 render(t)가 시간의 순수 함수인지 검사
   same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
-  test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs)과 장면의 불러오기, 캐릭터 MOVE의 모양을 브라우저 없이 확인한다
+  test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs), 장면과 견본의 불러오기, 캐릭터 MOVE의 모양, kit의 모든 부품이 어느 견본에 그려지는지를 브라우저 없이 확인한다
 <ref>/      레퍼런스 영상 하나 (예: pstack/)
   README.md      출처, 원본과 다른 점
   STYLE.md       계열별 룩과 모션 규칙
@@ -36,7 +37,9 @@ tools/
   families.json  계열 이름과 시트 순서 {"계열": "이름", …}
   kit/           이 영상 스타일의 부품: 선과 박자 도구, 캐릭터(cast/), 소품(props/), 배경 세트(sets/). 장면은 이것을 조립만 한다
   scenes/<계열>/<장면>.html
-  thumbs/<계열>-<장면>.jpg   시트 카드의 정지 썸네일. build_index.py --thumbs가 다시 만든다
+  parts/<묶음>/<이름>.html   kit 부품 견본(묶음: look, cast, props, sets, marks, time). ref: null인 MG.scene이고, 첫 주석의 첫 문장이 부품 시트의 카드 글이다
+  parts/sample.js            견본 페이지의 칸 배치 도우미(전역 SAMPLE). 부품이 아니라 페이지를 그린다
+  thumbs/<계열>-<장면>.jpg   시트 카드의 정지 썸네일. 견본은 parts-<묶음>-<이름>.jpg. build_index.py --thumbs가 다시 만든다
 references/<ref>/<ref>.mp4   원본 영상. 로컬에만 두고 저장소에 넣지 않는다(.gitignore)
 out/                         렌더 결과 작업 공간(.gitignore)
 ```

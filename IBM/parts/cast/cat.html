@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / cat</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/facade.js"></script>
+<script src="../../kit/cast/cat.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 흰 채움에 먹 외곽선의 고양이 둘, 창가 고양이 IB.windowCat의 포즈와 동작 여섯, 의자 고양이 IB.chairCat의 눈과 꼬리, 그리고 IB.place로 옮겨 놓기. 창가 고양이(머리 37px)는 원본 6편의 옆 창 창턱(y 749, 중심선 x 1539, IB.windowCat.ORIGIN)에 원본 좌표로 앉아 있고, 포즈 IB.windowCat.POSE.sit과 동작 여섯(IB.windowCat.MOVE.earFlick, lookBack, leave, comeBack, lower, followFly)을 창틀 IB.apartmentFacade의 middle과 front 레이어 사이에서 보인다: 앞을 보고 앉은 포즈는 창턱 아래가 가려지게 그려져 있다. 작아서 장면(spot/dark-eyes-reveal)이 CROP으로 키운 1.57배로 보인다. 고양이가 먼저 움직인다: 주인공보다 한 박자 먼저 고개를 돌리고(lookBack), 넉 장에 창턱 아래로 사라졌다가(leave) 귀 끝, 창턱에 얹은 쌍안경, 눈에 댄 쌍안경 순으로 한 장씩 올라오며(comeBack: 첫 장은 검은 렌즈, 다음부터 노란 세로 눈동자), 쌍안경은 주인공보다 한 장 늦게 내린다(lower). 의자 고양이 IB.chairCat(머리 92px, 1:1)은 정면으로 엎드린 채 눈(eyes 'shut' | 'wide')과 꼬리(tail 0 | 1, 3프레임마다 번갈아 vignette/balloons-lift-chair의 마지막 1초)만 움직이고, 말풍선 꼬리를 붙일 입꼬리 점을 돌려준다. 의자 고양이는 at·s·flip 옵션이 없어서 다른 자리와 크기에는 IB.place로 컨텍스트를 옮긴다. */
+const K = IB.windowCat, [CX, SILL] = K.ORIGIN, CAT_X = 960, SEAT = 700;
+// the sill the reference draws in front of the cat
+const inWindow = (ctx, draw) => { IB.apartmentFacade(ctx, { layer: 'middle' }); draw(); IB.apartmentFacade(ctx, { layer: 'front' }); };
+const seat = (ctx) => IB.box(ctx, CAT_X - 90, SEAT, 220, 16, { fill: IB.C.paper, w: 3, seed: 80 });
+MG.scene({
+  title: 'cast / cat',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.windowCat, IB.chairCat (cast/cat.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(12, 4);
+    const view = (i) => SAMPLE.window([CX, SILL], c[i][2] / 1.57, c[i][3] / 1.57, 50);   // the scene's 1.57x CROP
+    Object.entries(K.POSE).forEach(([name, p]) => SAMPLE.cell(ctx, c[0], view(0), () => inWindow(ctx, () => K(ctx, p)), `windowCat.POSE.${name}`));   // one pose: sit
+    // leave ends on an empty sill: start it from the sitting pose so the cell is not empty for long
+    Object.entries(K.MOVE).forEach(([name, move], i) => {
+      const rows = name === 'leave' ? [[0, K.POSE.sit], ...IB.play(move, 12)] : move;
+      SAMPLE.cell(ctx, c[1 + i], view(1 + i), () => inWindow(ctx, () => K(ctx, SAMPLE.cycle(f, rows, name === 'leave' ? 6 : 18))), 'MOVE.' + name);
+    });
+    SAMPLE.cell(ctx, c[7], SAMPLE.window([CX, SILL], c[7][2] / 1.57, c[7][3] / 1.57, 24), () => {
+      IB.seg(ctx, CX - 140, SILL, CX + 140, SILL, { w: 2.2, seed: 70 });
+      K(ctx, K.POSE.sit, { at: [CX - 55, SILL] });
+      K(ctx, K.POSE.sit, { at: [CX + 60, SILL], s: 1.3, flip: true });
+    }, 'opts { at, s: 1.3, flip }');
+    const fit = (i) => SAMPLE.fit(c[i], [CAT_X, SEAT], 100);
+    SAMPLE.cell(ctx, c[8], fit(8), () => { seat(ctx); IB.chairCat(ctx, [CAT_X, SEAT], { eyes: 'shut', tail: 0 }); }, "chairCat { eyes: 'shut' }");
+    SAMPLE.cell(ctx, c[9], fit(9), () => {
+      seat(ctx);
+      const mouth = IB.chairCat(ctx, [CAT_X, SEAT], { eyes: 'wide', tail: 0 });
+      IB.oval(ctx, mouth[0], mouth[1], 5, 5, { fill: IB.C.royal, w: 0, n: 8 });
+    }, "{ eyes: 'wide' } → returned bubble tip");
+    SAMPLE.cell(ctx, c[10], fit(10), () => { seat(ctx); IB.chairCat(ctx, [CAT_X, SEAT], { eyes: 'shut', tail: IB.alternate(f, 3) }); }, 'tail: IB.alternate(f, 3)');
+    SAMPLE.cell(ctx, c[11], fit(11), () => [[[CAT_X - 90, SEAT], false], [[CAT_X + 90, SEAT], true]].forEach(([at, flip]) => {
+      ctx.save(); IB.place(ctx, [CAT_X, SEAT], { at, s: 0.6, flip });
+      seat(ctx); IB.chairCat(ctx, [CAT_X, SEAT], { eyes: flip ? 'wide' : 'shut' });
+      ctx.restore();
+    }), 'IB.place({ at, s: 0.6, flip })');
+  },
+});
+</script>

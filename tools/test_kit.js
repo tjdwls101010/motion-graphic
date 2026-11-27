@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /* Contract of every <ref>/kit/ file and every scene that loads them, checked without a browser. Run: node tools/test_kit.js (exit 1 on failure).
    1. A kit file's first comment says what else it needs ("Needs ink.js, time.js and marks.js"): every IB.* name it uses and does not define itself must be defined by one of those files. A part that calls another file's part only on some path (a candle's relight burst) breaks a new scene that loads the file on the strength of its comment alone.
-   2. A scene loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
+   2. A scene or part sample loads, with its <script src> tags, every file that each kit file it loads needs, and every IB.* name the scene itself uses is defined by a file it loads.
    3. Only ink.js (which creates IB) and time.js load first; every other kit file may load in any order, so none of them may read another file's IB.* name while it loads (const F = IB.FIG at the top of a file is undefined if figure.js comes later): outside a function body, a file reads only its own names and those of ink.js and time.js.
    4. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
+   5. Every IB.* part a kit file exports is used in the code of at least one part sample (<ref>/parts/), so the part sheet is the whole kit; naming a part in a sample's comment does not count. The few names with nothing to draw are listed in NOT_SHOWN with the reason.
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
 const fs = require('fs');
 const path = require('path');
@@ -15,6 +16,8 @@ const defines = (src) => new Set([...strip(src).matchAll(/\bIB\.(\w+)\s*=(?!=)/g
 const files = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(path.join(dir, e.name)) : e.name.endsWith('.js') ? [path.join(dir, e.name)] : []));
 
 let failed = 0;
+// 5: kit names that no part sample has to use, each with the reason
+const NOT_SHOWN = { IBM: {} };
 const fail = (msg) => { failed++; console.log('FAIL ' + msg); };
 
 for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROOT, d, 'kit')))) {
@@ -42,9 +45,14 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
   }
 
   // 2. each scene loads what its kit files need and what it uses
-  const sceneDir = path.join(ROOT, ref, 'scenes');
-  for (const fam of fs.readdirSync(sceneDir)) for (const s of fs.readdirSync(path.join(sceneDir, fam)).filter((x) => x.endsWith('.html'))) {
-    const html = fs.readFileSync(path.join(sceneDir, fam, s), 'utf8'), name = `${ref}/scenes/${fam}/${s}`;
+  const pages = [];   // scenes and part samples load kit files the same way
+  for (const kind of ['scenes', 'parts']) {
+    const dir = path.join(ROOT, ref, kind);
+    if (!fs.existsSync(dir)) continue;
+    for (const fam of fs.readdirSync(dir).filter((d) => fs.statSync(path.join(dir, d)).isDirectory())) for (const s of fs.readdirSync(path.join(dir, fam)).filter((x) => x.endsWith('.html'))) pages.push([kind, fam, s]);
+  }
+  for (const [kind, fam, s] of pages) {
+    const html = fs.readFileSync(path.join(ROOT, ref, kind, fam, s), 'utf8'), name = `${ref}/${kind}/${fam}/${s}`;
     const loaded = [...html.matchAll(/<script src="\.\.\/\.\.\/kit\/([^"]+)"><\/script>/g)].map((m) => m[1]);
     for (const f of loaded) {
       if (!kit[f]) { fail(`${name} loads kit/${f}, which does not exist`); continue; }
@@ -91,6 +99,14 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
         if (Array.isArray(rows[0]) && rows[0][0] !== 0) fail(`${name} starts at frame ${rows[0][0]}: a move counts from its own first drawing, 0`);
       }
     }
+  }
+  // 5. every exported part is on the part sheet: used in a sample's script code, not only named in a comment, a string (titles, labels) or an HTML comment
+  const sampleDir = path.join(ROOT, ref, 'parts');
+  if (fs.existsSync(sampleDir)) {
+    const code = (src) => src.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''").replace(/`(?:[^`\\]|\\.)*`/g, (s) => [...s.matchAll(/\$\{([^}]*)\}/g)].map((m) => m[1]).join(' '));   // a template string keeps only its ${...} code
+    const shown = new Set(pages.filter(([kind]) => kind === 'parts').flatMap(([, fam, s]) => [...names(code(fs.readFileSync(path.join(sampleDir, fam, s), 'utf8')))]));
+    const missing = Object.keys(owner).filter((n) => !shown.has(n) && !(NOT_SHOWN[ref] || {})[n]).sort();
+    if (missing.length) fail(`${ref}: ${missing.length} parts are on no part sample: ${missing.map((n) => 'IB.' + n + ' (' + owner[n] + ')').join(', ')}`);
   }
 }
 

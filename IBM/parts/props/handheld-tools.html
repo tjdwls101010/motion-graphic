@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / handheld-tools</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 손에 들고 겨누는 도구 — 손전등 IB.torch, 정원 호스 IB.gardenHose와 노즐 IB.nozzle, 물줄기 IB.waterJet. 손전등은 손목에 쥐고 각 a로 겨누며 렌즈는 손목에서 96 px 앞이다: 빛은 이 부품이 아니라 IB.lightBeam(밝은 방)과 IB.darkness(어둠)가 그리고, 손이 드니 2프레임마다 한 장씩 돈다(metaphor/flashlight-finds-file: 22도에서 -24도로 1초, 0.25초 멈춤, 30도로 1초). 호스는 화면 밖에서 손까지 오는 30 px 굵기의 흰 관이고 state.bulge(0–5)가 물 혹이 한 장마다 경로의 16%씩 노즐로 가는 그림이다. 물줄기는 노즐 끝에서 화면 밖까지 가는 납작한 파란 부채이고 안의 흰 줄과 옆의 물방울이 장마다 새로 굴려진다(opts.k): 부채의 반각을 장마다 넓히면 화면을 덮는다(variation/hose-wipe-endcard: 13장에 걸쳐 3도에서 80도, 그다음 화면 전체가 파랑). 호스와 물줄기 칸의 손 위치는 그 장면에서 사람이 쥐는 자리이고(손전등의 손목 자리는 견본이 정했다) 사람은 그리지 않았다. */
+const { kf } = MG;
+const DEG = Math.PI / 180, F = IB.FIG, FLOOR = 930, X0 = 560, H = 520;
+// variation/hose-wipe-endcard: the braced pose's two hands, and the hose from off-screen left up to them
+const HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, HIP = [X0, HIPY + 0.06 * H];
+const HANDS = [[HIP[0] + 0.4 * H, HIP[1] - 0.07 * H], [HIP[0] + 0.27 * H, HIP[1] - 0.05 * H]];
+const HOSE = (() => {
+  const [far, near] = HANDS, a = Math.atan2(far[1] - near[1], far[0] - near[0]), u = [Math.cos(a), Math.sin(a)];
+  return { path: [[-60, FLOOR - 18], [X0 - 0.62 * H, FLOOR - 18], [X0 - 0.36 * H, FLOOR - 70], [X0 - 0.12 * H, HIP[1] + 0.2 * H], [near[0] - u[0] * 50, near[1] - u[1] * 50 + 16], near], a, tip: [far[0] + u[0] * 96, far[1] + u[1] * 96], near };
+})();
+const SPREAD = [3, 4, 5, 6, 7, 8, 8, 12, 18, 26, 38, 55, 80];   // half-angle of the stream per drawing after the burst
+// metaphor/flashlight-finds-file: where the beam points (degrees) over time; from 3.25 s it rests on the find, 8.5
+const beamAt = (tt) => kf(tt, [[0.5, 22], [1.5, -24, 'inOutQuad'], [1.75, -24], [2.75, 30, 'inOutQuad']]);
+const WRIST = [560, 540];
+MG.scene({
+  title: 'props / handheld-tools',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/handheld.js — torch, garden hose, nozzle, water jet');
+    const tt = IB.twos(t), n = Math.round(tt * 12), c = SAMPLE.grid(4, 2), wide = SAMPLE.span(c, 2, 3);
+    SAMPLE.cell(ctx, c[0], [WRIST[0] - 220, WRIST[1] - c[0][3] / 2, c[0][2], c[0][3]], () => {
+      const a = (tt < 3.25 ? beamAt(tt) : 8.5) * DEG, u = [Math.cos(a), Math.sin(a)];
+      IB.lightBeam(ctx, [WRIST[0] + u[0] * 96, WRIST[1] + u[1] * 96], a);
+      IB.torch(ctx, WRIST, a);
+    }, 'IB.torch(wrist, a) — its light is IB.lightBeam');
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [470, FLOOR], 30), () => {
+      IB.gardenHose(ctx, HOSE.path, { bulge: (n % 10) - 2 });   // the bulge runs up the hose in 6 drawings, then 4 without
+      IB.nozzle(ctx, HOSE.near, HOSE.a);
+    }, 'IB.gardenHose(path, { bulge }) + IB.nozzle(hand, a)');
+    SAMPLE.cell(ctx, wide, [HOSE.near[0] - 220, HOSE.tip[1] - wide[3] / 2, wide[2], wide[3]], () => {   // the jet runs on past the cell, as it runs off the screen
+      const k = n % 16;   // 13 drawings of the jet widening, then 3 before it bursts again
+      IB.gardenHose(ctx, HOSE.path);
+      if (k < SPREAD.length) IB.waterJet(ctx, HOSE.tip, HOSE.a, { k, half: SPREAD[k] * DEG });
+      IB.nozzle(ctx, HOSE.near, HOSE.a);
+    }, 'IB.waterJet(tip, a, { k, half }) — 3° to 80° over 13 drawings');
+  },
+});
+</script>

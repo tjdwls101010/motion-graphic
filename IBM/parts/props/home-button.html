@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / home-button</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 인서트 크기로 화면을 채운 승강기 호출 버튼 IB.callButton. 둥근 모서리 판에 나사 넷, 위에 표시등 화살표, 지름 352 px의 둥근 버튼이다. 누르면(state.pressed) 버튼 머리가 10 px 가라앉고, 켜지면(state.lit, 기본은 pressed와 같다) 머리가 파랑, 표시등이 민트로 함께 바뀐다. 인서트라 선이 7–9 px로 굵다. variation/hall-whip-button에서 휘핑 뒤 두 번째 샷 전체가 이 버튼이고, 누름은 사이 그림 없이 한 장에 바뀐다. 화면 전체를 쓰는 부품이라 칸 없이 전면으로 보인다. */
+MG.scene({
+  title: 'props / home-button',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const pressed = IB.twos(t) >= 1.5;   // on in one drawing, as the scene presses it
+    IB.callButton(ctx, [960, 560], { pressed });   // centred on the page; the scene has it at [860, 560], beside the finger that presses it
+    SAMPLE.caption(ctx, pressed ? 'IB.callButton(at, { pressed: true }) — sinks 10 px, lit' : 'IB.callButton(at, { pressed: false })');
+  },
+});
+</script>

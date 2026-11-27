@@ -1,0 +1,63 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / parcel</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/cast/parcel.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 걷는 상자 IB.parcel. 폴더·서류와 같은 집안의 물건 캐릭터라 얼굴이 없고, 상자는 단단해서 찌그러지지 않고 기울기만 한다. 걷기는 두 발 세트와 tilt 부호를 6프레임마다 바꾸고(±0.035), 서두르면 4프레임마다 ±0.07이다. 뛰어오르기는 0.33초에 네 장(바닥에서 250px 위가 착지 한 장 전), 착지하면 다리를 접어(legs 0.3 한 장, 그다음 0) 벨트에 실린다: 다리는 필요할 때만 있다. 캐릭터는 2프레임마다, 기계(벨트, 실려 가는 상자)는 1프레임마다 움직이는 것이 parcels-board-conveyor의 요점이라, 벨트 칸은 IB.conveyor와 함께 그렸다. 크기와 색은 그 장면의 넷(190 x 150 종이색, 150 x 200 노랑, 230 x 130 연보라, 늦은 꼬마 96 x 88)이고, 검사대 IB.stamper가 내려온 장부터 초록 체크(stamped)가 찍힌다. */
+const C = IB.C, FLOOR = 900, BELT = 690, LEG = 74, V = 230, BOXES = [{ w: 190, h: 150, fill: C.paper, seed: 100 }, { w: 150, h: 200, fill: C.yellow, seed: 140 }, { w: 230, h: 130, fill: C.lavender, seed: 180 }, { w: 96, h: 88, fill: C.paper, seed: 220 }];
+// parcels-board-conveyor's walk: the two foot sets and the tilt swap every 6 frames (every 4, with twice the tilt, when it hurries)
+const walking = (b, f, late) => { const step = IB.alternate(f, late ? 4 : 6); return { tilt: (step ? 1 : -1) * (late ? 0.07 : 0.035), feet: step ? [[-b.w * 0.2 - 8, 0], [b.w * 0.2 + 22, -12]] : [[-b.w * 0.2 + 22, -12], [b.w * 0.2 - 8, 0]] }; };
+// the hop onto the belt: the last 0.25 s of walking at 190 px/s (as much as fits the cell 1:1), four drawings in the air, the legs folding, riding
+const HOP = [[790, FLOOR - 12 - LEG - 130, -0.22], [850, FLOOR - 12 - LEG - 235, -0.16], [920, BELT - 110, -0.06], [960, BELT - 22, 0.05]];
+function hop(b, f) {
+  const n = (f + 3) % 30;   // a 30-frame loop, shifted so the 0.72 poster lands on the landing drawing
+  if (n < 6) return { x: 760 - 190 * (6 - (n - n % 2)) / 24, y: FLOOR - 12 - LEG, legs: 1, ...walking(b, n) };   // walking on twos
+  const k = Math.floor((n - 6) / 2);
+  if (k < 4) { const [x, y, tilt] = HOP[k]; return { x, y, tilt, legs: 0.6, feet: [[-b.w * 0.2 - 10, 0], [b.w * 0.2 + 4, -8]], air: true }; }
+  return { x: 960 + V * (n - 14) / 24, y: BELT, tilt: 0, legs: n < 16 ? 0.3 : 0, feet: [[-b.w * 0.2, 0], [b.w * 0.2, 0]], riding: true };   // riding: the belt carries it on ones
+}
+MG.scene({
+  title: 'cast / parcel',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.parcel — walking, hurrying, the hop, riding, stamped (cast/parcel.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(8, 4), tall = [c[2][0], c[2][1], c[2][2], c[6][1] + c[6][3] - c[2][1]];
+    const walker = (i, b, late, label) => SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [960, FLOOR]), () => {
+      IB.smear(ctx, 966, FLOOR - 11, b.w * 0.9, { h: 12, seed: b.seed + 30 });
+      IB.parcel(ctx, [960, FLOOR - 12 - LEG], { legs: 1, ...walking(b, f, late) }, { ...b, leg: LEG, ground: FLOOR - 12 });
+    }, label);
+    walker(0, BOXES[0], false, 'walk: tilt ±0.035, every 6 frames');
+    walker(1, BOXES[3], true, 'hurry: tilt ±0.07, every 4 frames');
+    walker(5, BOXES[1], false, '{ w: 150, h: 200, fill: yellow }');
+    walker(7, BOXES[2], false, '{ w: 230, h: 130, fill: lavender }');
+    // the hop onto the moving belt: the parcel on twos, the belt on ones
+    const s = hop(BOXES[0], f);
+    SAMPLE.cell(ctx, tall, SAMPLE.window([848, FLOOR], tall[2], tall[3], 228), () => {
+      IB.conveyor(ctx, [880, BELT], { travel: t * V }, { floor: FLOOR });
+      if (!s.riding && !s.air) IB.smear(ctx, s.x + 6, FLOOR - 11, 171, { h: 12, seed: 130 });
+      IB.parcel(ctx, [s.x, s.y], s, { ...BOXES[0], leg: LEG, ground: FLOOR - 12 });
+    }, 'state { air, legs, riding }');
+    // under the stamper: the pad down in four drawings (0.6, 1, 0.55, 0.2); the tick is there from the contact on
+    const k = Math.floor(f / 2) % 8, down = [0.6, 1, 0.55, 0.2, 0, 0, 0, 0][k], b = BOXES[1];
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [1500, BELT], 120), () => {
+      IB.conveyor(ctx, [880, BELT], {}, { floor: FLOOR });   // held still while the pad comes down
+      IB.parcel(ctx, [1500, BELT], { legs: 0, riding: true, stamped: k >= 1 && k < 6 }, { ...b, leg: LEG });
+      IB.stamper(ctx, [1500, BELT], { down, top: BELT - b.h, hit: k < 4 ? k : -1 });
+    }, 'state { stamped } under IB.stamper');
+    // folding the legs away: out, a third, gone, and back out for the next hop
+    const legs = [1, 1, 0.6, 0.3, 0, 0, 0, 0][Math.floor(f / 2) % 8];
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [960, FLOOR]), () => { IB.smear(ctx, 966, FLOOR - 11, 171, { h: 12, seed: 140 }); IB.parcel(ctx, [960, FLOOR - 12 - LEG], { legs, feet: [[-46, 0], [46, 0]] }, { ...BOXES[0], leg: LEG, ground: FLOOR - 12 }); }, `state { legs: ${legs} }`);
+  },
+});
+</script>

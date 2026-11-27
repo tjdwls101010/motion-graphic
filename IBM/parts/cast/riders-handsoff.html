@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / riders-handsoff</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/cast/riders.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 피날레에서 라이더마다 손잡이를 놓는 자기 방식 IB.rider.MOVE.handsOff(vents, bun, visor, curls: 동작 표가 아니라 라이더 이름별 표 넷이다). 다 함께 놓지 않는다: 장면에서는 앞 라이더가 먼저(222프레임), 나머지가 2–14프레임 뒤에 놓는다. 몸을 젖히는 정도는 lean -30에서 -66(어깨가 타던 자리보다 40–80px 뒤)이고, 맨 앞 vents만 두 다리를 내밀고 미끄러져 가며 나머지는 계속 페달을 밟는다. 젖힌 뒤에는 8프레임 간격의 두 그림을 오가서 든 손이 까딱인다. 칸마다 그 라이더의 표를 반복하고 마지막 그림을 0.75초 붙잡는다. */
+// one rider on a one-seat IB.tandem, as tandem-riders-join draws them: wheelbase 170, the axles at y 750, the cranks turning on twos (12 drawings a turn), streaming hair on three drawings
+const AXLE = 750, PI = Math.PI;
+function ride(ctx, cx, f, pose, look, o = {}) {
+  const d2 = Math.floor(f / 2), crank = (d2 / 12) * PI * 2 - PI / 2, rx = cx - 85, fx = cx + 85, bb = [rx + 62, AXLE - 4];
+  const bike = { rx, fx, bbs: [bb], built: [true], crank, alt: IB.alternate(f, 2) };
+  IB.tandem(ctx, bike, { axle: AXLE });
+  IB.rider(ctx, bb, pose, { look, crank, alt: IB.loop(f, [0, 1, -0.6]), seed: 200, ...o });
+  return bb;
+}
+const H = IB.rider.MOVE.handsOff;
+MG.scene({
+  title: 'cast / riders-handsoff',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.rider.MOVE.handsOff — each rider lets go its own way (cast/riders.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(4, 2);
+    Object.entries(H).forEach(([who, rows], i) => SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [960, AXLE + 50], 40), () => ride(ctx, 960, f, SAMPLE.cycle(f, rows), IB.RIDERS[who]), 'MOVE.handsOff.' + who));
+  },
+});
+</script>

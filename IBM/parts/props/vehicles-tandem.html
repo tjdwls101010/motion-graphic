@@ -1,0 +1,59 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / vehicles-tandem</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 탈것, 원본 다섯째 스팟의 탠덤 IB.tandem, 한 사람이 탈 때마다 자리 하나(안장, 크랭크, 뒷사람 손잡이)가 자라는 자전거다. 자리 하나는 120px이고 합류 네 장(2프레임 단위)에 그 30%, 80%, 106%, 100%를 얻는다(첫 장에는 안장과 크랭크가 아직 없다: built). 합류마다 꼬리가 들려 앞바퀴를 축으로 50, 27, -9px 기울고 자전거가 무거울수록 덜 들린다. 부품은 바퀴 IB.bikeWheel(바큇살 대신 회색 호 넷이 2프레임마다 바뀜)과 크랭크 IB.crankset(열두 장에 한 바퀴, 1초), 치수는 IB.TANDEM(크랭크 21, 바퀴 반지름 50)이다. 땅에는 바퀴 밑 IB.ripples, 뒷바퀴 먼지 IB.wheelDust를 layer 'wheels'와 'frame' 사이에 그린다. 원본은 1.5배 확대한 크롭이라 화면에서는 선이 2.9px이고 여기 값은 원본 무대 좌표다. 탄 사람은 cast/riders에 있다. */
+const PI = Math.PI, AXLE = 750, R = IB.TANDEM.r, JOIN = [8, 26, 44, 62], GROW = [0.3, 0.8, 1.06, 1];
+const presence = (i, f) => (i === 0 ? 1 : f < JOIN[i - 1] ? 0 : GROW[Math.min(3, Math.floor((f - JOIN[i - 1]) / 2))]);   // seat 0 is the front one, there from the start
+/* the bike for frame f, about its centre cx: axles and bottom brackets from how much of its place each seat has taken (spot/tandem-riders-join) */
+function bike(f, cx, seats) {
+  const pres = Array.from({ length: seats }, (_, i) => presence(seats - 1 - i, f)), n = pres.reduce((a, b) => a + b, 0);   // rear to front
+  const wb = 170 + 120 * (n - 1), rx = cx - wb / 2, fx = cx + wb / 2, bbs = []; let acc = 0;
+  pres.forEach((p) => { bbs.push([rx + 62 + 120 * acc + 60 * (p - 1), AXLE - 4]); acc += p; });
+  let pitch = 0;
+  JOIN.forEach((J, j) => { const k = Math.floor((f - J) / 2); if (seats > 1 && f >= J && k < 3) pitch = Math.asin([50, 27, -9][k] / (1 + j * 0.7) / wb); });
+  return { rx, fx, bbs: bbs.filter((_, i) => pres[i] > 0), built: pres.filter((p) => p > 0).map((p) => p >= 0.5), pitch };
+}
+MG.scene({
+  title: 'props / vehicles-tandem',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/vehicles.js — the tandem: IB.tandem, bikeWheel, crankset, TANDEM');
+    const f = IB.frame(t), d2 = Math.floor(f / 2), alt = IB.alternate(f, 2), crank = (d2 / 12) * PI * 2 - PI / 2, c = SAMPLE.grid(6, 3);
+    const ride = (b) => {
+      IB.ripples(ctx, [b.rx, AXLE + R], { alt, seed: 70 });
+      IB.ripples(ctx, [b.fx, AXLE + R], { alt, seed: 80 });
+      ctx.save();
+      ctx.translate(b.fx, AXLE + R); ctx.rotate(b.pitch); ctx.translate(-b.fx, -(AXLE + R));
+      const st = { rx: b.rx, fx: b.fx, bbs: b.bbs, built: b.built, crank, alt };
+      IB.tandem(ctx, st, { axle: AXLE, layer: 'wheels' });
+      IB.wheelDust(ctx, [b.rx, AXLE], { d: d2 });
+      IB.tandem(ctx, st, { axle: AXLE, layer: 'frame' });
+      ctx.restore();
+    };
+    const wide = SAMPLE.span(c, 0, 2);
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [960, AXLE + R], 90), () => ride(bike(f, 960, 5)), `IB.tandem(state, { layer }) — a seat joins every 18 frames (seats: ${bike(f, 960, 5).bbs.length})`);
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [960, AXLE + R], 140), () => {
+      IB.bikeWheel(ctx, [870, AXLE], { alt: 0, seed: 70 });
+      IB.bikeWheel(ctx, [1050, AXLE], { alt: 1, seed: 80 });
+    }, 'IB.bikeWheel — alt 0 | alt 1');
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [960, AXLE + R], 140), () => {
+      IB.ink(ctx, IB.ellipse(960, AXLE, IB.TANDEM.crank, IB.TANDEM.crank, 16), { closed: true, w: 1.2, color: '#b0b0b0', seed: 5, grain: 0 });
+      IB.ink(ctx, IB.ellipse(960, AXLE, R, R, 24), { closed: true, w: 1.2, color: '#d0d0d0', seed: 6, grain: 0 });
+      IB.crankset(ctx, [960, AXLE], crank, { alt });
+    }, 'IB.crankset(bb, a) in IB.TANDEM.r; crank 21');
+    SAMPLE.cell(ctx, c[5], SAMPLE.fit(c[5], [960, AXLE + R], 140), () => ride(bike(f, 960, 1)), 'IB.tandem — one seat');
+  },
+});
+</script>

@@ -1,0 +1,57 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / office-chart</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 화면을 채운 캔들 차트 — 인서트 크기의 모니터 IB.monitor(1560 × 830, 선 8, 베젤 34) 위에 움직이지 않는 눈금 IB.priceGrid, 캔들 IB.candles, 점선 저항선 IB.dashLine, 돌파 캔들의 번짐 IB.candleSmear, 가격표 IB.priceTag, 커서 IB.cursor와 말풍선 카드 IB.popupTag. market/monitor-candles-breakout의 그림 목록을 그대로 되돌리고 끝을 1.5초 붙잡는다. 인서트라 선이 5–8 px로 굵다(캔들 몸통 7, 꼬리·가격표·커서 6, 축·점선 5). 캔들은 2프레임마다 반 개씩 늘린다(n이 .5면 꼬리만, 다음 장에 몸통): 1초에 6개. 저항선은 5장에 걸쳐 그려지고, 돌파 전 0.67초는 아무것도 움직이지 않는다: 그 정지가 다음 캔들을 사건으로 만든다. 돌파 캔들은 한 장만 14% 길게 속도선과 함께(candleSmear) 나오고 다음 장에 제 크기다. 가격표는 끝난 종가로만 옮기고 깜빡이는 마지막 값을 따라가지 않는다. 커서는 그림이 아니라 화면이라 1프레임마다 IB.settle로 움직이고, 카드는 커서가 닿은 다음 장에 통째로 뜬다. 파랑은 오름, 빨강은 내림이다. 화면 전체를 쓰는 부품이라 칸 없이 전면으로 보인다. */
+const { lerp, clamp } = MG;
+const C = IB.C, CHART = [300, 170, 1210, 590], MIN = 20, MAX = 100, LINE = 53;
+// [open, close, high, low]
+const DATA = [[34, 40, 43, 31], [40, 37, 42, 35], [37, 45, 48, 36], [45, 49, 51, 43], [49, 42, 50, 40], [42, 38, 44, 35], [38, 44, 46, 37], [44, 50, 52, 43], [50, 46, 52, 44], [46, 41, 47, 39], [41, 47, 49, 40], [47, 51, 52, 46], [51, 48, 52, 46],
+  [48, 82, 85, 47], [82, 88, 91, 80], [88, 84, 90, 82], [84, 93, 95, 83], [93, 97, 98, 91]];
+const FIRST = 0.75, HOLD_END = 3.5, BREAK = 13, END = 6;   // the scene's 6 s, then its last drawing held
+
+function shown(tt) {
+  const k = IB.drawn(tt, FIRST), b = IB.drawn(tt, HOLD_END);
+  if (b < 0) return { n: clamp((k + 1) / 2, 0, BREAK), smear: false };
+  if (b === 0) return { n: BREAK, smear: true };
+  if (b < 3) return { n: BREAK + 1, smear: false };
+  return { n: clamp(BREAK + 1 + (b - 2) / 2, 0, DATA.length), smear: false };
+}
+
+MG.scene({
+  title: 'props / office-chart',
+  duration: 7.5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t0, ctx) {
+    IB.bg(ctx);
+    const t = Math.min(t0, END - 1 / 24), tt = IB.twos(t), f = IB.frame(t), { n, smear } = shown(tt), b = IB.drawn(tt, HOLD_END);
+    IB.shade(ctx, 520, 1012, 880, 30, { from: 'top', seed: 4, alpha: 0.5 });
+    IB.monitor(ctx, 960, 1010, 1560, 830, { lw: 8, bezel: 34, seed: 10 });
+    const [cx, cy, cw, ch] = CHART, Y = (v) => cy + ch - ((v - MIN) / (MAX - MIN)) * ch;
+    IB.priceGrid(ctx, CHART, { min: MIN, max: MAX, levels: [30, 50, 70, 90] });
+    const data = DATA.map((d) => d.slice()), last = DATA.length - 1;
+    if (n >= DATA.length && IB.alternate(f, 3)) data[last][1] = 94;   // the live candle's close flips on threes
+    const at = IB.candles(ctx, CHART, data, n, { min: MIN, max: MAX, lw: 7, up: C.blue, down: C.red, seed: 100 });
+    IB.dashLine(ctx, [cx, Y(LINE)], cw + 40, { drawn: clamp(IB.drawn(tt, 0.25) + 1, 0, 5) / 5 * 18, gap: b >= 1 ? [at.x(BREAK) - 40, at.x(BREAK) + 40] : null });
+    if (smear) IB.candleSmear(ctx, at.x(BREAK), { open: at.y(DATA[BREAK][0]), close: at.y(DATA[BREAK][1]), low: at.y(DATA[BREAK][3]) });
+    if (b >= 1 && b < 3) IB.burst(ctx, [at.x(BREAK), at.y(DATA[BREAK][2]) - 10], { angles: [0, 1, 2, 3, 4].map((i) => -Math.PI / 2 + (i - 2) * 0.42), r0: 50 + (b - 1) * 22, r1: 50 + (b - 1) * 22 + 54, w: 6, seed: 210 + b * 7 });
+    const done = Math.max(0, Math.floor(n) - 1), close = n >= 1 ? DATA[done][1] : DATA[0][0];
+    IB.priceTag(ctx, [cx + cw, Y(close)]);
+    if (t >= 4.5) {
+      const u = IB.settle(t - 4.5, 0.14, 0.5), px = lerp(1320, at.x(BREAK) + 16, u), py = lerp(700, at.y(64), u);
+      if (tt >= 5 + 1 / 12 - 1e-6) IB.popupTag(ctx, [at.x(BREAK), at.y(64)]);
+      IB.cursor(ctx, [px, py]);
+    }
+    SAMPLE.caption(ctx, smear ? 'IB.candleSmear — one drawing, 14% too tall' : t >= 4.5 ? 'IB.cursor (on ones) + IB.popupTag, IB.priceTag' : 'IB.monitor + IB.priceGrid + IB.candles(rect, data, n) + IB.dashLine');
+  },
+});
+</script>

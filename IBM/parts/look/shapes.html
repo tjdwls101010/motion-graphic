@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / shapes</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 붓펜 도형 줄임말 IB.box(직선은 곧게, 모서리 또렷), IB.oval(둥근 것), IB.seg(선분 하나), 색 띠에 양쪽 먹 가장자리를 두른 IB.tube(팔다리, 자전거 프레임)와 그것을 13px·2.75px 라벤더로 고정한 IB.pipe(받침대와 기계의 다리), 바닥 대신 놓는 파란 분필 스미어 IB.smear, 흑연 음영 IB.shade, 날벌레 IB.flyer, 사각 클립 IB.clipRect. 스미어는 발밑 웅덩이(w 110, h 10)에서 의자 밑(w 300, h 12)까지 쓰고 바닥선보다 조금 위에서 시작한다: 윗변이 또렷하고 아래로 가루가 흩어지며 양 끝이 옅어진다(엔드카드의 w 1000, h 34는 look/endcard). 음영은 원본이 평면 채움에 더하는 유일한 톤으로, 몸 밑의 다리, 바닥에 닿는 물건의 아래처럼 한쪽 변에 짙고 반대쪽에서 사라진다. 날벌레는 날 때 날개 flap을 매 프레임 바꾸고 내려앉으면 붙잡는다. */
+MG.scene({
+  title: 'look / shapes',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'ink.js — shapes, tubes, chalk and graphite');
+    const f = IB.frame(t), C = IB.C, c = SAMPLE.grid(9, 3), win = (i) => [0, 0, c[i][2], c[i][3]];
+    SAMPLE.cell(ctx, c[0], win(0), () => { IB.box(ctx, 70, 50, 190, 160, { fill: C.paper, w: 3, seed: 1 }); IB.box(ctx, 330, 80, 190, 130, { fill: C.yellow, w: 3, seed: 2 }); }, 'IB.box(ctx, x, y, w, h, { fill })');
+    SAMPLE.cell(ctx, c[1], win(1), () => { IB.oval(ctx, 170, 130, 100, 80, { fill: C.paper, w: 3, seed: 3 }); IB.oval(ctx, 420, 130, 70, 70, { fill: C.mint, w: 3, seed: 4 }); }, 'IB.oval(ctx, cx, cy, rx, ry)');
+    SAMPLE.cell(ctx, c[2], win(2), () => [[60, 200, 260, 60], [300, 60, 520, 200], [80, 130, 500, 130]].forEach(([a, b, x, y], i) => IB.seg(ctx, a, b, x, y, { w: 3, seed: 5 + i })), 'IB.seg(ctx, x1, y1, x2, y2)');
+    SAMPLE.cell(ctx, c[3], win(3), () => {
+      IB.tube(ctx, [[60, 70], [220, 130], [300, 220]], { w: 30, fill: C.skin[1], seed: 8 });   // an arm: straight segments, round joint
+      IB.tube(ctx, [[330, 200], [400, 60], [520, 120]], { w: 12, fill: C.paper, smooth: true, seed: 9 });
+    }, 'IB.tube(ctx, pts, { w, edge: 2.5, fill, smooth })');
+    SAMPLE.cell(ctx, c[4], win(4), () => {   // a hoop stand of lavender tubing
+      IB.pipe(ctx, [[200, 240], [200, 70], [390, 70], [390, 240]], { seed: 10 });
+      IB.pipe(ctx, [[150, 240], [250, 240]], { seed: 11 }); IB.pipe(ctx, [[340, 240], [440, 240]], { seed: 12 });
+    }, 'IB.pipe(ctx, pts) — w 13, edge 2.75, lavender');
+    SAMPLE.cell(ctx, c[5], win(5), () => {
+      IB.smear(ctx, 130, 150, 110, { h: 10, seed: 9 });
+      IB.smear(ctx, 380, 150, 300, { h: 12, seed: 9 });
+    }, 'IB.smear foot w 110 h 10 · chair w 300 h 12');
+    SAMPLE.cell(ctx, c[6], win(6), () => ['top', 'bottom', 'left', 'right'].forEach((from, i) => {
+      IB.box(ctx, 30 + i * 140, 60, 110, 150, { fill: C.paper, w: 3, seed: 13 + i });
+      const side = from === 'left' || from === 'right';
+      IB.shade(ctx, 30 + i * 140, from === 'bottom' ? 140 : 60, 110, side ? 150 : 70, { from, seed: 17 + i });   // the dense edge on the box's own edge
+    }), 'IB.shade from top · bottom · left · right');
+    // flying: wings alternate every frame; the last second it has landed and holds
+    const landed = t % 4 >= 3;
+    SAMPLE.cell(ctx, c[7], win(7), () => {
+      IB.flyer(ctx, 170, 130, 120, { rot: -0.3, flap: landed ? 1 : f % 2 });
+      IB.flyer(ctx, 430, 150, 44, { rot: 0.3, flap: landed ? 1 : (f + 1) % 2, seed: 7 });
+    }, landed ? 'IB.flyer — landed: flap held' : 'IB.flyer — flap: f % 2 in flight');
+    SAMPLE.cell(ctx, c[8], win(8), () => {   // a screen: what is on it stops at its edge
+      IB.box(ctx, 140, 40, 310, 190, { fill: C.paper, w: 4, seed: 21 });
+      ctx.save(); IB.clipRect(ctx, [146, 46, 298, 178]);
+      IB.oval(ctx, 220 + (t % 4) * 60, 170, 110, 90, { fill: C.sky, w: 3, seed: 22 });
+      ctx.restore();
+    }, 'IB.clipRect(ctx, [x, y, w, h])');
+  },
+});
+</script>

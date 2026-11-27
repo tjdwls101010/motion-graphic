@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / hiding-doc</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/cast/paper.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 숨는 서류 IB.hidingDoc과 그 눈 IB.docEyes(flashlight-finds-file). 서류 IB.doc과 달리 휘지 않는 빳빳한 종이(156 x 200, 연보라 블록과 글줄 넷)이고 다리는 곧은 IB.peg 둘이다. 걸을 때는 tilt ±0.04와 발 세트를 3장마다 바꾸며 그림 한 장에 17.5px씩 나아가고, 숨을 때는 down 120만큼 가라앉아 상자 뒤로 사라진다(바닥선으로 잘라 바닥 밑은 그리지 않는다). 손 흔들기는 팔을 두 장(arm 0.5, 1)에 그려 넣고 장갑 손을 3프레임마다 두 그림(wave 0, 1)으로 바꾼다. 눈은 어둠 속에서 보여야 해서만 있다: 종이색이라 검정 위에서 읽히고, 어둠 아래에 한 번 그리고 어둠 위에 다시 그린다(marks/darkness). 동공은 보는 쪽으로 최대 6px 옮기고, 들키면 wide, 깜빡임은 opts.shut의 종이색 두 줄이다. */
+const C = IB.C, FLOOR = 930, LEG = 74, BY = FLOOR - 12 - LEG;
+MG.scene({
+  title: 'cast / hiding-doc',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.hidingDoc, IB.docEyes (cast/paper.js)');
+    const f = IB.frame(t), k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(6, 3), fit = (i, x) => SAMPLE.fit(c[i], [x, FLOOR]);
+    const at = (x, st) => { IB.smear(ctx, x, FLOOR - 9, 200, { h: 14, seed: 9 }); IB.hidingDoc(ctx, [x, BY], st, { ground: FLOOR - 12 }); };
+    SAMPLE.cell(ctx, c[0], fit(0, 1290), () => at(1290, {}), 'standing: feet [[-22, 0], [22, 0]]');
+    // flashlight-finds-file's walk: 12 drawings from x 1392 to 1182, the tilt and the feet swapping every 3 drawings; held 0.5 s, again
+    const n = Math.min(12, k % 18), walking = n > 0 && n < 12, step = IB.alternate(n, 3), x = 1392 - (210 * n) / 12;
+    SAMPLE.cell(ctx, c[1], fit(1, 1287), () => { IB.smear(ctx, 1287, FLOOR - 9, 400, { h: 14, seed: 10 }); IB.hidingDoc(ctx, [x, BY], { tilt: walking ? (step ? 0.04 : -0.04) : 0, feet: walking ? (step ? [[-30, 0], [10, -10]] : [[-10, -10], [30, 0]]) : [[-22, 0], [22, 0]] }, { ground: FLOOR - 12 }); }, 'walking: tilt ±0.04, every 3 drawings');
+    // ducking behind the crate while the beam sweeps near it: down 120 in one drawing, clipped at the floor line
+    const down = k % 24 < 12 ? 0 : 120;
+    SAMPLE.cell(ctx, c[2], fit(2, 1395), () => {
+      ctx.save(); IB.clipRect(ctx, [0, 0, MG.W, FLOOR]);
+      IB.hidingDoc(ctx, [1392, BY], { down }, { ground: FLOOR - 12 });
+      ctx.restore();
+      IB.woodCrate(ctx, [1395, FLOOR], { w: 190, h: 170 });
+    }, `state { down: ${down} }, behind IB.woodCrate`);
+    // the wave: the arm drawn on in two drawings, then the mitten swapping every 3 frames; arm and hand gone again for 0.5 s
+    const a = k % 24, arm = a < 2 ? 0.5 : a < 18 ? 1 : 0, wave = IB.alternate(f, 3);
+    SAMPLE.cell(ctx, c[3], fit(3, 1150), () => at(1182, { arm, wave }), `state { arm: ${arm}, wave: ${wave} }`);
+    // the eyes in the dark: looking toward a light that moves, one 2-frame blink
+    const look = [{ dx: -6, dy: -3 }, { dx: -5, dy: 2 }, { dx: -2, dy: 5 }, { dx: 4, dy: 3 }][Math.floor(k / 6) % 4], shut = f % 48 >= 42 && f % 48 < 44;
+    SAMPLE.cell(ctx, c[4], fit(4, 1290), () => { ctx.fillStyle = '#000000'; ctx.fillRect(1290 - c[4][2] / 2, FLOOR + 40 - c[4][3], c[4][2], c[4][3]); IB.docEyes(ctx, [1290 - 26, BY - 150], look, { shut }); }, `IB.docEyes(at, { dx: ${look.dx}, dy: ${look.dy} }${shut ? ', shut' : ''})`);
+    // found: lit, wide, looking at whoever found it
+    SAMPLE.cell(ctx, c[5], fit(5, 1290), () => { at(1290, {}); IB.docEyes(ctx, [1290 - 26, BY - 150], { dx: -2, dy: 0, wide: true }); }, "docEyes { wide: true } on the lit sheet");
+  },
+});
+</script>

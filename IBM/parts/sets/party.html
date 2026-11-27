@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / party</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/party.js"></script>
+<script src="../../kit/sets/party.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 원본 넷째 스팟의 사무실 파티 구석 IB.partyCorner, 라벤더 파이프 받침의 농구 골대와 그물, 거기 묶인 풍선 여섯, 오른쪽 위 화면 밖으로 이어지는 가랜드. 장소는 벽 없이 소품 두세 개로 말한다: 원본 장면(spot/folder-meets-document)은 여기에 바닥 색종이(IB.confetti)와 미러볼(IB.discoBall, 샷에서 유일하게 멈추지 않는 것)을 더해 한 샷을 짓고, 이 견본도 그 셋을 1초마다 하나씩 쌓는다. 받침 기둥은 x 1650, 1920px 화면의 오른쪽 위이고 다른 자리에는 opts.shift로 옮긴다. 원본 장면처럼 IB.crop(ctx, [356, 60, 1564, 880])으로 1.23배 당겨 보여 준다. */
+const CONFETTI = IB.confettiField(), STEPS = ['IB.partyCorner()', 'IB.confetti', 'IB.discoBall'];
+MG.scene({
+  title: 'sets / party',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const shown = Math.min(STEPS.length, 1 + Math.floor(t)), f = IB.frame(t);
+    ctx.save();
+    IB.crop(ctx, [356, 60, 1564, 880]);   // the scene's own framing: the corner is the right third of the shot
+    if (shown > 1) IB.confetti(ctx, CONFETTI);
+    if (shown > 2) IB.discoBall(ctx, [1302, 215], { f }, { r: 105 });
+    IB.partyCorner(ctx);
+    ctx.restore();
+    SAMPLE.caption(ctx, STEPS.slice(0, shown).join(' + '));
+  },
+});
+</script>

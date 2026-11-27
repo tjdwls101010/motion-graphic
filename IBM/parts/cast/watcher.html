@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / watcher</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/facade.js"></script>
+<script src="../../kit/cast/watcher.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 여섯 번째 스팟의 쌍안경 든 사람 IB.watcher, 포즈 하나(IB.watcher.POSE.up)와 동작 넷(IB.watcher.MOVE.scanRight, swingLeft, find, lower). 그림은 원본을 4배 확대한 격자에서 읽어 원본 좌표 그대로이고(얼굴 축 x 1206, 두 렌즈 사이 IB.watcher.FOCUS = [1206, 462]), 창 안쪽으로 잘려 그려진다: 여기서도 장면처럼 IB.apartmentFacade의 back과 middle·front 레이어 사이에 둔다. 시선은 렌즈 안에서 눈이 3–6px 옮기는 것이고, 손과 쌍안경은 3–4장에 걸쳐 25–30px 휘두르며 머리는 그 0.55만큼 따라간다. 왼쪽으로 크게 돌면 오른쪽 경통의 옆면이 보이고, 렌즈가 검으면 깜빡임이다. find의 끝에서 커다란 초록 눈(lens 'wide')이 스팟 첫머리의 어둠 속 눈(IB.darkEyes, cast/dark-eyes)이다. 다른 자리에는 opts.at·s·flip(IB.place)로 옮긴다(마지막 칸, 창 없이). 장면은 원본을 1.57배로 확대해 보여 주지만 여기는 1:1이다. */
+const W = IB.watcher, POSTER = IB.frame(0.72 * 6);
+// each move with the frame the 0.72 poster should land on: the cell's clock is shifted by that much
+const MOVES = [['scanRight', 6], ['swingLeft', 8], ['find', 8], ['lower', 8]];
+const shifted = (f, rows, at) => { const len = rows[rows.length - 1][0] + 18; return f + ((at - POSTER) % len + len); };
+MG.scene({
+  title: 'cast / watcher',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.watcher — POSE.up, MOVE, placing (cast/watcher.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(6, 3), view = (i) => [W.FOCUS[0] - c[i][2] / 2, 352, c[i][2], c[i][3]];
+    const inWindow = (pose) => { IB.apartmentFacade(ctx, { layer: 'back' }); W(ctx, pose); IB.apartmentFacade(ctx, { layer: 'middle' }); IB.apartmentFacade(ctx, { layer: 'front' }); };
+    SAMPLE.cell(ctx, c[0], view(0), () => inWindow(W.POSE.up), 'POSE.up');
+    MOVES.forEach(([name, at], i) => SAMPLE.cell(ctx, c[1 + i], view(1 + i), () => inWindow(SAMPLE.cycle(shifted(f, W.MOVE[name], at), W.MOVE[name])), 'MOVE.' + name));
+    SAMPLE.cell(ctx, c[5], view(5), () => {
+      const p = SAMPLE.cycle(shifted(f, W.MOVE.swingLeft, 8), W.MOVE.swingLeft);
+      W(ctx, p, { at: [1120, 520], s: 0.6 });
+      W(ctx, p, { at: [1300, 520], s: 0.6, flip: true });
+    }, 'opts { at, s: 0.6, flip }');
+  },
+});
+</script>

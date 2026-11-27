@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / handheld-chop</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 장작 패기 — 도끼 IB.axe(382 px, 노란 자루와 숯색 머리), 그루터기 IB.choppingBlock, 반으로 갈라지는 통나무 IB.logHalf 둘과 그 윗면 IB.logTop, 튀는 나뭇조각 IB.woodChip. 넓은 칸은 acting/axe-windup-smear의 그림 목록 그대로다(키 560 px의 사람과 함께): 0.83초 쉬고, 3장에 걸쳐 들어 올리고, 0.92초 꼼짝 않고 버틴 뒤(도끼 머리 옆 떨림 표시만 4장), 내리치기는 사이 그림 없이 번짐 한 장이다. 그 한 장이 오른쪽 칸의 opts.smear: 지난 105도를 지나온 도끼 머리가 지나온 쪽은 가늘고 지금 자리는 꽉 찬 숯색 띠로 늘어나고 안에 속도 호 둘이 그어진다. 맞는 순간 통나무 두 쪽이 0.5초에 걸쳐 바깥으로 넘어지고 조각 여섯이 위로 튀었다가 떨어진 자리에 남는다. 손잡이 각 th는 자루 끝에서 머리 쪽이고, 아랫손은 grip, 윗손은 자루를 따라 62 px 더 간 자리이며, flip -1은 날을 반대쪽으로 돌린다. 통나무는 쪼개지기 전에도 반쪽 둘을 등지게 세우고 logTop을 얹어 그린다. */
+const { lerp, clamp } = MG;
+const F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
+const WHO = { ...IB.PEOPLE.chopper, h: 560, dir: 1, seed: 10 };
+const H = WHO.h, HIP = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, DEG = Math.PI / 180;
+// acting/axe-windup-smear: a pose is the body's joints plus the axe, its grip G and the angle th the handle points (butt to head)
+function withAxe(p, G, th, more) {
+  const u = [Math.cos(th), Math.sin(th)];
+  return { ...p, hands: [[G[0] + u[0] * 62, G[1] + u[1] * 62], G], grip: [true, true], G, th, ...more };
+}
+const base = (dx, dy, lean, far, near) => ({ hip: [X0 + dx, HIP + dy], lean, nod: 0, feet: [[X0 + far[0], FLOOR - F.ankle * H - IB.footLift(far[1] || 0, H), far[1] || 0], [X0 + near[0], FLOOR - F.ankle * H - IB.footLift(near[1] || 0, H), near[1] || 0]] });
+const REST = withAxe(base(0, 0, -0.04, [22], [-20]), [X0 + 64, HIP - 112], -143 * DEG, { flip: -1, behind: true, face: { mouth: 'smile' } });
+const UP = withAxe(base(-22, 8, -0.2, [96], [-72]), [X0 - 44, HIP - 282], 159 * DEG - 2 * Math.PI, { flip: 1, behind: true, face: { mouth: 'flat', brow: 1 } });
+const SMEAR = withAxe(base(20, 20, 0.28, [140], [-84, 0.3]), [X0 + 196, HIP - 150], 12 * DEG, { flip: 1, face: { mouth: 'open', brow: 1 } });
+const HIT = withAxe(base(40, 50, 0.6, [150], [-90, 0.5]), [X0 + 236, HIP + 18], 30 * DEG, { flip: 1, face: { eye: 'closed', mouth: 'open' } });
+const DONE = { ...base(124, 4, 0.05, [172], [78]), hands: [[X0 + 150, HIP - 12], HIT.G], elbow: [1, 1], grip: [false, true], G: HIT.G, th: HIT.th, flip: 1, face: { mouth: 'smile' } };
+function poseAt(t) {
+  const tt = IB.twos(t), step = (t0) => IB.drawn(tt, t0);
+  if (tt < 0.833) return REST;
+  if (tt < 2.0) { const u = IB.inbetween([0.35, 0.75, 1], step(0.833)), p = IB.poseMix(REST, UP, u); return { ...p, G: [lerp(REST.G[0], UP.G[0], u), lerp(REST.G[1], UP.G[1], u)], th: lerp(REST.th, UP.th, u), flip: u < 0.5 ? -1 : 1, behind: true, grip: [true, true], face: UP.face }; }
+  if (tt < 2.083) return SMEAR;
+  if (tt < 4.5) return HIT;
+  const u = IB.inbetween([0.5, 1], step(4.5));
+  return u < 1 ? { ...IB.poseMix(HIT, DONE, u), G: HIT.G, th: HIT.th, flip: 1, grip: [false, true], face: DONE.face } : DONE;
+}
+const CHIPS = [[-150, -210, -0.9], [-90, -300, 0.5], [70, -280, 1.2], [140, -190, -0.4], [210, -120, 0.8], [-230, -110, 1.6]];
+function chop(ctx, t) {
+  const tt = IB.twos(t), p = poseAt(t), look = { ...WHO, face: p.face }, hit = tt >= 2.083, k = hit ? clamp((tt - 2.083) / 0.5) : 0;
+  IB.choppingBlock(ctx, [BX, FLOOR], { top: TOP });
+  if (!hit) { IB.logHalf(ctx, [BX, TOP + 8], { side: -1, seed: 340 }); IB.logHalf(ctx, [BX, TOP + 8], { side: 1, seed: 350 }); IB.logTop(ctx, [BX, TOP + 8]); }
+  else for (const s of [-1, 1]) {
+    const fall = MG.ease.inQuad(k), out = MG.ease.outQuad(k);
+    IB.logHalf(ctx, [BX + s * (10 + (s < 0 ? 168 : 214) * out), TOP + 8 - 60 * Math.sin(k * Math.PI) + (FLOOR - TOP - 30) * fall], { rot: s * 1.57 * out, side: s, seed: s < 0 ? 340 : 350 });
+  }
+  if (hit) CHIPS.forEach(([dx, dy, r], i) => {
+    const x = BX + dx * MG.ease.outQuad(k), y = lerp(TOP - 20 + dy * Math.sin(k * Math.PI * 0.5) * (1 - k) * 1.6, FLOOR - 6 + (i % 3) * 5, MG.ease.inQuad(k));
+    IB.woodChip(ctx, [x, y], r * (1 + k * 4), { seed: 370 + i });
+  });
+  IB.smear(ctx, X0 + 40, FLOOR - 9, 430, { h: 14, seed: 9 });
+  if (p.behind) { IB.axe(ctx, p.G, p.th, { flip: p.flip }); IB.figure(ctx, p, look); }
+  else { IB.figure(ctx, p, look, 'far'); IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: p === SMEAR }); IB.figure(ctx, p, look, 'near'); }
+  const s1 = IB.drawn(tt, 1.0);
+  if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
+  const s2 = IB.drawn(tt, 2.083);
+  if (s2 >= 0 && s2 < 2) IB.burst(ctx, [BX, TOP - 20], { n: 5, a0: -2.7, da: 0.56, r0: 70 + s2 * 26, r1: 70 + s2 * 26 + 46 - s2 * 10, sy: 0.8, w: 3, seed: 410 + s2 * 9 });
+}
+const G = [700, 620];   // the grip of the axe alone
+MG.scene({
+  title: 'props / handheld-chop',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/handheld.js — axe, chopping block, log, chips');
+    // the raised axe (x 216) to the far log half (x 1590) is 1374 px and the smear alone 455 px: two hand-cut cells hold both at 1:1
+    const [, y, , h] = SAMPLE.grid(1, 1)[0], wide = [12, y, 1400, h], solo = [1432, y, 476, h], smear = Math.floor(t / 0.75) % 2 === 1;
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [903, FLOOR], 20), () => chop(ctx, t), 'IB.axe + IB.choppingBlock + IB.logHalf + IB.logTop + IB.woodChip');
+    SAMPLE.cell(ctx, solo, [G[0] - 68, G[1] - 520, solo[2], solo[3]], () => IB.axe(ctx, G, 12 * DEG, { flip: 1, smear }), smear ? 'IB.axe({ smear: true })' : 'IB.axe(grip, th, { flip })');
+  },
+});
+</script>

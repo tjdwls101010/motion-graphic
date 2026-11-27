@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / dark-eyes</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/cast/watcher.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 여섯 번째 스팟을 여는 어둠 속의 눈 한 쌍 IB.darkEyes와 그 동작 IB.darkEyes.MOVE.search, shrink. 원본에서 유일하게 순검정(#000)인 샷이고, 흰 아몬드(283 x 124, 468px 간격) 안에서 초록 테 두른 검은 홍채만 움직인다: 2프레임에 한 장, 한 번 보면 0.4–0.5초 붙잡는 점프(가운데, 왼쪽 85px, 위 27px, 오른쪽 아래). 깜빡임은 lid 0인 2프레임의 완전한 검정 한 장이고 첫 깜빡임 뒤에만 반쯤 뜬 lid 0.8 한 장이 붙는다. shrink는 카메라가 아니라 그림이다: 다섯 장에 걸쳐 0.98, 0.9, 0.8, 0.65, 0.46으로 opts.focus(1193, 438)를 향해 작아진 뒤 하드 컷하면, 밝은 첫 장의 쌍안경 렌즈(IB.watcher, cast/watcher)가 눈이 있던 자리에 온다. 흰 채움에 외곽선이 없어서 검정 위에만 그린다. */
+const E = IB.darkEyes, POSTER = IB.frame(0.72 * 6), FOCUS = [1193, 438];
+const shifted = (f, rows, at) => { const len = rows[rows.length - 1][0] + 18; return f + ((at - POSTER) % len + len); };
+MG.scene({
+  title: 'cast / dark-eyes',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.darkEyes — MOVE.search, MOVE.shrink, state (cast/watcher.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(4, 2), view = (i) => [1334 - c[i][2] / 2, 540 - c[i][3] / 2, c[i][2], c[i][3]];
+    const dark = (i, draw) => () => { ctx.fillStyle = '#000000'; ctx.fillRect(...view(i)); draw(); };
+    // the search, offset so the 0.72 poster lands on its look 85 px to the left (a blink at move frames 24 and 37 is an empty black drawing)
+    SAMPLE.cell(ctx, c[0], view(0), dark(0, () => E(ctx, SAMPLE.cycle(shifted(f, E.MOVE.search, 12), E.MOVE.search))), 'MOVE.search');
+    SAMPLE.cell(ctx, c[1], view(1), dark(1, () => { E(ctx, { s: SAMPLE.cycle(shifted(f, E.MOVE.shrink, 6), E.MOVE.shrink).s }); IB.oval(ctx, FOCUS[0], FOCUS[1], 5, 5, { fill: '#4ca757', w: 0, n: 8 }); }), 'MOVE.shrink — toward opts.focus (green dot)');
+    // the blink as the reference draws it: one empty drawing, one half-open, then open and held
+    const lid = [0, 0.8, 1, 1, 1, 1, 1, 1, 1][Math.floor(f / 2) % 9];
+    SAMPLE.cell(ctx, c[2], view(2), dark(2, () => E(ctx, { dx: -85, lid })), `state { dx: -85, lid: ${lid} }`);
+    // looks held on twos at the four places the reference sends them
+    const [dx, dy] = [[0, 0], [-85, 0], [9, -27], [46, 26]][Math.floor(f / 12) % 4];
+    SAMPLE.cell(ctx, c[3], view(3), dark(3, () => E(ctx, { dx, dy })), `state { dx: ${dx}, dy: ${dy} }`);
+  },
+});
+</script>

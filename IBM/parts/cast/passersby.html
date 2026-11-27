@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / passersby</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 군중용 행인 열셋 IB.PASSERSBY. 대부분 위아래 같은 색의 어두운 정장이고 몇만 색 있는 윗옷이나 흰 윗옷이다(신발은 검은 바지 밑이면 종이색, 아니면 잉크). 칸마다 street-rush-hour가 그 사람에게 준 키(228–270px)와 위상 차(0–5장)로 제자리 걷기를 2프레임마다 한 장 재생해서, 군중에서 두 발이 함께 디디지 않는 것을 보여 준다. 넓은 칸은 서로 엇갈려 지나는 둘이다: 왼쪽으로 가는 사람은 14px 앞(아래)에 서서, 엇갈릴 때 섞이지 않고 한 사람이 다른 사람 앞을 지난다. 정지한 무대를 걸으므로 그림 한 장마다 IB.walkLen / 12(이 키에서 16–19px)씩 나아간다. */
+const C = IB.C, FLOOR = 985;
+// street-rush-hour's crowd: each passer-by's height, direction and walk phase, in IB.PASSERSBY order
+const CROWD = [[270, 1, 0], [258, 1, 3], [262, -1, 5], [250, -1, 2], [232, 1, 4], [240, 1, 1], [236, -1, 3], [228, -1, 5], [266, 1, 2], [234, 1, 0], [260, -1, 4], [238, -1, 1], [230, 1, 5]].map(([h, dir, off], i) => ({ ...IB.PASSERSBY[i], h, dir, off, seed: 800 + i * 30 }));
+MG.scene({
+  title: 'cast / passersby',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.PASSERSBY — a crowd of thirteen, walking on twos (cast/people.js)');
+    const k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(16, 8), walk = (w, x, floor) => IB.figure(ctx, IB.walk(x, floor, w, ((k + w.off) / 12) % 1), { ...w, face: { mouth: 'flat' }, lw: IB.figLine(w.h) });
+    CROWD.forEach((w, i) => SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [960, FLOOR]), () => { IB.smear(ctx, 960, FLOOR - 11, 190, { h: 20, seed: 9 + i, alpha: 0.7 }); walk(w, 960, FLOOR); }, `PASSERSBY[${i}]`));
+    // two who cross: the one heading left 14 px nearer, so it passes in front; they meet at the 0.72 poster (drawing 34)
+    const wide = SAMPLE.span(c, 13, 15), pair = [CROWD[1], CROWD[2]].map((w) => ({ ...w, floor: FLOOR + (w.dir < 0 ? 14 : 0) }));
+    SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 11, 640, { h: 20, seed: 30, alpha: 0.7 });
+      for (const w of pair) walk(w, 960 + w.dir * (IB.walkLen(w) / 12) * ((k % 48) - 34), w.floor);
+    }, 'crossing: dir -1 walks 14 px nearer');
+  },
+});
+</script>

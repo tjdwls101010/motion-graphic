@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / figure</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 관절 인물 리그 IB.figure와 그 포즈를 만드는 IB.stand, IB.walk, IB.walkLen, IB.poseMix, IB.footLift. 리그는 엉덩이·발목·손목 목표점만 받고 무릎과 팔꿈치는 스스로 푸니, 포즈는 IB.stand에서 몇 관절만 옮긴 숫자 몇 개이고 2프레임마다 한 장으로 붙잡는다. 걷기는 12장을 2프레임씩(두 걸음 1.0초), 한 걸음에 몸이 0.42h(stride 0.21의 두 배) 나가서 한 사이클이 IB.walkLen = 0.84h다: 정지한 무대를 걸으면 그림 한 장마다 x를 IB.walkLen / 12만큼 옮겨야 디딘 발이 미끄러지지 않는다(bridge-plank-cross, street-rush-hour). IB.poseMix는 움직임의 사이 그림 한두 장(0.45, 0.8, 1 같은 비율)에만 쓰고, 붙잡은 포즈는 원본처럼 꼼짝 않는다. 발을 기울이면 IB.footLift만큼 발목을 올려야 밑창이 바닥에 닿는다. 앞뒤 팔 사이에 소품을 끼울 때는 only 'far'·'near'로 두 번 그린다. 여기 인물은 와이드 샷 키 330px(bridge-plank-cross, 선 IB.figLine = 3px)이고, 얼굴 칸만 520px(walk-cycle-bag)다. */
+const C = IB.C, F = IB.FIG, FLOOR = 930, H = 330;
+const WHO = { ...IB.PEOPLE.climber, h: H, dir: 1, seed: 20 };
+const LIFTER = { ...IB.PEOPLE.lifter, h: H, dir: 1, seed: 20 };
+const AY = FLOOR - F.ankle * H, HIPY = FLOOR - (F.ankle + F.shin + F.thigh) * H + 2, K = H / 540;   // K: lift-heavy-box's 540 px poses brought to this height
+const feet = (X, far, near) => [[X + far[0], AY - IB.footLift(far[1], H), far[1]], [X + near[0], AY - IB.footLift(near[1], H), near[1]]];
+// lift-heavy-box's grip pose (bent over the box, hands on its top), scaled to 330 px
+const grip = (X) => ({ hip: [X - 40 * K, HIPY + 110 * K], lean: 0.68, nod: -0.2, feet: feet(X, [55 * K, 0], [-55 * K, 0]), hands: [[X + 130 * K, FLOOR - 210 * K - 4], [X + 112 * K, FLOOR - 210 * K + 24 * K]], grip: [true, true], face: { mouth: 'flat', brow: 1 } });
+const FACES = [{ eye: 'dot', mouth: 'smile' }, { eye: 'closed', mouth: 'flat' }, { eye: 'wide', mouth: 'open' }, { eye: 'shades', mouth: 'frown', brow: 1 }];
+MG.scene({
+  title: 'cast / figure',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.figure — stand, walk, walkLen, poseMix, footLift (figure.js)');
+    const k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(8, 4), floor = (x, w = 300) => IB.smear(ctx, x, FLOOR - 9, w, { h: 14, seed: 9 });
+    const fit = (i, x) => SAMPLE.fit(c[i], [x, FLOOR]);
+
+    SAMPLE.cell(ctx, c[0], fit(0, 960), () => { floor(960); IB.figure(ctx, IB.stand(960, FLOOR, WHO), WHO); }, 'IB.stand(x, floor, look)');
+
+    // the walk in place: 12 drawings on twos, two steps a second
+    SAMPLE.cell(ctx, c[1], fit(1, 960), () => { floor(960); IB.figure(ctx, IB.walk(960, FLOOR, WHO, (k % 12) / 12), WHO); }, 'IB.walk(x, floor, look, k / 12)');
+
+    // walking across a still stage: x moves IB.walkLen / 12 a drawing and each planted foot stays on its tick (one tick a footfall: a step is IB.walkLen / 2 = 0.42 h); 8 drawings (as many as fit the cell 1:1), then 0.5 s held
+    const len = IB.walkLen(WHO), x0 = 847, n = Math.min(8, k % 14);
+    SAMPLE.cell(ctx, c[2], fit(2, 960), () => {
+      floor(960, 400);
+      for (let i = -1; i <= 2; i++) IB.seg(ctx, x0 + (i * len) / 2 + 0.21 * H, FLOOR + 4, x0 + (i * len) / 2 + 0.21 * H, FLOOR + 22, { w: 2, seed: 30 + i });
+      IB.figure(ctx, IB.walk(x0 + (n * len) / 12, FLOOR, WHO, (n / 12) % 1), WHO);
+    }, `IB.walkLen = 0.84 h = ${Math.round(len)} px`);
+
+    // walk contact to standing in three in-betweens on twos (walk-cycle-bag's stop: 0.45, 0.8, 1), held, then again
+    const u = [0, 0, 0, 0.45, 0.8, 1][Math.min(5, (k + 8) % 14)];   // shifted so the 0.72 poster lands on the first in-between
+    SAMPLE.cell(ctx, c[3], fit(3, 960), () => { floor(960); IB.figure(ctx, IB.poseMix(IB.walk(960, FLOOR, WHO, 0), IB.stand(960, FLOOR, WHO), u), WHO); }, `IB.poseMix(walk, stand, ${u})`);
+
+    // up on the toes and back, one drawing every 4 frames: the ankle rises by IB.footLift so the toe stays on the floor
+    const p = [0, 0.3, 0.6, 0.6, 0.3, 0][k % 12 >> 1];
+    SAMPLE.cell(ctx, c[4], fit(4, 960), () => {
+      floor(960);
+      const s = IB.stand(960, FLOOR, WHO), lift = IB.footLift(p, H);
+      IB.figure(ctx, { ...s, hip: [s.hip[0], s.hip[1] - lift], hands: s.hands.map(([x, y]) => [x, y - lift]), feet: s.feet.map(([x, y]) => [x, y - lift, p]) }, WHO);
+    }, `IB.footLift(${p}, h) = ${IB.footLift(p, H).toFixed(1)} px`);
+
+    // a held pose: lean, nod, grip and face (lift-heavy-box's grip on the box, the lifter's tucked tee)
+    SAMPLE.cell(ctx, c[5], fit(5, 940), () => { floor(960); IB.box(ctx, 940 + 225 * K - 70, FLOOR - 210 * K, 140, 210 * K, { fill: C.paper, w: 3, seed: 60 }); IB.figure(ctx, grip(940), { ...LIFTER, face: { mouth: 'flat', brow: 1 } }); }, 'pose { lean, nod, grip }');
+
+    // a box carried between the arms: the far side, the box, the near arm
+    SAMPLE.cell(ctx, c[6], fit(6, 960), () => {
+      floor(960);
+      const s = IB.stand(960, FLOOR, WHO), sy = s.hip[1] - F.torso * H, pose = { ...s, hands: [[960 + 0.17 * H, sy + 0.12 * H], [960 + 0.14 * H, sy + 0.16 * H]], grip: [true, true] };
+      IB.figure(ctx, pose, WHO, 'far');
+      IB.box(ctx, 960 + 0.08 * H, sy + 0.06 * H, 0.18 * H, 0.15 * H, { fill: C.yellow, w: 2.6, seed: 61 });
+      IB.figure(ctx, pose, WHO, 'near');
+    }, "IB.figure(…, 'far') · prop · 'near'");
+
+    // faces at 520 px (walk-cycle-bag's size): eye and mouth carry the acting, there is no other face
+    const big = { ...WHO, h: 520 };
+    SAMPLE.cell(ctx, c[7], [960 - c[7][2] / 2, 330, c[7][2], c[7][3]], () => FACES.forEach((face, i) => IB.figure(ctx, IB.stand(810 + i * 100, FLOOR, big), { ...big, face, seed: 20 + i * 7 })), 'look.face { eye, mouth, brow }');
+  },
+});
+</script>

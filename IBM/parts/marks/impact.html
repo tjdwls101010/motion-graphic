@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>marks / impact</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 효과 표시 견본: 움직임을 매끈하게 잇는 대신 옆에 몇 획 그어 두는 표시들, 충격선 IB.burst, 내려놓는 쿵 IB.thud, 입김 IB.breath, 꺼진 심지의 연기 IB.smoke, 물방울 IB.drop과 튀김 IB.splash, 흑연 문지름 IB.smudge, 신발 밑 분필 IB.puddle, 바퀴 밑 IB.ripples와 뒷바퀴 먼지 IB.wheelDust. 모두 2프레임마다 한 장이고 한두세 장만 살았다가 사라지며, 장마다 seed를 바꿔 새로 그린다(칸마다 그 표시가 사는 장수만큼 보이고 나머지는 빈 장). 서 있는 것 밑에는 puddle, 구르는 것 밑에는 ripples를 쓴다. burst는 장면마다 두 장이고 둘째 장이 12–40px 더 바깥이다(도끼 26px, 모니터 22px); 물방울은 한 장에 260px 떨어지고 바닥에 닿으면 튀김 두 장. 사람·상자·심지는 표시의 자리를 보이려는 자리 표시다. */
+const P0 = 34;   // the drawing on the poster (0.72 x 4 s): every cycle below is phased so that its first state is the one on the poster
+const phase = (d, period, at = 0) => (((d - P0 + at) % period) + period) % period;
+MG.scene({
+  title: 'marks / impact',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'marks.js — impact, breath, smoke, water, chalk, wheels');
+    const f = IB.frame(t), d = Math.floor(f / 2), C = IB.C;
+    const top = SAMPLE.grid(4, 4, { bottom: 518 }), low = SAMPLE.grid(5, 5, { top: 590 });
+
+    // a heavy box set down (acting/lift-heavy-box: BW 230): two drawings, the second further out, then four without
+    SAMPLE.cell(ctx, top[0], SAMPLE.fit(top[0], [960, 930]), () => {
+      const k = phase(d, 6);
+      IB.smear(ctx, 960, 926, 276, { h: 11, seed: 10 });
+      IB.box(ctx, 845, 720, 230, 210, { fill: C.paper, w: 3.4, seed: 20 });
+      if (k < 2) IB.thud(ctx, [960, 930], { half: 115, k });
+    }, 'IB.thud(at, { half, k: 0 | 1 })');
+
+    // breath from a mouth facing right (vignette/trick-candle-relight): three drawings 70 px apart, then three without
+    SAMPLE.cell(ctx, top[1], SAMPLE.fit(top[1], [960, 930]), () => {
+      const k = phase(d, 6), head = [840, 760];
+      IB.oval(ctx, head[0], head[1], 46, 52, { fill: C.paper, w: 3, seed: 30, n: 14 });
+      if (k < 3) IB.breath(ctx, head, { k, seed: 300 + k });
+    }, 'IB.breath(headAt, { k: 0..2 })');
+
+    // chalk under standing feet: 84 px plus the distance between them (cast/paper.js); the small one under a balloon at rest (props/party.js)
+    SAMPLE.cell(ctx, top[2], SAMPLE.fit(top[2], [960, 930]), () => {
+      IB.puddle(ctx, [890, 930], { w: 84 + 60, seed: 9 });
+      IB.puddle(ctx, [1060, 930], { w: 70, rx: 30, ry: 3.2, n: 10, wob: 1.2, h: 7, rise: 6, seed: 15 });
+    }, 'IB.puddle — feet / a resting balloon');
+
+    // under a rolling wheel (spot/tandem-riders-join): scribbles that flip on twos, a puff off the rear wheel three drawings in six
+    SAMPLE.cell(ctx, top[3], SAMPLE.fit(top[3], [980, 800]), () => {
+      const alt = d % 2, R = IB.TANDEM.r;
+      IB.ripples(ctx, [1040, 750 + R], { alt, seed: 70 });
+      IB.bikeWheel(ctx, [1040, 750], { alt, seed: 70 });
+      IB.wheelDust(ctx, [1040, 750], { d: phase(d, 6) });
+    }, 'IB.ripples, IB.wheelDust');
+
+    // burst, two scenes' values: an axe's blow (acting/axe-windup-smear) and a candle's breakout (market/monitor-candles-breakout)
+    SAMPLE.cell(ctx, low[0], SAMPLE.fit(low[0], [960, 900]), () => {
+      const s2 = phase(d, 6);
+      IB.box(ctx, 870, 820, 180, 80, { fill: C.paper, w: 3.4, seed: 40 });
+      if (s2 < 2) IB.burst(ctx, [960, 800], { n: 5, a0: -2.7, da: 0.56, r0: 70 + s2 * 26, r1: 70 + s2 * 26 + 46 - s2 * 10, sy: 0.8, w: 3, seed: 410 + s2 * 9 });
+    }, 'IB.burst({ n, a0, da })');
+    SAMPLE.cell(ctx, low[1], SAMPLE.fit(low[1], [960, 900]), () => {
+      const b = 1 + phase(d, 6);
+      IB.seg(ctx, 960, 900, 960, 760, { w: 5, seed: 50 });
+      if (b < 3) IB.burst(ctx, [960, 750], { angles: [0, 1, 2, 3, 4].map((i) => -Math.PI / 2 + (i - 2) * 0.42), r0: 50 + (b - 1) * 22, r1: 50 + (b - 1) * 22 + 54, w: 6, seed: 210 + b * 7 });
+    }, 'IB.burst({ angles, w: 6 })');
+
+    // smoke off a snuffed wick (vignette/trick-candle-relight): climbs 14 px a drawing for six drawings, a new seed each
+    SAMPLE.cell(ctx, low[2], SAMPLE.fit(low[2], [960, 900]), () => {
+      const k = phase(d, 8, 2);
+      IB.box(ctx, 940, 760, 40, 140, { fill: C.paper, w: 3, seed: 60 });
+      IB.seg(ctx, 960, 760, 960, 748, { w: 2.4, seed: 61 });
+      if (k < 6) IB.smoke(ctx, [960, 748], { k, seed: 320 + k });
+    }, 'IB.smoke(wick, { k: 0..5 })');
+
+    // drops 260 px a drawing, then two drawings of splash on the floor (variation/hose-wipe-endcard), entering a few drawings apart as there
+    SAMPLE.cell(ctx, low[3], SAMPLE.fit(low[3], [960, 902]), () => {
+      [[880, 0], [1000, 5], [940, 1]].forEach(([x, at]) => {
+        const k = phase(d, 6, 4 + at), y = -60 + k * 260;
+        if (y < 900) IB.drop(ctx, [x, y], { seed: 700 + x });
+        else { const s = k - Math.ceil(960 / 260); if (s < 2) IB.splash(ctx, [x, 902], { k: s, seed: 710 + x }); }
+      });
+      IB.seg(ctx, 800, 904, 1120, 904, { w: 2, seed: 62, color: '#9a9a9a' });
+    }, 'IB.drop, IB.splash({ k })');
+
+    // rubbed graphite: under a nose in a close-up (cast/closeup.js), and inside a cloud, lighter (props/nature.js)
+    SAMPLE.cell(ctx, low[4], SAMPLE.fit(low[4], [925, 960]), () => {
+      IB.smudge(ctx, [[850, 912], [920, 926], [1000, 916]], { seed: 54, wob: 1.5 });
+      IB.smudge(ctx, [[836, 812], [869, 814], [902, 812]], { w: 11.6, dw: 1, dy: 2, color: 'rgba(40, 40, 40, 0.13)', seed: 701 });
+    }, 'IB.smudge(pts) — nose / cloud');
+  },
+});
+</script>

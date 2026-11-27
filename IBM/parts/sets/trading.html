@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / trading</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/trading.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 객장 벽의 시세판 IB.tickerBoard, 1280×280 판에 제목 띠와 여섯 칸 두 줄, 칸마다 이름과 값 대신 막대 둘과 화살표 하나(파란 위, 빨간 아래)이고 아래 가장자리에 흑연이 진다. 방 자체는 빈 회색 무대로 둔다. 시장이 하는 일은 장면이 정한다: market/trading-desk-row 그대로, 한가할 때는 0.5초마다 칸 하나가 뒤집히고 3초부터 한 장(2프레임)에 한 칸씩 파란 물결이 판을 건넌다. 판은 머리 위 말풍선 자리를 남기려고 [320, 160]에 낮게 걸었다. */
+const RALLY = 3;
+function cells(tt) {
+  const half = Math.floor(tt * 2 + 1e-6), up = [];
+  for (let i = 0; i < 12; i++) {
+    let upArrow = MG.hash(i, 7) < 0.4;
+    for (let m = 1; m <= Math.min(half, RALLY * 2 - 1); m++) if ((m * 5) % 12 === i) upArrow = !upArrow;   // the idle market: one cell flips every half second
+    if (tt >= RALLY + i / 12 - 1e-6) upArrow = true;                                                        // the wave
+    up.push(upArrow);
+  }
+  return up;
+}
+MG.scene({
+  title: 'sets / trading',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t);
+    IB.tickerBoard(ctx, [320, 160], { up: cells(tt) });
+    SAMPLE.caption(ctx, `IB.tickerBoard(at, { up }) — ${tt < RALLY ? 'idle: one cell flips every 0.5 s' : 'the wave: one cell a drawing'}`);
+  },
+});
+</script>

@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / vehicles-heli</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 탈것, 노란 헬리콥터의 옆모습 IB.heli와 정면 IB.heliFront, 그리고 회전날개 IB.rotor. 날개는 가는 직선 아홉 개의 부채이고 그림(d)마다 새로 굴린다: 2프레임마다 d를 올리면 돈다. 몸통이 기울어도 날개는 거의 수평이다(몸통 회전의 85%를 돛대에서 되돌림). 옆모습은 s로 키우고 rot으로 기울이고 facing -1로 뒤집으며(-1.3은 들어올 때의 스미어 한 장), 선 굵기는 배율의 제곱근으로 가늘어진다. 정면은 선회 도중 두 장에만 쓰고 sx·sy로 눌러 돌아선다. 비스듬한 각도는 아직 없어서 옆모습을 돌리고 줄여 쓴다. 원본의 로고와 글자는 빠져 있다. 원본 비행 경로는 props/vehicles-heli-flyin에 있다. */
+MG.scene({
+  title: 'props / vehicles-heli',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/vehicles.js — the helicopter: side, front, rotor');
+    const d = Math.floor(IB.frame(t) / 2), c = SAMPLE.grid(2, 2), V = [0, 0, c[0][2], c[0][3]];
+    SAMPLE.cell(ctx, c[0], V, () => {
+      IB.heli(ctx, [520, 230], { d });
+      IB.heli(ctx, [400, 520], { rot: 0.2, facing: -1, d: d + 5 });
+      IB.seg(ctx, 449, 830, 449, 790, { w: 3.4, seed: 1 });
+      IB.rotor(ctx, [449, 790], { span: 280, d: d + 9 });
+    }, 'IB.heli(at, { s, rot, facing, d }) — facing 1, facing -1 rot 0.2; IB.rotor');
+    SAMPLE.cell(ctx, c[1], V, () => IB.heliFront(ctx, [449, 560], { d }), 'IB.heliFront(at, { sx, sy, d })');
+  },
+});
+</script>

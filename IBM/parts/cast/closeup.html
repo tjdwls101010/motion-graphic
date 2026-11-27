@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / closeup</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/cast/closeup.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 펜싱 마스크 너머로 화면을 가득 채운 두 얼굴 IB.boldFace(자신 있는 쪽)와 IB.worriedFace(불안한 쪽)가 철망 IB.maskMesh 아래에서 동작 하나씩을 한다(IB.boldFace.MOVE.scowl, IB.worriedFace.MOVE.alarm). 얼굴 안에서는 눈썹과 눈꺼풀만 2프레임 단위로 움직이고, 철망은 마스크에 붙어 있어서 얼굴과 철망을 같은 IB.closeup 하나에 넣어 화면 전체가 한 덩어리로 기울고 가라앉는다(pose.zoom, rot, dx, dy). 찌푸림은 석 장에 들어가(눈썹 안쪽 끝 24px 아래로, 윗눈꺼풀이 눈동자를 자름) 0.018rad 기울며 14px, 다시 10px 내려앉고 4프레임 붙잡은 뒤 들어간 그림을 거꾸로 밟아 나온다. 놀람은 석 장에 눈이 커지고 눈썹이 아치로 오르며(안쪽 끝 110px), 그 뒤로는 멈춘 얼굴 위에서 땀방울만 2프레임마다 74px에서 160px로 자란다. 선은 6~17px, 마스크 그늘 IB.MASK.shade #867968, 철망 #d9d7d6 11px. 화면을 채우는 인서트라 칸 없이 전면으로 보인다: 앞 2.5초가 boldFace, 뒤 2.5초가 worriedFace이고 그 사이는 하드 컷이다(원본은 휩, look/whip). 포즈 표와 작은 인서트는 cast/closeup-poses에 있다. */
+const A = IB.boldFace, B = IB.worriedFace;
+const SHOT_A = [[0, A.POSE.rest], ...IB.play(A.MOVE.scowl, 6)], SHOT_B = [[0, B.POSE.squint], ...IB.play(B.MOVE.alarm, 6)];
+MG.scene({
+  title: 'cast / closeup',
+  duration: 5, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const bold = t < 2.5, f = IB.frame(bold ? t : t - 2.5), p = IB.held(bold ? SHOT_A : SHOT_B, f), face = bold ? A : B;
+    IB.closeup(ctx, p, () => { face(ctx, p); IB.maskMesh(ctx); });
+    SAMPLE.caption(ctx, bold ? `IB.boldFace + IB.maskMesh in IB.closeup — MOVE.scowl from frame 6: scowl ${p.scowl}` : `IB.worriedFace — MOVE.alarm from frame 6: lids ${p.lids}, worry ${p.worry}, drop ${p.drop} — skin ${IB.MASK.skin}`, true);
+  },
+});
+</script>

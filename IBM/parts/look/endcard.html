@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / endcard</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 엔드카드의 한 줄 IB.copy(size 'tag', IB.TYPE.tag)과 그 아래 폭 1000px의 파란 분필 스미어 IB.smear. 빈 무대 한 프레임 뒤 하드 컷으로 둘이 함께 39px 왼쪽에 완전히 불투명하게 나타나 1프레임 단위로 0.5초에 정착한다(IB.settle tau 0.152, 프레임마다 남은 거리의 약 24%): 스미어는 IB.copy가 돌려주는 밀림 dx를 그대로 탄다. 잰 값: 글자 64px, 로열블루 #1e66f0, x 960 가운데 맞춤, 글자 윗선 y 508, 스미어는 y 910에서 w 1000, h 34. 로열블루는 이 한 줄과 스미어에만 쓴다. 문구는 원본 태그라인이 아니라 자리 표시다. 화면 한 장의 배치라 칸 없이 전면으로 보이고 3초마다 다시 컷한다. */
+MG.scene({
+  title: 'look / endcard',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const cut = 1 / 24;   // frame 0 is the bare stage
+    const dx = IB.copy(ctx, ['마지막 한 줄은 여기에.'], t, cut, { size: 'tag', color: IB.C.royal });
+    if (t >= cut) IB.smear(ctx, 960 + dx, 910, 1000, { h: 34, seed: 5 });
+    SAMPLE.caption(ctx, `IB.copy({ size: 'tag' }) + IB.smear(w 1000, h 34) — dx ${dx.toFixed(1)} px`);
+  },
+});
+</script>

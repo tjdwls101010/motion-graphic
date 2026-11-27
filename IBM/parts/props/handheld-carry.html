@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / handheld-carry</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 몸에 지니고 다니는 것 — 등에 멘 긴 가방 IB.slingBag과 끈 IB.strap, 테이크아웃 컵 IB.strawCup, 서류 가방 IB.briefcase, 작은 종이컵 IB.smallCup, 휴대전화 IB.mobilePhone, 골판지 상자 IB.cardboardBox. 손에 드는 것은 모두 IB.figure가 돌려주는 손목(j.hands)에 놓으므로 사람과 함께 보인다. 왼쪽은 acting/walk-cycle-bag의 걷는 사람(키 520 px, 제자리 걷기)이다: 가방은 사람보다 먼저 그리고 엉덩이 뒤 0.05 h, 어깨까지 42% 높이에 0.36 rad로 눕히며 엉덩이가 직전 장에서 움직인 만큼의 1.6배를 y에 더해 늦게 따라오게 한다. 끈은 사람 위에 그리고, 컵은 먼 손에 쥐고 손가락 셋을 피부색으로 다시 감는다. 가운데는 market/street-rush-hour의 군중(키 250 px 안팎): 서류 가방은 키에 맞춰 0.18 h 너비로, 작은 컵은 몸 앞에, 전화는 귀(머리 뒤, 팔꿈치를 뒤로 접어 팔이 눈을 가리지 않게)나 눈앞에 들고 up이면 화면에 파란 오름 화살표가 뜬다. 오른쪽은 acting/lift-heavy-box의 버티기다: 3프레임마다 두 포즈가 엇갈리는 동안 상자는 움직이지 않고 한 장 걸러 -0.02 rad 기울며 떨림 표시가 장마다 새로 굴려진다. 컵의 크기 구분: 키 400 px쯤의 사람이 쥐는 종이컵은 IB.cup(props/office-desk), 군중 속 작은 사람은 smallCup, 뚜껑과 빨대가 있는 것은 strawCup. 전화는 탁상 전화의 수화기가 IB.handset, 휴대전화가 mobilePhone이다. */
+const { lerp } = MG;
+const C = IB.C, F = IB.FIG;
+
+// acting/walk-cycle-bag: the walker, walking on the spot; both hands are busy (cup out in front, strap at the chest)
+const WALKER = { ...IB.PEOPLE.walker, h: 520, dir: 1, seed: 40 }, WX = 900, WFLOOR = 930;
+function carry(p) {
+  const h = WALKER.h, sy = p.hip[1] - F.torso * h;
+  p.hands = [[WX + 0.2 * h, sy + 0.115 * h], [WX + 0.1 * h, sy + 0.125 * h]];
+  p.elbow = [1, 1];
+  return p;
+}
+const walkAt = (tt) => carry(IB.walk(WX, WFLOOR, WALKER, ((tt % 1) + 1) % 1));   // one cycle (two steps) a second, on twos
+function walker(ctx, t) {
+  const tt = IB.twos(t), h = WALKER.h, pose = walkAt(tt), prev = walkAt(tt - 1 / 12);
+  IB.smear(ctx, WX, WFLOOR - 9, 300, { h: 14, seed: 9 });
+  const sh = [pose.hip[0] + Math.sin(pose.lean || 0) * F.torso * h, pose.hip[1] - Math.cos(pose.lean || 0) * F.torso * h];
+  const bx = pose.hip[0] - 0.05 * h, by = lerp(pose.hip[1], sh[1], 0.42) + (prev.hip[1] - pose.hip[1]) * 1.6;
+  IB.slingBag(ctx, [bx, by]);
+  const j = IB.figure(ctx, pose, WALKER);
+  IB.strap(ctx, [[j.sh[0] - 0.035 * h, j.sh[1] - 0.012 * h], [j.sh[0] + 0.035 * h, j.sh[1] + 0.035 * h], [j.hands[1][0] + 0.012 * h, j.hands[1][1]], [bx + 0.21 * h, by + 0.02 * h]]);
+  IB.strawCup(ctx, j.hands[0], { skin: WALKER.skin });
+}
+
+// market/street-rush-hour: four of the crowd walking on the spot, each with what their hands are busy with
+const CROWD = [
+  { x: 705, dir: 1, h: 258, off: 3, ...IB.PASSERSBY[1], prop: 'case', seed: 830 },
+  { x: 835, dir: -1, h: 262, off: 5, ...IB.PASSERSBY[2], prop: 'cup', seed: 860 },
+  { x: 965, dir: -1, h: 250, off: 2, ...IB.PASSERSBY[3], prop: 'phone', seed: 890 },
+  { x: 1095, dir: 1, h: 270, off: 0, ...IB.PASSERSBY[0], prop: 'look', seed: 800 },
+], CFLOOR = 985;
+function passer(ctx, w, k) {
+  const d = w.dir, look = w.prop === 'look';
+  const p = look ? IB.stand(w.x, CFLOOR, w) : IB.walk(w.x, CFLOOR, w, ((k + w.off) / 12) % 1), sh = [p.hip[0], p.hip[1] - F.torso * w.h];
+  if (w.prop === 'cup') p.hands = [p.hands[0], [sh[0] + 0.15 * w.h * d, sh[1] + 0.13 * w.h]];
+  if (w.prop === 'phone') { p.hands = [p.hands[0], [sh[0] - 0.035 * w.h * d, sh[1] - 0.085 * w.h]]; p.elbow = [1, -1]; }
+  if (look) { p.hands = [p.hands[0], [sh[0] + 0.17 * w.h * d, sh[1] - 0.02 * w.h]]; p.nod = 0.2; }   // the hero, stopped, reading good news
+  const lw = IB.figLine(w.h), j = IB.figure(ctx, p, { ...w, face: look ? { eye: 'wide', mouth: 'smile' } : { mouth: 'flat' }, lw });
+  if (w.prop === 'case') IB.briefcase(ctx, j.hands[0], { h: w.h, fill: w.bottom === C.ink ? C.charcoal : C.paper, lw, seed: w.seed + 20 });
+  if (w.prop === 'cup') IB.smallCup(ctx, j.hands[1], { d, lw: lw * 0.85, seed: w.seed + 22 });
+  if (w.prop === 'phone' || look) { const [hx, hy] = j.hands[1]; IB.mobilePhone(ctx, [hx + (look ? 6 : -2) * d, hy - (look ? 30 : 26)], { up: look, lw: lw * 0.85, seed: w.seed + 23 }); }
+}
+
+// acting/lift-heavy-box: the strain, two poses 16 px apart alternating on threes while the box does not move
+const LIFTER = { ...IB.PEOPLE.lifter, h: 540, dir: 1, seed: 20 }, LX = 760, LFLOOR = 930, BW = 230, BH = 210;
+const LH = LIFTER.h, HIPY = LFLOOR - (F.ankle + F.shin + F.thigh) * LH + 2, AY = LFLOOR - F.ankle * LH;
+const FEET = [[LX + 55, AY, 0], [LX - 55, AY, 0]];
+const GRIP = { hip: [LX - 40, HIPY + 110], lean: 0.68, nod: -0.2, feet: FEET, hands: [[LX + 130, LFLOOR - BH - 4], [LX + 112, LFLOOR - BH + 24]], face: { mouth: 'flat', brow: 1 } };
+const STRAIN = { hip: [LX - 44, HIPY + 94], lean: 0.58, nod: -0.5, feet: FEET, hands: [[LX + 130, LFLOOR - BH - 6], [LX + 112, LFLOOR - BH + 24]], face: { eye: 'closed', mouth: 'open', brow: 1 } };
+function lifter(ctx, t) {
+  const k = Math.round(IB.threes(t) * 8), pose = k % 2 ? STRAIN : GRIP, bx = LX + 225, look = { ...LIFTER, face: pose.face };
+  IB.smear(ctx, LX + 20, LFLOOR - 9, 330, { h: 14, seed: 9 });
+  IB.smear(ctx, bx, LFLOOR - 4, BW * 1.2, { h: 11, seed: 10 });
+  IB.figure(ctx, pose, look, 'far');
+  IB.cardboardBox(ctx, [bx, LFLOOR], { tilt: k % 2 ? -0.02 : 0 }, { w: BW, h: BH });
+  IB.figure(ctx, pose, look, 'near');
+  IB.shake(ctx, bx + BW / 2 + 8, LFLOOR - BH + 10, 18, { a: -0.7, n: 2, seed: 300 + k, w: 2.8 });
+  IB.shake(ctx, bx - BW / 2 - 6, LFLOOR - 20, 16, { a: 2.5, n: 2, seed: 350 + k, w: 2.8 });
+  IB.shake(ctx, pose.hip[0] - 40, pose.hip[1] - 70, 22, { a: Math.PI * 1.15, n: 3, seed: 390 + k, w: 2.8 });
+}
+
+MG.scene({
+  title: 'props / handheld-carry',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/handheld.js — bag, strap, cups, briefcase, phone, box');
+    const k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(3, 3);
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [WX, WFLOOR], 40), () => walker(ctx, t), 'IB.slingBag + IB.strap + IB.strawCup');
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [900, CFLOOR], 40), () => {
+      IB.smear(ctx, 900, CFLOOR - 11, 560, { h: 20, seed: 9, alpha: 0.7 });
+      CROWD.forEach((w) => passer(ctx, w, k));
+    }, 'IB.briefcase, IB.smallCup, IB.mobilePhone({ up })');
+    SAMPLE.cell(ctx, c[2], SAMPLE.fit(c[2], [900, LFLOOR], 40), () => lifter(ctx, t), 'IB.cardboardBox(at, { tilt })');
+  },
+});
+</script>

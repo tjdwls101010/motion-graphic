@@ -1,0 +1,84 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / figure-limbs</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 인물 리그의 비례 IB.FIG와 선 굵기 IB.figLine, 그 아래의 두 관절 풀이 IB.ik와 옷 모양 IB.limb, 그리고 걷는 물건(폴더, 서류, 상자)의 팔다리 IB.peg·IB.hose·IB.boot와 손 IB.mitt·IB.clasp. IB.FIG는 키 h에 대한 비율이다(다리 57%, 머리 7.5–8개 키). 선 굵기는 샷 크기를 따라 IB.figLine(h) = 1.8 + h / 280이다(와이드 250px에서 2.7px). 물건의 다리는 둘 중 하나를 쓴다: IB.peg는 곧은 가는 바지 다리 하나(숨는 서류, 상자), IB.hose는 뼈 길이 없이 통째로 휘는 고무호스 다리와 팔(폴더와 서류: bow로 휘고 via로 무릎을 꺾는다). 손은 물건 캐릭터에게도 진짜 작은 손가락이 있어 팔이 도착한 뒤의 연기를 맡는다(rest, reach, open). 수치는 cast/paper.js와 cast/parcel.js가 부르는 값이다. */
+const C = IB.C, F = IB.FIG, FLOOR = 930;
+const WHO = { ...IB.PEOPLE.climber, h: 330, dir: 1, seed: 20 };
+MG.scene({
+  title: 'cast / figure-limbs',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.FIG, figLine, ik, limb — and the limbs of objects that walk (figure.js)');
+    const f = IB.frame(t), k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(8, 4), fit = (i, x, y = FLOOR, dy = 40) => SAMPLE.fit(c[i], [x, y], dy);
+    const label = (text, x, y) => { ctx.fillStyle = '#6f6f6f'; ctx.font = '400 15px "JetBrains Mono"'; ctx.textBaseline = 'middle'; ctx.fillText(text, x, y); };
+
+    // the proportions, as a ruler beside a standing figure: ankle, knee, hip, shoulder, head centre, crown
+    SAMPLE.cell(ctx, c[0], fit(0, 990), () => {
+      const h = WHO.h, x = 1090, marks = [['floor', 0], ['ankle', F.ankle], ['knee', F.ankle + F.shin], ['hip', F.ankle + F.shin + F.thigh], ['shoulder', F.ankle + F.shin + F.thigh + F.torso], ['head', F.ankle + F.shin + F.thigh + F.torso + F.neck], ['crown', 1]];
+      IB.figure(ctx, IB.stand(x, FLOOR, WHO), WHO);
+      IB.seg(ctx, 950, FLOOR, 950, FLOOR - h, { w: 2, seed: 40 });
+      marks.forEach(([name, u], i) => { const y = FLOOR - u * h; IB.seg(ctx, 942, y, 958, y, { w: 2, seed: 41 + i }); label(`${name} ${u.toFixed(2)}`, 800, y); });
+    }, 'IB.FIG — fractions of h');
+
+    // line width follows the size of the shot
+    SAMPLE.cell(ctx, c[1], fit(1, 960), () => [200, 250, 330].forEach((h, i) => {
+      const who = { ...WHO, h, seed: 20 + i * 9 }, x = 830 + i * 120;
+      IB.figure(ctx, IB.stand(x, FLOOR, who), who);
+      label(`${IB.figLine(h).toFixed(1)}`, x - 14, FLOOR + 22);
+    }), 'IB.figLine(h) at h 200, 250, 330');
+
+    // two-bone IK: the knee is solved for an ankle target that moves on twos; the target out of reach is pulled in
+    const T = [[1010, 880], [1050, 850], [1120, 900], [1020, 760], [960, 830], [1070, 790]][(k >> 1) % 6], hip = [960, 720], [kn, end] = IB.ik(hip, T, F.thigh * 330, F.shin * 330, -1);
+    SAMPLE.cell(ctx, c[2], fit(2, 980), () => {
+      IB.limb(ctx, [hip, kn, end], [F.thighW * 330, F.kneeW * 330, F.cuffW * 330], { fill: C.navy, lw: 3, seed: 50, cap: 'end' });
+      IB.oval(ctx, T[0], T[1], 6, 6, { fill: C.yellow, w: 2, seed: 51, n: 8 });
+      for (const [x, y] of [hip, kn, end]) IB.oval(ctx, x, y, 4, 4, { fill: C.ink, w: 0, n: 6 });
+    }, 'IB.ik(A, T, a, b, bend) → IB.limb');
+
+    // peg legs: standing straight, walking (a foot set swapped every 6 frames, parcels-board-conveyor) and folded in a hop (knee 10)
+    const step = IB.alternate(f, 6), feet = step ? [[-46, 0], [60, -12]] : [[-16, -12], [30, 0]];
+    SAMPLE.cell(ctx, c[3], fit(3, 960), () => {
+      const top = FLOOR - 12 - 74;
+      [[810, [[-22, 0], [22, 0]], 0], [960, feet, 0], [1110, null, 10]].forEach(([x, ft, knee], i) => {
+        const y = knee ? top - 90 : top;   // in a hop the legs hang straight under the body, knees bent
+        IB.seg(ctx, x - 50, y - 3, x + 50, y - 3, { w: 3, seed: 60 + i });
+        [0, 1].forEach((j) => { const hip = [x + (j ? 26 : -26), y]; IB.peg(ctx, hip, ft ? [x + ft[j][0], FLOOR - 12 + ft[j][1]] : [hip[0] + 10, hip[1] + 74], { seed: 62 + i * 10 + j * 9, knee, dir: j ? 1 : -1 }); });
+      });
+    }, 'IB.peg(ctx, hip, foot, { knee, dir })');
+
+    // hose legs as the folder wears them (w 18 / 14.5, sky): straight, curled back (bow -17), knee through a joint (via)
+    SAMPLE.cell(ctx, c[4], fit(4, 960), () => [[820, { bow: 0 }, [820, FLOOR - 12], 0], [960, { bow: -17 }, [966, FLOOR - 29], -0.8], [1100, { via: [1086, FLOOR - 66] }, [1126, FLOOR - 14], 0]].forEach(([x, o, foot, rot], i) => {
+      IB.hose(ctx, [x, FLOOR - 118], foot, { w: 18, w1: 14.5, fill: C.sky, lw: 2.4, seed: 70 + i * 5, shade: 18, ...o });
+      IB.boot(ctx, foot, { dir: i === 2 ? 1 : i ? -1 : 0, rot, lw: 2.6, seed: 72 + i * 5 });
+    }), 'IB.hose(ctx, a, b, { bow | via })');
+
+    // boots: front on, toe left, toe right, tipped in a kick, and the document's laced sneaker
+    SAMPLE.cell(ctx, c[5], fit(5, 960, FLOOR, 160), () => [[{ dir: 0 }], [{ dir: -1 }], [{ dir: 1 }], [{ dir: -1, rot: 0.7 }], [{ dir: 1, s: 1.2, laces: true }]].forEach(([o], i) => IB.boot(ctx, [800 + i * 80, FLOOR - 12], { lw: 2.6, seed: 80 + i * 4, ...o })), 'IB.boot — dir 0 / -1 / 1, rot, laces');
+
+    // hands at the end of a hose arm, aimed along it (what IB.hose returns): rest, reach, open, at the scale of the paper arms (1.25)
+    SAMPLE.cell(ctx, c[6], fit(6, 960, FLOOR, 120), () => ['rest', 'reach', 'open'].forEach((kind, i) => {
+      const a = [820 + i * 130, FLOOR - 170], b = [a[0] + 46, a[1] + 74], ang = IB.hose(ctx, a, b, { bow: -6, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: 90 + i * 5, shade: 34 });
+      IB.mitt(ctx, b, ang, { kind, s: 1.25, seed: 92 + i * 5 });
+    }), "IB.mitt — 'rest', 'reach', 'open'");
+
+    // two arms that meet: tipped 0.12 rad, then level once they hold (every 12 frames here)
+    const held = IB.alternate(f, 12), M = [960, FLOOR - 120];
+    SAMPLE.cell(ctx, c[7], fit(7, 960, FLOOR, 120), () => {
+      IB.hose(ctx, [820, FLOOR - 180], [M[0] - 9, M[1] - 3], { bow: -5, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: 100, shade: 34 });
+      IB.hose(ctx, [1100, FLOOR - 180], [M[0] + 9, M[1] - 3], { bow: 5, w: 10, w1: 8, fill: C.bg, lw: 2.4, seed: 110, shade: 34 });
+      IB.clasp(ctx, M, { s: 1.3, rot: held ? 0 : 0.12, seed: 440 });
+    }, `IB.clasp(ctx, at, { s: 1.3, rot: ${held ? 0 : 0.12} })`);
+  },
+});
+</script>

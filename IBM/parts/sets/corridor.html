@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / corridor</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/sets/corridor.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 소실점 하나로 본 긴 복도 IB.corridor와 그 속을 날아가는 종이비행기 IB.paperPlane. 설정 샷의 문법(멈춘 그림, 1.5–5px 선이 섞임, 어디에나 무늬, 색은 한두 곳)을 실내에 옮겼다. 바닥 판자와 천장 등이 멀어지고, 끝 벽에 노란 문, 왼벽에 액자, 오른벽에 문과 게시판과 벤치, 선은 렌즈 쪽으로 굵어진다. 모든 것은 (벽 side, 깊이 z, 높이 v)로 복도 껍질 위에 놓인다. 카메라는 소실점(opts.vp)을 중심으로 2.75초에 1에서 1.045로 낱장 단위로 밀고 들어가고, 작은 색 하나만 2프레임 단위로 지나간다: 여기서는 원본 장면처럼 종이비행기 IB.paperPlane이 8프레임부터 여섯 장(배율 3.2에서 0.56, 첫 장은 1.5배 스미어)으로 소실점을 향해 날아가고 그 뒤로는 한 장에 1px씩 흘러간다. 값은 variation/hall-whip-button 그대로다. */
+const VP = [960, 500];
+const FLIGHT = [[250, 800, 3.2, -0.34, 1.5], [540, 660, 2.2, -0.3, 1], [716, 590, 1.5, -0.24, 1], [826, 548, 1.0, -0.18, 1], [890, 524, 0.72, -0.12, 1], [922, 514, 0.56, -0.08, 1]];
+MG.scene({
+  title: 'sets / corridor',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const z = 1 + 0.045 * MG.clamp(t / 2.75), f = IB.frame(t);
+    ctx.save();
+    ctx.translate(VP[0], VP[1]); ctx.scale(z, z); ctx.translate(-VP[0], -VP[1]);
+    IB.corridor(ctx, { vp: VP });
+    let k = -1;
+    if (f >= 8) { k = Math.floor((f - 8) / 2); const P = FLIGHT[Math.min(k, FLIGHT.length - 1)], drift = Math.max(0, k - FLIGHT.length + 1); IB.paperPlane(ctx, [P[0] + drift, P[1] - drift * 0.4], { s: P[2], rot: P[3], stretch: P[4] }); }
+    ctx.restore();
+    SAMPLE.caption(ctx, `IB.corridor({ vp }) — push-in ×${z.toFixed(3)}${k >= 0 ? `, IB.paperPlane drawing ${Math.min(k, 5) + 1} of 6` : ''}`);
+  },
+});
+</script>

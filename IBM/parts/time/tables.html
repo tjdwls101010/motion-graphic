@@ -1,0 +1,78 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>time / tables</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/cast/closeup.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 박자 견본: 연기를 적는 그림 목록 도구 IB.held(그 프레임에 유효한 그림), IB.heldRow(값 여럿인 행 통째로), IB.play(캐릭터의 MOVE를 장면 표의 시작 프레임에 끼우기), IB.inbetween(손으로 놓은 섞는 비율), IB.alternate(두 그림 번갈아), IB.loop(멈추지 않는 순환). 연기는 곡선이 아니라 [프레임, 그림] 표다: 다음 키까지가 그대로 정지 구간이고 키 사이를 보간하지 않으며, 움직이는 동안은 키를 2프레임 간격으로 둔다. 칸마다 장면의 실제 표를 시간축(아래 눈금, 한 칸이 한 프레임)과 함께 돌린다: 291px 팬의 2프레임당 이동량 9, 12, 12, 113, 117, 13, 9, 6(천천히 출발해 두 걸음에 건너가고 세 걸음에 멈춤, spot/folder-meets-document), 암전 뒤 렌즈 줌 CAM 행 3.79에서 1배까지(spot/dark-eyes-reveal), 찌푸리는 얼굴 IB.boldFace.MOVE.scowl을 6프레임에 끼운 SHOT_A(insert/mesh-eyes-whip, 눈썹 안쪽 끝이 24px 내려옴). 중간 그림은 이징 대신 비율 0.35, 0.75, 1이고, 깃발·불꽃·꼬리는 3프레임마다 두 장을, 바람에 날리는 것과 화분은 2프레임마다 세 장을 돈다. */
+const PAN = [[0, 0], [2, 9], [4, 21], [6, 33], [8, 146], [10, 263], [12, 276], [14, 285], [16, 291]];
+const CAM = [[79, 3.79, 1257, 488], [81, 1.92, 1223, 486], [83, 1.32, 1213, 474], [85, 1.15, 1206, 467], [87, 1.06, 1206, 464], [89, 1.016, 1206, 463], [91, 0.992, 1205, 463], [93, 1, 1206, 462]];
+const A = IB.boldFace.POSE, SHOT_A = [[0, A.rest], ...IB.play(IB.boldFace.MOVE.scowl, 6), [24, { ...A.frown, dx: -120 }]];
+const RATIOS = [0.35, 0.75, 1];
+// a strip of frames under a cell: one tick per frame from f0, the table's keys taller, the frame now in royal
+const strip = (ctx, keys, f0, n, now, x0 = 40, step = 18, y = 390) => {
+  for (let k = 0; k <= n; k++) IB.seg(ctx, x0 + k * step, y, x0 + k * step, y + 10, { w: 1.5, seed: 100 + k });
+  for (const [k] of keys) if (k - f0 >= 0 && k - f0 <= n) IB.seg(ctx, x0 + (k - f0) * step, y - 16, x0 + (k - f0) * step, y + 10, { w: 3, seed: 200 + k });
+  if (now >= 0 && now <= n) IB.oval(ctx, x0 + now * step, y - 26, 6, 6, { fill: IB.C.royal, w: 0, n: 8 });
+};
+const flag = (ctx, x, y, d, seed) => {
+  IB.seg(ctx, x, y - 10, x, y + 150, { w: 3, seed });
+  IB.ink(ctx, d ? [[x, y], [x + 50, y - 6], [x + 100, y + 12], [x + 96, y + 58], [x + 48, y + 46], [x, y + 50]] : [[x, y], [x + 50, y + 12], [x + 100, y + 2], [x + 96, y + 48], [x + 48, y + 60], [x, y + 50]], { closed: true, fill: IB.C.paper, w: 3, seed: seed + 1 });
+};
+MG.scene({
+  title: 'time / tables',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'time.js — drawing lists: IB.held, heldRow, play, inbetween, alternate, loop');
+    const f = IB.frame(t), c = SAMPLE.grid(6, 3), win = (i) => [0, 0, c[i][2], c[i][3]];
+    // the pan: 6 frames still, 16 frames of steps, then held
+    const g = (f % 48) - 6, x = IB.held(PAN, g);
+    SAMPLE.cell(ctx, c[0], win(0), () => {
+      IB.seg(ctx, 120, 260, 120 + 291, 260, { w: 1.5, seed: 1 });
+      for (const [, px] of PAN) IB.seg(ctx, 120 + px, 248, 120 + px, 272, { w: 1.5, seed: 2 + px });
+      IB.box(ctx, 120 + x - 40, 140, 80, 100, { fill: IB.C.blue, w: 3.7, seed: 5 });   // something the pan carries
+      strip(ctx, PAN, 0, 28, g);
+    }, `IB.held(PAN, f) — ${x} of 291 px`);
+    const h = 79 + (f % 36), [, z] = IB.heldRow(CAM, h, CAM[0]);
+    SAMPLE.cell(ctx, c[1], win(1), () => {
+      IB.oval(ctx, 295, 200, 30, 30, { w: 1.5, seed: 10, n: 20 });
+      IB.oval(ctx, 295, 200, 30 * z, 30 * z, { fill: IB.C.paper, w: 4, seed: 11, n: 28 });
+      IB.oval(ctx, 295, 200, 12 * z, 12 * z, { fill: IB.C.ink, w: 0, n: 20 });
+      strip(ctx, CAM, 79, 28, h - 79);
+    }, `IB.heldRow(CAM, f, CAM[0]) — zoom ${z}`);
+    // the brow of SHOT_A: the inner end drops with pose.scowl, the head sinks pose.dy, the last drawing jumps pose.dx
+    const s = f % 36, p = IB.held(SHOT_A, s);
+    SAMPLE.cell(ctx, c[2], win(2), () => {
+      const m = ([bx, by]) => [bx + p.dx, by + p.dy];
+      IB.ink(ctx, [[180, 140], [250, 120], [330, 122], [400, 140 + 24 * p.scowl], [420, 156 + 24 * p.scowl]].map(m), { w: 10, seed: 20 });
+      IB.oval(ctx, ...m([320, 220]), 40, 22 - 10 * p.scowl, { fill: IB.C.paper, w: 4, seed: 21 });
+      strip(ctx, SHOT_A, 0, 28, s);
+    }, `IB.play(boldFace.MOVE.scowl, 6) — scowl ${p.scowl}`);
+    // a move in three drawings on twos from the beat at 0.5 s: 35%, 75%, there
+    const n = IB.drawn(IB.twos(t % 2), 0.5), u = n < 0 ? 0 : IB.inbetween(RATIOS, n), bx = MG.lerp(80, 440, u);
+    SAMPLE.cell(ctx, c[3], win(3), () => {
+      for (const r of [0, ...RATIOS]) IB.seg(ctx, MG.lerp(80, 440, r) + 35, 250, MG.lerp(80, 440, r) + 35, 280, { w: 1.5, seed: 30 + r * 10 });
+      IB.box(ctx, bx, 170, 70, 70, { fill: IB.C.yellow, w: 3, seed: 34 });
+      strip(ctx, [[12, 0], [14, 0], [16, 0]], 0, 28, IB.frame(t % 2));
+    }, `IB.inbetween([0.35, 0.75, 1], ${Math.max(0, n)}) — ${u}`);
+    SAMPLE.cell(ctx, c[4], win(4), () => {
+      flag(ctx, 130, 120, IB.alternate(f, 3), 40);
+      flag(ctx, 360, 120, IB.alternate(f % 48, 2, 24), 50);
+    }, `IB.alternate(f, 3) · IB.alternate(f, 2, 24)`);
+    const sway = IB.loop(f, [0, 0.07, -0.05]);
+    SAMPLE.cell(ctx, c[5], win(5), () => [[200, -0.3, 150], [300, 0, 210], [400, 0.35, 170]].forEach(([bx, lean, len], i) => {
+      ctx.save(); ctx.translate(bx, 330); ctx.rotate(lean + sway * (1 + i * 0.5));
+      IB.ink(ctx, [[0, 0], [8, -len * 0.5], [4, -len]], { w: 4, seed: 60 + i });
+      ctx.restore();
+    }), `IB.loop(f, [0, 0.07, -0.05]) — ${sway}`);
+  },
+});
+</script>

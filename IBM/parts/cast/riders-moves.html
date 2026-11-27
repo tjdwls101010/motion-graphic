@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / riders-moves</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/cast/riders.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 라이더의 동작 표 IB.rider.MOVE 여덟(joinNew, joinBehind, joinAhead, lookBack, call, sing, singOn, loseCap). 끼어들기는 미끄러짐이 아니라 2프레임씩 네 장이고 모든 라이더를 흔든다: joinNew는 새로 타는 사람(공처럼 말려 공중에, 착지, 손 놓고 일어나 앉음, 자리 잡음), joinBehind는 그 뒤에 탄 사람들(안장에서 20px 뜨고 팔이 곧게 당겨지고 머리카락이 솟음), joinAhead는 앞에 탄 사람들(앞으로 쏠렸다가 뒤로 젖혀짐). 장면에서는 이 셋을 한 번의 끼어들기에 동시에 쓴다. 나머지는 끼어들기 사이의 작은 연기다: 뒤돌아 웃기, 입가에 손 대고 부르기, 고개 젖혀 노래하기(입 모양이 6프레임 또는 8프레임마다 바뀜), 모자를 잃기(손으로 허공을 잡고, 맨머리를 짚고, 모자를 눈으로 좇다가 팔을 든다: 8프레임째부터 맨머리). 칸마다 원본 그림 목록 그대로 반복하고 마지막 그림을 0.75초 붙잡는다. */
+// one rider on a one-seat IB.tandem, as tandem-riders-join draws them: wheelbase 170, the axles at y 750, the cranks turning on twos (12 drawings a turn), streaming hair on three drawings
+const AXLE = 750, PI = Math.PI;
+function ride(ctx, cx, f, pose, look, o = {}) {
+  const d2 = Math.floor(f / 2), crank = (d2 / 12) * PI * 2 - PI / 2, rx = cx - 85, fx = cx + 85, bb = [rx + 62, AXLE - 4];
+  const bike = { rx, fx, bbs: [bb], built: [true], crank, alt: IB.alternate(f, 2) };
+  IB.tandem(ctx, bike, { axle: AXLE });
+  IB.rider(ctx, bb, pose, { look, crank, alt: IB.loop(f, [0, 1, -0.6]), seed: 200, ...o });
+  return bb;
+}
+const M = IB.rider.MOVE, R = IB.RIDERS;
+// each cell with the frame of its move that the 0.72 poster should land on (a join's most thrown drawing, the acting at its height): the cell's clock is shifted by that much
+const CELLS = [['joinNew', R.bun, 2], ['joinBehind', R.curls, 2], ['joinAhead', R.vents, 2], ['lookBack', R.vents, 2], ['call', R.curls, 8], ['sing', R.bun, 6], ['singOn', R.bun, 8], ['loseCap', R.cap, 10]], POSTER = IB.frame(0.72 * 6);
+MG.scene({
+  title: 'cast / riders-moves',
+  duration: 6, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.rider.MOVE — the joins and the acting between them (cast/riders.js)');
+    const f = IB.frame(t), c = SAMPLE.grid(8, 4);
+    CELLS.forEach(([name, look, at], i) => {
+      const rows = M[name], len = rows[rows.length - 1][0] + 18, fc = f + ((at - POSTER) % len + len), g = fc % len;   // g: the frame within the move, as SAMPLE.cycle counts it
+      SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [960, AXLE + 50], 40), () => ride(ctx, 960, f, SAMPLE.cycle(fc, rows), look, { bare: name === 'loseCap' && g >= 8 }), 'MOVE.' + name);
+    });
+  },
+});
+</script>

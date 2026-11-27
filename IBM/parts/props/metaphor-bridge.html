@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / metaphor-bridge</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/metaphor.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 은유, 낭떠러지 IB.ledge 둘이 만든 틈과 그것을 잇는 겨자색 널빤지 IB.plank의 세 그림. 들고 가기(held: 잡는 점이 왼끝에서 300px), 내려 휘두르는 한 장(swing: 가까운 끝이 놓일 자리를 경첩으로 반쯤 내려와 호를 따라 늘어나고 속도 호 두 줄), 걸쳐 놓기(lie, 놓이는 순간 왼끝에 충격선 두 장), 그리고 무게를 받아 V로 처진 lie(sag: 가운데서 7px, 가장자리 120px 안에서는 덜). 낭떠러지는 흰 절벽이 화면 밖으로 이어지고 벽면에 흑연, 금 몇 줄이다. 틈은 520px(700에서 1220), 널빤지는 688에서 1244, 두께 18px로 metaphor/bridge-plank-cross 그대로다; 원본 장면에서는 사람이 들고 와서(held는 어깨 옆) 걸치고 건넌다. 틈이 무대를 가로지르므로 칸 없이 전면이다. */
+const TOP = 700, LEFT = 700, RIGHT = 1220, PLANK = [LEFT - 12, RIGHT + 24], THICK = 18, SWING = 1;
+MG.scene({
+  title: 'props / metaphor-bridge',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), k = IB.drawn(tt, SWING), o = { ends: PLANK, edges: [LEFT, RIGHT], top: TOP, thick: THICK };
+    const state = k < 0 ? 'held: [x, y, rot]' : k === 0 ? 'swing: [hinge x, hinge y]' : tt < 2.5 ? 'lie' : 'lie, sag: [960, 7]';
+    IB.ledge(ctx, [LEFT, TOP], { side: 'left' }); IB.ledge(ctx, [RIGHT, TOP], { side: 'right' });
+    if (k < 0) IB.plank(ctx, { held: [560, 560, 0.07] }, o);
+    else if (k === 0) IB.plank(ctx, { swing: [PLANK[1], TOP - THICK / 2] }, o);
+    else IB.plank(ctx, { lie: true, sag: tt < 2.5 ? null : [960, 7] }, o);
+    if (k >= 1 && k < 3) IB.burst(ctx, [PLANK[0] + 30, TOP - 20], { a0: -2.7, da: 0.5, r0: 40 + (k - 1) * 16, r1: 40 + (k - 1) * 16 + 40, seed: 300 + (k - 1) * 5 });
+    SAMPLE.caption(ctx, `IB.ledge(at, { side }) x2, IB.plank({ ${state} })`);
+  },
+});
+</script>

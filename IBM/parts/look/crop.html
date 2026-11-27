@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / crop</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/facade.js"></script>
+<script src="../../kit/cast/cat.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 원본 1920×1080 배치의 16:9 한 영역을 화면 가득 키우는 IB.crop. 원본 스팟은 왼쪽 절반이 카피라서 장면은 카피를 빼고 무대 쪽만 잘라 보이며, 그려지는 것은 모두 원본 좌표 그대로다(STYLE.md의 수치가 그 좌표다). IB.bg 바로 뒤에 부르고, 팬과 줌은 그 위에 translate·scale로 얹는다. 화면 전체의 변환을 바꾸므로 칸 없이 전면으로 보인다: 앞 1.5초는 원본 배치 전체(파란 테두리가 CROP 영역), 뒤 1.5초는 spot/dark-eyes-reveal의 CROP [700, 180, 1220, 686]을 1.57배로 키운 화면이다. 다른 스팟의 CROP은 folder-meets-document [356, 60, 1564, 880] 1.23배, tandem-riders-join [640, 150, 1280, 720] 1.5배. 무대는 아파트 벽 IB.apartmentFacade와 창가 고양이 IB.windowCat이다. */
+const CROP = [700, 180, 1220, 686];
+MG.scene({
+  title: 'look / crop',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const cropped = t >= 1.5, s = cropped ? IB.crop(ctx, CROP) : 1;
+    IB.apartmentFacade(ctx, { layer: 'back' });
+    IB.apartmentFacade(ctx, { layer: 'middle' });
+    IB.windowCat(ctx, IB.windowCat.POSE.sit);
+    IB.apartmentFacade(ctx, { layer: 'front' });
+    IB.sillPlant(ctx, { sway: IB.loop(IB.frame(t), [0, 0.07, -0.05]) });
+    if (!cropped) IB.box(ctx, CROP[0], CROP[1], CROP[2], CROP[3], { w: 4, color: IB.C.royal, wob: 0, grain: 0, seed: 7 });
+    SAMPLE.caption(ctx, cropped ? `IB.crop(ctx, [${CROP.join(', ')}]) — ×${s.toFixed(2)}, still in reference coordinates` : 'the reference frame, CROP outlined');
+  },
+});
+</script>

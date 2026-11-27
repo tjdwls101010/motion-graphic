@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / line</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 붓펜 한 획 IB.ink의 옵션과 점 목록 도우미(IB.line, IB.rect, IB.ellipse, IB.mirror, IB.along). 선 굵기는 샷 크기를 따른다: 와이드 3px(2~4), 상반신 미디엄 5~8px, 멀리 작게 1~2px, 화면을 채운 클로즈업 눈꺼풀 17px이고, 그림을 확대하면 선도 같이 굵어진다. 2.2px 이상의 획은 가장자리가 거칠고 마른 붓 먼지가 붙는다(grain 0이면 깨끗한 가장자리: 채움 위에 겹치는 띠). 손의 흔들림 wob은 seed가 고정하므로 붙잡은 그림은 떨리지 않는다(boil 없음): 한 화면의 획마다 seed를 달리 준다. from/to는 외곽선만 잘라 그려 나가는 선을 만들고 채움은 늘 통째로 칠한다. 직선인 것은 smooth: false로 모서리를 살리고, 둥근 것은 smooth로 곡선을 잇는다. */
+const WAVE = (x0, y, len, amp = 14) => Array.from({ length: 6 }, (_, i) => [x0 + (len * i) / 5, y + Math.sin(i * 1.3) * amp]);
+MG.scene({
+  title: 'look / line',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.ink — the brush-pen stroke and its point lists (ink.js)');
+    const c = SAMPLE.grid(9, 3), win = (i) => [0, 0, c[i][2], c[i][3]];
+    SAMPLE.cell(ctx, c[0], win(0), () => [1.5, 3, 5, 8, 17].forEach((w, i) => IB.ink(ctx, WAVE(40, 34 + i * 48, 500, 8), { w, seed: 3 + i })), 'IB.ink w: 1.5 · 3 · 5 · 8 · 17');
+    SAMPLE.cell(ctx, c[1], win(1), () => { IB.ink(ctx, WAVE(40, 80, 500), { w: 8, seed: 11 }); IB.ink(ctx, WAVE(40, 180, 500), { w: 8, seed: 11, grain: 0 }); }, 'grain: 1 (dust) · grain: 0');
+    const ZIG = [[60, 170], [170, 40], [290, 170], [410, 40], [530, 170]];
+    SAMPLE.cell(ctx, c[2], win(2), () => { IB.ink(ctx, ZIG, { w: 5, seed: 21 }); IB.ink(ctx, ZIG.map(([x, y]) => [x, y + 55]), { w: 5, seed: 22, smooth: false }); }, 'smooth: true · smooth: false');
+    SAMPLE.cell(ctx, c[3], win(3), () => [0, 0.7, 3].forEach((wob, i) => IB.ink(ctx, IB.line(50, 60 + i * 70, 540, 60 + i * 70), { w: 4, wob, seed: 31, smooth: false })), 'IB.line · wob: 0 · 0.7 · 3');
+    SAMPLE.cell(ctx, c[4], win(4), () => {
+      IB.ink(ctx, IB.rect(60, 50, 200, 160), { closed: true, smooth: false, fill: IB.C.yellow, w: 3, seed: 41 });
+      IB.ink(ctx, IB.ellipse(420, 130, 110, 80), { closed: true, fill: IB.C.paper, w: 3, seed: 42 });
+    }, 'closed, fill — IB.rect, IB.ellipse');
+    // drawn on, one drawing every two frames over a second, then held a second
+    const on = Math.min(1, IB.drawn(IB.twos(t % 2), 0) / 12);
+    SAMPLE.cell(ctx, c[5], win(5), () => {
+      IB.ink(ctx, WAVE(40, 70, 500), { w: 5, seed: 51, to: on });
+      IB.ink(ctx, IB.ellipse(295, 185, 200, 48, 20), { closed: true, fill: IB.C.sky, w: 4, seed: 52, to: on });
+    }, `from/to — to: ${on.toFixed(2)}, on twos`);
+    // one side of a face, mirrored about its centre line
+    const half = [[290, 30], [220, 40], [170, 90], [160, 160], [190, 220], [290, 240]], m = IB.mirror(290);
+    SAMPLE.cell(ctx, c[6], win(6), () => {
+      IB.ink(ctx, half, { w: 4, seed: 61 }); IB.ink(ctx, m(half), { w: 4, seed: 62 });
+      for (const side of [(p) => p, m]) IB.ink(ctx, side([[220, 120], [245, 110], [265, 120]]), { w: 4, seed: 63 });
+    }, 'IB.mirror(cx) — draw one side, mirror it');
+    // a bulge travelling down a hose, one step every two frames
+    const HOSE = [[50, 60], [200, 70], [300, 160], [420, 200], [540, 120]];
+    SAMPLE.cell(ctx, c[7], win(7), () => {
+      IB.tube(ctx, HOSE, { w: 16, fill: IB.C.green, smooth: true, seed: 71 });
+      const [x, y] = IB.along(HOSE, (IB.drawn(IB.twos(t % 2), 0) % 13) / 12);
+      IB.oval(ctx, x, y, 17, 17, { fill: IB.C.green, w: 3, seed: 72 });
+    }, 'IB.along(path, u) — on twos');
+    SAMPLE.cell(ctx, c[8], win(8), () => [1, 2, 3, 4].forEach((seed, i) => IB.ink(ctx, IB.line(50, 50 + i * 55, 540, 50 + i * 55), { w: 6, wob: 2.5, seed, smooth: false })), 'seed: 1 · 2 · 3 · 4 — the same line by hand');
+  },
+});
+</script>

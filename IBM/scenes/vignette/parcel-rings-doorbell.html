@@ -12,7 +12,7 @@
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/props/home.js"></script>
 <script>
-/* 택배 상자가 다리로 걸어 와 문 옆에 서서 초인종을 올려다보고, 뛰어올라 보지만 한 뼘이 모자라 쿵 떨어지고, 발을 동동 구른 뒤 더 깊이 웅크렸다 뛰어 머리(테이프 붙은 윗면)로 버튼을 누른다. 버튼에 불이 들어오면 "배달 왔어요!" 하고 기다린다. 원본에 없는 창작 장면이자 부품 시트의 조립 시험(계획 5단계)으로, 다섯 장면에서 온 부품만으로 지었다: 걷고 뛰는 상자(metaphor/parcels-board-conveyor), 문·액자·화분(acting/walk-cycle-bag), 호출 버튼(variation/hall-whip-button, 인서트 크기를 0.22배로 줄여 벽에 붙임), 쿵(acting/lift-heavy-box), 말풍선. 전달하는 생각: 한 번 실패한 뒤의 준비는 더 깊다.
+/* 택배 상자가 다리로 걸어 와 문 옆에 서서 초인종을 올려다보고, 뛰어올라 보지만 한 뼘이 모자라 쿵 떨어지고, 발을 동동 구른 뒤 더 깊이 웅크렸다 뛰어 머리(테이프 붙은 윗면)로 버튼을 누른다. 버튼에 불이 들어오면 "배달 왔어요!" 하고 기다린다. 원본에 없는 창작 장면이자 부품 시트의 조립 시험(계획 5단계)으로, 다섯 장면에서 온 부품만으로 지었다: 걷고 뛰는 상자(metaphor/parcels-board-conveyor), 문·액자·화분(acting/walk-cycle-bag), 호출 버튼(variation/hall-whip-button, opts.s 0.22로 줄여 벽에 붙임: 선은 와이드 굵기 3 px를 지킨다), 쿵(acting/lift-heavy-box), 말풍선. 전달하는 생각: 한 번 실패한 뒤의 준비는 더 깊다.
    Motion notes: one locked shot, 7 s, all on twos except the last second's foot tap on threes. The parcel (170 x 140, legs 74 px) walks in at 190 px/s, swapping its two foot sets and tilting +-0.035 every 6 frames, the parcels' own walk, the planted foot staying put in stage x while the body walks over it; it stops at 2.5 s rocking back 0.05 rad for one drawing, and at 2.67 s tips its top back 0.08 rad for one drawing to look up at the button. Hop 1 at 3.0 s: one crouched drawing (16 px down, tilted back 0.09), two drawings in the air with the legs hanging (40 then 60 px up: its top stops 15 px short of the button's plate), a landing crouch with a thud on the floor for 2 drawings, standing. Then three stamping drawings (tilt +-0.04, one foot up). Hop 2 at 4.5 s: a deeper crouch held 2 drawings (24 px, 0.12 rad), up 125 px in one drawing so the middle of its top (the tape) presses the cap: the button sinks and lights on that drawing with a burst for 2 drawings, down through 70 px, landing crouch, thud, standing. Bubble at 5.0 s. From 6.0 s the only thing that moves is one foot tapping on threes. The button keeps its light. Three colours: the yellow door, the lit button's blue and the indicator's mint; the parcel is paper white. */
 const FLOOR = 900, LEG = 74, Y0 = FLOOR - 12 - LEG, W = 170, H = 140, X0 = 980, XS = 1450, BTN = [1450, 520], BS = 0.22;
 const WALK_END = (XS - X0) / 190;   // 2.47 s
@@ -53,7 +53,7 @@ MG.scene({
     IB.pictureFrame(ctx, [560, 360], { w: 210, h: 160, seed: 700 });
     IB.door(ctx, [1060, FLOOR]);
     IB.pottedPlant(ctx, [1760, FLOOR], IB.PLANTS.bushy);
-    ctx.save(); ctx.translate(BTN[0], BTN[1]); ctx.scale(BS, BS); IB.callButton(ctx, [0, 0], { pressed: pressed(tt) }); ctx.restore();
+    IB.callButton(ctx, BTN, { pressed: pressed(tt) }, { s: BS });
     const b = IB.drawn(tt, 108 / 24);
     if (b >= 0 && b < 2) IB.burst(ctx, [BTN[0], BTN[1] - 30], { n: 5, a0: -2.9, da: 0.6, r0: 70 + b * 16, r1: 110 + b * 12, w: 3, seed: 560 + b * 7 });
     // the parcel, its smear and the thuds of its landings

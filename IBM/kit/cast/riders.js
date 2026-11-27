@@ -13,7 +13,7 @@
     vents: { who: 'vents', skin: C.skin[4], top: C.navy, arm: C.navy, leg: C.paper, shoe: C.paper, watch: true },
   };
 
-  // 성진(남김): face() and parts of HAIR are near-copies (about 1 px apart) of figure.js's private head, hairBack and hairFront. Moving them here kept every pixel; merging the two would redraw one of them, so it waits for the upgrade round (plan 4-3, the tandem figures).
+  // 성진: face() and parts of HAIR are near-copies (about 1 px apart) of figure.js's private head, hairBack and hairFront. Moving them here kept every pixel; merging the two would redraw one of them, so it waits for the upgrade round (plan 4-3, the tandem figures).
   /* The face every rider shares, in head units (profile radius about 22) facing +x: skull, nose and chin as one shape, an ear, an eye, a mouth. */
   function face(ctx, skin, p, seed) {
     IB.ink(ctx, [[-2, -22], [14, -16], [19, -4], [27, 3], [19, 7], [17, 17], [3, 23], [-15, 15], [-21, -4]], { closed: true, fill: skin, w: LW, seed });

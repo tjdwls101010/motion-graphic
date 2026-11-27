@@ -11,7 +11,7 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 출연진 견본: 인물 리그 IB.figure의 손 네 가지(pose.hand: relax, grip, open, point), 긴소매의 소맷단 선, 앞 그림을 pose.prev로 넘겨 머리와 묶은 머리가 한 장 늦게 따라오는 움직임. 손 길이는 키의 0.05라 와이드(h 330)에서 15 px쯤이고, 거기서는 손가락 선 없이 실루엣으로만 구별된다. 쥔 손의 마디 선과 소맷단 선은 h 400 이상의 미디엄에서만 그린다(원본 미디엄 샷의 케이크 앞 가족과 줄 당기는 여자에서 읽음). 따라오는 움직임은 장면이 자기 박자 격자에서 바로 앞 그림을 prev로 넘길 때만 생긴다: prev = 그 시각의 그림 시작(IB.twos(t)) 1e-4초 전의 포즈. 동작이 멈춘 다음 그림은 prev가 자기 자신이라 제자리에 서고, 그 뒤의 정지는 꼼짝 않는다(acting/lift-heavy-box). 아래 오른쪽 칸은 같은 숙임을 prev 없이(왼쪽)와 prev와 함께(오른쪽) 그린 것이다. */
+/* 출연진 견본: 인물 리그 IB.figure의 손 네 가지(pose.hand: relax, grip, open, point), 긴소매의 소맷단 선, 앞 그림을 pose.prev로 넘겨 머리와 묶은 머리가 한 장 늦게 따라오는 움직임. 손 길이는 키의 0.05라 와이드(h 330)에서 17 px쯤이고, 거기서는 손가락 선 없이 실루엣으로만 구별된다. 쥔 손의 마디 선과 소맷단 선은 h 400 이상의 미디엄에서만 그린다(원본 미디엄 샷의 케이크 앞 가족과 줄 당기는 여자에서 읽음). 따라오는 움직임은 장면이 자기 박자 격자에서 바로 앞 그림을 prev로 넘길 때만 생긴다: prev = 그 시각의 그림 시작(IB.twos(t)) 1e-4초 전의 포즈. 동작이 멈춘 다음 그림은 prev가 자기 자신이라 제자리에 서고, 그 뒤의 정지는 꼼짝 않는다(acting/lift-heavy-box). 아래 오른쪽 칸은 같은 숙임을 prev 없이(왼쪽)와 prev와 함께(오른쪽) 그린 것이다. */
 const FLOOR = 930, KINDS = ['relax', 'grip', 'open', 'point'];
 const WIDE = { ...IB.PEOPLE.trader, h: 330, dir: 1, seed: 20 }, MED = { ...IB.PEOPLE.trader, h: 520, dir: 1, seed: 24 };
 // arms up and out, so both hands are clear of the body
@@ -21,7 +21,7 @@ const reach = (x, look, kind) => {
 };
 // a quick bow and back on twos, then a hold: the lean of each drawing (one per 2 frames); shifted 7 drawings so the 0.72 poster lands on the way back up, where the trail shows
 const BOW = [0, 0, 0, 0.25, 0.55, 0.7, 0.7, 0.7, 0.45, 0.15, 0, 0, 0, 0, 0, 0];
-const bow = (x, look, tt) => ({ ...IB.stand(x, FLOOR, look), lean: BOW[(Math.round(tt * 12) + 7) % BOW.length], nod: 0 });
+const bow = (x, look, t) => ({ ...IB.stand(x, FLOOR, look), lean: BOW[(Math.floor(t * 12 + 1e-6) + 7) % BOW.length], nod: 0 });   // floors raw time to its drawing, so the time 1e-4 before a drawing starts is the drawing before
 MG.scene({
   title: 'cast / figure-hands',
   duration: 4, ref: null, fps: 24, loop: true,
@@ -37,12 +37,12 @@ MG.scene({
       SAMPLE.cell(ctx, c[4 + i], [cx - c[4 + i][2] / 2, p.hip[1] - 0.42 * MED.h, c[4 + i][2], c[4 + i][3]], () => IB.figure(ctx, p, MED), `hand: '${kind}' (h 520), cuff`);
     });
     // the same bow without and with prev, side by side; pony and bun swing, the head trails
-    const tt = IB.twos(t), prevT = tt - 1e-4;
+    const prevT = IB.twos(t) - 1e-4;
     SAMPLE.cell(ctx, wide, SAMPLE.fit(wide, [960, FLOOR]), () => {
       floor(960, 700);
       const A = { ...IB.PEOPLE.passenger, h: 330, dir: 1, seed: 30 }, B = { ...A, seed: 31 };
-      IB.figure(ctx, bow(800, A, tt), A);
-      IB.figure(ctx, { ...bow(1120, B, tt), prev: bow(1120, B, prevT) }, B);
+      IB.figure(ctx, bow(800, A, t), A);
+      IB.figure(ctx, { ...bow(1120, B, t), prev: bow(1120, B, prevT) }, B);
     }, 'the same bow: no prev | pose.prev = the drawing before');
   },
 });

@@ -63,12 +63,12 @@
   /* footLift(pitch, h) — how far to raise the ankle of a pitched foot so the lowest point of its sole still touches the floor: the toe when the heel is up (pitch > 0), the heel when the toe is up. */
   IB.footLift = (pitch, h) => Math.max(0, (pitch > 0 ? 0.128 : -0.046) * Math.sin(pitch) + 0.05 * Math.cos(pitch) - 0.05) * h;
 
-  /* A hand at the wrist, pointing along `ang`, in one of four drawings (r = 0.021 h, so a hand is 2.4 r long: 15 px at h 300, 26 px at h 520). The thumb is on the -y side of the forearm's axis.
+  /* A hand at the wrist, pointing along `ang`, in one of four drawings (r = 0.021 h, so a hand is 2.4 r long: 15 px at h 300, 26 px at h 520). The thumb is on the -y side of the forearm's axis for a figure facing right; dir -1 mirrors it.
        relax  a mitten: palm and a thumb, fingers together (a hanging or resting hand)
        grip   a fist closed round whatever the scene drew first: a rounder block with the thumb laid over the fingers
        open   fingers spread, each its own outlined shape, the palm drawn over their roots (a wave, a hand thrown up, a hand shown)
        point  the fist with the index finger out
-     The finger lines are the reference's medium shots (the family at the cake, the woman with the rope); at wide size they would close up into mush, so a fist only gets its knuckle lines when r is 8 px or more (h 380 and up), and spread fingers are told apart by their silhouette alone. */
+     The finger lines are the reference's medium shots (the family at the cake, the woman with the rope); at wide size they would close up into mush, so a fist only gets its knuckle lines from h 400, like the cuff of a long sleeve, and spread fingers are told apart by their silhouette alone. */
   const capsule = ([x0, y0], [x1, y1], wd) => {   // the outline of a finger from its root to its rounded tip
     const a = Math.atan2(y1 - y0, x1 - x0), nx = -Math.sin(a) * wd / 2, ny = Math.cos(a) * wd / 2, pts = [[x0 + nx, y0 + ny]];
     for (let i = 0; i <= 6; i++) { const t = a + Math.PI / 2 - (i / 6) * Math.PI; pts.push([x1 + Math.cos(t) * wd / 2, y1 + Math.sin(t) * wd / 2]); }
@@ -77,10 +77,11 @@
   };
   const FIST = [[-0.4, -0.85], [0.5, -1.05], [1.35, -0.85], [1.75, -0.2], [1.7, 0.5], [1.2, 1.0], [0.3, 1.0], [-0.4, 0.82]];
   const SPREAD = [[-0.55, 1.55], [-0.18, 1.75], [0.18, 1.65], [0.52, 1.3]];   // fingers of an open hand: [angle off the axis, length], index first
-  function hand(ctx, wrist, ang, h, skin, lw, seed, kind) {
+  function hand(ctx, wrist, ang, h, skin, lw, seed, kind, dir = 1) {
     ctx.save();
     ctx.translate(wrist[0], wrist[1]);
     ctx.rotate(ang);
+    ctx.scale(1, dir);   // a figure facing left is the mirror image of one facing right: its thumb stays on top
     const r = h * 0.021, k = (pts) => pts.map(([x, y]) => [x * r, y * r]), fw = 0.62 * r, fl = Math.max(1, lw * 0.6);   // a finger is thick enough to show skin inside a thinner line
     const fist = () => {
       IB.ink(ctx, k(FIST), { closed: true, fill: skin, w: lw, seed });
@@ -88,7 +89,7 @@
     };
     if (kind === 'grip') {
       fist();
-      if (r >= 8) [[[1.72, 0.12], [1.3, 0.16]], [[1.6, 0.6], [1.22, 0.6]]].forEach((ln, i) => IB.ink(ctx, k(ln), { w: lw * 0.6, seed: seed + 2 + i }));   // knuckles
+      if (h >= 400) [[[1.72, 0.12], [1.3, 0.16]], [[1.6, 0.6], [1.22, 0.6]]].forEach((ln, i) => IB.ink(ctx, k(ln), { w: lw * 0.6, seed: seed + 2 + i }));   // knuckles
     } else if (kind === 'point') {
       IB.ink(ctx, capsule([1.2 * r, -0.62 * r], [3.1 * r, -0.66 * r], fw), { closed: true, fill: skin, w: fl, seed: seed + 5 });
       fist();
@@ -97,7 +98,7 @@
       IB.ink(ctx, capsule([0.3 * r, -0.4 * r], [0.3 * r + Math.cos(-1.35) * 1.15 * r, -0.4 * r + Math.sin(-1.35) * 1.15 * r], fw * 1.05), { closed: true, fill: skin, w: fl, seed: seed + 9 });   // the thumb, well apart
       const palm = IB.ellipse(0.55 * r, 0.05 * r, 0.95 * r, 0.85 * r, 12);
       IB.ink(ctx, palm, { closed: true, fill: skin, w: 0, seed: seed + 10 });   // over the roots of the fingers: no line across them
-      IB.ink(ctx, palm, { closed: true, w: lw, seed: seed + 11, from: 0.3, to: 0.7 });   // the heel of the hand, the side away from the fingers
+      IB.ink(ctx, palm, { closed: true, w: lw, seed: seed + 11, from: 0.14, to: 0.84 });   // the outline from the little finger round the heel of the hand to the thumb: none across the roots of the fingers
     } else {
       IB.ink(ctx, [[-r * 0.4, -r * 0.8], [r * 1.2, -r * 0.95], [r * 2.3, -r * 0.45], [r * 2.4, r * 0.4], [r * 1.1, r * 0.95], [-r * 0.4, r * 0.8]], { closed: true, fill: skin, w: lw, seed });
       IB.ink(ctx, [[r * 0.3, -r * 0.8], [r * 1.0, -r * 1.7], [r * 1.5, -r * 0.9]], { w: lw * 0.8, seed: seed + 1 });
@@ -140,8 +141,8 @@
     ctx.rotate(ang * dir);
     ctx.scale(s * dir, s);
     const w = lw / s;
-    if (swing) {   // hair behind the head trails the move by one drawing: turned about the nape, + lifts it up and back
-      ctx.save(); ctx.translate(-15, 5); ctx.rotate(swing); ctx.translate(15, -5);
+    if (swing) {   // hair behind the head trails the move by one drawing, turned about the nape: + swings a ponytail up and back, and tips a bun back
+      ctx.save(); ctx.translate(-15, 5); ctx.rotate(look.hair === 'bun' ? -swing : swing); ctx.translate(15, -5);   // a bun sits above the nape, so trailing back is the other turn
       hairBack(ctx, look, w, seed + 20);
       ctx.restore();
     } else hairBack(ctx, look, w, seed + 20);
@@ -167,8 +168,8 @@
 
   /* figure(ctx, pose, look) — draw one person.
      pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], hand: ['relax', 'relax'], grip: [false, false], prev }
-           prev is the pose of the drawing shown just before this one (a plain pose, without a prev of its own). With it the head and the hair behind it trail the move by one drawing: the head keeps half of the lean and nod it just left, and a ponytail, bun or curls swing against the way the hips moved and the way the spine tipped. The drawing after a move has stopped has prev equal to itself, so the trail settles there and the hold that follows is dead still. Without prev nothing trails. Pass it from the scene's own drawing grid: prev = the pose at IB.twos(t) - 1e-4 (or IB.threes for a part on threes), so it changes only where the drawings do.
-           hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. hand picks each hand's drawing: 'relax' | 'grip' | 'open' | 'point' (see hand() above); grip: true is the older way to say 'grip'. Start from IB.stand() and move what the pose changes.
+           prev is the pose of the drawing shown just before this one (a plain pose, without a prev of its own). With it the head and the hair behind it trail the move by one drawing: the head keeps the whole tilt the spine's lean gave it in the drawing before and half of the nod it just left, and a ponytail, bun or curls swing against the way the hips moved and the way the spine tipped. The drawing after a move has stopped has prev equal to itself, so the trail settles there and the hold that follows is dead still. Without prev nothing trails. Pass it from the scene's own drawing grid: prev = the pose of the drawing before, e.g. the pose at IB.twos(t) - 1e-4 when the pose function floors raw time to its drawing (it must floor: a function that rounds would give the same drawing back). Do not pass it through a tremble that flips between two poses each drawing (a strain, a shiver): a one-drawing lag averages the two and the tremble dies.
+           hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. hand picks each hand's drawing: 'relax' | 'grip' | 'open' | 'point' (see hand() above); grip: true is the older way to say 'grip'; hand wins over grip. Start from IB.stand() and move what the pose changes.
      look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, face, seed }
            h is the standing height in px, dir 1 faces right and -1 left. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
      Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands), and drag: [dx, dy], half of how far the hips moved since prev and the other way, for a hanging thing (a bag, a cord) to trail by. Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
@@ -209,7 +210,7 @@
           IB.ink(ctx, [[c[0] - uy * hw, c[1] + ux * hw], [c[0] + uy * hw, c[1] - ux * hw]], { w: lw * 0.75, smooth: false, seed: sd + 9, taper: false });
         }
       }
-      hand(ctx, A.e, ang, h, skin, lw * 0.9, sd + 12, kinds[i]);
+      hand(ctx, A.e, ang, h, skin, lw * 0.9, sd + 12, kinds[i], d);
     };
 
     if (only !== 'near') {

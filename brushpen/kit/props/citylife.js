@@ -62,7 +62,7 @@
     IB.ink(ctx, [[X(330), water - 120 * s], [X(130), water - 440 * s], [X(10), water - 520 * s], [X(-120), water - 440 * s], [X(-230), water - 50 * s]], { w: lw * 0.5, smooth: false, seed: seed + 40, taper: false });   // the stays, straight
   };
 
-  /* shinkansen(ctx, [nose, rail], { len, s, lw }) — a bullet train heading right, its long duckbill nose at `nose`: white body, a blue line under the windows, a row of small windows, the cars' joints. len is the visible length behind the nose (it runs off the left edge). A machine: move it on ones, fast (an 80 m/s pass crosses a wide shot in a quarter second). */
+  /* shinkansen(ctx, [nose, rail], { len, s, lw }) — a bullet train heading right, its long duckbill nose at `nose`: white body, a blue line under the windows, a row of small windows, the cars' joints. len is the visible length behind the nose (it runs off the left edge); wake (a frame number) adds three speed lines behind the tail, new every frame. A machine: move it on ones, fast (an 80 m/s pass crosses a wide shot in a quarter second). */
   IB.shinkansen = (ctx, [nose, rail], o = {}) => {
     const s = o.s || 1, lw = o.lw || 3, seed = o.seed || 1420, len = o.len || 2400, H = 120 * s, top = rail - H - 10 * s;
     const body = [[nose, rail - 18 * s], [nose - 30 * s, rail - 34 * s], [nose - 90 * s, rail - 62 * s], [nose - 170 * s, rail - 92 * s], [nose - 260 * s, top + 4 * s], [nose - 300 * s, top], [nose - len, top], [nose - len, rail - 10 * s], [nose - 10 * s, rail - 10 * s]];
@@ -71,6 +71,7 @@
     IB.ink(ctx, [[nose - 180 * s, top + 22 * s], [nose - 250 * s, top + 8 * s]], { w: lw, seed: seed + 2 });   // the cab window
     for (let x = nose - 330 * s; x > nose - len; x -= 40 * s) IB.oval(ctx, x, top + 38 * s, 10 * s, 9 * s, { fill: C.sky, w: lw * 0.5, seed: seed + 3 + Math.round(x), n: 8 });
     for (let x = nose - 650 * s; x > nose - len; x -= 500 * s) IB.seg(ctx, x, top + 4, x, rail - 12 * s, { w: lw, seed: seed + 5 + Math.round(x) });
+    if (o.wake != null) for (let i = 0; i < 3; i++) IB.seg(ctx, nose - len - 30 - i * 40, rail - 40 - i * 22, nose - len - 260 - i * 90, rail - 40 - i * 22, { w: 2.6, seed: seed + 30 + i + o.wake });   // speed lines behind the tail, re-seeded each frame (o.wake)
   };
 
   /* cableCar(ctx, at, { s, sway, lw }) — a cable car hanging from its grip: the arm from the cable point `at` down to a rounded cabin with a window band; sway tips it (rad) as it starts or stops. Draw the cable first (IB.ink a line between the stations). */

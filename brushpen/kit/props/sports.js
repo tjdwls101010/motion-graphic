@@ -1,4 +1,4 @@
-/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside and the arena's in IB.courtside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
+/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside and the arena's in IB.courtside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits), the clock over a backboard (IB.gameClock) and the penalty mark (IB.penaltySpot). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG;
   const MESH = '#9a9a9a';   // net strings: lighter than ink so the players and the ball read over them
@@ -190,6 +190,16 @@
     IB.tube(ctx, [[x, floor], [x, top]], { w: 0.035 * M, edge: lw * 0.8, fill: C.paper, seed });
     const fw = 0.4 * M, fh = 0.3 * M, pts = w ? [[x, top], [x + fw * 0.5, top + fh * 0.12], [x + fw, top - fh * 0.05], [x + fw * 0.95, top + fh * 0.9], [x + fw * 0.5, top + fh * 1.05], [x, top + fh]] : [[x, top], [x + fw * 0.45, top - fh * 0.1], [x + fw, top + fh * 0.08], [x + fw * 0.98, top + fh * 1.02], [x + fw * 0.45, top + fh * 0.88], [x, top + fh]];
     IB.ink(ctx, pts, { closed: true, fill: o.fill || C.yellow, w: lw * 0.8, seed: seed + 1 + w });
+  };
+
+  /* penaltySpot(ctx, [x, floor], opts) — the penalty mark on the grass: a small white disc seen almost edge-on (9 x 3 px at 140 px a metre). opts: s, seed. */
+  IB.penaltySpot = (ctx, [x, floor], o = {}) => { const s = o.s || 1; IB.oval(ctx, x, floor + 2, 9 * s, 3 * s, { fill: C.paper, w: 1.5, n: 8, seed: o.seed || 3 }); };
+
+  /* gameClock(ctx, [cx, cy], text, opts) — the small game clock hung over a backboard, as arenas have one there: a charcoal box 124 x 52 with the time in segment digits (yellow, white once it has run out: opts.out), and its hanger down to `hangTo` (a point on the board's top). */
+  IB.gameClock = (ctx, [cx, cy], text, o = {}) => {
+    IB.ink(ctx, [[cx - 62, cy - 26], [cx + 62, cy - 26], [cx + 62, cy + 26], [cx - 62, cy + 26]], { closed: true, smooth: false, fill: C.charcoal, w: 2.8, seed: 850 });
+    if (o.hangTo) IB.seg(ctx, cx, cy + 26, o.hangTo[0], o.hangTo[1], { w: 2.6, seed: 851 });
+    IB.segDigits(ctx, [cx - 50, cy - 15], text, { size: 30, color: o.out ? C.paper : C.yellow, seed: 852 });
   };
 
   /* pitchside(ctx, [x0, x1], floor, opts) — the backdrop of a football shot in one call: the crowd (IB.stands, top at floor - 470), the hoarding (IB.adBoards, 160 px back) and the green chalk smear of the grass along the floor line. opts: cheer, colors (the two teams), seed. */

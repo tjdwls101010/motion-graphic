@@ -5,6 +5,7 @@
    3. Only ink.js (which creates IB) and time.js load first; every other kit file may load in any order, so none of them may read another file's IB.* name while it loads (const F = IB.FIG at the top of a file is undefined if figure.js comes later): outside a function body, a file reads only its own names and those of ink.js and time.js.
    4. Every character's MOVE (a move it can play: IB.folder.MOVE.kick) is a list of [frame, state] rows from the move's first drawing, frames ascending, so a scene places any of them with IB.play and reads it with IB.held.
    5. Every IB.* part a kit file exports is used in the code of at least one part sample (<ref>/parts/), so the part sheet is the whole kit; naming a part in a sample's comment does not count. The few names with nothing to draw are listed in NOT_SHOWN with the reason.
+   6. A scene only assembles parts: its script calls none of the drawing primitives (IB.ink, IB.box, IB.oval, IB.seg, IB.tube, IB.ellipse, IB.limb, IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp, IB.crease) and no canvas drawing (ctx.fill, ctx.stroke, ctx.arc ...). A drawing a scene needs goes into <ref>/kit/ as a part, where the next scene can use it (README.md; the grep in brushpen/README.md checks the same thing by hand).
    Comments are stripped before names are read: kit comments name parts of other files on purpose (a torch's light is IB.darkness). */
 const fs = require('fs');
 const path = require('path');
@@ -110,6 +111,16 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
     const shown = new Set(pages.filter(([kind]) => kind === 'parts').flatMap(([, fam, s]) => [...names(code(fs.readFileSync(path.join(sampleDir, fam, s), 'utf8')))]));
     const missing = Object.keys(owner).filter((n) => !shown.has(n) && !(NOT_SHOWN[ref] || {})[n]).sort();
     if (missing.length) fail(`${ref}: ${missing.length} parts are on no part sample: ${missing.map((n) => 'IB.' + n + ' (' + owner[n] + ')').join(', ')}`);
+  }
+}
+
+// 6. scenes assemble parts and draw nothing themselves
+const DRAWS = /\bIB\.(ink|box|oval|seg|tube|ellipse|limb|peg|hose|boot|mitt|clasp|crease)\(|\bctx\.(fill|stroke|fillRect|strokeRect|arc|ellipse|quadraticCurveTo|bezierCurveTo|fillText)\(/;
+for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROOT, d, 'kit')) && fs.existsSync(path.join(ROOT, d, 'scenes')))) {
+  const sceneFiles = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? sceneFiles(path.join(dir, e.name)) : e.name.endsWith('.html') ? [path.join(dir, e.name)] : []));
+  for (const f of sceneFiles(path.join(ROOT, ref, 'scenes'))) {
+    const code = [...fs.readFileSync(f, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => strip(m[1])).join('\n');
+    code.split('\n').forEach((ln, i) => { const m = ln.match(DRAWS); if (m) fail(`${path.relative(ROOT, f)} draws directly (${m[0]}...): make it a kit part`); });
   }
 }
 

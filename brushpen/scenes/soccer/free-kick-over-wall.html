@@ -110,7 +110,7 @@ MG.scene({
     IB.crop(ctx, IB.camera(CAMS, f));
     IB.pitchside(ctx, [-20, 2200], FLOOR, { cheer: cheerAt(f) });
     IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
-    if (f < KF) IB.oval(ctx, BALL0[0], FLOOR + 2, 9, 3, { fill: IB.C.paper, w: 1.5, n: 8, seed: 3 });
+    if (f < KF) IB.penaltySpot(ctx, [BALL0[0], FLOOR]);
     [2, 1, 0].forEach((n) => { const p = wall[n](f); IB.figure(ctx, p, lookOf(p, WALL[n])); });
     IB.figure(ctx, kicker(f), KICK);
     IB.figure(ctx, k, GK, 'far');

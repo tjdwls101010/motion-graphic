@@ -31,11 +31,9 @@ MG.scene({
     IB.cloud(ctx, [200, 620, 210, 58], { seed: 3 });
     IB.cloud(ctx, [1500, 1840, 160, 52], { seed: 4 });
     IB.namsanTower(ctx, [1450, 880], { h: 420, hill: 300 });
-    IB.ink(ctx, [[0, 880], [1920, 880]], { w: 3, seed: 5, taper: false });
+    IB.skyline(ctx, 880);
     // the stations and the two cables
-    [[LOW[0] - 70, LOW[1] - 10, 120], [HIGH[0] - 30, HIGH[1] - 20, 110]].forEach(([x, y, w], i) => IB.ink(ctx, [[x, y], [x + w, y], [x + w, y + 80], [x, y + 80]], { closed: true, smooth: false, fill: IB.C.paper, w: 3, seed: 10 + i }));
-    IB.ink(ctx, [LOW, HIGH], { w: 3, seed: 12, taper: false });
-    IB.ink(ctx, [[LOW[0], LOW[1] + GAP], [HIGH[0], HIGH[1] + GAP]], { w: 3, seed: 13, taper: false });
+    IB.cableway(ctx, LOW, HIGH, { gap: GAP });
     IB.cableCar(ctx, carAt(ff, true), { s: 0.8, sway: swayAt(ff), seed: 20 });
     IB.cableCar(ctx, carAt(ff, false), { s: 0.8, sway: -swayAt(ff), seed: 30 });
     // the roofs in front, a row of hanok seen over their walls

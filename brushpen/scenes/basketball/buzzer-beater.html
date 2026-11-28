@@ -94,9 +94,7 @@ MG.scene({
     IB.scoreboard(ctx, SB, { home: f >= SWISH + 4 ? 101 : 98, away: 99, clock: clockAt(t), clockColor: out ? IB.C.paper : IB.C.yellow }, { colors: [IB.C.yellow, IB.C.lavender], w: 560 });
     // the game clock over the backboard, as arenas hang one there: it is in the frame when the buzzer goes
     const BC = [BOARD - 0.55 * M, FLOOR - 4.3 * M];
-    IB.ink(ctx, [[BC[0] - 62, BC[1] - 26], [BC[0] + 62, BC[1] - 26], [BC[0] + 62, BC[1] + 26], [BC[0] - 62, BC[1] + 26]], { closed: true, smooth: false, fill: IB.C.charcoal, w: 2.8, seed: 850 });
-    IB.seg(ctx, BC[0], BC[1] + 26, BC[0] + 0.3 * M, FLOOR - 3.95 * M, { w: 2.6, seed: 851 });
-    IB.segDigits(ctx, [BC[0] - 50, BC[1] - 15], clockAt(t).slice(2), { size: 30, color: out ? IB.C.paper : IB.C.yellow, seed: 852 });
+    IB.gameClock(ctx, BC, clockAt(t).slice(2), { out, hangTo: [BC[0] + 0.3 * M, FLOOR - 3.95 * M] });
     const bz = IB.drawn(tt, BUZZ / 24);
     if (bz >= 0 && bz < 4) { IB.burst(ctx, [SB[0], SB[1] + 65], { n: 8, a0: 0, da: (2 * PI) / 8, r0: 300 + (bz % 2) * 12, r1: 340 + (bz % 2) * 16, w: 3.4, seed: 80 + bz }); IB.burst(ctx, BC, { n: 7, a0: 0, da: (2 * PI) / 7, r0: 80 + (bz % 2) * 8, r1: 110 + (bz % 2) * 10, w: 3.2, seed: 90 + bz }); }
     IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });

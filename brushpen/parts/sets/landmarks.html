@@ -9,7 +9,7 @@
 <script src="../../kit/sets/landmarks.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 배경 세트 견본: 세계 도시의 랜드마크 IB.liberty, IB.empireState(뉴욕), IB.bigBen, IB.towerBridge, IB.londonEye(런던), IB.eiffel, IB.arcTriomphe(파리), IB.tokyoTower, IB.torii, IB.fuji(도쿄), IB.namsanTower, IB.gwanghwamun, IB.hanok, IB.lotteTower(서울), IB.operaHouse(시드니), IB.colosseum(로마), IB.pyramids(기자). 모두 원본의 먹선 룩으로: 평평한 채움, 3 px 외곽선, 디테일은 한 획, 글자와 로고는 없다. 바닥점과 높이 h로 놓고, 움직이는 것은 상태로 받는다: 타워 브리지는 도개교가 열리고(lift, 1프레임 단위 기계), 런던 아이는 돌고(rot), 빅벤은 시각(time)을, 에펠탑은 저녁의 반짝임(sparkle, 2프레임마다 바꾼다)을 받는다. 빨강은 그것이 곧 그 랜드마크인 곳(도쿄 타워, 도리이)에만 쓴다. */
+/* 배경 세트 견본: 세계 도시의 랜드마크 IB.liberty, IB.empireState(뉴욕), IB.bigBen, IB.towerBridge, IB.londonEye(런던), IB.eiffel, IB.arcTriomphe(파리), IB.tokyoTower, IB.torii, IB.fuji(도쿄), IB.namsanTower, IB.gwanghwamun, IB.hanok, IB.lotteTower(서울), IB.operaHouse(시드니), IB.colosseum(로마), IB.pyramids(기자), 그 아래의 땅: 스카이라인 선 IB.skyline, 철둑 IB.embankment, 케이블카 정류장과 줄 IB.cableway. 모두 원본의 먹선 룩으로: 평평한 채움, 3 px 외곽선, 디테일은 한 획, 글자와 로고는 없다. 바닥점과 높이 h로 놓고, 움직이는 것은 상태로 받는다: 타워 브리지는 도개교가 열리고(lift, 1프레임 단위 기계), 런던 아이는 돌고(rot), 빅벤은 시각(time)을, 에펠탑은 저녁의 반짝임(sparkle, 2프레임마다 바꾼다)을 받는다. 빨강은 그것이 곧 그 랜드마크인 곳(도쿄 타워, 도리이)에만 쓴다. */
 const C = IB.C;
 const CELLS = [
   ['IB.liberty', (k) => IB.liberty(ctxRef.c, [960, 900], { h: 520 })],
@@ -20,8 +20,8 @@ const CELLS = [
   ['IB.eiffel({ sparkle })', (k) => IB.eiffel(ctxRef.c, [960, 900], { h: 560, sparkle: k % 2 })],
   ['IB.arcTriomphe', () => IB.arcTriomphe(ctxRef.c, [960, 900], { h: 300 })],
   ['IB.tokyoTower', () => IB.tokyoTower(ctxRef.c, [960, 900], { h: 560 })],
-  ['IB.torii + IB.fuji', () => { IB.fuji(ctxRef.c, [960, 900], { w: 900, h: 300 }); IB.torii(ctxRef.c, [960, 900], { h: 260 }); }],
-  ['IB.namsanTower', () => IB.namsanTower(ctxRef.c, [960, 900], { h: 380, hill: 170 })],
+  ['IB.torii + IB.fuji, IB.skyline, IB.embankment', () => { IB.fuji(ctxRef.c, [960, 820], { w: 900, h: 300 }); IB.skyline(ctxRef.c, 820, { x0: 600, x1: 1320 }); IB.embankment(ctxRef.c, 860, { x0: 600, x1: 1320 }); IB.torii(ctxRef.c, [960, 900], { h: 260 }); }],
+  ['IB.namsanTower + IB.cableway', () => { IB.namsanTower(ctxRef.c, [1060, 900], { h: 380, hill: 170 }); IB.cableway(ctxRef.c, [720, 760], [1000, 700], { gap: 16 }); }],
   ['IB.gwanghwamun', () => IB.gwanghwamun(ctxRef.c, [960, 900], { h: 320 })],
   ['IB.hanok', () => { IB.hanok(ctxRef.c, [780, 900], { w: 340, h: 200 }); IB.hanok(ctxRef.c, [1140, 900], { w: 300, h: 180, seed: 1170 }); }],
   ['IB.lotteTower', () => IB.lotteTower(ctxRef.c, [960, 900], { h: 560 })],

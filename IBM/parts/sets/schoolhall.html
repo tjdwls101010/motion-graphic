@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / schoolhall</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/schoolhall.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 학교 복도 — 교실 미닫이문 IB.classDoor(open 0..1, 문이 벽 속으로 밀려 들어가고 어두운 문간이 드러난다), 사물함 줄 IB.lockerRow(문마다 열림 0..1, 왼쪽 경첩으로 보는 사람 쪽으로 돌아 나오며 끝이 0.1 w까지 커지고, 안은 어둡고 선반 하나)와 손이 잡는 손잡이 자리 IB.lockerEdge, 벽의 전기 종 IB.schoolBell(정면에서 본 둥근 종과 그 밑의 타종 상자·망치. ring 0 정지, 1·2는 2프레임마다 바꾸는 두 그림: 종이 3 px, 0.09 rad 기울고 반대쪽 테에 망치가 붙고 양옆에 흔들림선 세 줄). 복도는 벽 없이 소품으로만 말하고 색을 빼서 흰 면과 검은 선으로 둔다: 색은 아이들 옷이 가져간다. 아이 키는 240 px(IB.PEOPLE.pupil, headK 1.3)이고 문은 그 1.7배, 사물함 두 칸(80 × 120 둘)은 아이 키쯤이라 위 칸 손잡이가 어깨 높이다. 쓰는 장면은 school/bell-locker-rush. */
+const FLOOR = 930, KID = { ...IB.PEOPLE.pupil, h: 240, dir: -1, seed: 40 };
+const LOCKERS = [700, FLOOR];
+MG.scene({
+  title: 'sets / schoolhall',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'sets/schoolhall.js — classroom door, lockers, bell');
+    const f = IB.frame(t), k = Math.floor(f / 2), c = SAMPLE.grid(4, 2);
+    // the door, opening on twos and holding
+    SAMPLE.cell(ctx, c[0], SAMPLE.window([420, FLOOR], c[0][2] * 1.25, c[0][3] * 1.25, 30), () => {
+      IB.smear(ctx, 420, FLOOR - 6, 380, { h: 12, seed: 9 });
+      const open = IB.inbetween([0, 0, 0, 0, 0, 0.3, 0.7, 0.92, 1], k % 24);
+      IB.classDoor(ctx, [230, FLOOR], { open });
+      IB.classDoor(ctx, [520, FLOOR], { open: 0, seed: 920 });
+    }, 'IB.classDoor([left, floor], { open })');
+    // the bell: still, then ringing on twos
+    SAMPLE.cell(ctx, c[1], [1460 - c[1][2] / 2, 300 - c[1][3] / 2, c[1][2], c[1][3]], () => {
+      const ringing = k % 24 >= 8, ring = ringing ? 1 + IB.alternate(f, 2) : 0;
+      IB.schoolBell(ctx, [1300, 300], { ring: 0 });
+      IB.schoolBell(ctx, [1580, 300], { ring, k });
+    }, 'IB.schoolBell(centre, { ring: 0 | 1 | 2, k })');
+    // the lockers: two doors at fixed swings, one swinging open and slammed, and a child's hand on its handle
+    const row = SAMPLE.span(c, 2, 3);
+    SAMPLE.cell(ctx, row, SAMPLE.window([960, FLOOR], row[2], row[3], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 6, 1100, { h: 12, seed: 10 });
+      const swing = IB.inbetween([0, 0, 0, 0.3, 0.55, 0.62, 0.62, 0.62, 0.62, 0.62, 0.62, 0.3, 0], k % 16);
+      IB.lockerRow(ctx, LOCKERS, { cols: 8, open: (i) => (i === 3 ? 0.5 : i === 4 ? 1 : i === 10 ? swing : 0) });
+      const hand = IB.lockerEdge(LOCKERS, 10, swing, { cols: 8 }), p = IB.stand(1195, FLOOR, KID);
+      p.hands[1] = swing > 0 ? hand : p.hands[1];
+      p.hand = ['relax', swing > 0 ? 'grip' : 'relax'];
+      p.lean = 0.05;
+      IB.figure(ctx, p, KID);
+    }, 'IB.lockerRow([left, floor], { cols, open: (i) => 0..1 }), IB.lockerEdge(at, i, open)');
+  },
+});
+</script>

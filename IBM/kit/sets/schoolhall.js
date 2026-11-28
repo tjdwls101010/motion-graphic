@@ -168,7 +168,7 @@
     return { edge };
   };
 
-  /* backpack(ctx, pose, look, opts) — a child's school backpack worn on a figure: a rounded bag on its back from 0.06 h to 0.23 h up the spine, a flap and a front pocket, turning with the spine's lean. It bobs a drawing late: give the pose its prev (IB.figure's) and the bag drops by 1.4 times how far the hip rose since the drawing before (and rises when the hip drops), at most 0.06 h, which on a run reads as the bag thumping on every stride. `part` 'bag' (draw before the figure) or 'strap' (the shoulder strap, drawn between the figure's far and near passes); omit it for both (school/late-gate-run). */
+  /* backpack(ctx, pose, look, opts) — a child's school backpack worn on a figure: a rounded bag on its back from 0.06 h to 0.23 h up the spine, a flap and a front pocket, turning with the spine's lean. It bobs a drawing late: give the pose its prev (IB.figure's) and the bag drops by 1.4 times how far the hip rose since the drawing before (and rises when the hip drops), at most 0.06 h, which on a run reads as the bag thumping on every stride. Draw it between the figure's two passes, IB.figure(..., 'far') then the backpack then IB.figure(..., 'near'): the bag sits on the back, so it covers the far arm when that arm swings back behind the body and the near arm swings over it. `part` 'bag' or 'strap' draws only one of the two (the strap goes over the shoulder to under the near arm); omit it for both (school/late-gate-run). */
   IB.backpack = (ctx, pose, look, o = {}) => {
     const { fill = C.lavender, part = null, seed = 1120 } = o, h = look.h, d = look.dir || 1, lean = pose.lean || 0;
     const lag = pose.prev ? clamp((pose.prev.hip[1] - pose.hip[1]) * 1.4, -0.06 * h, 0.06 * h) : 0;

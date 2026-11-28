@@ -12,7 +12,7 @@
 <script src="../../kit/sets/schoolhall.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 배경 세트 견본: 식당과 교문 — 칸 나뉜 식판 IB.lunchTray(밥, 국그릇, 반찬 둘은 자리 표시 도형)와 그것을 든 두 손목 자리 IB.trayGrips(먼 손은 식판 뒤 왼쪽 모서리 밑, 가까운 손은 앞 테 위), 끝에서 본 급식 탁자 IB.lunchTable(앉는 키 h에 맞춰 상판 0.43 h, 양쪽 긴 의자의 윗면이 IB.sit의 좌석 높이; layer 'bench'와 'table' 사이에 앉은 사람의 먼 쪽을 그린다), 빗각으로 본 미닫이 교문 IB.schoolGate(깊이 z px가 화면에서 (0.8 z, -0.3 z)로 놓여 길이 왼쪽에서 오른쪽으로 문을 지난다; 노란 문살 판이 레일 위를 1프레임 단위로 미끄러져 닫히고, IB.gateLane(at, z)가 그 깊이의 바닥 점이다), 아이의 책가방 IB.backpack(척추를 따라 돌고, pose.prev가 있으면 엉덩이가 오른 만큼의 1.4배를 한 장 늦게 내려가 뛸 때마다 들썩인다). 식판을 든 아이는 키 290 px, 뛰는 아이는 260 px(IB.PEOPLE.pupil, pupil2, pupil3). 쓰는 장면은 school/lunch-tray-seat, school/late-gate-run. */
+/* 배경 세트 견본: 식당과 교문 — 칸 나뉜 식판 IB.lunchTray(밥, 국그릇, 반찬 둘은 자리 표시 도형)와 그것을 든 두 손목 자리 IB.trayGrips(먼 손은 식판 뒤 왼쪽 모서리 밑, 가까운 손은 앞 테 위), 끝에서 본 급식 탁자 IB.lunchTable(앉는 키 h에 맞춰 상판 0.43 h, 양쪽 긴 의자의 윗면이 IB.sit의 좌석 높이; layer 'bench'와 'table' 사이에 앉은 사람의 먼 쪽을 그린다), 빗각으로 본 미닫이 교문 IB.schoolGate(깊이 z px가 화면에서 (0.8 z, -0.3 z)로 놓여 길이 왼쪽에서 오른쪽으로 문을 지난다; 노란 문살 판이 레일 위를 1프레임 단위로 미끄러져 닫히고, IB.gateLane(at, z)가 그 깊이의 바닥 점이다), 아이의 책가방 IB.backpack(인물의 먼 쪽과 가까운 쪽 사이에 그려 뒤로 흔든 먼 팔을 덮고, 척추를 따라 돌고, pose.prev가 있으면 엉덩이가 오른 만큼의 1.4배를 한 장 늦게 내려가 뛸 때마다 들썩인다). 식판을 든 아이는 키 290 px, 뛰는 아이는 260 px(IB.PEOPLE.pupil, pupil2, pupil3). 쓰는 장면은 school/lunch-tray-seat, school/late-gate-run. */
 const FLOOR = 930, F = IB.FIG;
 const CARRY = { ...IB.PEOPLE.pupil, h: 290, dir: 1, seed: 40 }, FRIEND = { ...IB.PEOPLE.pupil2, h: 290, dir: -1, seed: 60 }, RUNNER = { ...IB.PEOPLE.pupil3, h: 260, dir: 1, seed: 80 };
 MG.scene({
@@ -54,12 +54,11 @@ MG.scene({
       IB.schoolGate(ctx, G, { open, layer: 'back' });
       const L = IB.runLen(RUNNER) / 8, x = 380 + ((k * L) % 1200), run = (n) => IB.run(380 + ((n * L) % 1200), lane[1], RUNNER, (n / 8) % 1);
       const p = { ...run(k), prev: run(k - 1) };
-      IB.backpack(ctx, p, RUNNER, { part: 'bag' });
       IB.figure(ctx, p, RUNNER, 'far');
-      IB.backpack(ctx, p, RUNNER, { part: 'strap' });
+      IB.backpack(ctx, p, RUNNER);
       IB.figure(ctx, p, RUNNER, 'near');
       IB.schoolGate(ctx, G, { open, layer: 'front' });
-    }, 'IB.schoolGate([post foot], { open, layer }), IB.gateLane(at, z);  IB.backpack(ctx, pose, look, { part })');
+    }, 'IB.schoolGate([post foot], { open, layer }), IB.gateLane(at, z);  IB.backpack(ctx, pose, look) between far and near');
   },
 });
 </script>

@@ -64,9 +64,8 @@ MG.scene({
     IB.smear(ctx, 820, Y - 9, 1500, { h: 14, seed: 9 });
     IB.schoolGate(ctx, G, { ...GATE, open, layer: 'back' });
     if (p) {
-      IB.backpack(ctx, p, KID, { ...BAG, part: 'bag' });
       IB.figure(ctx, p, { ...KID, face: p.face, tuck: p.lean > 0.3 }, 'far');
-      IB.backpack(ctx, p, KID, { ...BAG, part: 'strap' });
+      IB.backpack(ctx, p, KID, BAG);
       const j = IB.figure(ctx, p, { ...KID, face: p.face, tuck: p.lean > 0.3 }, 'near');
       if (f >= SCRAPE && f < SCRAPE + 2) IB.shake(ctx, p.hip[0] - 0.2 * H, p.hip[1] - 0.2 * H, 26, { a: Math.PI + 0.3, n: 3, w: 2.6, seed: 660 });
       PUFFS.forEach((at, i) => { const k = (f - at) >> 1; if (f >= at && k < 3) IB.breath(ctx, j.headAt, { k, big: 0.8, seed: 300 + i * 20 }); });

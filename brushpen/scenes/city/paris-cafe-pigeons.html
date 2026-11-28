@@ -1,0 +1,73 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>city / paris-cafe-pigeons</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script>
+/* 파리 카페: 에펠탑이 보이는 노천 카페에 두 친구가 마주 앉아 잔을 들고 이야기하고, 발치에서는 비둘기들이 모이를 쫀다. 둘이 잔을 높이 들어 쨍 부딪치는 순간 비둘기들이 한꺼번에 날아올라 에펠탑 쪽으로 멀어지고, 둘은 고개를 젖혀 웃는다. 원본에 없는 창작 장면이다. 전달하는 생각: 작은 소리 하나가 풍경 전체를 움직인다.
+   Motion notes: one locked shot (IB.crop of a 1500 px window, 1.28x), 7.5 s. The friends (330 px, seated with IB.sit on bistro chairs) are on twos with pose.prev; the pigeons peck on threes (head down one drawing in three) while they are on the ground. 0-1.5 s one sips (cup to the mouth) while the other talks with a hand; 1.5 s both lean back and raise their cups (the anticipation), 1.83 s the cups meet over the table (a burst for 2 drawings) one drawing past where they hold, 2.0 s held. On the clink the pigeons take off a drawing apart, wings alternating each drawing, rising on a curve toward the tower and gone by 4.5 s. 2.17 s both throw their heads back laughing (nod -0.3) and settle at 2.67 s; from 4.5 s nothing moves. Colours: the tower's bronze (mustard), the two tops' yellow and lavender; the street a blue chalk smear. */
+const F = IB.FIG, FLOOR = 900, PI = Math.PI, H = 330, TX = 960, TOP = FLOOR - 0.43 * H;
+const A = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 30 }, B = { ...IB.PEOPLE.passenger, top: IB.C.lavender, h: H, dir: -1, seed: 40 };
+const XA = TX - 0.42 * H, XB = TX + 0.42 * H;
+const seat = (look, x, lean, hands, more = {}) => { const p = IB.sit(x, FLOOR, look); return IB.posed(look, { ...p, lean, hands, ...more }); };
+const cupHand = (p, i) => p.hands[i];
+const AACT = [[0, seat(A, XA, 0.06, [{ a: 0.6, l: 0.24 }, { a: -0.75, l: 0.18 }], { nod: -0.1, face: { eye: 'closed', mouth: 'flat' } })],
+  [16, seat(A, XA, 0.08, [{ a: 0.6, l: 0.24 }, { a: 0.15, l: 0.24 }], { face: { eye: 'dot', mouth: 'smile' } })],
+  [36, seat(A, XA, -0.08, [{ a: 0.7, l: 0.24 }, { a: -0.55, l: 0.27 }], { face: { eye: 'dot', mouth: 'open' } })],
+  [44, seat(A, XA, 0.12, [{ a: 0.7, l: 0.24 }, { a: -0.3, l: 0.285 }], { face: { eye: 'closed', mouth: 'open' } })],
+  [46, seat(A, XA, 0.1, [{ a: 0.7, l: 0.24 }, { a: -0.28, l: 0.28 }], { face: { eye: 'closed', mouth: 'open' } })],
+  [52, seat(A, XA, -0.12, [{ a: 0.7, l: 0.24 }, { a: 0.0, l: 0.24 }], { nod: -0.3, face: { eye: 'closed', mouth: 'open' } })],
+  [64, seat(A, XA, 0.02, [{ a: 0.7, l: 0.24 }, { a: 0.2, l: 0.24 }], { nod: -0.05, face: { eye: 'closed', mouth: 'smile' } })]];
+const BACT = [[0, seat(B, XB, 0.08, [{ a: 0.6, l: 0.24 }, { a: -0.1, l: 0.26 }], { hand: ['relax', 'open'], face: { eye: 'dot', mouth: 'open' } })],
+  [12, seat(B, XB, 0.1, [{ a: 0.6, l: 0.24 }, { a: -0.35, l: 0.26 }], { hand: ['relax', 'open'], face: { eye: 'dot', mouth: 'open' } })],
+  [24, seat(B, XB, 0.08, [{ a: 0.6, l: 0.24 }, { a: 0.15, l: 0.24 }], { face: { eye: 'dot', mouth: 'smile' } })],
+  [36, seat(B, XB, -0.08, [{ a: 0.7, l: 0.24 }, { a: -0.55, l: 0.27 }], { face: { eye: 'dot', mouth: 'open' } })],
+  [44, seat(B, XB, 0.12, [{ a: 0.7, l: 0.24 }, { a: -0.3, l: 0.285 }], { face: { eye: 'closed', mouth: 'open' } })],
+  [46, seat(B, XB, 0.1, [{ a: 0.7, l: 0.24 }, { a: -0.28, l: 0.28 }], { face: { eye: 'closed', mouth: 'open' } })],
+  [52, seat(B, XB, -0.12, [{ a: 0.7, l: 0.24 }, { a: 0.0, l: 0.24 }], { nod: -0.3, face: { eye: 'closed', mouth: 'open' } })],
+  [64, seat(B, XB, 0.02, [{ a: 0.7, l: 0.24 }, { a: 0.2, l: 0.24 }], { nod: -0.05, face: { eye: 'closed', mouth: 'smile' } })]];
+const CLINK = 44;
+const PIGEONS = [[430, 1], [560, -1], [1380, 1], [1500, -1], [690, 1]];
+const pigeonAt = (i, f) => {
+  const [x0, dir] = PIGEONS[i], go = CLINK + i * 2;
+  if (f < go) return { at: [x0, FLOOR], perch: true, peck: Math.floor((f + i * 3) / 3) % 3 === 0, dir };
+  const u = (f - go) / 24; return { at: [x0 + u * 520 + u * u * 120, FLOOR - 30 - u * 420 + u * u * 40], wing: (f / 2 + i) % 2, dir: 1 };
+};
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const friendA = withPrev(AACT), friendB = withPrev(BACT);
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { a: friendA(f), b: friendB(f), pigeons: PIGEONS.map((_, i) => { const p = pigeonAt(i, f); return p.at[1] < -100 ? null : [Math.round(p.at[0]), Math.round(p.at[1]), p.perch ? (p.peck ? 'peck' : 'up') : p.wing]; }) }; };
+
+MG.scene({
+  title: 'city / paris-cafe-pigeons',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), a = friendA(f), b = friendB(f);
+    IB.crop(ctx, [210, 160, 1500]);
+    IB.eiffel(ctx, [1460, 760], { h: 560 });
+    IB.skyline(ctx, 760);
+    IB.lamppost(ctx, [380, FLOOR], { h: 420 });
+    IB.smear(ctx, 960, FLOOR - 6, 1600, { h: 14, seed: 9 });
+    IB.bistroChair(ctx, XA, FLOOR, H, 1); IB.bistroChair(ctx, XB, FLOOR, H, -1);
+    IB.figure(ctx, a, A, 'far'); IB.figure(ctx, b, B, 'far');
+    IB.cafeTable(ctx, [TX, FLOOR], { s: 1.35 });
+    IB.figure(ctx, a, A, 'near'); IB.figure(ctx, b, B, 'near');
+    IB.cup(ctx, cupHand(a, 1), {}); IB.cup(ctx, cupHand(b, 1), {});
+    const ck = IB.drawn(tt, CLINK / 24);
+    if (ck >= 0 && ck < 2) IB.burst(ctx, [TX, (a.hands[1][1] + b.hands[1][1]) / 2 - 30], { n: 5, a0: -2.8, da: 0.55, r0: 26 + ck * 8, r1: 50 + ck * 6, w: 3, seed: 70 + ck });
+    PIGEONS.forEach((_, i) => { const p = pigeonAt(i, f); if (p.at[1] > -100) IB.flapper(ctx, p.at, { perch: p.perch, peck: p.peck, wing: p.wing, dir: p.dir, s: 1.2, seed: 80 + i * 7 }); });
+  },
+});
+</script>

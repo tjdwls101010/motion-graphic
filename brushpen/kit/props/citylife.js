@@ -1,4 +1,4 @@
-/* props/citylife.js — the moving things of the world's cities, to put in front of the landmarks (sets/landmarks.js): a London double-decker bus and phone box, a ferry and a tall ship, a river with its waves, a Tokyo bullet train, a cable car on its cable, a cherry tree and its falling petals, a Paris lamp post and café table, the Banpo bridge's fountain jets, and a flapping pigeon or gull (IB.doubleDecker, IB.phoneBox, IB.ferry, IB.tallShip, IB.river, IB.shinkansen, IB.cableCar, IB.sakura, IB.petals, IB.lamppost, IB.cafeTable, IB.fountainBridge, IB.flapper). Machines (bus, train, ferry, cable car) move on ones; drawn things (petals, waves, wings, water) are new drawings on twos. Red is used only where it is the thing's own colour (the bus, the phone box). Needs ink.js. */
+/* props/citylife.js — the moving things of the world's cities, to put in front of the landmarks (sets/landmarks.js): a London double-decker bus and phone box, a ferry and a tall ship, a river with its waves, a Tokyo bullet train, a cable car on its cable, a cherry tree and its falling petals, a Paris lamp post, café table and chair (IB.bistroChair), the Banpo bridge's fountain jets, and a flapping pigeon or gull (IB.doubleDecker, IB.phoneBox, IB.ferry, IB.tallShip, IB.river, IB.shinkansen, IB.cableCar, IB.sakura, IB.petals, IB.lamppost, IB.cafeTable, IB.fountainBridge, IB.flapper). Machines (bus, train, ferry, cable car) move on ones; drawn things (petals, waves, wings, water) are new drawings on twos. Red is used only where it is the thing's own colour (the bus, the phone box). Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG, TAU = Math.PI * 2, { lerp } = MG;
   const poly = (ctx, pts, fill, lw, seed, smooth = false) => IB.ink(ctx, pts, { closed: true, smooth, fill, w: lw, seed });
@@ -121,6 +121,14 @@
     return top;
   };
 
+  /* bistroChair(ctx, x, floor, h, dir, { lw }) — a Paris café chair from the side for a sitter of height h whose hip is at x (as IB.sit puts it): a round seat at the sitter's seat height (0.335 h, office.js's IB.SEAT), thin splayed legs and a bent back on the side away from dir. Draw it before the sitter. */
+  IB.bistroChair = (ctx, x, floor, h, dir = 1, o = {}) => {
+    const lw = o.lw || 3, seed = o.seed || 1530, seat = floor - 0.335 * h + 0.04 * h, k = (dx) => x + dx * h * dir;
+    IB.seg(ctx, k(-0.1), seat, k(-0.14), floor, { w: lw, seed }); IB.seg(ctx, k(0.08), seat, k(0.12), floor, { w: lw, seed: seed + 1 });
+    IB.ink(ctx, [[k(-0.12), seat], [k(-0.15), seat - 0.12 * h], [k(-0.13), seat - 0.26 * h]], { w: lw * 1.2, seed: seed + 2 });
+    IB.oval(ctx, k(-0.01), seat, 0.13 * h, 0.02 * h, { fill: C.paper, w: lw, seed: seed + 3, n: 12 });
+  };
+
   /* fountainBridge(ctx, [x0, x1, deck], { k, lw, d }) — the Banpo bridge's moonlight rainbow fountain: from nozzles under the deck, jets arc out and fall to the river; k (0..1) is how far they have come on (they start in 4 drawings), d re-rolls the spray every drawing. Draws the deck too. */
   IB.fountainBridge = (ctx, [x0, x1, deck], o = {}) => {
     const lw = o.lw || 3, seed = o.seed || 1540, k = MG.clamp(o.k == null ? 1 : o.k, 0, 1), d = o.d || 0, r = MG.rng(seed + d * 7);
@@ -135,9 +143,17 @@
     }
   };
 
-  /* flapper(ctx, [x, y], { wing, s, dir, color, lw }) — a pigeon or gull in flight as the reference draws far birds: an M of two wings over a small body, the tips up (wing 0) or down (wing 1); alternate the two drawings on twos while it flaps. */
+  /* flapper(ctx, [x, y], { wing, s, dir, color, lw }) — a pigeon or gull in flight as the reference draws far birds: an M of two wings over a small body, the tips up (wing 0) or down (wing 1); alternate the two drawings on twos while it flaps. perch: true draws it standing on the ground at [x, y] (its feet), head up, or down with peck: true (alternate on threes for pecking). */
   IB.flapper = (ctx, [x, y], o = {}) => {
     const s = o.s || 1, d = o.dir || 1, lw = o.lw || 2.6, seed = o.seed || 1560, up = !o.wing;
+    if (o.perch) {   // on the ground: a plump body on two short legs, the head up or down to peck
+      const col = o.color || '#d9d9d9', hx = x + 16 * s * d, hy = o.peck ? y - 6 * s : y - 22 * s;
+      IB.seg(ctx, x - 3 * s, y - 6 * s, x - 5 * s, y + 4 * s, { w: lw * 0.7, seed: seed + 5 }); IB.seg(ctx, x + 4 * s, y - 6 * s, x + 5 * s, y + 4 * s, { w: lw * 0.7, seed: seed + 6 });
+      IB.oval(ctx, x, y - 14 * s, 16 * s, 9 * s, { fill: col, w: lw, seed, n: 10 });
+      IB.oval(ctx, hx, hy, 6 * s, 6 * s, { fill: col, w: lw, seed: seed + 1, n: 8 });
+      IB.seg(ctx, hx + 6 * s * d, hy + 1 * s, hx + 11 * s * d, hy + 3 * s, { w: lw * 0.8, seed: seed + 7 });
+      return;
+    }
     const tip = up ? -18 : 10, mid = up ? -6 : 2;   // the wing tips up or down, the elbows a little less
     IB.ink(ctx, [[x - 30 * s, y + tip * s], [x - 14 * s, y + mid * s], [x, y], [x + 14 * s, y + mid * s], [x + 30 * s, y + tip * s]], { w: lw * 1.2, seed: seed + 2 });
     IB.oval(ctx, x + 2 * s * d, y + 2 * s, 8 * s, 4 * s, { fill: o.color || '#d9d9d9', w: lw * 0.8, seed, n: 8 });

@@ -235,5 +235,7 @@ establish, insert 계열의 문법을 원본과 다른 장소와 대상에 적�
 
 - **룩:** 랜드마크는 원본의 먹선으로 단순화한 정면·옆모습 선화이고(`kit/sets/landmarks.js`), 글자와 로고는 넣지 않는다. 돌은 옅은 회백(`#e6e2d6`), 강철은 회색으로 두어 샷의 색은 그 장소를 말하는 한두 가지(런던 버스의 빨강, 후지산의 하늘색, 남산의 민트)에 맡긴다.
 - **모션:** 기계(도개교, 범선, 버스, 신칸센, 케이블카)는 1프레임 단위이고 출발과 정지에 smoothstep을 준다. 그린 것(물결, 꽃잎, 날갯짓)은 2프레임마다 새 그림이다. 큰 사건 뒤에는 바람이 지수로 잦아들고(꽃잎 표류 60 → 3 px, tau 0.5 s), 매달린 것은 감쇠 사인으로 흔들리다 선다.
-- **키트:** `kit/sets/landmarks.js`, `kit/props/citylife.js`, `kit/props/nature.js` (`IB.cloud`), `kit/figure.js`, `kit/cast/people.js`
+- **사람이 있는 도시 장면:** 랜드마크는 배경으로 물러나고 사건은 사람의 작은 동작 하나다: 택시를 잡는 손(지나치는 첫 손짓과 기대를 덜어 낮게 드는 두 번째 손짓, `new-york-taxi-hail`), 잔을 부딪는 소리에 날아오르는 비둘기(`paris-cafe-pigeons`), 자전거를 세우고 분수를 가리키는 손(`seoul-banpo-fountain`). 랜드마크가 사람보다 크게 화면 윗부분을 채우도록 1.2–1.45배로 당긴다.
+- **엽서 몽타주:** 여러 도시를 이을 때는 한 장에 1.5초씩 두고 원본의 휩으로 넘기며(카드가 2프레임에 왼쪽으로 빠지고, 빈 무대 2프레임, 다음 카드가 4프레임에 오른쪽에서 들어온다), 모든 카드를 같은 종이비행기가 가로질러 눈이 컷을 넘어 한 줄기를 따라가게 한다(`world-postcard-tour`).
+- **키트:** `kit/sets/landmarks.js` (`IB.skyline`, `IB.embankment`, `IB.cableway`와 랜드마크들), `kit/props/citylife.js`, `kit/props/vehicles.js` (`IB.cab`의 lit, `IB.paperPlane`), `kit/props/traffic.js` (`IB.bicycle`, `IB.ride`), `kit/props/nature.js` (`IB.cloud`), `kit/figure.js`, `kit/cast/people.js`
 - **장면:** `scenes/city/`

@@ -55,7 +55,7 @@
     ctx.save();
     if (panel) {
       IB.box(ctx, L + 16, top + 34, w - 32, ht - 104, { fill: '#e2e2e2', w: lw * 0.6, seed: seed + 1 });
-      for (const [dx, k] of [[0.18, 0], [0.26, 1]]) IB.seg(ctx, L + w * dx, top + 80 + k * 30, L + w * dx + 60, top + 30 + k * 30 + 0.42 * (ht - 160), { w: 2.2, color: C.paper, seed: seed + 2 + k, grain: 0 });   // two glints on the glass
+      for (const [dx, k] of [[0.18, 0], [0.27, 1]]) IB.seg(ctx, L + w * dx, top + 80, L + w * dx + 60 - k * 18, top + 30 + 0.42 * (ht - 160) - k * 16, { w: 2.2, color: C.paper, seed: seed + 2 + k, grain: 0 });   // two glints on the glass
     }
     IB.box(ctx, L + 50, floor - 116, w - 100, 14, { fill: C.paper, w: lw * 0.8, seed: seed + 4 });   // the bench
     for (const bx of [L + 80, R - 80]) IB.seg(ctx, bx, floor - 102, bx, floor - 4, { w: lw, seed: seed + 5 + bx });
@@ -113,7 +113,7 @@
     return { door: [x + DX * S, road + (yb - 10) * S], exhaust: [x + (Bk - 12) * S, road + (yb + 9) * S], front: x + F * S, rear: x + Bk * S };
   };
 
-  /* exhaust(ctx, at, state) — the one puff a bus coughs as it pulls away, from the pipe's mouth `at`: drawing state.k 0 is a ball (r 20) at the pipe, 1 and 2 two and then three balls rolling back and up and growing (the largest r 44), 3 two large broken ones 136 px back; from 4 nothing. White balls in the ink outline, like the dust off a wheel (IB.wheelDust), but at a vehicle's size. It stays where it was coughed: do not move it with the bus. opts.dir is the way it drifts (-1, back from a bus heading right); opts.s scales it with the bus (street/bus-missed-chase). */
+  /* exhaust(ctx, at, state) — the one puff a bus coughs as it pulls away, from the pipe's mouth `at`: drawing state.k 0 is a ball (r 20) at the pipe, 1 and 2 two and then three balls rolling back and up and growing (to r 44), 3 two large broken ones (r 50 and 32) 136 px back; from 4 nothing. White balls in the ink outline, like the dust off a wheel (IB.wheelDust), but at a vehicle's size. It stays where it was coughed: do not move it with the bus. opts.dir is the way it drifts (-1, back from a bus heading right); opts.s scales it with the bus (street/bus-missed-chase). */
   IB.exhaust = (ctx, [ex, ey], st = {}, o = {}) => {
     const { k = 0 } = st, { dir = -1, s = 1, seed = 1000 } = o;
     const PUFF = [[[12, -2, 20]], [[36, -10, 32], [8, 2, 17]], [[80, -26, 44], [38, -10, 30], [10, 0, 15]], [[136, -50, 50], [86, -26, 32]]][k];

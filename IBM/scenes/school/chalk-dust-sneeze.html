@@ -25,15 +25,16 @@ const set = (p, look, i, dx, dy) => { const hands = p.hands.slice(); hands[i] = 
 const TS = { ...IB.stand(TX, FLOOR, T), hand: ['relax', 'grip'], face: { mouth: 'flat' } }, TY = TS.hip[1];
 const holding = (p) => set(p, T, 1, 0.12, 0.2);   // the eraser held at the waist
 const RUB = [14, 50];   // the rub: two drawings swapping on twos, no prev; each pair a little lower on the board
-const rubA = (n) => set({ ...TS, hip: [TX - 6 * U, TY], lean: 0.3, nod: 0.02, face: { mouth: 'flat', brow: 0.6 } }, T, 1, 0.27, -0.05 - n * 0.014);
-const rubB = (n) => set({ ...TS, hip: [TX + 6 * U, TY + 2 * U], lean: 0.0, nod: -0.02, face: { mouth: 'flat', brow: 0.6 } }, T, 1, 0.07, 0.1 - n * 0.014);
+// the far stroke climbs 0.012 h a pair at arm's length (0.28 h from the shoulder); the near one stays at chest height ahead of her chin, so the eraser never crosses her face
+const rubA = (n) => { const dy = -0.05 - n * 0.012; return set({ ...TS, hip: [TX - 3 * U, TY + 4], lean: 0.3, nod: 0.02, face: { mouth: 'flat', brow: 0.6 } }, T, 1, Math.sqrt(0.28 * 0.28 - dy * dy), dy); };
+const rubB = () => set({ ...TS, hip: [TX + 6 * U, TY + 2 * U], lean: 0.0, nod: -0.02, face: { mouth: 'flat', brow: 0.6 } }, T, 1, 0.1, 0.1);
 const TP = {
-  start: set({ ...TS, lean: 0.2 }, T, 1, 0.24, 0.0),
+  start: set({ ...TS, hip: [TX, TY + 3], lean: 0.2 }, T, 1, 0.24, 0.0),
   cock: set({ ...TS, hip: [TX + 4 * U, TY], lean: 0.02, nod: -0.04, face: { mouth: 'flat', brow: 0.6 } }, T, 1, 0.05, -0.2),   // the anticipation: back and up before the first stroke
   down: holding({ ...TS, lean: 0.06, face: { mouth: 'flat' } }),
   sniff1: holding({ ...TS, lean: -0.03, nod: -0.1, face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
   sniff2: holding({ ...TS, hip: [TX + 2 * U, TY], lean: -0.1, nod: -0.2, face: { eye: 'closed', mouth: 'open', brow: 1 } }),
-  sniff3: holding({ ...TS, hip: [TX + 5 * U, TY + U], lean: -0.19, nod: -0.32, face: { eye: 'closed', mouth: 'open', brow: 1 } }),
+  sniff3: holding({ ...TS, hip: [TX + 5 * U, TY + U + 3], lean: -0.19, nod: -0.32, face: { eye: 'closed', mouth: 'open', brow: 1 } }),
   sneeze: holding({ ...TS, hip: [TX - 6 * U, TY + 4 * U], lean: 0.42, nod: 0.3, face: { eye: 'closed', mouth: 'open', brow: 1 } }),
   rebound: holding({ ...TS, hip: [TX - 4 * U, TY + 3 * U], lean: 0.3, nod: 0.2, face: { eye: 'closed', mouth: 'open', brow: 1 } }),
   after: holding({ ...TS, hip: [TX - 3 * U, TY + 2 * U], lean: 0.24, nod: 0.14, face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
@@ -62,7 +63,10 @@ function drawing(act, f, still) {
   const [k, p] = act[i], next = i + 1 < act.length ? act[i + 1][0] : Infinity, trail = i > 0 && !(still && still(f)) && (f - k < 2 || next - k <= 3);
   return { ...p, prev: trail ? act[i - 1][1] : p };
 }
-const ERASER = (p) => { const s = shoulder(p, T), hd = p.hands[1], a = Math.atan2(hd[1] - s[1], hd[0] - s[0]); return [hd[0] + Math.cos(a) * 12 * U, hd[1] + Math.sin(a) * 12 * U]; };
+// the eraser sits on the hand the rig draws (IB.ik from the rig's own shoulder), not on the target, so it never floats off the fist
+const rigShoulder = (p) => { const l = p.lean || 0, d = T.dir, u = (F.torso - 0.012) * H; return [p.hip[0] + Math.sin(l) * d * u + Math.cos(l) * d * 0.004 * H, p.hip[1] - Math.cos(l) * u + Math.sin(l) * 0.004 * H]; };
+const drawnHand = (p) => IB.ik(rigShoulder(p), p.hands[1], F.upper * H, F.fore * H, T.dir)[1];
+const ERASER = (p, hd = drawnHand(p)) => { const s = rigShoulder(p), a = Math.atan2(hd[1] - s[1], hd[0] - s[0]); return [hd[0] + Math.cos(a) * 12 * U, hd[1] + Math.sin(a) * 12 * U]; };
 const DUST = { at: 32, from: [TX - 0.37 * H, FLOOR - 0.72 * H] };   // the cloud starts mid-rub, rising from the eraser
 function state(t) {
   const f = IB.frame(t), teacher = drawing(T_ACT, f, (g) => g >= RUB[0] && g < RUB[1]), pupil = drawing(K_ACT, f);
@@ -93,7 +97,7 @@ MG.scene({
     // the teacher, the eraser between her arms
     IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
     const look = { ...T, face: p.face }, j = IB.figure(ctx, p, look, 'far');
-    const e = ERASER(p), rubbing = f >= RUB[0] && f < RUB[1];
+    const e = ERASER(p, j.hands[1]), rubbing = f >= RUB[0] && f < RUB[1];
     IB.boardEraser(ctx, e, { rot: rubbing ? Math.PI / 2 : 0.15, w: 0.155 * H, hgt: 0.06 * H, fill: IB.C.yellow });
     IB.figure(ctx, p, look, 'near');
     if (s.dust) IB.chalkDust(ctx, DUST.from, s.dust, { r: 0.23 * H, dir: -1, rise: 5 * U });

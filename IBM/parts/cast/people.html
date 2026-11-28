@@ -10,7 +10,7 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 출연진 견본: 창작 장면의 이름 붙은 사람들 IB.PEOPLE 열한 명. 이 룩에서 사람은 얼굴이 아니라 머리 모양과 옷으로 구별되고 한 샷에 색이 한두 가지라, 한 사람은 머리 모양 하나, 피부색 하나, 색 있는 옷 한 벌이다(흰 옷은 무대 색 IB.C.bg 그대로). 쓸 때는 { ...IB.PEOPLE.climber, h, dir, seed }로 키와 방향만 주고, 옷을 바꾸려면 필드 하나를 덮어쓴다(마지막 칸). 여기서는 모두 와이드 샷 키 330px(bridge-plank-cross)로 세웠고, 장면에서는 210–560px로 쓴다(누가 어느 장면인지는 cast/people.js의 줄 주석). */
+/* 출연진 견본: 창작 장면의 이름 붙은 사람들 IB.PEOPLE 스무 명. 이 룩에서 사람은 얼굴이 아니라 머리 모양과 옷으로 구별되고 한 샷에 색이 한두 가지라, 한 사람은 머리 모양 하나, 피부색 하나, 색 있는 옷 한 벌이다(흰 옷은 무대 색 IB.C.bg 그대로). 쓸 때는 { ...IB.PEOPLE.climber, h, dir, seed }로 키와 방향만 주고, 옷을 바꾸려면 필드 하나를 덮어쓴다(마지막 칸). 여기서는 어른을 와이드 샷 키 330px(bridge-plank-cross)로, 아이(pupil, headK 1.3)를 그 0.68인 225px로 세웠고, 장면에서는 210–560px로 쓴다(누가 어느 장면인지는 cast/people.js의 줄 주석). */
 const C = IB.C, FLOOR = 930, H = 330;
 const CAST = [...Object.entries(IB.PEOPLE).map(([name, look]) => ['PEOPLE.' + name, look]), ['{ ...climber, top: C.mint }', { ...IB.PEOPLE.climber, top: C.mint }]];
 MG.scene({
@@ -19,11 +19,11 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    SAMPLE.title(ctx, 'IB.PEOPLE — the named people, at h 330 (cast/people.js)');
-    const c = SAMPLE.grid(12, 6);
+    SAMPLE.title(ctx, 'IB.PEOPLE — the named people, at h 330 (children 225) (cast/people.js)');
+    const c = SAMPLE.grid(CAST.length, 7);
     CAST.forEach(([name, look], i) => {
-      const who = { ...look, h: H, dir: 1, seed: 20 + i * 13 };
-      SAMPLE.cell(ctx, c[i], SAMPLE.fit(c[i], [960, FLOOR]), () => {
+      const who = { ...look, h: look.headK ? H * 0.68 : H, dir: 1, seed: 20 + i * 13 };
+      SAMPLE.cell(ctx, c[i], SAMPLE.window([960, FLOOR], (c[i][2] * 400) / c[i][3], 400), () => {   // three rows: each window 400 px tall, drawn smaller
         IB.smear(ctx, 960, FLOOR - 9, 200, { h: 14, seed: 9 + i });
         IB.figure(ctx, IB.stand(960, FLOOR, who), who);
       }, name);

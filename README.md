@@ -2,7 +2,7 @@
 
 유튜브 영상에 나오는 모션그래픽을 코드로 다시 만든 디자인 레퍼런스 모음이다. 앞으로 클로드로 모션그래픽을 만들 때 "이런 룩, 이런 움직임"을 말로 설명하는 대신 장면 파일을 가리키고 그 코드를 가져다 쓰려는 용도다.
 
-- 영상 하나가 레퍼런스 폴더 하나다. 지금은 [pstack](pstack/README.md)(장면 15개, 3개 계열)과 [IBM](IBM/README.md)(장면 32개, 11개 계열: 재현 6개와 같은 스타일의 창작 26개, 그리고 kit 부품 견본 63장)이 있다.
+- 영상 하나가 레퍼런스 폴더 하나다. 지금은 [IBM](IBM/README.md)(장면 32개, 11개 계열: 재현 6개와 같은 스타일의 창작 26개, 그리고 kit 부품 견본 63장)이 있다.
 - 장면은 전부 빌드 없이 브라우저에서 바로 열리는 HTML이다. 각 장면은 원본의 어느 구간을 재현했는지(`ref`)와 거기서 읽어 낸 모션 규칙(`Motion notes:`)을 파일 안에 적어 둔다.
 
 ## 보는 법
@@ -31,7 +31,7 @@ tools/
   drawings.py     장면의 IB.actors(t)로 배우마다 그림 수를 센다: 그림이 바뀌는 프레임, 움직이는 동안의 초당 그림 수, 가장 긴 정지, 스텝보다 오래 남은 그림. 연기 업그레이드의 수치 근거
   same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
   test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs), 장면과 견본의 불러오기, 캐릭터 MOVE의 모양, kit의 모든 부품이 어느 견본에 그려지는지를 브라우저 없이 확인한다
-<ref>/      레퍼런스 영상 하나 (예: pstack/)
+<ref>/      레퍼런스 영상 하나 (예: IBM/)
   README.md      출처, 원본과 다른 점
   STYLE.md       계열별 룩과 모션 규칙
   CATALOG.md     원본의 샷 전체 목록과 구현 여부
@@ -48,11 +48,11 @@ out/                         렌더 결과 작업 공간(.gitignore)
 ## 렌더
 
 ```bash
-python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --mp4 out/balance-scale.mp4
+python3 tools/capture.py IBM/scenes/spot/folder-meets-document.html --mp4 out/folder.mp4
 ```
 
 ```bash
-python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/balance-scale.jpg --n 6
+python3 tools/capture.py IBM/scenes/spot/folder-meets-document.html --compare out/folder.jpg --n 6
 ```
 
 두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 고르게 뽑은 시점은 구도를 보여 줄 뿐 그림 한 장 한 장은 놓치므로, 연기를 볼 때는 `--frames 16-36`으로 프레임을 짚고 `--box x0,y0,x1,y1`로 배우만 확대한다(원본의 일부만 잘라 보여 주는 장면은 `--ref-crop`에 그 영역을 준다). 키의 시각이나 위치를 재려고 원본 프레임을 직접 뽑을 때는 시각(`-ss`)이 아니라 프레임 번호로 뽑는다: `ffmpeg -i references/<ref>/<ref>.mp4 -vf "select=between(n\,157\,211)" -fps_mode passthrough -start_number 0 out/ref/%03d.png`(157은 장면의 `ref` 시작초 x 24). `-ss`는 요청한 시각과 같거나 그 뒤의 첫 프레임부터 주기 때문에 시작초의 반올림에 따라 전체가 한 프레임 밀리고, 2프레임마다 한 장인 그림에서는 그 한 프레임이 키를 전부 홀짝이 바뀐 자리에 놓게 만든다. 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
@@ -61,7 +61,7 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/b
 
 1. 원본 영상을 `references/<ref>/<ref>.mp4`에 둔다.
 2. `<ref>/families.json`에 계열을 적고, 장면을 `<ref>/scenes/<계열>/<장면>.html`에 만든다. 엔진은 `../../../core/`에서, 이 영상 스타일의 부품은 `../../kit/`에서 불러온다. 여러 장면에 다시 쓸 그림(캐릭터, 소품, 배경)은 장면이 아니라 `kit/`에 부품으로 두고, 장면에는 포즈·박자·배치의 표와 조립만 남긴다(IBM이 그 예다: `IBM/README.md`의 부품 지도).
-3. `<ref>/README.md`, `STYLE.md`, `CATALOG.md`를 pstack과 같은 모양으로 쓴다.
+3. `<ref>/README.md`, `STYLE.md`, `CATALOG.md`를 IBM과 같은 모양으로 쓴다.
 4. `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만든다.
 
 ## 장면 작성 규약
@@ -73,4 +73,4 @@ python3 tools/capture.py pstack/scenes/sketch/balance-scale.html --compare out/b
 3. **스크립트 첫 주석에 "무슨 일이 일어나고 어떤 생각을 전달하는가" 2~4문장과 `Motion notes:`를 쓴다.** 설명 문단은 한국어로 쓰고, 첫 문장이 시트 카드에 그대로 나가므로 그 문장만 읽어도 장면이 무엇인지 알 수 있게 쓴다. Motion notes에는 재사용할 기법과 실제로 쓴 수치(이징, 간격, 길이)를 적고, 이징 이름 같은 기술 용어는 영어 그대로 둔다. 나중에 이 주석을 grep해서 장면을 찾는다.
 4. **빌드와 네트워크 없이 열려야 한다.** `file://`에서는 ES 모듈이 막히므로 일반 `<script src>`만 쓰고, CDN과 새 의존성을 들이지 않는다.
 5. **DOM·SVG 장면은 구조를 `setup`에서 한 번 만들고 `render`에서는 글자·스타일·속성만 갱신한다.** canvas 장면은 매 프레임 전체를 다시 그린다.
-6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만들고, `--compare`로 원본과 대조한다. 그림을 바꾸지 않으려는 변경(코드를 부품으로 옮기기 등)이면 고치기 전 커밋을 `rm -rf out/base && mkdir -p out/base && git archive <커밋> | tar -x -C out/base`로 풀고 `python3 tools/same_frames.py --base out/base IBM/scenes/*/*.html`처럼 바꾼 장면을 지정해 모든 프레임이 그대로인지 확인한다. 정확 비교라 canvas 장면에만 쓴다: SVG 필터를 쓰는 pstack felt 장면은 같은 파일이어도 텍스처 잡음으로 실패한다.
+6. 고친 뒤에는 `python3 tools/check_pure.py`로 1번을 확인하고, `python3 tools/build_index.py --thumbs`로 썸네일과 시트를 다시 만들고, `--compare`로 원본과 대조한다. 그림을 바꾸지 않으려는 변경(코드를 부품으로 옮기기 등)이면 고치기 전 커밋을 `rm -rf out/base && mkdir -p out/base && git archive <커밋> | tar -x -C out/base`로 풀고 `python3 tools/same_frames.py --base out/base IBM/scenes/*/*.html`처럼 바꾼 장면을 지정해 모든 프레임이 그대로인지 확인한다. 정확 비교라 canvas 장면에만 쓴다: SVG 필터를 쓰는 장면(지금은 지운 pstack의 felt 장면)은 같은 파일이어도 텍스처 잡음으로 실패한다.

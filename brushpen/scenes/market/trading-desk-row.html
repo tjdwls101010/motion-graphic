@@ -11,9 +11,10 @@
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/handheld.js"></script>
 <script src="../../kit/sets/trading.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 시세판 아래 책상 세 개에 나란히 앉아 한 명은 타자를 치고 한 명은 통화하고 한 명은 늘어져 있다가, 시세판이 왼쪽부터 차례로 파란 화살표로 넘어가자 가운데 사람이 벌떡 일어나 "매수!" 하고 셋 다 자판에 달려든다. 원본에 없는 창작 장면으로, 원본의 "저마다 다른 박자로 연기하다 한 사건에 차례로 반응한다"를 증권사 사무실에 옮겼다. 전달하는 생각: 조용하던 사무실이 숫자 하나에 한꺼번에 움직인다. 상승은 파랑, 하락은 빨강이다.
-   Motion notes: one locked shot, 7.5 s, figures 400 px tall, seated (IB.sit). Before the event each worker keeps a different clock so the row never moves in unison: the typist's hands swap every drawing on twos (8 px), the caller's free hand flips between two gestures on threes, the lounger does not move at all. The board is a drawing that changes by hard cuts: one cell flips direction every 0.5 s until 3.0 s. The event is a wave, not a cut: from 3.0 s the twelve cells turn to the blue up arrow one drawing apart, left to right and top row first (1 s for the board), and the reactions are staggered three drawings apart as it passes: 3.25 s the typist's head comes up, 3.5 s the caller is on their feet in 3 drawings (the feet stay where they were under the desk, the hip goes up and forward over them), 3.75 s the lounger is on the keyboard in 2 drawings. On their feet the caller throws the far fist up behind the head and holds the handset out in front, so the face stays clear. Every reaction has a drawing past its pose: the typist's head comes up half-way, goes past its hold (with the trail, about 0.04 rad on screen) and holds, and comes down through -0.12; the caller rises in 3 drawings, the middle one a little past standing (hips 4% further, the feet staying on the floor); the lounger lands a drawing past the typing pose. Each figure passes its drawing before as pose.prev, so heads and hair trail the reactions. Bubble 3.92-4.75 s over the held standing pose, after the lounger has landed on the keyboard; the caller sits again in 2 drawings at 4.75 s the handset goes back on its cradle and the lounger's cup stands on the desk (a prop that is put down stays in the picture), and all three type on twos, from 5.0 s with shake marks re-rolled each drawing, while three sheets leave the desks at 4.75, 5.0 and 5.33 s, 14 drawings each on an arc, and lie where they land. Three colours: the caller's yellow top, and the board's two data colours. */
+   Motion notes: 7.5 s in four shots (IB.shot, on ones): 0-3.0 s the office (1920) pushing in to 1640; 3.0 s, as the wave starts, a cut to the left of the row under the board (1200); 3.33 s the reference's pan 580 px right along the row (16 frames on twos), so the camera travels with the wave and the caller rises inside it; 4.75 s, as all three start typing, a cut to a lower wide (1600, the board at the top, the row at the bottom) and a slow push (1480, 62 frames). The figures 400 px tall, seated (IB.sit). Before the event each worker keeps a different clock so the row never moves in unison: the typist's hands swap every drawing on twos (8 px), the caller's free hand flips between two gestures on threes, the lounger does not move at all. The board is a drawing that changes by hard cuts: one cell flips direction every 0.5 s until 3.0 s. The event is a wave, not a cut: from 3.0 s the twelve cells turn to the blue up arrow one drawing apart, left to right and top row first (1 s for the board), and the reactions are staggered three drawings apart as it passes: 3.25 s the typist's head comes up, 3.5 s the caller is on their feet in 3 drawings (the feet stay where they were under the desk, the hip goes up and forward over them), 3.75 s the lounger is on the keyboard in 2 drawings. On their feet the caller throws the far fist up behind the head and holds the handset out in front, so the face stays clear. Every reaction has a drawing past its pose: the typist's head comes up half-way, goes past its hold (with the trail, about 0.04 rad on screen) and holds, and comes down through -0.12; the caller rises in 3 drawings, the middle one a little past standing (hips 4% further, the feet staying on the floor); the lounger lands a drawing past the typing pose. Each figure passes its drawing before as pose.prev, so heads and hair trail the reactions. Bubble 3.92-4.75 s over the held standing pose, after the lounger has landed on the keyboard; the caller sits again in 2 drawings at 4.75 s the handset goes back on its cradle and the lounger's cup stands on the desk (a prop that is put down stays in the picture), and all three type on twos, from 5.0 s with shake marks re-rolled each drawing, while three sheets leave the desks at 4.75, 5.0 and 5.33 s, 14 drawings each on an arc, and lie where they land. Three colours: the caller's yellow top, and the board's two data colours. */
 const F = IB.FIG, FLOOR = 940, DESK = 778, H = 400;
 const SEATS = [220, 760, 1300];
 const WHO = [
@@ -52,6 +53,16 @@ function poses(t) {
 const drawn = (t) => { const tt = IB.twos(t), now = poses(t), was = tt > 0 ? poses(tt - 1e-4) : []; return now.map((p, i) => ({ ...p, prev: was[i] })); };
 IB.actors = (t) => { const [typist, caller, lounger] = poses(t); return { typist, caller, lounger }; };
 
+// the camera on ones: the office pushing in, a cut to the left of the row under the board as the wave starts, the reference's pan along the row with the wave (the caller rises inside it), a cut to a lower wide when they all start typing, pushing in
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [0, { at: [960, 560], w: 1640 }, 'push', 72],
+  [72, { at: [640, 570], w: 1200 }, 'cut'],
+  [80, { at: [1220, 570], w: 1200 }, 'pan', 16],
+  [114, { at: [960, 600], w: 1600 }, 'cut'],
+  [118, { at: [910, 620], w: 1480 }, 'push', 62],
+];
+
 // which of the board's twelve cells show an up arrow at time tt
 function cells(tt) {
   const half = Math.floor(tt * 2 + 1e-6), up = [];
@@ -71,29 +82,31 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), k = Math.round(tt * 12), ps = drawn(t);
-    IB.tickerBoard(ctx, [320, 160], { up: cells(tt) });   // hung low, leaving a band above the heads for the bubble
-    IB.wallClock(ctx, [1740, 260]);
-    IB.smear(ctx, 960, FLOOR - 4, 1760, { h: 14, seed: 9 });
-    // a sheet leaves each desk as its sitter joins in, flies 14 drawings and lies where it lands
-    IB.flyingSheet(ctx, [SEATS[0] + 300, DESK - 20], [SEATS[0] + 470, FLOOR - 6], IB.drawn(tt, IB.T(57)), { seed: 600 });
-    IB.flyingSheet(ctx, [SEATS[1] + 290, DESK - 20], [SEATS[1] + 500, FLOOR - 6], IB.drawn(tt, IB.T(60)), { seed: 610 });
-    IB.flyingSheet(ctx, [SEATS[2] + 280, DESK - 20], [SEATS[2] + 500, FLOOR - 6], IB.drawn(tt, IB.T(64)), { seed: 620 });
-    SEATS.forEach((x, i) => {
-      const p = ps[i], look = { ...WHO[i], face: p.face };
-      IB.chair(ctx, x, FLOOR, H, 1, { seed: 700 + i * 10 });
-      IB.figure(ctx, p, look, 'far');
-      IB.workstation(ctx, [x, DESK], { floor: FLOOR, seed: 500 + i * 10 });
-      if (i === 1) IB.phoneCradle(ctx, [x + 236, DESK]);
-      const j = IB.figure(ctx, p, look, 'near');
-      if (p.phone) IB.handset(ctx, j.hands[1], { cradle: [x + 236, DESK] });   // the handset in the near hand, its cord back to the cradle
-      if (p.phoneDown) IB.phoneCradle(ctx, [x + 236, DESK], { rest: true });     // back on the cradle
-      if (p.cupDown) IB.cup(ctx, [x + 260, DESK - 6]);                            // put down on the desk
-      if (p.cup) IB.cup(ctx, j.hands[1]);
-      // everyone hammering the keys: marks above each keyboard, re-rolled on every drawing
-      if (tt >= IB.T(60) - 1e-6 && !p.phone && !p.cup) { IB.shake(ctx, x + 124, DESK - 40, 14, { a: -Math.PI / 2 - 0.5, n: 2, seed: 800 + i * 40 + k, w: 2.4 }); IB.shake(ctx, x + 196, DESK - 40, 14, { a: -Math.PI / 2 + 0.5, n: 2, seed: 820 + i * 40 + k, w: 2.4 }); }
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.tickerBoard(ctx, [320, 160], { up: cells(tt) });   // hung low, leaving a band above the heads for the bubble
+      IB.wallClock(ctx, [1740, 260]);
+      IB.smear(ctx, 960, FLOOR - 4, 1760, { h: 14, seed: 9 });
+      // a sheet leaves each desk as its sitter joins in, flies 14 drawings and lies where it lands
+      IB.flyingSheet(ctx, [SEATS[0] + 300, DESK - 20], [SEATS[0] + 470, FLOOR - 6], IB.drawn(tt, IB.T(57)), { seed: 600 });
+      IB.flyingSheet(ctx, [SEATS[1] + 290, DESK - 20], [SEATS[1] + 500, FLOOR - 6], IB.drawn(tt, IB.T(60)), { seed: 610 });
+      IB.flyingSheet(ctx, [SEATS[2] + 280, DESK - 20], [SEATS[2] + 500, FLOOR - 6], IB.drawn(tt, IB.T(64)), { seed: 620 });
+      SEATS.forEach((x, i) => {
+        const p = ps[i], look = { ...WHO[i], face: p.face };
+        IB.chair(ctx, x, FLOOR, H, 1, { seed: 700 + i * 10 });
+        IB.figure(ctx, p, look, 'far');
+        IB.workstation(ctx, [x, DESK], { floor: FLOOR, seed: 500 + i * 10 });
+        if (i === 1) IB.phoneCradle(ctx, [x + 236, DESK]);
+        const j = IB.figure(ctx, p, look, 'near');
+        if (p.phone) IB.handset(ctx, j.hands[1], { cradle: [x + 236, DESK] });   // the handset in the near hand, its cord back to the cradle
+        if (p.phoneDown) IB.phoneCradle(ctx, [x + 236, DESK], { rest: true });     // back on the cradle
+        if (p.cupDown) IB.cup(ctx, [x + 260, DESK - 6]);                            // put down on the desk
+        if (p.cup) IB.cup(ctx, j.hands[1]);
+        // everyone hammering the keys: marks above each keyboard, re-rolled on every drawing
+        if (tt >= IB.T(60) - 1e-6 && !p.phone && !p.cup) { IB.shake(ctx, x + 124, DESK - 40, 14, { a: -Math.PI / 2 - 0.5, n: 2, seed: 800 + i * 40 + k, w: 2.4 }); IB.shake(ctx, x + 196, DESK - 40, 14, { a: -Math.PI / 2 + 0.5, n: 2, seed: 820 + i * 40 + k, w: 2.4 }); }
+      });
+      const b = ps[1];
+      IB.bubble(ctx, ['매수!'], t, IB.T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 512, until: IB.T(57), seed: 900 });
     });
-    const b = ps[1];
-    IB.bubble(ctx, ['매수!'], t, IB.T(47), { tip: [b.hip[0] + 46, b.hip[1] - 0.31 * H], x: b.hip[0] + 200, y: 512, until: IB.T(57), seed: 900 });
   },
 });
 </script>

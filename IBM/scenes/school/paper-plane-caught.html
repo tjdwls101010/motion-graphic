@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>school / paper-plane-caught</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/props/classroom.js"></script>
+<script>
+/* 선생님이 칠판에 글씨를 쓰는 사이 뒷자리 아이가 종이비행기를 날리고, 비행기가 교실을 가로지르는 동안 선생님이 돌아서며 손을 들어 딱 잡자 아이가 던진 자세 그대로 얼어붙는다. 원본에 없는 창작 장면으로, 칠판·분필·아이 책상과 의자(kit/props/classroom.js), 종이비행기 IB.paperPlane(variation/hall-whip-button), 흔들림선 IB.shake, 일상 인물 teacher·pupil·pupil3를 썼다. 전달하는 생각: 등 뒤의 일은 다 보인다.
+   Motion notes: one locked shot, 6.5 s: teacher 580 px (line 3.9 px), children 394 px (line 3.2 px); the board runs off the left edge. All on twos, every drawing passing the one before as pose.prev for its first two frames. 0-2.25 s the teacher writes with her back to the class: 28 drawings, each puts 1/27 of a 116 px row of chalk scribbles on the board (IB.chalkboard state.drawn) at shoulder height, the hand on the chalk's tip (IB.along of the stroke being written), the hips moving 27 px and the spine straightening 0.3 to 0.14 as the row comes toward her. 1.17 s the back child cocks the plane behind its head (far arm, an in-between and the hold), aims 0.58 s, throws at 1.92 s: an in-between, one drawing past (lean 0.26, hips 7 px up, hand 0.27 h out), the follow-through held. The plane flies on twos like the drawn thing it is (the reference puts only machines and camera on ones): 12 drawings from the throwing hand (the first drawing is in it) to the teacher's fist, 631 px left and 306 px up on a 205 px arc, its nose along its path, IB.paperPlane mirrored at s 0.85 (105 px, 3 px line). The front child ducks and looks up as it passes over (2.17 s). 2.5 s the teacher stops (eyes wide, head up), 2.67 s sinks 10 px (the anticipation), 2.75 s comes round: the drawing she turns on keeps her feet where they were, 2.83 s her far hand up past the catch (0.17 h ahead of the shoulder and 0.225 h above it, inside the arm's reach), 2.92 s the plane arrives on that drawing and her fist closes on it; an in-between and she holds it out in front of her from 3.08 s (0.25 h ahead of the shoulder), the plane's nose clear of her face. She turns on the spot: her shoes swing round where they stood, so no foot jumps, and the chalk stays in her other fist. The thrower holds the plane behind its head (drawn before the child, so the head and fist cover it) from the in-between at 1.17 s. The thrower jolts a drawing after the catch (shake marks for 3 drawings) and freezes in its follow-through, eyes wide. Bubble 3.42-5.0 s; still from 5.08 s. Colours: navy trousers, the yellow and mint tees, and the lavender plane as the one small accent. */
+const F = IB.FIG, FLOOR = 1020, H = 580, KH = Math.round(H * 0.68);
+const TX = 760, AX = 1200, BX = 1700, U = H / 340;   // U: px offsets below were first set on a 340 px teacher
+const T = { ...IB.PEOPLE.teacher, h: H, dir: -1, seed: 14 }, A = { ...IB.PEOPLE.pupil, h: KH, dir: -1, seed: 36 }, B = { ...IB.PEOPLE.pupil3, h: KH, dir: -1, seed: 58 };
+const shoulder = (p, look) => { const l = p.lean || 0, d = p.dir || look.dir, u = (F.torso - 0.012) * look.h; return [p.hip[0] + Math.sin(l) * d * u, p.hip[1] - Math.cos(l) * u]; };
+const off = (p, look, dx, dy) => { const s = shoulder(p, look), d = p.dir || look.dir; return [s[0] + dx * look.h * d, s[1] + dy * look.h]; };
+const set = (p, look, i, dx, dy) => { const hands = p.hands.slice(); hands[i] = off(p, look, dx, dy); return { ...p, hands }; };
+
+/* ---------- the writing: a row of scribbles at shoulder height, a share of it every drawing ---------- */
+const OLD = [...IB.chalkScript([-100, 270], 900, { seed: 31, size: 40 }), ...IB.chalkScript([-100, 370], 620, { seed: 32, size: 40 }), ...IB.chalkShape('underline', [-100, 394], 200), ...IB.chalkScript([-100, FLOOR - 0.81 * H], 560, { seed: 33, size: 40 })];
+const ROW = IB.chalkScript([TX - 0.4 * H, FLOOR - 0.81 * H], 0.2 * H, { size: 0.07 * H, seed: 34 }), STROKES = [...OLD, ...ROW];
+const WRITE = [0, 54];   // frames the hand writes over, on twos
+const written = (f) => Math.min(1, Math.max(0, (f - (f % 2) - WRITE[0]) / (WRITE[1] - WRITE[0])));
+const tipAt = (u) => { const n = u * ROW.length, i = Math.min(ROW.length - 1, Math.floor(n)); return IB.along(ROW[i], n - i); };
+
+/* ---------- the teacher ---------- */
+const TS = { ...IB.stand(TX, FLOOR, T), dir: -1, hand: ['relax', 'grip'], face: { mouth: 'flat' } }, TY = TS.hip[1];
+const writing = (u) => { const tip = tipAt(u); return { ...TS, hip: [TX + (-10 + 16 * u) * U, TY + 4], lean: 0.3 - 0.16 * u, nod: 0.04, hands: [TS.hands[0], [tip[0] + 10 * U, tip[1] + 6 * U]], face: { mouth: 'flat', brow: 0.4 }, tip }; };
+const ST = { ...IB.stand(TX + 6 * U, FLOOR, { ...T, dir: 1 }), hip: [TX + 6 * U, TY + 5], dir: 1, hand: ['open', 'grip'] };   // facing the class; the hips 5 px lower so the feet she turned on reach the floor
+const turned = (more, dx, dy) => set({ ...ST, feet: TS.feet, ...more }, T, 0, dx, dy);   // she turns on the spot: the shoes swing round where they stand, so no foot jumps
+const TP = {
+  hear: { ...writing(1), nod: -0.04, face: { eye: 'wide', mouth: 'flat' } },
+  squash: { ...writing(1), hip: [TX + 4 * U, TY + 6 * U], lean: 0.18, nod: 0.06, face: { eye: 'wide', mouth: 'flat', brow: 1 } },
+  turn: turned({ hip: [TX + 4 * U, TY + 3 * U], feet: TS.feet, lean: -0.04, face: { eye: 'wide', mouth: 'flat', brow: 1 } }, 0.12, -0.18),   // the drawing she comes round on: her feet have not moved yet
+  reachPast: turned({ hip: [TX + 8 * U, TY + 6], lean: -0.1, nod: -0.08, face: { eye: 'wide', mouth: 'flat', brow: 1 } }, 0.17, -0.225),
+  catch: turned({ lean: -0.06, nod: -0.04, hand: ['grip', 'grip'], face: { mouth: 'flat', brow: 1 } }, 0.2, -0.2),
+  hold: turned({ lean: 0.02, nod: 0.02, hand: ['grip', 'grip'], face: { mouth: 'frown', brow: 1 } }, 0.25, -0.03),
+  say: turned({ lean: 0.03, nod: 0.03, hand: ['grip', 'grip'], face: { mouth: 'open', brow: 1 } }, 0.25, -0.03),
+};
+const T_ACT = [];
+for (let f = WRITE[0]; f <= WRITE[1]; f += 2) T_ACT.push([f, writing(written(f))]);
+T_ACT.push([60, TP.hear], [64, TP.squash], [66, TP.turn], [68, TP.reachPast], [70, TP.catch], [72, IB.poseMix(TP.catch, TP.hold, 0.5)], [74, TP.hold], [82, TP.say], [120, TP.hold]);
+
+/* ---------- the plane: thrown at frame 46, on twos, 12 drawings to the hand ---------- */
+const THROW = 46, CATCH = 70;
+const HELD = [-8 * U, -6 * U], GRIP = [0.07 * H, -4 * U];   // the plane's centre from the fist that holds it: the thrower's, and the teacher's (the nose clear of her face)
+const handAt = (p) => p.hands[0];
+function plane(f) {
+  if (f < THROW) return null;
+  const n = Math.min(CATCH, f - (f % 2)) - THROW, u = n / (CATCH - THROW);
+  if (f >= CATCH) return { caught: true };
+  const at = (v) => [MG.lerp(START[0], END[0], v), MG.lerp(START[1], END[1], v) - Math.sin(v * Math.PI) * 120 * U], [x, y] = at(u), [x2, y2] = at(Math.min(1, u + 0.05));
+  return { at: [x, y], rot: Math.atan2(y2 - y, x - x2) };
+}
+
+/* ---------- the children: B throws from the back, A ducks as it goes over ---------- */
+const DESK = FLOOR - 0.43 * KH;
+const kid = (X, S, hip, lean, nod, face, far, hand = 'relax') => ({ ...S, hip, lean, nod, face, hand: [hand, 'relax'], hands: [far || [X - 0.22 * KH, DESK - 4 * U], [X - 0.18 * KH, DESK - 4 * U]] });
+const BS = IB.sit(BX, FLOOR, B), BY = BS.hip[1], AS = IB.sit(AX, FLOOR, A), AY = AS.hip[1];
+const bArm = (p, dx, dy) => set(p, B, 0, dx, dy);
+const BP = {
+  sit: kid(BX, BS, [BX, BY], 0.08, 0.02, { mouth: 'smile', brow: 0.8 }),
+  aim: bArm(kid(BX, BS, [BX + 2 * U, BY], -0.1, -0.06, { mouth: 'smile', brow: 0.8 }, null, 'grip'), -0.13, -0.23),
+  throwPast: bArm(kid(BX, BS, [BX - 4 * U, BY - 4 * U], 0.26, 0.08, { eye: 'wide', mouth: 'open' }, null, 'open'), 0.27, -0.09),
+  thrown: bArm(kid(BX, BS, [BX - 2 * U, BY - 2 * U], 0.18, 0.04, { mouth: 'smile', brow: 0.8 }, null, 'open'), 0.25, -0.06),
+  jolt: bArm(kid(BX, BS, [BX - U, BY - 4 * U], 0.16, -0.02, { eye: 'wide', mouth: 'flat', brow: -0.6 }, null, 'open'), 0.25, -0.08),
+  frozen: bArm(kid(BX, BS, [BX - 2 * U, BY - 2 * U], 0.18, 0.02, { eye: 'wide', mouth: 'flat', brow: -0.6 }, null, 'open'), 0.25, -0.06),
+};
+const B_ACT = [[0, BP.sit], [28, IB.poseMix(BP.sit, BP.aim, 0.5)], [30, BP.aim], [THROW - 2, IB.poseMix(BP.aim, BP.throwPast, 0.4)], [THROW, BP.throwPast], [THROW + 2, BP.thrown], [72, BP.jolt], [74, BP.frozen]];
+const AP = {
+  sit: kid(AX, AS, [AX, AY], 0.1, 0.06, { mouth: 'flat' }),
+  duck: kid(AX, AS, [AX, AY + 3 * U], 0.2, -0.2, { eye: 'wide', mouth: 'open' }),
+  look: kid(AX, AS, [AX, AY + U], 0.12, -0.12, { eye: 'wide', mouth: 'open' }),
+};
+const START = [BP.throwPast.hands[0][0] + HELD[0], BP.throwPast.hands[0][1] + HELD[1]], END = [TP.catch.hands[0][0] + GRIP[0], TP.catch.hands[0][1] + GRIP[1]];   // the flight leaves the throwing hand and ends where the catching fist holds it
+const A_ACT = [[0, AP.sit], [52, IB.poseMix(AP.sit, AP.duck, 0.6)], [54, AP.duck], [74, IB.poseMix(AP.duck, AP.look, 0.5)], [76, AP.look]];
+
+function drawing(act, f) {
+  let i = 0;
+  while (i + 1 < act.length && act[i + 1][0] <= f) i++;
+  const [k, p] = act[i], next = i + 1 < act.length ? act[i + 1][0] : Infinity, trail = i > 0 && (f - k < 2 || next - k <= 3);
+  return { ...p, prev: trail ? act[i - 1][1] : p };
+}
+function state(t) {
+  const f = IB.frame(t);
+  return { teacher: drawing(T_ACT, f), front: drawing(A_ACT, f), back: drawing(B_ACT, f), plane: plane(f), drawn: OLD.length + written(f) * ROW.length };
+}
+IB.actors = (t) => { const s = state(t); return { teacher: s.teacher, front: s.front, back: s.back, plane: s.plane, writing: s.drawn }; };
+
+function seat(ctx, x, p, look, seed) {
+  IB.schoolChair(ctx, [x, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), seed });
+  IB.schoolDesk(ctx, [x, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'legs', seed: seed + 20 });
+  IB.smear(ctx, x - 0.2 * KH, FLOOR - 8, 0.95 * KH, { h: 15, seed: seed + 3 });
+  const lk = { ...look, face: p.face };
+  IB.figure(ctx, p, lk, 'far');
+  IB.schoolDesk(ctx, [x, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'top', seed: seed + 20 });
+  return IB.figure(ctx, p, lk, 'near');
+}
+
+MG.scene({
+  title: 'school / paper-plane-caught',
+  duration: 6.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), s = state(t), p = s.teacher;
+    IB.chalkboard(ctx, [380, 460], { strokes: STROKES, drawn: s.drawn, smudges: [[200, 440, 300, 46]] }, { w: 1200, h: 600, lw: 4.2, frame: 22 });
+    seat(ctx, AX, s.front, A, 860);
+    // the plane in the thrower's far hand, behind its head: drawn before the child, so the head and the fist cover it
+    if (f >= 28 && f < THROW) { const h = s.back.hands[0]; ctx.save(); ctx.translate(h[0] + HELD[0], h[1] + HELD[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: 0.3 }); ctx.restore(); }
+    const jb = seat(ctx, BX, s.back, B, 900);
+    if (f >= 72 && f < 78) IB.shake(ctx, jb.headAt[0] + 4 * U, jb.headAt[1] - 6 * U, 26 * U, { a: -Math.PI / 2, n: 2, span: 0.55, gap: 13, seed: 80 + (f >> 1) * 3, w: 3.2 });
+    // the plane, before the teacher so the hand that catches it closes over it; it points left, so it is mirrored
+    const pl = s.plane;
+    if (pl && pl.caught) { const h = p.hands[0]; ctx.save(); ctx.translate(h[0] + GRIP[0], h[1] + GRIP[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: -0.12 }); ctx.restore(); }
+    else if (pl) { ctx.save(); ctx.translate(pl.at[0], pl.at[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: pl.rot }); ctx.restore(); }
+    IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
+    const look = { ...T, dir: p.dir, face: p.face }, j = IB.figure(ctx, p, look);
+    if (p.tip) { const hd = j.hands[1]; IB.chalk(ctx, [(hd[0] + p.tip[0]) / 2, (hd[1] + p.tip[1]) / 2], { rot: Math.atan2(p.tip[1] - hd[1], p.tip[0] - hd[0]), len: 18 * U, wd: 6 * U }); }
+    else { const hd = j.hands[1]; IB.chalk(ctx, [hd[0] + 3 * U, hd[1] + 9 * U], { rot: 1.25, len: 18 * U, wd: 6 * U }); }   // turned round, the chalk stays in the hanging fist
+    IB.bubble(ctx, ['압수!'], t, 3.42, { until: 5.0, tip: [j.headAt[0] + 0.09 * H, j.headAt[1] - 0.07 * H], x: j.headAt[0] + 0.36 * H, y: j.headAt[1] - 0.36 * H, seed: 500 });
+  },
+});
+</script>

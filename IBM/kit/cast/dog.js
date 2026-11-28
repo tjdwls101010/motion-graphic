@@ -99,7 +99,7 @@
     return { ...(u < 0.5 ? a : b), body: [lerp(a.body[0], b.body[0], u), lerp(a.body[1], b.body[1], u)], tilt: f('tilt'), neck: f('neck', 1), head: f('head'), mouth: Math.max(0, f('mouth')), ear: Math.max(-1, Math.min(1, f('ear'))), tail: f('tail', 0.7), feet: a.feet.map((q, i) => [lerp(q[0], b.feet[i][0], v), lerp(q[1], b.feet[i][1], v)]) };
   };
 
-  /* leash(ctx, hand, collar, state, opts) — the lead from a hand to the collar: one ink line that droops between them when slack and pulls straight when taut. state.taut 0..1 (0 hangs a sag of 0.3 x the span plus 30 px, 1 is a straight line); a small loop goes round the hand. Draw it after the figure and the dog. opts { w (3), color (C.ink), seed }. Returns its lowest point (where to put shake marks when it snaps taut). */
+  /* leash(ctx, hand, collar, state, opts) — the lead from a hand to the collar: one ink line that droops between them when slack and pulls straight when taut. state.taut 0..1 (0 hangs a sag of 0.3 x the span plus 30 px, 1 is a straight line); a small loop goes round the hand. Draw it after the figure and the dog. opts { w (3), color (C.ink), seed }. Returns the middle of the line (half way along the curve; the lowest point when hand and collar are level), where to put shake marks when it snaps taut. */
   IB.leash = (ctx, hand, collar, st = {}, o = {}) => {
     const { taut = 0 } = st, { w = 3, color = C.ink, seed = 680 } = o;
     const D = Math.hypot(collar[0] - hand[0], collar[1] - hand[1]), sag = Math.pow(1 - Math.max(0, Math.min(1, taut)), 1.3) * (0.3 * D + 30);

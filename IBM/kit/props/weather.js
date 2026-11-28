@@ -42,7 +42,7 @@
     ctx.restore();
   };
 
-  /* raindrop(ctx, at, opts) — one falling drop, its round end at `at`: a blue teardrop 11 x 22 px (times s) with an ink outline, stretched along its fall by `stretch` (1.6 for the drawing where it falls fastest). Smaller than IB.drop (marks.js), for a drop that lands on a head or runs off a soaked figure. opts { s (1), stretch (1), fill (C.blue), w (2.2), seed (930) }. */
+  /* raindrop(ctx, at, opts) — one falling drop, its round end at `at`: a blue teardrop 11 x 27.5 px (times s; its tip is 22 x s above `at` and its round end 5.5 x s below) with an ink outline, stretched along its fall by `stretch` (1.6 for the drawing where it falls fastest: only the tip goes up). Smaller than IB.drop (marks.js), for a drop that lands on a head or runs off a soaked figure. opts { s (1), stretch (1), fill (C.blue), w (2.2), seed (930) }. */
   IB.raindrop = (ctx, [x, y], o = {}) => {
     const { s = 1, stretch = 1, fill = C.blue, w = 2.2, seed = 930 } = o, k = s, t = 16 * s * stretch;
     IB.ink(ctx, [[x, y - 6 * k - t], [x - 5.5 * k, y - 3 * k], [x - 4 * k, y + 3.5 * k], [x, y + 5.5 * k], [x + 4 * k, y + 3.5 * k], [x + 5.5 * k, y - 3 * k]], { closed: true, fill, w, seed });

@@ -135,7 +135,7 @@
 
   /* The head in profile: skull, nose and chin as one shape, an eye, a mouth. face: { eye: 'dot' | 'closed' | 'wide' | 'shades', mouth: 'smile' | 'flat' | 'open' | 'frown', brow: -1..1 } */
   function head(ctx, at, ang, dir, h, look, lw, seed, swing = 0) {
-    const s = (F.head * h) / 21, face = look.face || {};
+    const s = (F.head * h * (look.headK || 1)) / 21, face = look.face || {};
     ctx.save();
     ctx.translate(at[0], at[1]);
     ctx.rotate(ang * dir);
@@ -170,15 +170,15 @@
      pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], hand: ['relax', 'relax'], grip: [false, false], prev }
            prev is the pose of the drawing shown just before this one (a plain pose, without a prev of its own). With it the head and the hair behind it trail the move by one drawing: the head keeps the whole tilt the spine's lean gave it in the drawing before and half of the nod it just left, and a ponytail, bun or curls swing against the way the hips moved and the way the spine tipped. The drawing after a move has stopped has prev equal to itself, so the trail settles there and the hold that follows is dead still. Without prev nothing trails. Pass it from the scene's own drawing grid: prev = the pose of the drawing before, e.g. the pose at IB.twos(t) - 1e-4 when the pose function floors raw time to its drawing (it must floor: a function that rounds would give the same drawing back). Do not pass it through a tremble that flips between two poses each drawing (a strain, a shiver): a one-drawing lag averages the two and the tremble dies.
            hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. hand picks each hand's drawing: 'relax' | 'grip' | 'open' | 'point' (see hand() above); grip: true is the older way to say 'grip'; hand wins over grip. Start from IB.stand() and move what the pose changes.
-     look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, face, seed }
-           h is the standing height in px, dir 1 faces right and -1 left. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
+     look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, headK, face, seed }
+           h is the standing height in px, dir 1 faces right and -1 left. headK scales the head (default 1): a child is a shorter figure (h 0.6-0.75 of an adult's) whose head is a larger part of its height, headK 1.25-1.35, and the head rides up its neck to make room. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
      Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands), and drag: [dx, dy], half of how far the hips moved since prev and the other way, for a hanging thing (a bag, a cord) to trail by. Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
   IB.figure = (ctx, pose, look, only) => {
     const h = look.h, d = look.dir || 1, lw = look.lw || IB.figLine(h), seed = look.seed || 1, skin = look.skin || C.skin[2];
     const top = look.top || C.bg, bottom = look.bottom || C.navy, tee = (look.topKind || 'tee') === 'tee', shorts = look.bottomKind === 'shorts';
     const lean = pose.lean || 0, sx = Math.sin(lean) * d, sy = -Math.cos(lean), fx = Math.cos(lean) * d, fy = Math.sin(lean);   // spine and forward unit vectors
     const hip = pose.hip, at = (u, f) => [hip[0] + sx * u * h + fx * f * h, hip[1] + sy * u * h + fy * f * h];
-    const sh = at(F.torso - 0.012, 0.004), headAt = at(F.torso + F.neck, 0.016 + (pose.nod || 0) * 0.03);
+    const sh = at(F.torso - 0.012, 0.004), headAt = at(F.torso + F.neck + ((look.headK || 1) - 1) * F.head * 0.8, 0.016 + (pose.nod || 0) * 0.03);   // a larger head sits higher on the same neck
     const knee = pose.knee || [1, 1], elbow = pose.elbow || [1, 1], grip = pose.grip || [false, false], kinds = [0, 1].map((i) => (pose.hand && pose.hand[i]) || (grip[i] ? 'grip' : 'relax'));
     // follow-through from the previous drawing (none without pose.prev)
     const prev = pose.prev, dl = prev ? (prev.lean || 0) - lean : 0, dn = prev ? (prev.nod || 0) - (pose.nod || 0) : 0;
@@ -254,6 +254,30 @@
     return p;
   };
   IB.walkLen = (look, stride = 0.21) => 4 * stride * look.h;
+
+  /* run(x, floor, look, ph, opts) — one drawing of a run for a figure whose body is at x: ph 0..1 runs through two steps, ph = 0 is the near foot landing. Draw 8 of them on twos (0.67 s per two steps, 3 steps a second). Unlike the walk each foot is on the floor for only `stance` (0.3) of its cycle, so the body is in the air twice a cycle with both feet up, and it carries the body IB.runLen = 2 x `step` / `stance` = 1.47 h a cycle (2.2 h/s: 2.6 times the walk): move x by IB.runLen / 8 a drawing across a still stage and the planted foot stays put.
+     Stance foot: lands flat-ish (toe up 0.15 rad) ahead by `step` x h (0.22) and slides back under the body. Swing foot: the heel kicks up under the seat (0.28 h off the floor, 0.1 h behind the hip, toe down) and the knee comes through high to land. Hips 0.05 h below a stand on the landing (so the leg reaches the foot out ahead), 0.075 h at mid-stance and 0.025 h in the air. Spine tipped forward 0.22 rad; arms bent, the hands pumping against the legs by `swing` x h (0.14) at waist height. */
+  IB.run = (x, floor, look, ph, o = {}) => {
+    const h = look.h, d = look.dir || 1, step = (o.step == null ? 0.22 : o.step) * h, ST = o.stance == null ? 0.3 : o.stance, p = IB.stand(x, floor, look), ay = floor - F.ankle * h;
+    const foot = (u) => {   // u: this foot's own phase; 0-ST on the floor
+      if (u < ST) { const k = u / ST, pitch = k < 0.3 ? -0.15 * (1 - k / 0.3) : k > 0.7 ? (0.5 * (k - 0.7)) / 0.3 : 0; return [step * (1 - 2 * k), -IB.footLift(pitch, h), pitch]; }
+      const k = (u - ST) / (1 - ST);   // the heel kicks up under the seat first (to 0.1 h behind the hip, 0.28 h up), then the knee drives through and the foot reaches out to land
+      const fx = k < 0.4 ? lerp(-step, -0.1 * h, Math.sin((k / 0.4) * Math.PI / 2)) : lerp(-0.1 * h, step, (1 - Math.cos(((k - 0.4) / 0.6) * Math.PI)) / 2);
+      const fy = k < 0.4 ? 0.28 * h * Math.sin((k / 0.4) * Math.PI / 2) : 0.28 * h * (1 - Math.pow((k - 0.4) / 0.6, 1.6)), pitch = k < 0.4 ? lerp(0.5, 1.1, k / 0.4) : lerp(1.1, -0.15, (k - 0.4) / 0.6);
+      return [fx, -fy - IB.footLift(pitch, h) * (1 - Math.sin(Math.PI * k)), pitch];
+    };
+    const near = foot(ph), far = foot((ph + 0.5) % 1), sw = Math.cos(ph * 2 * Math.PI) * (o.swing == null ? 0.14 : o.swing) * h;
+    const bump = (u) => (u < ST ? Math.sin((Math.PI * u) / ST) : 0);
+    p.feet = [[x + far[0] * d, ay + far[1], far[2]], [x + near[0] * d, ay + near[1], near[2]]];
+    const down = ph % 0.5 < ST ? 0.05 + 0.025 * Math.max(bump(ph), bump((ph + 0.5) % 1)) : 0.025;
+    p.hip[1] += h * down;
+    p.lean = o.lean == null ? 0.22 : o.lean;
+    const hy = p.hip[1] - 0.1 * h;   // the pumping hands ride at the waist, elbows bent
+    p.hands = [[x + (0.06 * h + sw) * d, hy - Math.max(0, sw) * 0.5], [x + (0.06 * h - sw) * d, hy + Math.min(0, sw) * 0.5]];
+    p.hand = ['grip', 'grip'];
+    return p;
+  };
+  IB.runLen = (look, step = 0.22, stance = 0.3) => (2 * step * look.h) / stance;
 
   /* poseMix(a, b, u) — the pose a fraction u of the way from a to b, joint by joint. For the one or two in-betweens of a move; a held pose is just a (the reference holds its poses dead still). u above 1 is an overshoot drawing (1.05-1.1, the body passing its mark before it settles on b): hip, lean, nod and hands go past b, the feet never do (a foot on the floor does not overshoot). */
   IB.poseMix = (a, b, u) => {

@@ -14,6 +14,16 @@
     trader: { skin: C.skin[1], top: C.yellow, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short' },              // yellow long sleeves (market/watched-chart-drops, trading-desk-row)
     typist: { skin: C.skin[3], top: C.bg, topKind: 'long', bottom: C.charcoal, shoe: C.ink, hair: 'bun' },                 // white shirt, charcoal trousers (market/trading-desk-row)
     lounger: { skin: C.skin[4], top: C.bg, bottom: C.ink, shoe: C.paper, hair: 'curly' },                                  // white tee (market/trading-desk-row)
+    // the daily scenes (work, school, street): adults at the wide shot's h 300-360, children at 0.68 of the adult beside them with headK 1.3
+    clerk: { skin: C.skin[2], top: C.sky, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'short' },                  // sky shirt (work)
+    designer: { skin: C.skin[4], top: C.yellow, bottom: C.charcoal, shoe: C.paper, hair: 'bun' },                          // yellow tee (work)
+    boss: { skin: C.skin[1], top: C.charcoal, topKind: 'long', bottom: C.charcoal, shoe: C.ink, hair: 'bald' },            // charcoal suit (work)
+    teacher: { skin: C.skin[3], top: C.bg, topKind: 'long', bottom: C.navy, shoe: C.ink, hair: 'bun', hairColor: '#8a8a8a' },   // white blouse, grey bun (school)
+    pupil: { skin: C.skin[1], top: C.yellow, bottom: C.navy, bottomKind: 'shorts', shoe: C.paper, hair: 'curly', headK: 1.3 },   // yellow tee, shorts (school)
+    pupil2: { skin: C.skin[3], top: C.lavender, bottom: C.ink, shoe: C.paper, hair: 'pony', headK: 1.3 },                  // lavender tee, ponytail (school)
+    pupil3: { skin: C.skin[4], top: C.mint, bottom: C.charcoal, shoe: C.paper, hair: 'short', headK: 1.3 },                // mint tee (school)
+    jogger: { skin: C.skin[2], top: C.mint, bottom: C.ink, bottomKind: 'shorts', shoe: C.paper, hair: 'pony' },            // mint tee, shorts (street)
+    commuter: { skin: C.skin[0], top: C.navy, topKind: 'long', bottom: C.ink, shoe: C.paper, hair: 'cap', hat: C.paper },  // navy jacket, white cap (street)
   };
 
   /* PASSERSBY — thirteen people for a crowd, most of them in one dark suit (top and trousers the same colour), a few with one coloured or white top. Shoes are paper under ink trousers and ink otherwise. In a crowd give each a different walk phase so no two feet land together (market/street-rush-hour). */

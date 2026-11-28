@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / figure-run</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 인물 리그의 뛰기 IB.run과 한 사이클 거리 IB.runLen, 그리고 아이 체형 look.headK. 뛰기는 두 걸음 8장을 2프레임 단위로(0.67초, 초당 세 걸음) 그리고, 한 발이 바닥에 있는 것은 제 사이클의 30%뿐이라 한 사이클에 두 번 두 발이 다 뜬다. 한 장에 IB.runLen / 8(키 330px이면 60.5px)씩 옮기면 디딘 발이 미끄러지지 않는다: 걷기의 2.6배 속도다. 위 줄은 8장을 한 장씩 늘어놓은 것, 아래 왼쪽은 무대를 가로지르는 어른, 아래 오른쪽은 어른 키의 0.68에 headK 1.3인 아이가 같은 뛰기로 달리는 것이다. */
+const C = IB.C, FLOOR = 930, ADULT = { ...IB.PEOPLE.jogger, h: 330, dir: 1, seed: 20 }, CHILD = { ...IB.PEOPLE.pupil, h: 225, dir: 1, seed: 40 };
+MG.scene({
+  title: 'cast / figure-run',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.run, IB.runLen — 8 drawings on twos; look.headK for a child (figure.js)');
+    const c = SAMPLE.grid(8, 4), k = Math.round(IB.twos(t) * 12);
+    // the eight drawings of the cycle, side by side, the planted foot marked
+    const strip = SAMPLE.span(c, 0, 3);
+    SAMPLE.cell(ctx, strip, SAMPLE.window([960, FLOOR], strip[2], strip[3]), () => {
+      for (let i = 0; i < 8; i++) {
+        const x = 230 + i * 210, p = IB.run(x, FLOOR, ADULT, i / 8);
+        IB.figure(ctx, p, { ...ADULT, seed: 20 + i * 3 });
+        ctx.fillStyle = '#6f6f6f'; ctx.font = '400 19px "JetBrains Mono"'; ctx.textBaseline = 'top'; ctx.fillText(`ph ${i}/8`, x - 30, FLOOR + 14);
+      }
+    }, 'IB.run(x, floor, look, i / 8), i = 0..7');
+    // crossing the stage at IB.runLen / 8 a drawing
+    const wide = SAMPLE.span(c, 4, 5), L = IB.runLen(ADULT), x0 = 960 - wide[2] / 2 + 100, span = wide[2] - 200, x = x0 + ((k * L) / 8) % span, ph = (k / 8) % 1;
+    SAMPLE.cell(ctx, wide, SAMPLE.window([960, FLOOR], wide[2], wide[3]), () => {
+      IB.smear(ctx, 960, FLOOR - 9, wide[2] - 60, { h: 14, seed: 9 });
+      IB.figure(ctx, IB.run(x, FLOOR, ADULT, ph), ADULT);
+    }, `x += IB.runLen / 8 = ${(L / 8).toFixed(1)} px a drawing`);
+    const kid = SAMPLE.span(c, 6, 7), LK = IB.runLen(CHILD), xk = 960 - kid[2] / 2 + 260 + ((k * LK) / 8) % (kid[2] - 340);
+    SAMPLE.cell(ctx, kid, SAMPLE.window([960, FLOOR], kid[2], kid[3]), () => {
+      IB.smear(ctx, 960, FLOOR - 9, kid[2] - 60, { h: 14, seed: 10 });
+      IB.figure(ctx, IB.stand(960 - kid[2] / 2 + 110, FLOOR, { ...IB.PEOPLE.teacher, h: 330 }), { ...IB.PEOPLE.teacher, h: 330, seed: 60 });
+      IB.figure(ctx, IB.run(xk, FLOOR, CHILD, (k / 8) % 1), CHILD);
+    }, 'PEOPLE.pupil: h 225 (0.68 of 330), headK 1.3');
+  },
+});
+</script>

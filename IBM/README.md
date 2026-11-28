@@ -29,7 +29,7 @@ time.js    시계와 그림 목록: 24fps(IB.FPS), 12fps·8fps 양자화(IB.twos
            그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop), 도착한 것의 감쇠 출렁임(IB.bob)
 marks.js   효과 표시: 터짐선(IB.burst), 쿵(IB.thud), 입김(IB.breath), 연기(IB.smoke), 물방울과 튐(IB.drop, IB.splash), 어둠과 빛줄기(IB.darkness, IB.lightBeam),
            휩에 뜯기는 화면(IB.whipBreakup), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
-figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
+figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.run, IB.runLen, 아이 체형 look.headK, IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
            화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
 solid.js   입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
 cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동작(MOVE: 그 동작의 첫 그림부터 센 [프레임, 포즈] 목록)을 내보낸다

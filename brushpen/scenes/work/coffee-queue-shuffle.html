@@ -11,9 +11,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
 <script src="../../kit/props/copyroom.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 탕비실 커피머신 앞에 컵을 든 셋이 줄 서 있다. 앞사람이 커피를 받아 떠나자 뒤의 둘이 한 장씩 늦게 한 칸씩 당겨 서고, 둘째가 물통의 마지막 물로 커피를 받아 떠난 뒤 마지막 사람이 컵을 놓고 버튼을 누르자 머신이 물 없음 등을 켜고 한 방울만 떨어뜨린다. 원본에 없는 창작 장면으로, 인물 리그(IB.figure, IB.walk, IB.poseMix), 일상 인물(IB.PEOPLE.boss, designer, clerk), 탕비실 소품(IB.counter, IB.coffeeMachine, IB.waterCooler), 종이컵(IB.cup), 말풍선을 썼다. 전달하는 생각: 같은 걸음이 한 장씩 늦게 번지면 줄이 하나의 몸처럼 움직인다.
-   Motion notes: one locked shot, 8 s, three figures 440 px tall (line 3.4 px), dir 1, each with a paper cup (IB.cup) in the near hand, all on twos as walks and lists of drawings, every drawing passing the one before as pose.prev; the pantry parts at s 1.29 (the machine 145 x 217 px on a worktop 233 px up, its cup and button within 0.29 h of the one at the front). A shuffle is one walk cycle from a standing stride (phase 1/3) to the same stride one IB.walkLen (369.6 px) on: 11 walking drawings at 30.8 px each, one drawing thrown forward (lean 0.14) and the stand, so the line's three places are 369.6 px apart and no planted foot slides. The ripple: the boss leaves on frame 30, the designer starts frame 32 and the clerk frame 34, one drawing apart, and each stops one drawing after the one ahead (2.25 s and 2.33 s). Whoever leaves walks on off the right edge and is gone. The machine is a machine: its button sinks for 4 frames, its empty light switches on ones; its stream is drawn and flickers between two drawings on twos, growing in two drawings (0.5, 1). Beats: the boss's stream stops at 0.67 s, he reaches for the cup (an in-between, the grip) at 0.83 s and lifts it at 1.08 s. The designer puts her cup down (in-between 2.58 s, set 2.67 s), lets go, presses the button with the far hand so her face stays clear (2.83 s); the stream runs 3.0-4.0 s while the tank goes from 0.22 to empty; she takes the cup at 4.17 s and walks off at 4.58 s; the clerk follows one drawing later and stops at 5.58 s. He sets his cup down at 5.92 s and presses at 6.08 s; the empty light comes on at 6.25 s, blinks off and on every 6 frames and stays on from 6.75 s; one drop leaves the spout at 6.33 s and is in the cup by 6.67 s, four drawings; he leans in to look (6.42 s) and at 6.83 s slumps with one drawing past (u 1.08, head down 0.5, eyes shut). The bubble opens at 7.0 s and from 7.17 s nothing moves. Three colours: the designer's yellow tee and the clerk's sky shirt, the blue of the water in the tank and the cooler's bottle, and the empty light's yellow; the boss is in charcoal. */
+   Motion notes: 8 s in five shots (IB.shot, on ones): 0 s a wide of the whole line and the cooler (1760 px window); 1.25 s, as the line steps up, a pan after it (on twos, 20 frames, to 1440); 2.58 s a cut to the designer at the machine with the clerk waiting behind her (1000); 4.5 s a cut back to the line (1480) as she leaves and he steps up; 5.75 s an ease in to the machine's grate (600, 14 frames) that lands as the empty light comes on and the drop falls, his face leaning into the close-up; 6.83 s, on the slump, a cut to a medium of him and the machine (1160) for the bubble. Actors are staged once in stage px: three figures 440 px tall (line 3.4 px), dir 1, each with a paper cup (IB.cup) in the near hand, all on twos as walks and lists of drawings, every drawing passing the one before as pose.prev; the pantry parts at s 1.29 (the machine 145 x 217 px on a worktop 233 px up, its cup and button within 0.29 h of the one at the front). A shuffle is one walk cycle from a standing stride (phase 1/3) to the same stride one IB.walkLen (369.6 px) on: 11 walking drawings at 30.8 px each, one drawing thrown forward (lean 0.14) and the stand, so the line's three places are 369.6 px apart and no planted foot slides. The ripple: the boss leaves on frame 30, the designer starts frame 32 and the clerk frame 34, one drawing apart, and each stops one drawing after the one ahead (2.25 s and 2.33 s). Whoever leaves walks on off the right edge and is gone. The machine is a machine: its button sinks for 4 frames, its empty light switches on ones; its stream is drawn and flickers between two drawings on twos, growing in two drawings (0.5, 1). Beats: the boss's stream stops at 0.67 s, he reaches for the cup (an in-between, the grip) at 0.83 s and lifts it at 1.08 s. The designer puts her cup down (in-between 2.58 s, set 2.67 s), lets go, presses the button with the far hand so her face stays clear (2.83 s); the stream runs 3.0-4.0 s while the tank goes from 0.22 to empty; she takes the cup at 4.17 s and walks off at 4.58 s; the clerk follows one drawing later and stops at 5.58 s. He sets his cup down at 5.92 s and presses at 6.08 s; the empty light comes on at 6.25 s, blinks off and on every 6 frames and stays on from 6.75 s; one drop leaves the spout at 6.33 s and is in the cup by 6.67 s, four drawings; he leans in to look (6.42 s) and at 6.83 s slumps with one drawing past (u 1.08, head down 0.5, eyes shut). The bubble opens at 7.0 s and from 7.17 s nothing moves. Three colours: the designer's yellow tee and the clerk's sky shirt, the blue of the water in the tank and the cooler's bottle, and the empty light's yellow; the boss is in charcoal. */
 const F = IB.FIG, FLOOR = 960, H = 440, K = H / 340;   // K: the pantry parts are drawn for a 340 px figure
 const PEOPLE = {
   boss: { ...IB.PEOPLE.boss, h: H, dir: 1, seed: 90 },
@@ -90,6 +91,16 @@ function machineAt(f) {
   return st;
 }
 
+// the camera: the whole line, a pan as it steps up, the designer's coffee, the line again, an ease in to the cup for the drop, the slump
+const SHOTS = [
+  [0, { at: [860, 700], w: 1760 }],
+  [30, { at: [1060, 700], w: 1440 }, 'pan', 20],
+  [62, { at: [1120, 680], w: 1000 }, 'cut'],
+  [108, { at: [1000, 700], w: 1480 }, 'cut'],
+  [138, { at: [1268, 620], w: 600 }, 'ease', 14],
+  [164, { at: [1120, 660], w: 1160 }, 'cut'],
+];
+
 IB.actors = (t) => { const f = IB.frame(t); return { boss: poseAt('boss', t), designer: poseAt('designer', t), clerk: poseAt('clerk', t), machine: machineAt(f) }; };
 
 MG.scene({
@@ -99,21 +110,23 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t), ft = IB.frame(IB.twos(t));
-    IB.smear(ctx, 820, FLOOR - 10, 1500, { h: 16, seed: 9 });
-    IB.waterCooler(ctx, [150, FLOOR], { level: 0.62 }, { s: K, lw: 3.4 });
-    IB.counter(ctx, [MX + 140 * K, FLOOR], { s: K, lw: 3.4 });
-    IB.coffeeMachine(ctx, [MX, TOP], { ...machineAt(f), to: RIM }, { s: K, lw: 3.4 });
-    for (const name of ['clerk', 'designer', 'boss']) {
-      const where = IB.held(CUPS[name], ft);
-      if (where === 'grate') IB.cup(ctx, CUP);
-    }
-    for (const name of ['clerk', 'designer', 'boss']) {
-      const p = poseAt(name, t);
-      if (!p) continue;
-      const j = IB.figure(ctx, p, { ...PEOPLE[name], face: p.face });
-      if (IB.held(CUPS[name], ft) === 'hand') IB.cup(ctx, [j.hands[1][0] - 4, j.hands[1][1] - 2]);
-    }
-    IB.bubble(ctx, ['…한 방울?'], t, 7.0, { tip: [P0 + 24, SHY(D.slump(P0, PEOPLE.clerk)) - 0.16 * H], x: P0 - 190, y: FLOOR - H - 40, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.smear(ctx, 820, FLOOR - 10, 1500, { h: 16, seed: 9 });
+      IB.waterCooler(ctx, [150, FLOOR], { level: 0.62 }, { s: K, lw: 3.4 });
+      IB.counter(ctx, [MX + 140 * K, FLOOR], { s: K, lw: 3.4 });
+      IB.coffeeMachine(ctx, [MX, TOP], { ...machineAt(f), to: RIM }, { s: K, lw: 3.4 });
+      for (const name of ['clerk', 'designer', 'boss']) {
+        const where = IB.held(CUPS[name], ft);
+        if (where === 'grate') IB.cup(ctx, CUP);
+      }
+      for (const name of ['clerk', 'designer', 'boss']) {
+        const p = poseAt(name, t);
+        if (!p) continue;
+        const j = IB.figure(ctx, p, { ...PEOPLE[name], face: p.face });
+        if (IB.held(CUPS[name], ft) === 'hand') IB.cup(ctx, [j.hands[1][0] - 4, j.hands[1][1] - 2]);
+      }
+      IB.bubble(ctx, ['…한 방울?'], t, 7.0, { tip: [P0 + 24, SHY(D.slump(P0, PEOPLE.clerk)) - 0.16 * H], x: P0 - 190, y: FLOOR - H - 40, seed: 500 });
+    });
   },
 });
 </script>

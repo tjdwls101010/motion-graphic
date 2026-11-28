@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>city / tokyo-shinkansen-sakura</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script>
+/* 도쿄 근교: 후지산을 뒤로 벚꽃잎이 천천히 떨어지는 둑길에서 아이가 기다리다 손을 흔들고, 신칸센이 눈 깜짝할 새 지나가며 꽃잎을 한꺼번에 휘몰아 간다. 꽃잎이 다시 가라앉을 때까지 아이는 손을 든 채 멈춰 있다. 원본에 없는 창작 장면이다. 전달하는 생각: 가장 빠른 것이 지나간 뒤에 가장 느린 것이 남는다.
+   Motion notes: one locked shot (IB.crop of a 1560 px window, 1.23x), 8 s. Mount Fuji fills the horizon; the rail runs along an embankment in front of it with a cherry tree at each side. The petals are a new drawing every 2 frames (IB.petals), drifting 3 px a drawing; the train is a machine on ones: its nose enters at 2.5 s and the whole 2600 px train is gone 0.55 s later (4800 px/s, about 34 m/s at this scale), with three speed lines behind its tail on the frames it passes. Its wake blows the petals right: the drift jumps to 60 px a drawing and falls back to 3 over 1.5 s (an exponential, tau 0.5 s), and the near tree's blossom shakes for 4 drawings. The child (h 225, the people's 0.68) waits, then waves on twos (two drawings, no prev) from 1.5 s, freezes with her hand up as the train passes, and holds it there, her ponytail trailing a drawing (pose.prev) as the wake hits. From 6.0 s only the petals move. Colours: Fuji's sky blue and snow, the train's white and blue line, the blossom's lavender (the palette's nearest to pale pink), the child's lavender top. */
+const F = IB.FIG, GROUND = 930, RAIL = 812, PI = Math.PI;
+const KID = { ...IB.PEOPLE.pupil2, h: 225, dir: -1, seed: 60 }, KX = 1360, HY = IB.stand(0, GROUND, KID).hip[1], AY = GROUND - F.ankle * KID.h;
+const PASS = 2.5, TRAIN_V = 4800, LEN = 2600, noseAt = (t) => -40 + (t - PASS) * TRAIN_V;
+const windAt = (t) => 3 + (t > PASS ? 57 * Math.exp(-(t - PASS) / 0.5) : 0);
+const drift = (tt) => { let x = 0; for (let k = 0; k < tt * 12; k++) x += windAt(k / 12); return x; };   // petals' total drift, summed drawing by drawing so it stays pure
+const kp = (hands, more = {}) => IB.posed(KID, { hip: [KX, HY], lean: 0, feet: [[KX + 0.05 * KID.h, AY, 0], [KX - 0.05 * KID.h, AY, 0]], hands, ...more });
+const WAIT = kp([{ a: PI / 2 - 0.15, l: 0.26 }, { a: PI / 2 + 0.1, l: 0.26 }], { face: { eye: 'dot', mouth: 'smile' } });
+const WAVE_A = kp([{ a: PI / 2 - 0.15, l: 0.26 }, { a: -PI / 2 + 0.35, l: 0.285 }], { hand: ['relax', 'open'], face: { eye: 'dot', mouth: 'open' } });
+const WAVE_B = kp([{ a: PI / 2 - 0.15, l: 0.26 }, { a: -PI / 2 - 0.2, l: 0.285 }], { hand: ['relax', 'open'], face: { eye: 'dot', mouth: 'open' } });
+const FREEZE = kp([{ a: PI / 2 - 0.3, l: 0.26 }, { a: -PI / 2 + 0.1, l: 0.285 }], { hand: ['relax', 'open'], lean: -0.08, nod: -0.1, face: { eye: 'wide', mouth: 'open' } });
+const ACT = [[0, WAIT]];
+for (let f = 36; f < 60; f += 4) ACT.push([f, WAVE_A], [f + 2, WAVE_B]);
+ACT.push([60, FREEZE]);
+const kidAt = (f) => { const p = IB.held(ACT, f), waving = f >= 36 && f < 60, prev = f >= 60 ? IB.held(ACT, f - 2) : undefined; const wake = f >= 60 && f < 72 ? { ...p, hip: [p.hip[0] - (f < 64 ? 4 : 0), p.hip[1]] } : p; return { ...wake, prev: waving ? undefined : prev && { ...prev, hip: [prev.hip[0] + (f >= 60 && f < 66 ? 20 : 0), prev.hip[1]] } }; };
+
+IB.actors = (t) => { const tt = IB.twos(t), f = IB.frame(tt), ff = Math.floor(t * 24); return { kid: kidAt(f), train: ff / 24 >= PASS && noseAt(ff / 24) - LEN < 1960 ? noseAt(ff / 24) : null, petals: Math.round(drift(tt)) }; };
+
+MG.scene({
+  title: 'city / tokyo-shinkansen-sakura',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), t1 = Math.floor(t * 24) / 24, d = Math.round(tt * 12);
+    IB.crop(ctx, [180, 190, 1560]);
+    IB.fuji(ctx, [960, 760], { w: 1700, h: 470 });
+    IB.ink(ctx, [[0, 760], [1920, 760]], { w: 3, seed: 2, taper: false });
+    IB.ink(ctx, [[0, RAIL + 10], [1920, RAIL + 10]], { w: 4, seed: 3, taper: false });                    // the embankment's top
+    for (let x = 10; x < 1920; x += 60) IB.seg(ctx, x, RAIL + 10, x - 14, RAIL + 28, { w: 2, color: '#9a9a9a', seed: 4 + x });   // its slope
+    const nose = noseAt(t1);
+    if (t1 >= PASS && nose - LEN < 1960) {
+      IB.shinkansen(ctx, [nose, RAIL], { s: 0.85, len: LEN });
+      for (let i = 0; i < 3; i++) IB.seg(ctx, nose - LEN - 30 - i * 40, RAIL - 40 - i * 22, nose - LEN - 260 - i * 90, RAIL - 40 - i * 22, { w: 2.6, seed: 30 + i + Math.floor(t * 24) });
+    }
+    const shake = f >= 60 && f < 68 ? (f % 4 ? 6 : -6) : 0;
+    ctx.save(); ctx.translate(shake, 0); IB.sakura(ctx, [240, GROUND], { h: 520, seed: 70 }); ctx.restore();
+    IB.sakura(ctx, [1760, GROUND], { h: 460, seed: 90 });
+    IB.smear(ctx, 960, GROUND - 6, 2000, { h: 16, color: IB.C.green, seed: 9 });
+    IB.figure(ctx, kidAt(f), KID);
+    ctx.save(); ctx.translate(drift(tt) % 1920, 0);   // the petal field slides with the wind's total drift, wrapping
+    IB.petals(ctx, [-1920, 120, 0, 980], { d, n: 46, seed: 41 }); IB.petals(ctx, [0, 120, 1920, 980], { d, n: 46, seed: 41 }); ctx.restore();
+  },
+});
+</script>

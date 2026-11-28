@@ -30,22 +30,22 @@
   const POD = loft([[0.55, 0.40, 0.78, -0.50, -0.14], [-0.6, 0.40, 0.74, -0.48, -0.12], [-1.5, 0.30, 0.46, -0.36, -0.14]]);
   const PODS = [...POD, ...POD.map(mirrorZ)];
 
-  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). Where it is: x (metres along the track from the view's origin: + is the way the track runs), z (metres across it), heading (rad: the car turned away from the way the track runs, a drift or a spin; + turns its nose toward -z). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), frontSpin (the front wheels' turn when it differs from spin: hold it still for a locked front under braking), blur (wheels at speed: rings instead of spokes), drs (rear flap open: true, or 0..1 while it opens), glow (front brake discs glowing through the rims under heavy braking), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lw, seed.
-     Returns { map, U, wheels: [stage points of the four contact patches], helmet: stage point } so a scene can put smoke at a tyre or a close-up on the helmet. */
+  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). Where it is: x (metres along the track from the view's origin: + is the way the track runs), z (metres across it), heading (rad: the car turned away from the way the track runs, a drift or a spin; + turns its nose toward -z). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), frontSpin (the front wheels' turn when it differs from spin: hold it still for a locked front under braking), blur (wheels at speed: rings instead of spokes), drs (rear flap open: true, or 0..1 while it opens), glow (front brake discs glowing through the rims under heavy braking), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lift (metres the whole car stands up on its jacks in a pit stop, wheels and all; the shadow stays on the ground), off (indices of wheels taken off in a pit stop: 0 front -z, 1 front +z, 2 rear -z, 3 rear +z; the bare hub shows instead), nuts (each wheel's centre-lock nut in the accent colour, for a close-up at the wheel), lw, seed.
+     Returns { map, U, wheels: [stage points of the four contact patches], hubs: [stage points of the four wheel centres on their outer faces], helmet: stage point } so a scene can put smoke at a tyre, a wheel gun on a hub or a close-up on the helmet. */
   IB.racer = (ctx, o = {}) => {
     const U = 140 * (o.s || 1), color = o.color || C.navy, accent = o.accent || C.yellow, seed = o.seed || 1600, lw = o.lw || 2.6;
     const space = IB.space({ at: o.at || [960, 800], yaw: o.yaw || 0, pitch: o.pitch || 0, roll: o.roll || 0, f: o.f || 1500, look: o.look == null ? 0.18 : o.look });
     const rake = o.rake || 0, br = o.bodyRoll || 0, cr = Math.cos(rake), sr = Math.sin(rake), cb = Math.cos(br), sb = Math.sin(br);
     const body = ([x, y, z]) => { const y1 = y * cb - z * sb, z1 = y * sb + z * cb; return [x * cr - y1 * sr, x * sr + y1 * cr, z1]; };   // the sprung body pitches and rolls; wheels do not
-    const hd = o.heading || 0, ch = Math.cos(hd), shd = Math.sin(hd), px = o.x || 0, pz = o.z || 0;
-    const place = ([x, y, z]) => [x * ch - z * shd + px, y, x * shd + z * ch + pz];   // the car's own heading, then where it is on the track
+    const hd = o.heading || 0, ch = Math.cos(hd), shd = Math.sin(hd), px = o.x || 0, pz = o.z || 0, lift = o.lift || 0;
+    const place = ([x, y, z]) => [x * ch - z * shd + px, y - lift, x * shd + z * ch + pz];   // the car's own heading, then where it is on the track
     const map = (p) => { const q = place(p); return space([q[0] * U, q[1] * U, q[2] * U]); };
     const near = (q) => q.every((p) => p[2] > -(o.f || 1500) * 0.85);
     const faces = [];   // { pts (stage), z, fill, w, kind }
     const add = (pts3, fill, opts = {}) => { const q = pts3.map(opts.unsprung ? (p) => p : body).map(map); if (!near(q)) return; faces.push({ pts: q, z: q.reduce((a, p) => a + p[2], 0) / q.length + (opts.bias || 0) * U, fill, w: opts.w == null ? lw : opts.w, line: opts.line, stroke: opts.stroke, closed: opts.closed !== false }); };
 
     // shadow on the tarmac, always first
-    const sh = flat(-2.75, 2.8, 0, -1.02, 1.02).map(map);
+    const sh = flat(-2.75, 2.8, lift, -1.02, 1.02).map(map);
     if (near(sh)) IB.ink(ctx, sh, { closed: true, smooth: true, fill: SHADOW, w: 0, seed });
 
     add(flat(-2.3, 1.6, -0.05, -0.74, 0.74), DARK, { bias: 0.02 });   // floor
@@ -89,14 +89,20 @@
     faces.push({ z: hc[2] - 0.05 * U, draw: () => { IB.oval(ctx, hc[0], hc[1], hr, hr, { fill: o.helmet || accent, w: lw, seed: seed + 50, n: 14 }); if (seesVisor) IB.ink(ctx, visor, { closed: true, smooth: false, fill: DARK, w: lw * 0.6, seed: seed + 51 }); } });
 
     // wheels: cylinders, with the tyre band, the sidewall stripe and the rim on the outer face
-    const wheels = [];
+    const wheels = [], hubs = [];
     const R = 0.36;
-    [[1.75, 0.38, o.steer || 0, true], [-1.85, 0.42, 0, false]].forEach(([ax, ww, st, front]) => [-1, 1].forEach((sd) => {
+    [[1.75, 0.38, o.steer || 0, true], [-1.85, 0.42, 0, false]].forEach(([ax, ww, st, front], fr) => [-1, 1].forEach((sd) => {
       const cz = 0.80 * sd, turn = ([x, y, z]) => { const c = Math.cos(st), s = Math.sin(st), dx = x - ax, dz = z - cz; return [ax + dx * c - dz * s, y, cz + dx * s + dz * c]; };
       const ring = (zz, r) => Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return turn([ax + Math.cos(a) * r, -R + Math.sin(a) * r, zz]); });
       const zo = cz + (ww / 2) * sd, zi = cz - (ww / 2) * sd, outer = ring(zo, R), inner = ring(zi, R);
       const ctr = map(turn([ax, -R, cz]));
       wheels.push(map([ax, 0, cz]));
+      hubs.push(map(turn([ax, -R, zo])));
+      if (o.off && o.off.includes(fr * 2 + (sd > 0 ? 1 : 0))) {   // the wheel is off: the bare hub and brake disc on the end of the upright
+        const disc = ring(cz + 0.08 * sd, R * 0.5).map(map), stub = ring(cz + 0.2 * sd, R * 0.2).map(map);
+        if (near(disc)) faces.push({ z: ctr[2], draw: () => { IB.ink(ctx, disc, { closed: true, fill: '#6b6b6b', w: lw * 0.8, seed: seed + 160 }); IB.ink(ctx, stub, { closed: true, fill: DARK, w: lw * 0.6, seed: seed + 161 }); } });
+        return;
+      }
       const parts = [];
       for (let i = 0; i < 16; i++) { const j = (i + 1) % 16; parts.push({ pts: [outer[i], outer[j], inner[j], inner[i]], fill: TYRE }); }
       parts.push({ pts: inner, fill: TYRE });
@@ -114,6 +120,7 @@
             if (front && o.glow) IB.ink(ctx, ring(zz, R * 0.4).map(map), { closed: true, fill: C.yellow, w: 0, seed: seed + 143 });   // the disc behind the rim, glowing
             if (o.blur) IB.ink(ctx, ring(zz, R * 0.35).map(map), { closed: true, fill: null, w: lw * 0.6, color: '#9a9a9a', seed: seed + 142 });
             else for (let s5 = 0; s5 < 5; s5++) { const a = (front && o.frontSpin != null ? o.frontSpin : o.spin || 0) + (s5 * Math.PI * 2) / 5, p0 = map(turn([ax, -R, zz])), p1 = map(turn([ax + Math.cos(a) * R * 0.52, -R + Math.sin(a) * R * 0.52, zz])); IB.seg(ctx, p0[0], p0[1], p1[0], p1[1], { w: lw * 0.7, wob: 0, seed: seed + 150 + s5 }); }
+            if (o.nuts && !o.blur) IB.ink(ctx, Array.from({ length: 6 }, (_, i) => { const a = (o.spin || 0) + (i * Math.PI) / 3; return map(turn([ax + Math.cos(a) * R * 0.17, -R + Math.sin(a) * R * 0.17, zz + 0.03 * sd])); }), { closed: true, smooth: false, fill: accent, w: lw * 0.8, seed: seed + 143 });   // the centre-lock nut
           }
         });
       } });
@@ -124,7 +131,7 @@
       if (fc.stroke || !fc.fill) return IB.ink(ctx, fc.pts, { closed: false, smooth: fc.pts.length > 2, w: fc.w, color: fc.line || C.ink, seed: seed + 200 + i, taper: false });
       IB.ink(ctx, fc.pts, { closed: true, smooth: false, fill: fc.fill, w: fc.w, seed: seed + 200 + i });
     });
-    return { map: (p) => space([p[0] * U, p[1] * U, p[2] * U]), U, wheels, helmet: hc };   // map: the view's space without the car's place, for things on the track
+    return { map: (p) => space([p[0] * U, p[1] * U, p[2] * U]), U, wheels, hubs, helmet: hc };   // map: the view's space without the car's place, for things on the track
   };
 
   // the centre line of a bent track over [a, b] (metres along it): (X) => [x, z, heading] from X = 0 (at the origin, heading 0), integrating the curvature bend(X) in 0.25 m steps (each step's turn the mean of 8 samples, so a corner that starts or ends inside a step costs no stray turn)

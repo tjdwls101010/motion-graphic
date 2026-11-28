@@ -1,4 +1,4 @@
-/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands (IB.stands) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
+/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG;
   const MESH = '#9a9a9a';   // net strings: lighter than ink so the players and the ball read over them
@@ -174,6 +174,36 @@
         IB.oval(ctx, x, by - 12 * s * k - hr, hr, hr, { fill: skin, w: lw, seed: seed + Math.round(x) + row, n: 9 });
       }
     }
+  };
+
+  /* adBoards(ctx, [x0, x1], floor, opts) — the low hoarding round a pitch, between the play and the stands: a row of blank panels (no brands: the reference's rule for real logos and copy) alternating white and pale grey, `ht` px tall (60), standing on a line `back` px behind the floor line (the far touchline). opts: ht, w (panel width 240), back (150), seed. */
+  IB.adBoards = (ctx, [x0, x1], floor, o = {}) => {
+    const ht = o.ht || 60, w = o.w || 240, y = floor - (o.back == null ? 150 : o.back), lw = o.lw || 2.6, seed = o.seed || 750;
+    for (let x = x0, i = 0; x < x1; x += w, i++) IB.ink(ctx, [[x, y - ht], [x + w, y - ht], [x + w, y], [x, y]], { closed: true, smooth: false, fill: i % 2 ? '#e2e2e2' : C.paper, w: lw, seed: seed + i });
+    return y - ht;
+  };
+
+  /* cornerFlag(ctx, [x, floor], opts) — the corner post (1.5 m) and its flag, which flaps in two drawings: pass `wave` 0 | 1 and alternate it on twos while there is wind, hold it for a still shot. opts: s, fill (the flag, C.yellow), wave, seed. */
+  IB.cornerFlag = (ctx, [x, floor], o = {}) => {
+    const s = o.s || 1, M = 200 * s, top = floor - 1.5 * M, lw = o.lw || 3, w = o.wave ? 1 : 0, seed = o.seed || 780;
+    IB.tube(ctx, [[x, floor], [x, top]], { w: 0.035 * M, edge: lw * 0.8, fill: C.paper, seed });
+    const fw = 0.4 * M, fh = 0.3 * M, pts = w ? [[x, top], [x + fw * 0.5, top + fh * 0.12], [x + fw, top - fh * 0.05], [x + fw * 0.95, top + fh * 0.9], [x + fw * 0.5, top + fh * 1.05], [x, top + fh]] : [[x, top], [x + fw * 0.45, top - fh * 0.1], [x + fw, top + fh * 0.08], [x + fw * 0.98, top + fh * 1.02], [x + fw * 0.45, top + fh * 0.88], [x, top + fh]];
+    IB.ink(ctx, pts, { closed: true, fill: o.fill || C.yellow, w: lw * 0.8, seed: seed + 1 + w });
+  };
+
+  /* pitchside(ctx, [x0, x1], floor, opts) — the backdrop of a football shot in one call: the crowd (IB.stands, top at floor - 470), the hoarding (IB.adBoards, 160 px back) and the green chalk smear of the grass along the floor line. opts: cheer, colors (the two teams), seed. */
+  IB.pitchside = (ctx, [x0, x1], floor, o = {}) => {
+    IB.stands(ctx, [x0, x1], floor - 470, { colors: o.colors || [C.navy, C.yellow], share: 0.35, cheer: o.cheer || 0, s: 0.9, seed: o.seed || 710 });
+    IB.adBoards(ctx, [x0 - 40, x1 + 40], floor, { back: 160, ht: 56 });
+    IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.green, seed: 9 });
+  };
+
+  /* camera(keys, f) — the crop window [x, y, w] (for IB.crop) at frame f, from [frame, [x, y, w]] keys: held before the first and after the last, eased with a smoothstep between two keys. Call it with the frame of the drawing (on twos) so the camera moves on twos with the players. */
+  IB.camera = (keys, f) => {
+    let i = 0; while (i < keys.length - 1 && f >= keys[i + 1][0]) i++;
+    if (i === keys.length - 1 || f <= keys[0][0]) return keys[f <= keys[0][0] ? 0 : i][1];
+    const [f0, a] = keys[i], [f1, b] = keys[i + 1], u = (f - f0) / (f1 - f0), k = u * u * (3 - 2 * u);
+    return a.map((v, j) => v + (b[j] - v) * k);
   };
 
   /* segDigits(ctx, [x, y], text, opts) — numbers drawn as seven-segment strokes in ink (a scoreboard is a drawn object here, not typeset copy): digits, ':' and '.'; [x, y] is the top left, each digit `size` px tall and 0.55 of that wide. Returns the width drawn. opts: size (40), color, lw, seed. */

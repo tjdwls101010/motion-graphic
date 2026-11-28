@@ -2,7 +2,7 @@
 
 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)에 나오는 모션그래픽을 코드로 다시 만든 레퍼런스다.
 
-- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 38개(8개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 44개(9개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -29,7 +29,7 @@ time.js    시계와 그림 목록: 24fps(IB.FPS), 12fps·8fps 양자화(IB.twos
            그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop), 도착한 것의 감쇠 출렁임(IB.bob)
 marks.js   효과 표시: 터짐선(IB.burst), 쿵(IB.thud), 입김(IB.breath), 연기(IB.smoke), 물방울과 튐(IB.drop, IB.splash), 어둠과 빛줄기(IB.darkness, IB.lightBeam),
            휩에 뜯기는 화면(IB.whipBreakup), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
-figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.run, IB.runLen, 아이 체형 look.headK, 경기복의 양말·장갑·민소매·반바지 길이(look.socks, gloves, topKind 'tank', shortsLen), IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
+figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.run, IB.runLen, 어깨·골반 위치 IB.joints와 각도·길이로 손발을 놓는 IB.polar·IB.posed, 아이 체형 look.headK, 경기복의 양말·장갑·민소매·반바지 길이(look.socks, gloves, topKind 'tank', shortsLen), IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
            화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
 solid.js   입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
 cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동작(MOVE: 그 동작의 첫 그림부터 센 [프레임, 포즈] 목록)을 내보낸다
@@ -54,7 +54,7 @@ props/     소품
   office.js   앉은 포즈(IB.sit, 좌석 높이 IB.SEAT), 의자·책상·모니터·자리(IB.chair, IB.desk, IB.monitor, IB.workstation, IB.keyboard), 캔들 차트와 선 차트(IB.candles, IB.lineChart, IB.priceGrid, IB.chartAxes,
               IB.dashLine, IB.candleSmear, IB.priceTag), 커서와 팝업(IB.cursor, IB.popupTag), 화살표(IB.arrow), 벽시계(IB.wallClock), 전화 받침(IB.phoneCradle), 날리는 종이(IB.flyingSheet)
   metaphor.js 막대(IB.bar), 깃발(IB.flag), 도미노(IB.domino, IB.dominoRest), 낭떠러지와 널빤지(IB.ledge, IB.plank)
-  sports.js   공의 비행·바운드·구르기(IB.flight, 도착 지점과 시간에서 발사 속도 IB.aim), 축구공과 농구공(IB.soccerBall, IB.basketball), 빠른 공의 속도선(IB.ballTrail), 옆에서 본 축구 골대와 불룩해지는 그물(IB.soccerGoal), 농구 골대와 스위시 그물(IB.hoop), 관중석(IB.stands), 점수판과 7획 숫자(IB.scoreboard, IB.segDigits)
+  sports.js   공의 비행·바운드·구르기(IB.flight, 도착 지점과 시간에서 발사 속도 IB.aim), 축구공과 농구공(IB.soccerBall, IB.basketball), 빠른 공의 속도선(IB.ballTrail), 옆에서 본 축구 골대와 불룩해지는 그물(IB.soccerGoal), 농구 골대와 스위시 그물(IB.hoop), 관중석(IB.stands), 점수판과 7획 숫자(IB.scoreboard, IB.segDigits), 빈 광고판(IB.adBoards), 관중·광고판·잔디를 한 번에(IB.pitchside), 코너 플래그(IB.cornerFlag), 크롭 창 사이를 smoothstep으로 옮기는 카메라(IB.camera)
   copyroom.js 복사실과 탕비실(모두 opts.s로 크기): 프린터(IB.printer: 출력·종이 걸림·표시등·덜컹), 쏟아지는 종이와 낱장(IB.paperSpray, IB.looseSheet), 조리대(IB.counter), 커피머신(IB.coffeeMachine: 잔 자리·물줄기·한 방울·물통·물 없음 등), 정수기(IB.waterCooler), 안고 다니는 서류 더미(IB.paperStack: lean, wave)
   classroom.js 칠판(IB.chalkboard: 써지는 획, 지우개 길로 지워짐), 자리 표시 글씨와 그림(IB.chalkScript, IB.chalkShape), 분필(IB.chalk), 칠판지우개(IB.boardEraser), 분필 가루 구름(IB.chalkDust), 아이 책상과 의자(IB.schoolDesk, IB.schoolChair), 교탁(IB.lectern)
   traffic.js  보행자 신호등(IB.walkSignal), 옆에서 본 횡단보도(IB.crosswalk), 버스 정류장(IB.busStop), 버스와 치수(IB.bus, IB.BUS), 매연(IB.exhaust), 한 사람 자전거(IB.bicycle: 탠덤의 자리 하나, 탄 사람의 자리 IB.bikeFit, 포즈 IB.ride), 벨 소리 표시(IB.bellRing)
@@ -89,7 +89,7 @@ grep -rnE "IB\.(ink|box|oval|seg|tube|ellipse|limb|peg|hose|boot|mitt|clasp|crea
 
 ## 창작 장면
 
-`metaphor`, `acting`, `vignette`, `variation`, `market`, `work`, `school`, `street` 여덟 계열은 원본의 샷이 아니다. 원본의 룩과 모션 원칙을 지키면서 다른 상황을 새로 그렸고, 장면은 `ref: null`이라 시트에 "창작"으로 나오며 `tools/capture.py --compare`를 쓸 수 없다. 인물의 그림체는 `references/IBM/`에 둔 제작 스틸 7장(로컬에만 있다)도 참고했다. 원본에 없던 글자가 두 가지 있다. 일부 장면의 말풍선(한국어 한마디, 규칙은 STYLE.md의 "말풍선")과 `variation/hose-wipe-endcard`의 엔드카드 한 줄(원본 태그라인이 아닌 자리 표시 문구)이다.
+`metaphor`, `acting`, `vignette`, `variation`, `market`, `work`, `school`, `street`, `soccer` 아홉 계열은 원본의 샷이 아니다. 원본의 룩과 모션 원칙을 지키면서 다른 상황을 새로 그렸고, 장면은 `ref: null`이라 시트에 "창작"으로 나오며 `tools/capture.py --compare`를 쓸 수 없다. 인물의 그림체는 `references/IBM/`에 둔 제작 스틸 7장(로컬에만 있다)도 참고했다. 원본에 없던 글자가 두 가지 있다. 일부 장면의 말풍선(한국어 한마디, 규칙은 STYLE.md의 "말풍선")과 `variation/hose-wipe-endcard`의 엔드카드 한 줄(원본 태그라인이 아닌 자리 표시 문구)이다.
 
 ## 원본과 다른 점
 

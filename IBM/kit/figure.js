@@ -237,8 +237,19 @@
     };
   };
 
+  /* reach(p, h, d) — lower the hip of a stepping pose just enough that every foot is within its leg's reach, so IB.figure's IK lands each ankle on its target instead of pulling it off. The near leg leaves the pelvis 0.048 h behind the far one, so on its heel strike its foot is the one that would fall short. Returns p. */
+  const reach = (p, h, d) => {
+    const lean = p.lean || 0, L = (F.thigh + F.shin) * h - 0.5;
+    const drop = Math.max(0, ...p.feet.map((f, i) => {
+      const r = [p.hip[0] + Math.cos(lean) * d * (i ? -0.024 : 0.024) * h, p.hip[1] + Math.sin(lean) * (i ? -0.024 : 0.024) * h], dx = f[0] - r[0], dy = f[1] - r[1];
+      return Math.abs(dx) < L ? dy - Math.sqrt(L * L - dx * dx) : 0;
+    }));
+    p.hip[1] += drop;
+    return p;
+  };
+
   /* walk(x, floor, look, ph, opts) — one drawing of a walk cycle for a figure whose body is at x: ph 0..1 runs through two steps and ph = 0 is the contact with the near foot ahead. Draw 12 of them on twos for the reference's walk (1.0 s per two steps). Each step carries the body 2 x `stride` x h (stride defaults to 0.21: 0.42 h a step, so IB.walkLen = 0.84 h per cycle): either move x by that much per cycle across a still stage, or keep x and scroll the world under the feet.
-     Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peeling up to 0.6 rad over its last 25%. Swing foot: 0.085 h off the floor on a half sine. Hip lowest at each contact, 0.028 h higher at mid-stance. Arms swing against the legs by `swing` x h (default 0.11); a scene whose figure carries something overwrites p.hands. */
+     Stance foot: heel strike with the toe up 0.35 rad, flat by 15% of the stance, heel peeling up to 0.6 rad over its last 25%. Swing foot: 0.085 h off the floor on a half sine. Hip lowest at each contact, 0.028 h higher at mid-stance, and lowered further wherever a foot would be out of the leg's reach (the near heel strike: up to 0.014 h). Arms swing against the legs by `swing` x h (default 0.11); a scene whose figure carries something overwrites p.hands. */
   IB.walk = (x, floor, look, ph, o = {}) => {
     const h = look.h, d = look.dir || 1, step = (o.stride == null ? 0.21 : o.stride) * h, p = IB.stand(x, floor, look), ay = floor - F.ankle * h;
     const foot = (u) => {   // u: this foot's own phase. 0-0.5 on the floor sliding back under the body, 0.5-1 swinging forward
@@ -251,12 +262,12 @@
     p.hip[1] += h * (0.014 + 0.014 * Math.cos(ph * 4 * Math.PI));
     p.lean = o.lean == null ? 0.07 : o.lean;
     p.hands = [[p.hands[0][0] + sw * d, p.hands[0][1] - Math.abs(sw) * 0.25], [p.hands[1][0] - sw * d, p.hands[1][1] - Math.abs(sw) * 0.25]];
-    return p;
+    return reach(p, h, d);
   };
   IB.walkLen = (look, stride = 0.21) => 4 * stride * look.h;
 
   /* run(x, floor, look, ph, opts) — one drawing of a run for a figure whose body is at x: ph 0..1 runs through two steps, ph = 0 is the near foot landing. Draw 8 of them on twos (0.67 s per two steps, 3 steps a second). Unlike the walk each foot is on the floor for only `stance` (0.3) of its cycle, so the body is in the air twice a cycle with both feet up, and it carries the body IB.runLen = 2 x `step` / `stance` = 1.47 h a cycle (2.2 h/s: 2.6 times the walk): move x by IB.runLen / 8 a drawing across a still stage and the planted foot stays put.
-     Stance foot: lands flat-ish (toe up 0.15 rad) ahead by `step` x h (0.22) and slides back under the body. Swing foot: the heel kicks up under the seat (0.28 h off the floor, 0.1 h behind the hip, toe down) and the knee comes through high to land. Hips 0.05 h below a stand on the landing (so the leg reaches the foot out ahead), 0.075 h at mid-stance and 0.025 h in the air. Spine tipped forward 0.22 rad; arms bent, the hands pumping against the legs by `swing` x h (0.14) at waist height. */
+     Stance foot: lands flat-ish (toe up 0.15 rad) ahead by `step` x h (0.22) and slides back under the body. Swing foot: the heel kicks up under the seat (0.28 h off the floor, 0.1 h behind the hip, toe down) and the knee comes through high to land. Hips 0.05 h below a stand on the landing (so the leg reaches the foot out ahead), 0.075 h at mid-stance and 0.025 h in the air, and lower still wherever a foot would be out of the leg's reach (the near foot's landing: 0.007 h). Spine tipped forward 0.22 rad; arms bent, the hands pumping against the legs by `swing` x h (0.14) at waist height. */
   IB.run = (x, floor, look, ph, o = {}) => {
     const h = look.h, d = look.dir || 1, step = (o.step == null ? 0.22 : o.step) * h, ST = o.stance == null ? 0.3 : o.stance, p = IB.stand(x, floor, look), ay = floor - F.ankle * h;
     const foot = (u) => {   // u: this foot's own phase; 0-ST on the floor
@@ -275,7 +286,7 @@
     const hy = p.hip[1] - 0.1 * h;   // the pumping hands ride at the waist, elbows bent
     p.hands = [[x + (0.06 * h + sw) * d, hy - Math.max(0, sw) * 0.5], [x + (0.06 * h - sw) * d, hy + Math.min(0, sw) * 0.5]];
     p.hand = ['grip', 'grip'];
-    return p;
+    return reach(p, h, d);
   };
   IB.runLen = (look, step = 0.22, stance = 0.3) => (2 * step * look.h) / stance;
 

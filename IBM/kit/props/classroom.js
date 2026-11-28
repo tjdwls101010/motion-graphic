@@ -30,17 +30,16 @@
     return [];
   };
 
-  /* chalk haze: what a wiped board keeps, one broad translucent pass of white along a path and two thin streaks in it */
-  function haze(ctx, pts, w, seed, a = 1) {
+  /* chalk haze: what a wiped board keeps, `n` thin streaks along a stroke at seeded heights inside its band, in a grey a step or two lighter than the charcoal and half transparent: low contrast, so a wiped patch reads as writing gone, not as a grey shape */
+  function haze(ctx, pts, w, seed, n = 1) {
     if (pts.length < 2) return;
-    IB.ink(ctx, pts, { w: w * 0.9, color: `rgba(253, 253, 253, ${0.07 * a})`, grain: 0, taper: false, smooth: false, wob: 2, seed });
-    [-0.22, 0.2].forEach((off, i) => IB.ink(ctx, pts.map(([x, y]) => [x, y + off * w]), { w: 1.4, color: `rgba(253, 253, 253, ${0.16 * a})`, grain: 0, smooth: false, wob: 1.5, seed: seed + 5 + i }));
+    for (let i = 0; i < n; i++) { const off = (MG.hash(seed, i) - 0.5) * 0.8 * w; IB.ink(ctx, pts.map(([x, y]) => [x, y + off]), { w: 2.4, color: 'rgba(98, 98, 98, 0.5)', grain: 0, taper: false, smooth: false, wob: 1.2, seed: seed + i }); }
   }
 
   /* chalkboard(ctx, at, state, opts) — a chalkboard hung on the wall, `at` the centre of its face: a charcoal face w x h in a paper frame, a chalk tray under it with `chalks` sticks lying on it, graphite on the wall under the tray.
        state.strokes  chalk strokes (IB.chalkScript, IB.chalkShape, concatenated) in stage px, written in order
        state.drawn    how many of them are on the board (default all); a fraction draws that much of the next one, so a scene writes on twos by stepping it
-       state.wipe     the eraser's path so far, [[x, y], ...] in stage px: the board is wiped clean along it, wipeW px wide (the eraser's long side), leaving a haze
+       state.wipe     the eraser's path so far, [[x, y], ...] in stage px: the board is wiped clean along it, wipeW px wide (the eraser's long side), with faint streaks along its sideways strokes only. Rub in rows (far, near, far a little higher ...) so the streaks lie across the board, as an eraser leaves them
        state.smudges  [[x, y, w, h], ...] old wiped patches, a haze only
      Returns the face [x, y, w, h] (school/hand-up-called, school/chalk-dust-sneeze, school/paper-plane-caught). */
   IB.chalkboard = (ctx, [cx, cy], st = {}, o = {}) => {
@@ -54,7 +53,7 @@
     // what is on the face, clipped to it
     ctx.save();
     IB.clipRect(ctx, face);
-    smudges.forEach(([sx, sy, sw, sh], i) => [0.3, 0.7].forEach((v, j) => haze(ctx, [[sx + j * 8, sy + sh * v], [sx + sw * 0.5, sy + sh * v + (j ? -2 : 2)], [sx + sw - j * 10, sy + sh * v]], sh * 0.6, seed + 40 + i * 7 + j * 3)));   // sideways sweeps
+    smudges.forEach(([sx, sy, sw, sh], i) => [0.3, 0.7].forEach((v, j) => haze(ctx, [[sx + j * 8, sy + sh * v], [sx + sw * 0.5, sy + sh * v + (j ? -2 : 2)], [sx + sw - j * 10, sy + sh * v]], sh * 0.6, seed + 40 + i * 7 + j * 3, 2)));   // sideways sweeps
     strokes.forEach((s, i) => {
       if (i >= drawn) return;
       const part = Math.min(1, drawn - i);
@@ -63,7 +62,7 @@
     if (wipe && wipe.length) {
       const path = wipe.length > 1 ? wipe : [wipe[0], [wipe[0][0] + 1, wipe[0][1]]];
       IB.ink(ctx, path, { w: wipeW, color: C.charcoal, grain: 0, taper: false, smooth: false, wob: 0.6, seed: seed + 9 });
-      haze(ctx, path, wipeW, seed + 20, 1.4);
+      path.forEach((p, i) => { const q = path[i + 1]; if (q && Math.abs(q[0] - p[0]) > Math.abs(q[1] - p[1])) haze(ctx, [p, q], wipeW, seed + 20 + i * 3); });   // streaks only along the sideways strokes, none along the step between two rows
     }
     ctx.restore();
     // the tray: a ledge under the face, its lip, and chalk lying on it

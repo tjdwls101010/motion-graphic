@@ -33,7 +33,7 @@ figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦�
            화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
 solid.js   입체로 도는 사물: 3D 좌표를 투영해 붓펜으로 그린다(IB.space, IB.cast), 휘는 종이(IB.bend, IB.rim), 틈의 흑연(IB.crease, IB.clip)
 cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동작(MOVE: 그 동작의 첫 그림부터 센 [프레임, 포즈] 목록)을 내보낸다
-  people.js   IB.figure에 입히는 고정 출연진(IB.PEOPLE: chopper, lifter, walker, climber, neighbour, searcher, kid, passenger, trader, typist, lounger)과 군중(IB.PASSERSBY)
+  people.js   IB.figure에 입히는 고정 출연진(IB.PEOPLE: chopper, lifter, walker, climber, neighbour, searcher, kid, passenger, trader, typist, lounger; 일상 장면의 clerk, designer, boss, teacher, jogger, commuter와 아이 pupil, pupil2, pupil3)과 군중(IB.PASSERSBY)
   paper.js    폴더와 서류(IB.folder, IB.doc, 무대 높이 IB.PAPER), 둘의 팔(IB.paperArm, 서로 찾아가는 두 팔 IB.paperReach, 맞잡은 손 IB.paperClasp), 숨는 서류(IB.hidingDoc, IB.docEyes)
   parcel.js   다리 달린 소포(IB.parcel)
   riders.js   탠덤의 다섯 사람(IB.rider, IB.RIDERS), 날아가는 모자(IB.flyingCap)

@@ -15,9 +15,10 @@
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/sets/city.js"></script>
 <script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 뉴욕 택시: 엠파이어 스테이트 빌딩이 보이는 길가에서 휴대폰을 보던 사람이 노란 택시를 보고 손을 번쩍 들지만, 손님을 태운 택시는 그냥 지나가고 팔이 축 처진다. 표시등이 켜진 다음 택시가 오자 다시 손을 들고, 택시가 앞에 서서 그쪽으로 걸어간다. 원본에 없는 창작 장면이다. 전달하는 생각: 같은 손짓도 두 번째는 덜 기대하며 든다.
-   Motion notes: one locked shot (IB.crop of a 1320 px window, 1.45x), 8 s. The pedestrian (330 px) is on twos, each drawing passing the one before as pose.prev; the cabs are machines on ones at 520 px/s (market/street-rush-hour). 0-1.0 s he looks at his phone; 1.0 s his head comes up; 1.25 s he steps to the kerb (lean 0.12, the anticipation), 1.42 s his arm shoots up one drawing past where it holds (overshoot) and the bubble opens. The first cab (its roof sign dark: taken) passes 1.5-3.4 s without slowing; 3.0 s his arm drops halfway and his shoulders sag (nod 0.25), held. The second cab (sign lit) comes in at 3.6 s; he raises the arm again at 3.92 s, lower and without the overshoot, and it brakes on ones at 1.6 m/s² x 140 (uniform deceleration) to stop in front of him at 5.3 s; he walks to its door in 6 drawings (IB.walk at IB.walkLen / 12) and his hand goes to the handle at 6.33 s. From 6.5 s nothing moves. Colours: the cabs' yellow, his navy jacket, the Empire State's lit crown. */
+   Motion notes: 8 s in five shots (IB.shot, on ones): 0-1.4 s a wide of the street and the Empire State (1600 px window) pushing in to 1320; 1.42 s, on the arm going up, a snap in to a medium shot of him (900); 3.0 s, as the arm drops after the first cab has gone by, a cut to a close-up of his face (560); 3.75 s a cut back to the wide street (1320) as the second cab comes in; 4.6 s an ease toward where it stops (1100, 24 frames); 6.0 s a slow push to the cab's door and his hand (820, 48 frames). Actors are staged once in stage px. The pedestrian (330 px) is on twos, each drawing passing the one before as pose.prev; the cabs are machines on ones at 520 px/s (market/street-rush-hour). 0-1.0 s he looks at his phone; 1.0 s his head comes up; 1.25 s he steps to the kerb (lean 0.12, the anticipation), 1.42 s his arm shoots up one drawing past where it holds (overshoot) and the bubble opens. The first cab (its roof sign dark: taken) comes on at 0.5 s and passes him at 2.72 s without slowing; 3.0 s his arm drops halfway and his shoulders sag (nod 0.25), held. The second cab (sign lit) comes in at 3.6 s; he raises the arm again at 3.92 s, lower and without the overshoot, and it brakes on ones at 1.6 m/s² x 140 (uniform deceleration) to stop in front of him at 5.3 s; he walks to its door in 6 drawings (IB.walk at IB.walkLen / 12) and his hand goes to the handle at 6.33 s. From 6.5 s nothing moves. Colours: the cabs' yellow, his navy jacket, the Empire State's lit crown. */
 const F = IB.FIG, FLOOR = 900, ROAD = 1010, PI = Math.PI, V = 520;
 const WHO = { ...IB.PEOPLE.commuter, h: 330, dir: -1, seed: 30 }, H = WHO.h, HY = IB.stand(0, FLOOR, WHO).hip[1], AY = FLOOR - F.ankle * H, X0 = 1180;
 const wp = (x, lean, hands, more = {}) => IB.posed(WHO, { hip: [x, HY + (more.down || 0)], lean, feet: [[x + 0.06 * H, AY, 0], [x - 0.06 * H, AY, 0]], hands, ...more });
@@ -34,12 +35,21 @@ const PACT = [
 // the second cab stops in front of him; he walks to its door
 const BRAKE = 1.6 * 140, STOPX = X0 - 330, BRAKE_D = (V * V) / (2 * BRAKE), T2 = 3.6;
 const cab2X = (t) => { const xs = -260 + V * (t - T2); if (xs < STOPX - BRAKE_D) return xs; const t0 = T2 + (STOPX - BRAKE_D + 260) / V, dt = Math.min(t - t0, V / BRAKE); return STOPX - BRAKE_D + V * dt - (BRAKE * dt * dt) / 2; };
-const cab1X = (t) => -260 + V * (t - 1.5);
+const cab1X = (t) => -260 + V * t;   // passes him at 2.72 s, before his arm drops
 const WL = IB.walkLen(WHO) / 12, FW = 132;
 for (let k = 0; k < 6; k++) { const p = IB.walk(X0 - 26 - k * WL, FLOOR, WHO, (1 / 3 + k / 12) % 1); p.hands[1] = IB.polar(IB.joints(p, WHO).sh, PI - 0.5, 0.2 * H); p.face = { eye: 'dot', mouth: 'smile' }; PACT.push([FW + k * 2, p]); }
 const XD = X0 - 26 - 6 * WL;
 PACT.push([FW + 12, wp(XD, 0.12, [{ a: 1.2, l: 0.26 }, { a: 0.55, l: 0.28 }], { hand: ['relax', 'grip'], face: { eye: 'dot', mouth: 'smile' } })]);
 const person = (f) => ({ ...IB.held(PACT, f), prev: f > 0 ? IB.held(PACT, f - 2) : undefined });
+const SHOTS = [
+  [0, [160, 110, 1600]],
+  [0, [440, 290, 1320], 'push', 34],
+  [34, { at: [X0 - 40, 740], w: 900 }, 'snap'],
+  [72, { at: [X0 - 50, 640], w: 560 }, 'cut'],
+  [90, [440, 290, 1320], 'cut'],
+  [110, { at: [1000, 720], w: 1100 }, 'ease', 24],
+  [144, { at: [XD - 40, 830], w: 840 }, 'push', 48],
+];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)), t1 = Math.floor(t * 24) / 24; return { person: person(f), cab1: Math.round(cab1X(t1)), cab2: Math.round(cab2X(t1)) }; };
 
@@ -50,19 +60,20 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(IB.twos(t)), t1 = Math.floor(t * 24) / 24, p = person(f);
-    IB.crop(ctx, [440, 290, 1320]);
-    [[300, 560, 470, 'dots'], [620, 860, 420, 'v'], [1460, 1720, 440, 'grid']].forEach((r, i) => IB.tower(ctx, r, { base: 780, seed: 100 + i * 30 }));
-    IB.empireState(ctx, [1180, 780], { h: 470, lit: true });
-    IB.skyline(ctx, 780);
-    IB.smear(ctx, 1000, FLOOR - 6, 1800, { h: 14, seed: 9 });
-    IB.skyline(ctx, FLOOR + 12, { seed: 1303 });   // the kerb
-    IB.figure(ctx, p, WHO);
-    const j = IB.joints(p, WHO), ph = p.hands[0];
-    IB.mobilePhone(ctx, [ph[0] - 8, ph[1] - 26], {});
-    const c2 = cab2X(t1), c1 = cab1X(t1);
-    if (t1 >= T2 && c2 > -400) IB.cab(ctx, [c2, ROAD], { spin: (c2 + 260) / 34, lit: true });
-    if (c1 > -400 && c1 < 2300) IB.cab(ctx, [c1, ROAD], { spin: (c1 + 260) / 34 });
-    IB.bubble(ctx, ['택시!'], t, 1.42, { until: 2.6, tip: [j.sh[0] - 30, j.sh[1] - 0.15 * H], x: j.sh[0] - 150, y: j.sh[1] - 0.4 * H, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      [[300, 560, 470, 'dots'], [620, 860, 420, 'v'], [1460, 1720, 440, 'grid']].forEach((r, i) => IB.tower(ctx, r, { base: 780, seed: 100 + i * 30 }));
+      IB.empireState(ctx, [1180, 780], { h: 470, lit: true });
+      IB.skyline(ctx, 780);
+      IB.smear(ctx, 1000, FLOOR - 6, 1800, { h: 14, seed: 9 });
+      IB.skyline(ctx, FLOOR + 12, { seed: 1303 });   // the kerb
+      IB.figure(ctx, p, WHO);
+      const j = IB.joints(p, WHO), ph = p.hands[0];
+      IB.mobilePhone(ctx, [ph[0] - 8, ph[1] - 26], {});
+      const c2 = cab2X(t1), c1 = cab1X(t1);
+      if (t1 >= T2 && c2 > -400) IB.cab(ctx, [c2, ROAD], { spin: (c2 + 260) / 34, lit: true });
+      if (c1 > -400 && c1 < 2300) IB.cab(ctx, [c1, ROAD], { spin: (c1 + 260) / 34 });
+      IB.bubble(ctx, ['택시!'], t, 1.42, { until: 2.6, tip: [j.sh[0] - 30, j.sh[1] - 0.15 * H], x: j.sh[0] - 150, y: j.sh[1] - 0.4 * H, seed: 500 });
+    });
   },
 });
 </script>

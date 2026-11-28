@@ -67,7 +67,7 @@ const kidAt = (t) => { const f = IB.frame(IB.twos(t)), p = kidOn(f), q = kidOn(M
 /* ---------- the friend at the table ---------- */
 const FS = IB.sit(FRIEND_SEAT, FLOOR, FRIEND), FSH = FS.hip[1] - (F.torso - 0.012) * H, fx = (dx) => FRIEND_SEAT - dx * H;
 const waving = (dx, dy, more = {}) => ({ ...FS, hands: [[fx(dx), FSH - dy * H], FS.hands[1]], hand: ['open', 'relax'], face: { mouth: 'open' }, ...more });
-const FRIEND_ACT = [[0, { ...FS, face: { mouth: 'flat' } }], [60, { ...FS, hands: [[fx(0.12), FS.hip[1] - 0.02 * H], FS.hands[1]], face: { mouth: 'flat' } }], [62, waving(0.14, 0.27, { face: { eye: 'wide', mouth: 'open' } })]];
+const FRIEND_ACT = [[0, { ...FS, face: { mouth: 'flat' } }], [60, { ...FS, hands: [[fx(0.12), FS.hip[1] - 0.02 * H], FS.hands[1]], face: { mouth: 'flat' } }], [62, waving(0.13, 0.25, { face: { eye: 'wide', mouth: 'open' } })]];
 for (let i = 0; i < 12; i++) FRIEND_ACT.push([64 + i * 2, [waving(0.19, 0.2), waving(0.14, 0.215), waving(0.09, 0.21), waving(0.14, 0.215)][i % 4]]);
 FRIEND_ACT.push([88, waving(0.16, 0.0, { hand: ['open', 'relax'], face: { mouth: 'smile' } })], [90, { ...FS, face: { mouth: 'smile' } }]);
 const WAVE = [64, 88];

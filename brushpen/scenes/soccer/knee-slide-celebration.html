@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 골 세리머니: 골을 넣은 선수가 두 팔을 벌리고 코너 플래그 쪽으로 내달리다 무릎을 꿇으며 잔디 위를 미끄러지고, 고개를 젖혀 포효한다. 동료 둘이 양쪽에서 달려와 한 명은 뛰어올라 껴안고 한 명은 뒤에서 덮친다. 관중은 모두 일어나 환호한다. 원본에 없는 창작 장면이다. 전달하는 생각: 기쁨은 혼자 미끄러지다 함께 멈춘다.
-   Motion notes: seen from the touchline, 7 s; the camera (IB.camera, on twos) frames 1250 px of the stage (1.54x) and pans left with the scorer until 2.0 s. Players 252 px on the stage (1.8 m, 140 px a metre). The scorer runs (IB.run at IB.runLen / 8 a drawing) with his arms out like wings; at 1.25 s he drops to his knees in one drawing (anticipation: a lower, leaning-back drawing) and slides on them from 5 m/s to a stop over 2 m (uniform deceleration: the gaps between drawings shrink), spine leaning back, arms wide and up, head thrown back and roaring, leaving a green smear. Two teammates run in from either side (IB.run); the one from the left leaps on a gravity arc (0.3 m) and lands hugging him at 2.58 s, the other bends over him from behind on the next drawing; all three hold together from 2.83 s, the heads trailing a drawing (pose.prev). The corner flag flaps on twos while they move. The crowd stands throughout and cheers on twos until 4.5 s; from 4.5 s nothing moves. Colours: the scorer's team in yellow, the flag yellow, the crowd's navy; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 7 s; the camera (IB.shot, on ones) films it in three shots: 0-1.25 s a 1150 px frame running with the scorer, 220 px ahead of him; 1.25 s a cut down low (760 px, the grass low in the frame) as his knees hit the turf (shaking 16 px) and he slides across the frame, snapping in to 560 px on his roar at 2.17 s; 2.5 s a cut to a 1300 px wide as his teammates land on him (2.58 s, shaking 16 px), and from 3.0 s a slow push to 860 px on the three (48 frames). Players 252 px on the stage (1.8 m, 140 px a metre). The scorer runs (IB.run at IB.runLen / 8 a drawing) with his arms out like wings; at 1.25 s he drops to his knees in one drawing (anticipation: a lower, leaning-back drawing) and slides on them from 5 m/s to a stop over 2 m (uniform deceleration: the gaps between drawings shrink), spine leaning back, arms wide and up, head thrown back and roaring, leaving a green smear. Two teammates run in from either side (IB.run); the one from the left leaps on a gravity arc (0.3 m) and lands hugging him at 2.58 s, the other bends over him from behind on the next drawing; all three hold together from 2.83 s, the heads trailing a drawing (pose.prev). The corner flag flaps on twos while they move. The crowd stands throughout and cheers on twos until 4.5 s; from 4.5 s nothing moves. Colours: the scorer's team in yellow, the flag yellow, the crowd's navy; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, PI = Math.PI;
 const SC = IB.athlete('soccer', 'away', 6, { h: H, dir: -1, seed: 30 });
 const T1 = IB.athlete('soccer', 'away', 0, { h: H, dir: 1, seed: 40 });
@@ -53,11 +54,19 @@ T2ACT.push([HUG + 2, hug2(0.9, 0.3)], [HUG + 6, hug2(0.82, 0.25)]);
 
 const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
 const scorer = withPrev(SACT), mate1 = withPrev(T1ACT), mate2 = withPrev(T2ACT);
-const CAMS = [[0, [780, 330, 1250]], [48, [Math.round(KS - 520), 330, 1250]]];
+// the camera (IB.shot, on ones): running with the scorer, a cut down low as his knees hit the turf, a punch-in on the roar, the wide as his teammates land on him, and a slow push in on the three
+const SHOTS = [
+  [0, (f) => ({ at: [runX(f) - 220, 660], w: 1150 })],
+  [FD, { at: [640, 800], w: 760 }, 'cut'],
+  [SEND, { at: [560, 715], w: 560 }, 'snap'],
+  [HUG - 2, { at: [560, 690], w: 1300 }, 'cut'],
+  [72, { at: [540, 740], w: 860 }, 'push', 48],
+];
+const HITS = [[FD + 2, 16], [HUG, 16]];
 const cheerAt = (f) => (f < 108 ? 1 + (f / 2) % 2 : 'up');
 const waveAt = (f) => (f < HUG + 6 ? (f / 2) % 2 : 0);
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { scorer: scorer(f), mate1: mate1(f), mate2: mate2(f), crowd: cheerAt(f), flag: waveAt(f), camera: IB.camera(CAMS, f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { scorer: scorer(f), mate1: mate1(f), mate2: mate2(f), crowd: cheerAt(f), flag: waveAt(f) }; };
 
 MG.scene({
   title: 'soccer / knee-slide-celebration',
@@ -66,13 +75,14 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(IB.twos(t)), s = scorer(f);
-    IB.crop(ctx, IB.camera(CAMS, f));
-    IB.pitchside(ctx, [-200, 2100], FLOOR, { cheer: cheerAt(f) });
-    IB.cornerFlag(ctx, [FLAG, FLOOR + 4], { s: 0.7, wave: waveAt(f) });
-    if (f > FD) { const x1 = Math.max(KS, kneeX(f)); IB.smear(ctx, (KX0 + x1) / 2 + 0.28 * H, FLOOR - 4, KX0 - x1 + 0.2 * H, { h: 13, color: IB.C.green, seed: 21 }); }   // the knees' track
-    IB.figure(ctx, mate2(f), T2);
-    IB.figure(ctx, s, SC);
-    IB.figure(ctx, mate1(f), T1);
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.pitchside(ctx, [-200, 2100], FLOOR, { cheer: cheerAt(f) });
+      IB.cornerFlag(ctx, [FLAG, FLOOR + 4], { s: 0.7, wave: waveAt(f) });
+      if (f > FD) { const x1 = Math.max(KS, kneeX(f)); IB.smear(ctx, (KX0 + x1) / 2 + 0.28 * H, FLOOR - 4, KX0 - x1 + 0.2 * H, { h: 13, color: IB.C.green, seed: 21 }); }   // the knees' track
+      IB.figure(ctx, mate2(f), T2);
+      IB.figure(ctx, s, SC);
+      IB.figure(ctx, mate1(f), T1);
+    });
   },
 });
 </script>

@@ -10,14 +10,15 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 슬라이딩 태클: 공을 몰고 전력으로 달리는 공격수에게 수비수가 마주 달려와 발부터 미끄러져 들어가 공만 정확히 걷어 낸다. 공격수는 뻗은 다리를 뛰어넘어 비틀거리며 착지하고 돌아서 두 팔을 벌려 항의하고, 수비수는 잔디에 긴 자국을 남긴 채 일어나 주먹을 쥔다. 원본에 없는 창작 장면이다. 전달하는 생각: 깨끗한 태클은 공만 데려간다.
-   Motion notes: seen from the touchline, 7 s, one camera framing (IB.crop of a 1300 px window, 1.48x) on the meeting point. On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²). The attacker runs on IB.run at IB.runLen / 8 a drawing with the ball rolling just ahead; the defender runs at him (dir -1) and at 1.0 s drops into the slide: on his hip, the spine laid back 1.15 rad, the lead leg out along the ground, sliding from 6 m/s to a stop over 1.5 m (uniform deceleration, so the gaps between drawings shrink), a green smear left behind him. 1.25 s his boot meets the ball (a burst) and sends it back past the attacker (3.6 m/s, 2.1 up, bouncing e 0.5). The attacker takes off the drawing after, clears the legs on a gravity arc (0.35 m up) with his knees tucked, lands pitched forward with his arms out (1.75 s), catches himself, and at 2.5 s turns (a drawing with no prev) and spreads his arms at the referee off screen. The defender sits up (1.83 s), comes up on one knee (2.17 s), stands (2.67 s) and clenches a fist (3.0 s). From 3.5 s nothing moves but the crowd, which stands at 4.5 s. Colours: the two kits' navy and yellow; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 7 s, filmed in four shots (IB.shot, on ones): 0-1.0 s a 1750 px wide of the two running at each other pushing in to 1200; 1.0 s a cut to a 560 px close-up down on the grass as the defender slides into the frame, shaking 20 px when his boot meets the ball (1.25 s); 1.42 s a cut to a 900 px medium of the hurdle, shaking 16 px on the landing (1.75 s); 2.5 s an ease in (14 frames) to a 640 px two-shot of the protest and the fist; 4.17 s an ease out to a 1350 px wide (20 frames). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²). The attacker runs on IB.run at IB.runLen / 8 a drawing with the ball rolling just ahead; the defender runs at him (dir -1) and at 1.0 s drops into the slide: on his hip, the spine laid back 1.15 rad, the lead leg out along the ground, sliding from 6 m/s to a stop over 1.5 m (uniform deceleration, so the gaps between drawings shrink), a green smear left behind him. 1.25 s his boot meets the ball (a burst) and sends it back past the attacker (3.6 m/s, 2.1 up, bouncing e 0.5). The attacker takes off the drawing after, clears the legs on a gravity arc (0.35 m up) with his knees tucked, lands pitched forward with his arms out (1.75 s), catches himself, and at 2.5 s turns (a drawing with no prev) and spreads his arms at the referee off screen. The defender sits up (1.83 s), comes up on one knee (2.17 s), stands (2.67 s) and clenches a fist (3.0 s). From 3.5 s nothing moves but the crowd, which stands at 4.5 s. Colours: the two kits' navy and yellow; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M, PI = Math.PI;
 const ATT = IB.athlete('soccer', 'away', 1, { h: H, dir: 1, seed: 30 });
 const DEF = IB.athlete('soccer', 'home', 3, { h: H, dir: -1, seed: 40 });
 const HY = IB.stand(0, FLOOR, ATT).hip[1], AY = FLOOR - F.ankle * H;
-const RL = IB.runLen(ATT) / 8, CAM = [380, 330, 1300];
+const RL = IB.runLen(ATT) / 8;
 
 /* ---------- the meeting ---------- */
 const FS = 24, FC = 30, MEET = 1000;                       // slide starts, contact, where the ball is met
@@ -71,6 +72,16 @@ const withPrev = (table) => (f) => { const p = IB.held(table, f), q = IB.held(ta
 const attacker = withPrev(AACT), defender = withPrev(DACT);
 const cheerAt = (f) => (f < FC ? 0 : f < 108 ? 1 + (f / 2) % 2 : 'up');
 const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+// the camera (IB.shot, on ones): a wide of the two running at each other pushing in, a close-up down on the grass for the boot meeting the ball, a low medium of the hurdle and the landing, an ease in to the two of them for the protest and the fist, and the wide
+const SHOTS = [
+  [0, { at: [1040, 640], w: 1750 }],
+  [0, { at: [1000, 700], w: 1200 }, 'push', FS],
+  [FS, { at: [1010, 830], w: 560 }, 'cut'],
+  [TO + 2, { at: [1100, 690], w: 900 }, 'cut'],
+  [60, { at: [1165, 680], w: 640 }, 'ease', 14],
+  [100, { at: [1000, 660], w: 1350 }, 'ease', 20],
+];
+const HITS = [[FC, 20], [LAND, 16]];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { attacker: attacker(f), defender: defender(f), ball: ballAt(f).p, crowd: cheerAt(f) }; };
 
@@ -81,15 +92,16 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), a = attacker(f), d = defender(f);
-    IB.crop(ctx, CAM);
-    IB.pitchside(ctx, [200, 1900], FLOOR, { cheer: cheerAt(f) });
-    if (f > FS) { const x1 = Math.min(X_START, slideX(f) + 0.1 * H); IB.smear(ctx, (X_START + x1) / 2 + 0.1 * H, FLOOR - 4, Math.max(20, X_START - x1 + 0.2 * H), { h: 13, color: IB.C.green, seed: 21 }); }   // the slide's mark on the grass
-    IB.figure(ctx, d, lookOf(d, DEF));
-    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    IB.figure(ctx, a, lookOf(a, ATT));
-    const hit = IB.drawn(tt, FC / 24), ld = IB.drawn(tt, LAND / 24);
-    if (hit >= 0 && hit < 2) IB.burst(ctx, [ballX(FC), FLOOR - R], { n: 5, a0: -3.0, da: 0.5, r0: 20 + hit * 8, r1: 40 + hit * 6, w: 3, seed: 70 + hit });
-    if (ld >= 0 && ld < 2) IB.thud(ctx, [LX + 0.05 * H, FLOOR], { half: 0.2 * H, k: ld });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.pitchside(ctx, [-100, 2200], FLOOR, { cheer: cheerAt(f) });
+      if (f > FS) { const x1 = Math.min(X_START, slideX(f) + 0.1 * H); IB.smear(ctx, (X_START + x1) / 2 + 0.1 * H, FLOOR - 4, Math.max(20, X_START - x1 + 0.2 * H), { h: 13, color: IB.C.green, seed: 21 }); }   // the slide's mark on the grass
+      IB.figure(ctx, d, lookOf(d, DEF));
+      IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      IB.figure(ctx, a, lookOf(a, ATT));
+      const hit = IB.drawn(tt, FC / 24), ld = IB.drawn(tt, LAND / 24);
+      if (hit >= 0 && hit < 2) IB.burst(ctx, [ballX(FC), FLOOR - R], { n: 5, a0: -3.0, da: 0.5, r0: 20 + hit * 8, r1: 40 + hit * 6, w: 3, seed: 70 + hit });
+      if (ld >= 0 && ld < 2) IB.thud(ctx, [LX + 0.05 * H, FLOOR], { half: 0.2 * H, k: ld });
+    });
   },
 });
 </script>

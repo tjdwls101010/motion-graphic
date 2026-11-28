@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 페널티킥: 키커가 공 뒤에서 숨을 고르다 달려 들어와 골대 윗구석으로 세게 차고, 골라인 앞에서 몸을 낮추고 있던 골키퍼가 솟구쳐 손끝으로 공을 크로스바 위로 쳐 낸다. 원본에 없는 창작 장면이다. 공의 궤적은 중력으로 계산했고(IB.aim, IB.flight), 골대·관중·광고판·선수는 kit 부품이다. 전달하는 생각: 선방은 차는 순간의 웅크림에서 이미 시작된다.
-   Motion notes: seen from the touchline, 7.5 s. On the stage the players are 252 px tall (1.8 m, so 140 px a metre: gravity 1373 px/s²) and the ball r 15 px; the camera (IB.crop, on twos with a smoothstep) frames 1100 px of it, so on screen they are 440 px: it holds on the kicker, pans with the ball to the keeper in 4 drawings from 1.75 s (the ball crosses the frame as it moves), and from 4.17 s to 4.67 s pulls back to a 1540 px frame that holds both players. The penalty spot is 9.3 m from the goal line (compressed from 11 m to keep both in one wide shot). 0-1 s the kicker stands behind the ball, the keeper bounces on twos (two drawings, no prev). 0.92 s the kicker leans in (anticipation), then runs 6 drawings (IB.run at IB.runLen / 8 a drawing) so his far foot lands beside the ball. 1.5 s: plant with the kicking leg cocked behind, 1.58 s the leg swings through, 1.67 s contact (a burst on the ball for 2 drawings) and the follow-through, the leg one drawing higher past it (overshoot), down at 2.0 s. The ball leaves at 24 m/s aimed under the bar (arriving 0.38 s later), drawn on twos with speed lines. On the contact drawing the keeper sinks 0.11 h (the read), takes off on the next and flies a gravity arc that peaks on the save: 0.33 s after the kick his hands meet the ball 2.1 m up, a burst and the ball goes up over the bar at a sixth of its speed. He lands at 2.25 s (a thud, 2 drawings), comes up and pumps both fists at 3.08 s. 3.5 s the kicker's hands go to his head, a drawing late in his head (pose.prev). The crowd stands from the save and cheers on twos until 5.5 s, then holds standing; from 5.5 s nothing moves. Colours: the two kits' navy and yellow and the keeper's mint; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 7.5 s. On the stage the players are 252 px tall (1.8 m, so 140 px a metre: gravity 1373 px/s²) and the ball r 15 px; the camera (IB.shot, on ones) films it in five shots: 0-1.5 s a 1840 px wide of both players pushing in to a 1000 px medium on the kicker's run; 1.5 s a cut to a close-up of his boot and the ball (600 px, tilted 0.06 rad), shaking 18 px on the contact; 1.75 s a cut to the keeper (900 px) as the ball comes in, a snap in to 620 px on the save (2.0 s, shaking 16 px) and an ease back out to 1150 px (2.25 s, 12 frames) as the ball goes over the bar and he lands; 3.42 s a cut to the kicker (640 px) as his hands go to his head; 4.17 s an ease out to a 1720 px wide that holds both (24 frames). The penalty spot is 9.3 m from the goal line (compressed from 11 m to keep both in one wide shot). 0-1 s the kicker stands behind the ball, the keeper bounces on twos (two drawings, no prev). 0.92 s the kicker leans in (anticipation), then runs 6 drawings (IB.run at IB.runLen / 8 a drawing) so his far foot lands beside the ball. 1.5 s: plant with the kicking leg cocked behind, 1.58 s the leg swings through, 1.67 s contact (a burst on the ball for 2 drawings) and the follow-through, the leg one drawing higher past it (overshoot), down at 2.0 s. The ball leaves at 24 m/s aimed under the bar (arriving 0.38 s later), drawn on twos with speed lines. On the contact drawing the keeper sinks 0.11 h (the read), takes off on the next and flies a gravity arc that peaks on the save: 0.33 s after the kick his hands meet the ball 2.1 m up, a burst and the ball goes up over the bar at a sixth of its speed. He lands at 2.25 s (a thud, 2 drawings), comes up and pumps both fists at 3.08 s. 3.5 s the kicker's hands go to his head, a drawing late in his head (pose.prev). The crowd stands from the save and cheers on twos until 5.5 s, then holds standing; from 5.5 s nothing moves. Colours: the two kits' navy and yellow and the keeper's mint; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M;
 const GX = 1800;                                   // the goal line
 const BALL0 = [520, FLOOR - R];                    // the ball on the spot
@@ -101,12 +102,21 @@ const BOUNCE = [8, 34];   // frames where the keeper alternates two drawings: no
 
 function kickerAt(f) { const p = IB.held(KACT, f); return { ...p, prev: f > 22 ? IB.held(KACT, f - 2) : undefined }; }
 function keeperAt(f) { const p = IB.held(KEACT, f); const alt = f >= BOUNCE[0] && f < BOUNCE[1]; return { ...p, prev: f > 0 && !alt ? IB.held(KEACT, f - 2) : undefined }; }
-// the camera: close on the kicker, panning with the ball to the keeper on twos (smoothstep), and at the end back out to hold both
-const CAM = [[0, [40, 400, 1100]], [KF + 2, [40, 400, 1100]], [KF + 10, [820, 400, 1100]], [100, [820, 400, 1100]], [112, [380, 222, 1540]]];
-const camAt = (f) => IB.camera(CAM, f);
+// the camera (IB.shot, on ones): a wide pushing in on the run, a tilted close-up of the boot, the keeper's medium punching in on the save, the kicker's face, and the wide again
+const SHOTS = [
+  [0, { at: [1020, 680], w: 1840 }],
+  [0, { at: [420, 720], w: 1000 }, 'push', 36],
+  [36, { at: [480, 770], w: 600, tilt: 0.06 }, 'cut'],
+  [42, { at: [1600, 650], w: 900 }, 'cut'],
+  [KF + TD, { at: [1660, 590], w: 620 }, 'snap'],
+  [54, { at: [1640, 650], w: 1150 }, 'ease', 12],
+  [82, { at: [560, 700], w: 640 }, 'cut'],
+  [100, { at: [1080, 660], w: 1720 }, 'ease', 24],
+];
+const HITS = [[KF, 18], [KF + TD, 16]];
 const cheerAt = (f) => (f < KF + TD + 2 ? 0 : f < 132 ? (IB.alternate(f, 2) ? 1 : 2) : 'up');
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kickerAt(f), keeper: keeperAt(f), ball: ballAt(f).p, crowd: cheerAt(f), camera: camAt(f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kickerAt(f), keeper: keeperAt(f), ball: ballAt(f).p, crowd: cheerAt(f) }; };
 
 MG.scene({
   title: 'soccer / penalty-save-over-bar',
@@ -115,20 +125,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(IB.twos(t)), b = ballAt(f), kp = kickerAt(f), gk = keeperAt(f);
-    IB.crop(ctx, camAt(f));
-    IB.pitchside(ctx, [-20, 2100], FLOOR, { cheer: cheerAt(f) });
-    IB.penaltySpot(ctx, [BALL0[0], FLOOR]);   // the penalty spot
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'back' });
-    IB.figure(ctx, kp, KICK);
-    IB.figure(ctx, gk, KEEP, 'far');
-    if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
-    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    IB.figure(ctx, gk, KEEP, 'near');
-    const hit = IB.drawn(IB.twos(t), KF / 24), save = IB.drawn(IB.twos(t), (KF + TD) / 24), land = IB.drawn(IB.twos(t), KEEPER.LAND / 24);
-    if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
-    if (save >= 0 && save < 2) IB.burst(ctx, SAVE, { n: 5, a0: -3.0, da: 0.55, r0: 24 + save * 8, r1: 52 + save * 6, w: 3, seed: 80 + save });
-    if (land >= 0 && land < 2) IB.thud(ctx, [gk.hip[0], FLOOR], { half: 0.2 * H, k: land });
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'front' });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.pitchside(ctx, [-300, 2400], FLOOR, { cheer: cheerAt(f) });
+      IB.penaltySpot(ctx, [BALL0[0], FLOOR]);   // the penalty spot
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'back' });
+      IB.figure(ctx, kp, KICK);
+      IB.figure(ctx, gk, KEEP, 'far');
+      if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+      IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      IB.figure(ctx, gk, KEEP, 'near');
+      const hit = IB.drawn(IB.twos(t), KF / 24), save = IB.drawn(IB.twos(t), (KF + TD) / 24), land = IB.drawn(IB.twos(t), KEEPER.LAND / 24);
+      if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
+      if (save >= 0 && save < 2) IB.burst(ctx, SAVE, { n: 5, a0: -3.0, da: 0.55, r0: 24 + save * 8, r1: 52 + save * 6, w: 3, seed: 80 + save });
+      if (land >= 0 && land < 2) IB.thud(ctx, [gk.hip[0], FLOOR], { half: 0.2 * H, k: land });
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'front' });
+    });
   },
 });
 </script>

@@ -10,11 +10,12 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 헤딩 골: 크로스가 골대 너머에서 높이 넘어오고, 공격수가 수비수와 함께 뛰어올라 머리를 뒤로 젖혔다가 내리찍는다. 공은 골키퍼 앞 땅에 한 번 튀어 몸을 날린 골키퍼 위로 넘어가 그물에 꽂힌다. 원본에 없는 창작 장면이고, 공은 중력과 바운드로 계산했다(IB.aim, IB.flight). 전달하는 생각: 땅으로 내리찍은 공은 튀어서 골키퍼의 손을 넘는다.
-   Motion notes: seen from the touchline, 7.5 s, one camera framing (IB.crop of a 1240 px window: 1.55x). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²). The cross is lofted from beyond the far post 1.0 s before the header and drops in on a gravity arc. The striker runs in on IB.run (IB.runLen / 8 a drawing), plants on 0.92 s and jumps on a gravity arc (0.54 m up, peaking on the header at 1.25 s): on the drawing before it he arches back with his head cocked (anticipation), on the header he snaps forward (lean 0.25, nod 0.35, a burst at the brow for 2 drawings), and the next drawing goes past (lean 0.4). The defender jumps a drawing later and peaks 0.2 m lower. The headed ball is aimed at the ground 1.6 m in front of the keeper in 0.18 s, bounces (e 0.45) and rises 1.4 m over the keeper, who reads it on the header (crouch) but goes a drawing late: he steps and dives forward along the ground in 3 drawings and lands under the ball's arc as it rises over him (a thud). It hits the back net, which bulges round it for 6 drawings, and drops inside. The striker lands, turns and runs off with an arm up, stopping arms wide; the keeper rolls to his knees and punches the turf; the crowd stands and cheers on twos, and from 5.5 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 7.5 s, filmed in four shots (IB.shot, on ones): 0-0.92 s a 1900 px wide of the cross coming over, pushing in to 1560; 0.92 s a cut to a low 1000 px medium of the jump, snapping in to 640 px on the header (1.25 s, shaking 18 px); 1.38 s a cut to the keeper's side (1000 px) for the bounce, the dive and the ball hitting the net (2.17 s, shaking 16 px); 2.25 s the measured pan (16 frames) to 1150 px on the striker's run back and the keeper on his knees; 3.5 s an ease out to a 1600 px wide (24 frames). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²). The cross is lofted from beyond the far post 1.0 s before the header and drops in on a gravity arc. The striker runs in on IB.run (IB.runLen / 8 a drawing), plants on 0.92 s and jumps on a gravity arc (0.54 m up, peaking on the header at 1.25 s): on the drawing before it he arches back with his head cocked (anticipation), on the header he snaps forward (lean 0.25, nod 0.35, a burst at the brow for 2 drawings), and the next drawing goes past (lean 0.4). The defender jumps a drawing later and peaks 0.2 m lower. The headed ball is aimed at the ground 1.6 m in front of the keeper in 0.18 s, bounces (e 0.45) and rises 1.4 m over the keeper, who reads it on the header (crouch) but goes a drawing late: he steps and dives forward along the ground in 3 drawings and lands under the ball's arc as it rises over him (a thud). It hits the back net, which bulges round it for 6 drawings, and drops inside. The striker lands, turns and runs off with an arm up, stopping arms wide; the keeper rolls to his knees and punches the turf; the crowd stands and cheers on twos, and from 5.5 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M;
-const GX = 1760, GS = 0.7, CAM = [760, 320, 1240];
+const GX = 1760, GS = 0.7;
 const STR = IB.athlete('soccer', 'away', 6, { h: H, dir: 1, seed: 30 });
 const DEF = IB.athlete('soccer', 'home', 0, { h: H, dir: 1, seed: 40 });
 const GK = IB.athlete('soccer', 'keeper', 4, { h: H, dir: -1, seed: 50 });
@@ -93,6 +94,17 @@ const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.hel
 const striker = withPrev(SACT), defender = withPrev(DACT), keeper = withPrev(KACT);
 const cheerAt = (f) => (f < HIT ? 0 : f < 132 ? 1 + (f / 2) % 2 : 'up');
 const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+// the camera (IB.shot, on ones): a wide of the cross pushing in, a low medium of the jump punching in on the header, a cut to the keeper's side for the bounce and the net, the measured pan after the striker's run back, and the wide
+const SHOTS = [
+  [0, { at: [1320, 600], w: 1900 }],
+  [0, { at: [1340, 630], w: 1560 }, 'push', 22],
+  [22, { at: [1300, 600], w: 1000 }, 'cut'],
+  [FH, { at: [1340, 650], w: 640 }, 'snap'],
+  [FH + 3, { at: [1720, 700], w: 1000 }, 'cut'],
+  [HIT + 2, { at: [1160, 680], w: 1150 }, 'pan', 16],
+  [84, { at: [1300, 660], w: 1600 }, 'ease', 24],
+];
+const HITS = [[FH, 18], [HIT, 16]];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { striker: striker(f), defender: defender(f), keeper: keeper(f), ball: ballAt(f).p, net: bulgeAt(f), crowd: cheerAt(f) }; };
 
@@ -103,19 +115,20 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), s = striker(f), d = defender(f), k = keeper(f);
-    IB.crop(ctx, CAM);
-    IB.pitchside(ctx, [600, 2100], FLOOR, { cheer: cheerAt(f) });
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
-    IB.figure(ctx, d, DEF);
-    IB.figure(ctx, k, GK, 'far');
-    IB.figure(ctx, s, lookOf(s, STR));
-    IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
-    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    IB.figure(ctx, k, GK, 'near');
-    const hd = IB.drawn(tt, FH / 24), kd = IB.drawn(tt, (FH + 10) / 24);
-    if (hd >= 0 && hd < 2) IB.burst(ctx, HP, { n: 4, a0: -2.4, da: 0.55, r0: 22 + hd * 8, r1: 44 + hd * 6, w: 3, seed: 70 + hd });
-    if (kd >= 0 && kd < 2) IB.thud(ctx, [KX - 0.32 * H, FLOOR], { half: 0.35 * H, k: kd });
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.pitchside(ctx, [100, 2600], FLOOR, { cheer: cheerAt(f) });
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
+      IB.figure(ctx, d, DEF);
+      IB.figure(ctx, k, GK, 'far');
+      IB.figure(ctx, s, lookOf(s, STR));
+      IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+      IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      IB.figure(ctx, k, GK, 'near');
+      const hd = IB.drawn(tt, FH / 24), kd = IB.drawn(tt, (FH + 10) / 24);
+      if (hd >= 0 && hd < 2) IB.burst(ctx, HP, { n: 4, a0: -2.4, da: 0.55, r0: 22 + hd * 8, r1: 44 + hd * 6, w: 3, seed: 70 + hd });
+      if (kd >= 0 && kd < 2) IB.thud(ctx, [KX - 0.32 * H, FLOOR], { half: 0.35 * H, k: kd });
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+    });
   },
 });
 </script>

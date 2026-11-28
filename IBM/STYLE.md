@@ -44,7 +44,7 @@
 | `mustard` | `#d2a005` | 액자 |
 | `green` | `#42be64` | 모자 |
 | `mint` | `#c1ecc0` | 스웨터, 깃발 |
-| `red` | `#ee5a4a` | 원본에 없는 색. 원본 프레임에는 빨강이 없어서, 주식 장면의 하락 표시용으로 성진이 추가를 정했다. `blue`·`green`과 무게가 맞는 값으로 골랐고 잰 값이 아니다. `market` 계열 밖에서는 쓰지 않는다 |
+| `red` | `#ee5a4a` | 원본에 없는 색. 원본 프레임에는 빨강이 없어서, 주식 장면의 하락 표시용으로 성진이 추가를 정했다. `blue`·`green`과 무게가 맞는 값으로 골랐고 잰 값이 아니다. `market` 계열과 거리 보행 신호등의 멈춤 칸(`street`, 2026-11-28 성진이 허용) 밖에서는 쓰지 않는다 |
 | `skin` | `#f6c398` `#ddbb9c` `#d2b99b` `#b59674` `#a07d5a` | 인물마다 하나 |
 
 ## spot: 카피와 무대가 한 화면인 15초 스팟
@@ -196,3 +196,12 @@ establish, insert 계열의 문법을 원본과 다른 장소와 대상에 적�
 - **교실의 모션:** 손 흔들기와 지우개 왕복은 두 그림 교대라 prev 없이, 천천히 내려오는 손은 3프레임 박자로 그린다. 앉은 아이가 손을 들 때는 먼 팔을 쓴다: 가까운 팔의 반소매가 큰 머리를 통째로 덮는다. 손 들기는 웅크림 두 장 → 엉덩이가 0.06 h 뜨는 지나침 한 장 → 정착이고, 불리면 한 장 뒤에 움찔(흔들림선 세 장) 후 얼어붙는다(`hand-up-called`). 재채기 준비는 머리를 점점 젖히는 세 장을 점점 길게(0.33, 0.33, 0.5 s) 붙잡은 뒤 한 장에 터뜨리고 가루가 넉 장에 흩어진다(`chalk-dust-sneeze`). 손에 붙는 소품(지우개, 쥔 종이비행기)은 포즈의 손 목표가 아니라 `IB.figure`가 돌려준 손에 붙인다: 목표가 팔 길이 밖이면 둘이 어긋난다. 던진 종이비행기는 그린 물건이라 2프레임 단위로 날아가 잡는 손의 그림과 같은 프레임에 도착하고, 돌아서는 선생님은 발을 그 자리에 두고 방향만 바꾼다(`paper-plane-caught`).
 - **키트:** `kit/props/classroom.js` (`IB.chalkboard`, `IB.chalkScript`, `IB.chalkShape`, `IB.chalk`, `IB.boardEraser`, `IB.chalkDust`, `IB.schoolDesk`, `IB.schoolChair`, `IB.lectern`), `kit/props/vehicles.js` (`IB.paperPlane`), `kit/sets/schoolhall.js` (`IB.classDoor`, `IB.lockerRow`, `IB.lockerEdge`, `IB.schoolBell`, `IB.lunchTray`, `IB.trayGrips`, `IB.lunchTable`, `IB.schoolGate`, `IB.gateLane`, `IB.backpack`), `kit/figure.js` (`IB.run`, `IB.walk`, `IB.shake`), `kit/props/office.js` (`IB.sit`), `kit/props/home.js` (`IB.hangingLamp`), `kit/marks.js` (`IB.burst`, `IB.breath`), `kit/cast/people.js`
 - **장면:** `scenes/school/`
+
+### street: 거리 일상
+
+인도, 횡단보도, 정류장에서 지나가는 사람에게 일어나는 작은 사건 하나와 그 반응이다.
+
+- **룩:** 빈 무대에 신호등, 횡단보도 줄, 정류장, 화분 같은 소품 두셋으로 거리를 알린다. 무대를 가로지르는 장면은 인물 h 360, 서서 반응하는 장면은 h 450이고, 버스와 자전거는 사람에 맞춰 키운다(버스 1.15배, 자전거 1.25 × h / 330). 신호등의 빨강·초록은 한 번에 하나만 켠다. 깊이는 바닥 줄 둘이나 셋을 14–60 px 띄워 만들고 줄마다 스미어를 따로 깐다.
+- **모션:** 기계(버스, 문, 신호 칸)는 1프레임, 사람·자전거·매연은 2프레임 단위다. 기다리던 무리는 걷기 위상 1/3의 보폭으로 서 있다가 한 장씩 늦게 출발하고, 서 있다가 뛰기 시작하는 첫 그림은 서 있던 보폭의 앞발을 그대로 디디는 위상(약 0.2)으로 골라 몸이 뒤로 물러나지 않게 한다. 사건 직전과 직후에 0.42초씩 완전히 멈춘다. 놓침과 놀람은 준비 한 장과 지나침 한 장(어깨를 든 뒤 떨어뜨리기, 웅크린 뒤 공중)으로 보이고, 선 자세에서 어깨를 들 때는 골반이 아니라 척추·고개·손을 쓴다: 선 다리는 거의 펴져 있어 골반을 몇 px만 올려도 두 발이 뜬다. 무리가 길을 건너는 장면은 다 내보내지 않고 건너편에 모아 세워 끝 정지에 사람을 남기며, 뛰는 사람이 화면 끝까지 가는 장면은 카메라가 2프레임 단위 smoothstep으로 한 번 따라간다(`crosswalk-green-cross`, `bus-missed-chase`).
+- **키트:** `kit/props/traffic.js` (`IB.walkSignal`, `IB.crosswalk`, `IB.busStop`, `IB.bus`, `IB.BUS`, `IB.exhaust`, `IB.bicycle`, `IB.bikeFit`, `IB.ride`, `IB.bellRing`), `kit/props/vehicles.js` (`IB.tandem`), `kit/figure.js` (`IB.walk`, `IB.run`), `kit/props/handheld.js` (`IB.mobilePhone`, `IB.briefcase`), `kit/marks.js` (`IB.burst`, `IB.breath`)
+- **장면:** `scenes/street/`

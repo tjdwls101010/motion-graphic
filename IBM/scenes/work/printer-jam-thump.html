@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>work / printer-jam-thump</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/copyroom.js"></script>
+<script>
+/* 하늘색 셔츠의 사무원이 출력물을 가지러 프린터 앞에 와 기다리는데, 셋째 장이 걸려 프린터가 덜컹 멈추고 노란 등이 깜빡인다. 몸을 숙여 들여다본 뒤 주먹을 뒤로 뺐다가 옆구리를 툭 치자, 한 박자 아무 일 없다가 걸린 종이가 빨려 들어가고 종이가 한꺼번에 쏟아져 날린다. 원본에 없는 창작 장면으로, 인물 리그(IB.figure, IB.walk, IB.poseMix), 사무원(IB.PEOPLE.clerk), 복사실 소품(IB.printer, IB.paperSpray), 맞은 자리의 터짐선과 흔들림선(IB.burst, IB.shake), 말풍선을 썼다. 전달하는 생각: 고장 난 기계를 치는 것은 준비와 정지가 있어야 웃긴다.
+   Motion notes: one locked shot, 8 s, figure 500 px tall (line 3.6 px, IB.figLine), dir 1; the printer is IB.printer at s 1.47 (309 x 368 px, its top at his hip). The person is on twos as one walk and a list of drawings (ACT), every drawing passing the one before as pose.prev; the printer is a machine and moves on ones (a sheet slides out over 12 frames, the jam shudders the body 4, -4, 3, -3, 1, -1 px on six frames, the warning light blinks every 6 frames, the thump knocks it 9, 4, -3 px). Walk in from the left edge for 22 drawings at IB.walkLen / 12 = 35 px a drawing (0-1.83 s), stopping on phase 5/6 with one drawing thrown forward (lean 0.14). Sheets 1 and 2 print at 1.0 s and 1.67 s; sheet 3 jams at 2.5 s, chewed in a zigzag (two drawings on twos for 0.5 s), and on the next drawing (2.58 s) his head comes forward with wide eyes. The peer at 2.83 s: two in-betweens (0.4, 0.8), one drawing past (1.06), then held bent over the printer's top 0.75 s (lean 0.92, hands on the knees, the shirt tucked so its hem does not flap up behind). The thump: an in-between and a wind-up drawing with the fist raised over the head (lean -0.08), held 0.25 s; at 4.17 s the fist lands on the printer's flank in one drawing with the body past the mark (u 1.07, the fist staying on the flank), a four-line burst for 2 drawings and shake marks for 4; held on the flank, released in one in-between at 4.42 s. The light dies on the thump. From 4.58 s to 5.08 s nothing moves at all (the beat). At 5.08 s the light comes on green and the jammed sheet and the tray are gone; at 5.17 s fourteen sheets (94 x 123 px) shoot out of the bay three a drawing (IB.paperSpray: launch 88-135 px a drawing, gravity 17.6, falling at most 53 px a drawing, everything at s 1.47 so the timing is the 340 px one), rising up to 440 px over the bay and landing across 600 px of floor; one drawing later (5.25 s) he jumps back (one drawing past: lean -0.16, open hands up, mouth open) and holds. The last sheet is down on 7.08 s; he lowers his hands and looks down at the paper in one in-between (7.17 s), the bubble opens at 7.33 s and from 7.5 s nothing moves. Three colours: his sky shirt, the green and the yellow of the status light. */
+const F = IB.FIG, FLOOR = 980, H = 500, K = H / 340, WHO = { ...IB.PEOPLE.clerk, h: H, dir: 1, tuck: true, seed: 80 };   // K: the copy-room parts are drawn for a 340 px figure
+const PACE = IB.walkLen(WHO) / 12, XS = 840, IN = 22, X0 = XS - IN * PACE, PH = (IN / 12) % 1, W0 = IN * 2;
+const PX = XS + 230 * K;   // the printer: floor under its centre; its left flank is at PX - 105 K
+
+const stopped = () => ({ ...IB.stand(XS, FLOOR, WHO), feet: IB.walk(XS, FLOOR, WHO, PH).feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]) });
+const S = stopped(), HY = S.hip[1], SH = HY - (F.torso - 0.012) * H;
+const FLANK = [PX - 103 * K, FLOOR - 178 * K];   // where the fist lands on the printer's flank
+const DRAW = {
+  wait: { ...S, face: { mouth: 'flat' } },
+  thrown: { ...S, lean: 0.14, hip: [XS + 9, HY + 3], face: { mouth: 'flat' } },
+  notice: { ...S, lean: 0.05, nod: 0.12, face: { eye: 'wide', mouth: 'flat', brow: 1 } },
+  peer: { ...S, hip: [XS + 6, HY + 32], lean: 0.92, nod: 0.1, hands: [[XS + 0.15 * H, HY + 0.15 * H], [XS + 0.12 * H, HY + 0.16 * H]], face: { eye: 'dot', mouth: 'flat', brow: 1 } },
+  wind: { ...S, hip: [XS - 9, HY + 6], lean: -0.08, nod: -0.06, hands: [S.hands[0], [XS + 0.02 * H, SH - 0.2 * H]], hand: ['relax', 'grip'], face: { eye: 'dot', mouth: 'flat', brow: 1 } },
+  hit: { ...S, hip: [XS + 18, HY + 20], lean: 0.24, hands: [S.hands[0], FLANK], hand: ['relax', 'grip'], face: { eye: 'closed', mouth: 'flat', brow: 1 } },
+  waitFist: { ...S, hand: ['relax', 'grip'], face: { mouth: 'flat', brow: 1 } },
+  jump: { ...S, hip: [XS - 15, HY - 6], lean: -0.16, nod: -0.1, hands: [[XS + 0.06 * H, SH - 0.18 * H], [XS + 0.16 * H, SH - 0.13 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },
+  down: { ...S, lean: 0.06, nod: 0.24, face: { eye: 'dot', mouth: 'frown', brow: -0.6 } },
+};
+const mix = (a, b, u) => ({ ...IB.poseMix(a, b, u), hand: (u < 0.5 ? a : b).hand, face: (u < 0.5 ? a : b).face });
+const past = (a, b, u) => ({ ...mix(a, b, u), hands: b.hands });   // the body passes its mark, the hands stay where they land
+// [frame at 24 fps, drawing] after the walk
+const ACT = [
+  [W0, DRAW.thrown], [W0 + 2, DRAW.wait],
+  [62, DRAW.notice],
+  [68, mix(DRAW.notice, DRAW.peer, 0.4)], [70, mix(DRAW.notice, DRAW.peer, 0.8)], [72, mix(DRAW.notice, DRAW.peer, 1.06)], [74, DRAW.peer],
+  [92, mix(DRAW.peer, DRAW.wind, 0.55)], [94, DRAW.wind],
+  [100, past(DRAW.wind, DRAW.hit, 1.07)], [102, DRAW.hit],
+  [106, mix(DRAW.hit, DRAW.waitFist, 0.5)], [108, DRAW.waitFist],
+  [126, past(DRAW.waitFist, DRAW.jump, 1.1)], [128, DRAW.jump],
+  [172, mix(DRAW.jump, DRAW.down, 0.5)], [174, DRAW.down],
+];
+function poseOn(f) {
+  if (f < W0) { const k = f >> 1; return { ...IB.walk(X0 + k * PACE, FLOOR, WHO, (k / 12) % 1), face: { mouth: 'flat' } }; }
+  return IB.held(ACT, f);
+}
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)); return { ...poseOn(f), prev: f > 0 ? poseOn(f - 2) : undefined }; };
+
+/* the printer, on ones: [state] at frame f */
+const SHUDDER = [4, -4, 3, -3, 1, -1], KNOCK = [9, 4, -3];
+function printerAt(f) {
+  const sheet = (f0) => (f - f0) / 12;   // a sheet slides out over 12 frames
+  const st = { out: f >= 36 ? (f >= 52 ? 2 : 1) : 0, light: 'ok' };
+  if (f >= 24 && f < 36) st.feed = sheet(24);
+  else if (f >= 40 && f < 52) st.feed = sheet(40);
+  else if (f >= 54 && f < 60) st.feed = sheet(54);
+  if (f >= 60 && f < 122) {   // jammed: the sheet chewed (two drawings on twos for 0.5 s, then held), the warning light blinking until the thump kills it
+    st.jam = f < 72 ? 1 + IB.alternate(f - 60, 2) : 2;
+    st.light = f >= 100 ? 'off' : IB.alternate(f - 60, 6) ? 'off' : 'warn';
+    st.jolt = f - 60 < SHUDDER.length ? SHUDDER[f - 60] : f >= 100 && f - 100 < KNOCK.length ? KNOCK[f - 100] : 0;
+  }
+  if (f >= 122) st.out = 0;   // the jam clears: the whole tray goes out with the spray
+  return st;
+}
+const SPRAY = 124;   // the first pair of sheets leaves on this frame
+const SPRAY_OPTS = { n: 14, floor: FLOOR, a: -2.0, spread: 1.4, v: [60 * K, 92 * K], g: 12 * K, vt: 36 * K, per: 3, s: K, seed: 1310 }, SPRAY_END = 23;   // all scaled by K, so the last sheet is down on drawing 23 (frame 170) at any K
+
+IB.actors = (t) => { const f = IB.frame(t), tt = IB.twos(t); return { clerk: poseAt(t), printer: printerAt(f), spray: MG.clamp(IB.drawn(tt, SPRAY / 24), -1, SPRAY_END) }; };
+
+MG.scene({
+  title: 'work / printer-jam-thump',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), tt = IB.twos(t), p = poseAt(t);
+    IB.wallClock(ctx, [1620, 300], { r: 76, hands: [[0, -48], [31, 17]], lw: 3.8, hw: 3.8 });
+    IB.smear(ctx, 860, FLOOR - 10, 1000, { h: 16, seed: 9 });
+    const pr = IB.printer(ctx, [PX, FLOOR], printerAt(f), { s: K, lw: 3.6 });
+    IB.figure(ctx, p, { ...WHO, face: p.face });
+    const b = IB.drawn(tt, 100 / 24);
+    if (b >= 0 && b < 2) IB.burst(ctx, [FLANK[0] + 6, FLANK[1]], { n: 4, a0: -2.2, da: 0.55, r0: 40 + b * 16, r1: 80 + b * 14, w: 3.6, seed: 600 + b * 5 });
+    if (b >= 0 && b < 4) { IB.shake(ctx, PX + 122 * K, FLOOR - 200 * K, 24, { a: -0.3, n: 2, seed: 640 + b, w: 3.2 }); IB.shake(ctx, PX + 118 * K, FLOOR - 80 * K, 22, { a: 0.3, n: 2, seed: 660 + b, w: 3.2 }); }
+    IB.paperSpray(ctx, pr.slot, IB.drawn(tt, SPRAY / 24), SPRAY_OPTS);
+    IB.bubble(ctx, ['…됐네.'], t, 176 / 24, { tip: [XS + 30, SH - 0.17 * H], x: XS - 140, y: SH - 0.4 * H, seed: 500 });
+  },
+});
+</script>

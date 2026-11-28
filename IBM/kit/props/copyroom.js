@@ -1,4 +1,4 @@
-/* props/copyroom.js — the copy room and the pantry of an office in the IBM look: a floor-standing printer seen from the front that feeds, jams and spits its paper, a pantry counter with a coffee machine (a cup's place, a stream, a water tank and an empty light) and a water cooler, a stack of papers that leans and bends as one, and loose sheets that fly and settle. Paper-white bodies in the same brush-pen outline as the furniture, graphite where things meet the floor or hide under an overhang; the lights, the water and one folder colour are the only colours. New, not measured: at s = 1 the sizes are set for figures 340 px tall (a printer to the waist, a counter top at 0.53 h); every part takes opts.s to scale with a larger figure (s = h / 340), its lines staying `lw` px on screen. Needs ink.js; adds to the global IB. */
+/* props/copyroom.js — the copy room and the pantry of an office in the IBM look: a floor-standing printer seen from the front that feeds, jams and spits its paper, a pantry counter with a coffee machine (a cup's place, a stream, a water tank and an empty light) and a water cooler, a stack of papers that leans and bends as one, and loose sheets that fly and settle. Paper-white bodies in the same brush-pen outline as the furniture, graphite where things meet the floor or hide under an overhang; the lights, the water and one folder colour are the only colours. New, not measured: at s = 1 the sizes are set for figures 340 px tall (a printer whose output tray is at the hip, 0.58 h, and whose scanner top is at the shoulder, 0.77 h; a counter top at 0.53 h); every part takes opts.s to scale with a larger figure (s = h / 340), its lines staying `lw` px on screen. Needs ink.js; adds to the global IB. */
 (function (g) {
   const MG = g.MG, IB = g.IB, C = IB.C;
   const { lerp, clamp } = MG;
@@ -9,13 +9,13 @@
   const zoom = (ctx, at, s) => { ctx.save(); ctx.translate(at[0], at[1]); ctx.scale(s, s); ctx.translate(-at[0], -at[1]); };
   const unzoom = (at, s) => ([x, y]) => [at[0] + (x - at[0]) * s, at[1] + (y - at[1]) * s];
 
-  /* printer(ctx, at, state, opts) — a floor-standing office printer seen from the front, 210 x 250: two paper drawers on casters, the print engine with its panel (a blank screen and a status light), and on top a scanner block over the right of it with the output bay under it, where printed sheets slide out to the left onto the top. `at` is the floor under its centre.
+  /* printer(ctx, at, state, opts) — a floor-standing office printer seen from the front, 210 x 262 with its casters (the output tray 197 px up, 0.58 of a 340 px figure, the scanner's top 262 px, 0.77): two paper drawers on casters, the print engine with its panel (a blank screen and a status light), and on top a scanner block over the right of it with the output bay under it, where printed sheets slide out to the left onto the top. `at` is the floor under its centre.
      state  out    sheets already lying in the output tray (each 2.5 px of the stack seen edge-on)
             feed   0..1, how far the sheet being printed has slid out of the bay (0: none)
             jam    0 | 1 | 2: no jam, or one of two drawings of a sheet chewed into a zigzag and stuck half out of the bay (alternate them on twos while it chews, then hold one)
             light  'ok' | 'warn' | 'off': the status light (blink it by switching to 'off' every few frames)
             jolt   px the whole body is knocked sideways (a shudder on ones, a thump); tilt rad it rocks about its bottom right corner (- lifts its left caster)
-     opts   s (1: 210 x 250), lw (3.2 on screen), seed
+     opts   s (1: 210 x 262), lw (3.2 on screen), seed
      Returns { slot, tray, side, light, top }: the point where paper leaves the bay, the top of the output stack, the middle of its left flank (where a hand thumps it), the status light and the top of the scanner, all in stage px and already moved by jolt (tilt ignored). (work/printer-jam-thump) */
   IB.printer = (ctx, [cx, floor], st = {}, o = {}) => {
     const { out = 0, feed = 0, light = 'ok', tilt = 0, jam = 0 } = st, { s = 1, seed = 900 } = o, lw = (o.lw || 3.2) / s, jolt = (st.jolt || 0) / s, W = 210, H = 250, back = unzoom([cx, floor], s);

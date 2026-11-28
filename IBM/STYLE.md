@@ -176,3 +176,12 @@ establish, insert 계열의 문법을 원본과 다른 장소와 대상에 적�
 - **목표선 앞의 멈춤:** 값이 목표에 닿으면 다음 그림에 얼굴만 바뀌고 그 뒤 차트도 인물도 0.33초 꼼짝 않으며(차트는 0.5초 멈춘다), 뚫는 점은 한 장에 올라오며 인물은 같은 장에 웅크렸다(준비) 손을 든다. 성공의 크기는 뚫는 순간이 아니라 그 앞의 멈춤 길이가 정한다(`target-hit-balloons`). 떠오르는 것(풍선)은 `IB.bob`으로 한 번 출렁이고 1초 안에 정확히 멈춘다.
 - **키트:** `kit/props/office.js` (`IB.sit`, `IB.chair`, `IB.desk`, `IB.monitor`, `IB.workstation`, `IB.candles`, `IB.lineChart`, `IB.priceGrid`, `IB.cursor`, `IB.arrow`), `kit/sets/street.js` (`IB.financeStreet`), `kit/sets/trading.js` (`IB.tickerBoard`), `kit/props/vehicles.js` (`IB.cab`, `IB.coasterCart`, `IB.rail`), `kit/cast/people.js` (`IB.PEOPLE`, `IB.PASSERSBY`), `kit/figure.js`
 - **장면:** `scenes/market/`
+
+### work: 직장 일상
+
+사무실 층(엘리베이터, 회의실, 책상)에서 사람 한둘에게 일어나는 작은 사건 하나와 그 반응이다. 소재는 직장이지만 모션 규칙은 위 계열들의 것을 그대로 쓴다.
+
+- **룩:** 사무실의 큰 가구(엘리베이터, 회의 탁자, 이젤 화이트보드, 바퀴 의자와 책상)를 무대로 쓴다. 무대를 가로지르는 장면은 인물 h 330–345(선 3 px)이고, 앉은 사람의 끄덕임이나 기지개처럼 작은 사건이 중심이면 h 480–520(선 3.5–3.7 px)으로 당겨 탁자와 화이트보드를 화면 밖으로 자른다: h 330으로 앉힌 첫 판은 앉은 키가 200 px라 끄덕임이 시트에서 읽히지 않았다. 가구는 흰 면과 회색(엘리베이터 문 `#d9d9d9`)이고, 색은 인물의 옷과 작은 점 하나(불 들어온 화살표 mint, 화이트보드의 파란 막대와 노란 포스트잇)뿐이며 화면과 보드의 글자는 자리 표시 도형이다.
+- **모션:** 사람은 2프레임, 엘리베이터 문과 벽시계 바늘은 1프레임 단위로 움직여 기계와 연기의 박자 차이가 그대로 보인다(문은 일정 속도로 닫히고 outCubic으로 다시 열리며, 분침은 0.4분 지나쳤다 돌아오는 딸깍). 앉은 사람의 졸음은 몸이 먼저 숙고 머리가 `pose.prev`로 한 장 늦게 따라오며, 툭 떨어진 고개는 한 장 지나쳤다 다음 장에 정착한다. 옆모습 리그는 고개만 돌릴 수 없으므로 쳐다보는 사람은 바퀴 의자째 돌아앉는다(dir을 뒤집고 그 장에서는 prev를 끊는다). 바퀴 의자는 한 장에 34 px에서 3 px까지 줄어드는 간격으로 구르고, 구르는 동안 발은 바닥에서 뜬다(`friday-stretch-roll`). 탁자 뒤에 앉은 사람은 `tuck: true`로 윗옷을 넣어 입힌다: 늘어진 밑단이 탁자 판 아래로 나와 의자 방석처럼 보인다.
+- **키트:** `kit/sets/officefloor.js` (`IB.elevator`, `IB.meetingTable`, `IB.whiteboard`, `IB.chairRoll`), `kit/props/office.js` (`IB.sit`, `IB.chair`, `IB.workstation`, `IB.wallClock`), `kit/props/home.js` (`IB.callButton`, `IB.hangingLamp`), `kit/figure.js` (`IB.run`, `IB.walk`, `IB.shake`, `IB.bubble`), `kit/cast/people.js`
+- **장면:** `scenes/work/`

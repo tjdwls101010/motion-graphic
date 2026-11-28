@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sets / officefloor</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/sets/officefloor.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 배경 세트 견본: 사무실 층의 큰 가구 — 두 문짝이 양쪽 벽으로 미끄러지는 엘리베이터 IB.elevator(문 열린 정도 open 0..1, 화살표 불 lit, 층 표시등 floor, 'car'와 'front' 두 겹 사이에 탄 사람), 앉은 사람들이 뒤에 들어가 앉는 긴 회의 탁자 IB.meetingTable, 자리 표시 도형의 막대 차트·화살표·포스트잇이 붙은 화이트보드 IB.whiteboard(이젤, wall: true면 벽걸이), 구르는 사무 의자가 남기는 바닥 줄과 먼지 IB.chairRoll. 엘리베이터 문은 기계라 1프레임 단위로 닫히고 열리며, 안쪽 사람은 opening에 잘라 그려서 벽 뒤에 숨는다(옆 호출 버튼은 IB.callButton을 s 0.16으로). 탁자는 의자 → 사람의 먼 쪽 → 탁자 → 사람의 가까운 쪽 순서로 그려서 판이 무릎을 덮고 가까운 손이 판 위에 놓인다. 의자는 2프레임 단위로 뒤로 굴러 점점 짧아지는 간격으로 멈추고, 줄의 길이는 그 장에 움직인 거리를 따른다. */
+const F = IB.FIG, FLOOR = 900, H = 330;
+const BOSS = { ...IB.PEOPLE.boss, h: 340, dir: -1, seed: 300 };
+const SIT = [{ ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 100 }, { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 200 }];
+const ROLL = [0, 34, 30, 25, 20, 15, 10, 6, 3, 1];   // px a drawing, rolling back from rest
+
+function doors(f) {   // one loop of 96 frames: open, closing on ones over 24 frames, shut, opening over 18
+  const g = f % 96;
+  if (g < 12) return 1;
+  if (g < 36) return 1 - MG.ease.inOutQuad((g - 12) / 24);
+  if (g < 60) return 0;
+  if (g < 78) return MG.ease.outCubic((g - 60) / 18);
+  return 1;
+}
+
+MG.scene({
+  title: 'sets / officefloor',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'sets/officefloor.js — lift, meeting table, whiteboard, rolling chair');
+    const f = IB.frame(t), tt = IB.twos(t), k = Math.round(tt * 12), c = SAMPLE.grid(4, 2);
+    // the lift, shrunk to fit: the boss stands to one side of the car, clipped to the opening
+    const sc = 0.72, vw = c[0][2] / sc, vh = c[0][3] / sc;
+    SAMPLE.cell(ctx, c[0], [960 - vw / 2, FLOOR + 30 - vh, vw, vh], () => {
+      const st = { open: doors(f), lit: true, floor: 2 };
+      const lift = IB.elevator(ctx, [960, FLOOR], st, { layer: 'car' });
+      ctx.save(); IB.clipRect(ctx, lift.opening);
+      IB.smear(ctx, 1060, FLOOR - 8, 200, { h: 10, seed: 9 });
+      IB.figure(ctx, IB.stand(1060, FLOOR, BOSS), { ...BOSS, face: { mouth: 'flat' } });
+      ctx.restore();
+      IB.elevator(ctx, [960, FLOOR], st, { layer: 'front' });
+      IB.callButton(ctx, [1180, 640], {}, { s: 0.16 });
+    }, `IB.elevator({ open: ${doors(f).toFixed(2)} }) — car | rider | front`);
+    // the whiteboard on its easel and on a wall
+    const vb = [960 - c[1][2] / 0.92 / 2, FLOOR + 24 - c[1][3] / 0.92, c[1][2] / 0.92, c[1][3] / 0.92];
+    SAMPLE.cell(ctx, c[1], vb, () => {
+      IB.whiteboard(ctx, [760, FLOOR]);
+      IB.whiteboard(ctx, [1160, FLOOR], { wall: true, bars: [0.6, 0.4, 0.75, 0.9], accent: IB.C.mint, notes: 3, seed: 990 });
+    }, 'IB.whiteboard() · IB.whiteboard({ wall: true, bars, notes })');
+    // the meeting table: chairs, the sitters' far side, the table, their near arms
+    SAMPLE.cell(ctx, c[2], SAMPLE.fit(c[2], [960, FLOOR], 24), () => {
+      const xs = [720, 1000], top = 135;
+      xs.forEach((x, i) => IB.chair(ctx, x, FLOOR, H, 1, { seed: 700 + i * 10 }));
+      const ps = xs.map((x, i) => { const p = IB.sit(x, FLOOR, SIT[i]); return { ...p, hands: [p.hands[0], [x + 0.2 * H, FLOOR - 126]] }; });
+      ps.forEach((p, i) => IB.figure(ctx, p, { ...SIT[i], face: { mouth: 'flat' } }, 'far'));
+      IB.meetingTable(ctx, [900, FLOOR], { w: 680, top, sheets: [-60, 170] });
+      ps.forEach((p, i) => IB.figure(ctx, p, { ...SIT[i], face: { mouth: 'flat' } }, 'near'));
+    }, 'IB.meetingTable({ w: 680, sheets }) between far and near');
+    // the chair rolling back on twos, slowing to a stop, then waiting
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [960, FLOOR], 24), () => {
+      const n = k % 24, d = Math.min(n, ROLL.length - 1), x = 1160 - ROLL.slice(0, d + 1).reduce((a, b) => a + b, 0);
+      IB.chairRoll(ctx, x, FLOOR, H, 1, { k: n, v: n < ROLL.length ? ROLL[d] : 0 });
+      IB.chair(ctx, x, FLOOR, H, 1);
+    }, 'IB.chairRoll(ctx, x, floor, h, dir, { k, v }) + IB.chair');
+  },
+});
+</script>

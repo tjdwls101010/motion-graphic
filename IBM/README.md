@@ -2,7 +2,7 @@
 
 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)에 나오는 모션그래픽을 코드로 다시 만든 레퍼런스다.
 
-- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 32개(8개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 35개(8개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -39,6 +39,7 @@ cast/      캐릭터. 그림 함수와 함께 이름 붙은 포즈(POSE)와 동�
   riders.js   탠덤의 다섯 사람(IB.rider, IB.RIDERS), 날아가는 모자(IB.flyingCap)
   watcher.js  쌍안경 관찰자(IB.watcher), 암전 속 두 눈(IB.darkEyes)
   cat.js      창가 고양이(IB.windowCat), 의자 위 고양이(IB.chairCat)
+  dog.js      목줄을 맨 개 리그(IB.dog, 포즈 IB.dog.POSE·동작 IB.dog.MOVE), 걷기와 그 사이클 거리(IB.dogWalk, IB.dogWalkLen), 포즈 섞기(IB.dogMix), 처지는 목줄(IB.leash)
   closeup.js  철망 너머 두 얼굴(IB.boldFace, IB.worriedFace), 철망(IB.maskMesh), 인서트의 줌과 기울기(IB.closeup), 색(IB.MASK)
 props/     소품
   nature.js   화분(IB.pottedPlant, IB.PLANTS), 창턱 화분(IB.sillPlant), 구름 셋(IB.cloud, IB.bandCloud, IB.wispCloud), 나무 덩어리(IB.clump), 새(IB.bird), 풀과 돌(IB.tuft, IB.stones)
@@ -54,6 +55,7 @@ props/     소품
   metaphor.js 막대(IB.bar), 깃발(IB.flag), 도미노(IB.domino, IB.dominoRest), 낭떠러지와 널빤지(IB.ledge, IB.plank)
   classroom.js 칠판(IB.chalkboard: 써지는 획, 지우개 길로 지워짐), 자리 표시 글씨와 그림(IB.chalkScript, IB.chalkShape), 분필(IB.chalk), 칠판지우개(IB.boardEraser), 분필 가루 구름(IB.chalkDust), 아이 책상과 의자(IB.schoolDesk, IB.schoolChair), 교탁(IB.lectern)
   traffic.js  보행자 신호등(IB.walkSignal), 옆에서 본 횡단보도(IB.crosswalk), 버스 정류장(IB.busStop), 버스와 치수(IB.bus, IB.BUS), 매연(IB.exhaust), 한 사람 자전거(IB.bicycle: 탠덤의 자리 하나, 탄 사람의 자리 IB.bikeFit, 포즈 IB.ride), 벨 소리 표시(IB.bellRing)
+  weather.js  장마다 새로 뿌리는 비(IB.rain, 우산 지붕 아래는 마름), 빗방울(IB.raindrop), 비구름(IB.rainCloud), 펴지는 우산(IB.umbrella), 고인 물(IB.waterPuddle), 바퀴가 쳐 올리는 물벽(IB.wheelSplash)
 sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이터다. `layer`로 나눠 그려서 배우가 그 사이에 선다
   city.js     도시와 경기장(IB.stadiumCity, IB.stadium, IB.tower, IB.roofBlock)
   street.js   금융가 거리(IB.financeStreet, IB.windowGrid)

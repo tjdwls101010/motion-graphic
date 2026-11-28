@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 도끼를 어깨에 걸친 사람이 머리 위로 크게 들어 올려 한참 버티다가, 스미어 한 장으로 내리쳐 통나무를 둘로 쪼개고 "됐다." 하고 선다. 원본에 없는 창작 장면으로, 원본 3편의 도끼질에서 읽은 "긴 준비, 스미어 한 장, 긴 정지"를 한 인물의 한 동작으로 옮겼다. 전달하는 생각: 오래 벼른 한 번이 일을 끝낸다.
-   Motion notes: one locked shot, figure 560 px tall, line 3.8 px. Everything on twos, written as one list of drawings (ACT, frame -> pose): 17 drawings, 12 a second while she moves (tools/drawings.py). Rest pose held 0.83 s; anticipation in 2 drawings (0.83-1.0 s): the knees give, the axe dips behind her and the stance widens one foot at a time, each foot lifted on its drawing so no planted foot slides; wind-up in 3 drawings (mix 0.3, 0.72 and an overshoot 1.08 where the body leans past the overhead pose while the axe stays at its mark, so the hands stay on the handle) and the overhead pose at 1.25 s, leaning back 0.2 rad, held dead still 0.75 s while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact at 2.083 s is one drawing deeper than where she stops (grip 12 px lower, the blade about 26 px further into the block, hip 12 px lower, spine 0.66 rad), then the impact pose at 2.17 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.3 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 4 drawings: the back foot comes forward lifted on two of them, an overshoot (1.04) and the end pose at 4.75 s; every drawing passes the one before it as pose.prev, so her curls and head trail each move by one drawing and every hold is dead still from its second drawing; a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
+   Motion notes: 6 s in four shots (IB.shot, on ones), the whole body in frame from the anticipation to the end of the swing: 0-0.75 s an insert of the log on the block (640 px window); 0.75 s a cut to her full figure and the block (1560), which from 1.25 s pushes in to 1480 with a -0.03 rad tilt through the overhead hold (18 frames, the tension); 2.08 s, on the impact, a snap in to 1300 that rights the frame, with a 22 px jolt; 2.75 s, once the chips have landed, an insert of the split halves on the floor and the axe in the block (900); 4.0 s a cut back to her full figure (1600) pushing in to 1450 over 48 frames for the recovery and the bubble. Figure 560 px tall, line 3.8 px. Everything on twos, written as one list of drawings (ACT, frame -> pose): 17 drawings, 12 a second while she moves (tools/drawings.py). Rest pose held 0.83 s; anticipation in 2 drawings (0.83-1.0 s): the knees give, the axe dips behind her and the stance widens one foot at a time, each foot lifted on its drawing so no planted foot slides; wind-up in 3 drawings (mix 0.3, 0.72 and an overshoot 1.08 where the body leans past the overhead pose while the axe stays at its mark, so the hands stay on the handle) and the overhead pose at 1.25 s, leaning back 0.2 rad, held dead still 0.75 s while only the shake marks at the axe head flicker for 4 drawings: the hold is longer than the move it prepares. The swing itself is ONE drawing (2 frames at 2.0 s): no in-betweens, the head drawn as a charcoal crescent swept through 105 degrees with two speed arcs, the arms already at full stretch. Impact at 2.083 s is one drawing deeper than where she stops (grip 12 px lower, the blade about 26 px further into the block, hip 12 px lower, spine 0.66 rad), then the impact pose at 2.17 s: spine 0.6 rad forward, back heel up 0.5 rad, eyes shut; held 2.3 s. The log's halves and six chips are the only things moving after the hit, on twos, 0.5 s to land (outQuad out, inQuad down), a five-line burst at the cut for 2 drawings. Recovery at 4.5 s in 4 drawings: the back foot comes forward lifted on two of them, an overshoot (1.04) and the end pose at 4.75 s; every drawing passes the one before it as pose.prev, so her curls and head trail each move by one drawing and every hold is dead still from its second drawing; a speech bubble at 4.83 s (IB.bubble), then still to the end. Draw order changes with the pose: the axe is behind the body while it is carried and raised, between the two arms from the swing on (IB.figure's `only` passes). */
 const { lerp, clamp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 660, BX = 1192, TOP = 808;
 const WHO = { ...IB.PEOPLE.chopper, h: 560, dir: 1, seed: 10 };
@@ -59,6 +60,15 @@ function poseAt(t) {
 }
 IB.actors = (t) => ({ chopper: poseAt(t) });
 
+// the camera, frames at 24 fps: the log; the whole body for the wind-up, closing in and tilting through the hold; punched in on the hit; the halves; the whole body again
+const SHOTS = [
+  [0, { at: [1192, 790], w: 640 }],
+  [18, { at: [900, 530], w: 1560 }, 'cut'], [30, { at: [890, 530], w: 1480, tilt: -0.03 }, 'push', 18],
+  [50, { at: [900, 600], w: 1300 }, 'snap'],
+  [66, { at: [1300, 800], w: 900 }, 'cut'],
+  [96, { at: [960, 580], w: 1600 }, 'cut'], [96, { at: [940, 580], w: 1450 }, 'push', 48],
+];
+const HITS = [[50, 22]];   // the blade goes in
 const CHIPS = [[-150, -210, -0.9], [-90, -300, 0.5], [70, -280, 1.2], [140, -190, -0.4], [210, -120, 0.8], [-230, -110, 1.6]];
 
 MG.scene({
@@ -68,32 +78,34 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), p = poseAt(t), look = { ...WHO, face: p.face }, hit = tt >= 2.083, k = hit ? clamp((tt - 2.083) / 0.5) : 0;
-    IB.choppingBlock(ctx, [BX, FLOOR], { top: TOP });
-    // the log: whole until the hit, then two halves tip outward and come to rest on the floor
-    if (!hit) { IB.logHalf(ctx, [BX, TOP + 8], { side: -1, seed: 340 }); IB.logHalf(ctx, [BX, TOP + 8], { side: 1, seed: 350 }); IB.logTop(ctx, [BX, TOP + 8]); }
-    else for (const s of [-1, 1]) {
-      const fall = MG.ease.inQuad(k), out = MG.ease.outQuad(k);
-      IB.logHalf(ctx, [BX + s * (10 + (s < 0 ? 168 : 214) * out), TOP + 8 - 60 * Math.sin(k * Math.PI) + (FLOOR - TOP - 30) * fall], { rot: s * 1.57 * out, side: s, seed: s < 0 ? 340 : 350 });
-    }
-    if (hit) CHIPS.forEach(([dx, dy, r], i) => {   // chips: up and out, then lying where they fell
-      const x = BX + dx * MG.ease.outQuad(k), y = lerp(TOP - 20 + dy * Math.sin(k * Math.PI * 0.5) * (1 - k) * 1.6, FLOOR - 6 + (i % 3) * 5, MG.ease.inQuad(k));
-      IB.woodChip(ctx, [x, y], r * (1 + k * 4), { seed: 370 + i });
-    });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.choppingBlock(ctx, [BX, FLOOR], { top: TOP });
+      // the log: whole until the hit, then two halves tip outward and come to rest on the floor
+      if (!hit) { IB.logHalf(ctx, [BX, TOP + 8], { side: -1, seed: 340 }); IB.logHalf(ctx, [BX, TOP + 8], { side: 1, seed: 350 }); IB.logTop(ctx, [BX, TOP + 8]); }
+      else for (const s of [-1, 1]) {
+        const fall = MG.ease.inQuad(k), out = MG.ease.outQuad(k);
+        IB.logHalf(ctx, [BX + s * (10 + (s < 0 ? 168 : 214) * out), TOP + 8 - 60 * Math.sin(k * Math.PI) + (FLOOR - TOP - 30) * fall], { rot: s * 1.57 * out, side: s, seed: s < 0 ? 340 : 350 });
+      }
+      if (hit) CHIPS.forEach(([dx, dy, r], i) => {   // chips: up and out, then lying where they fell
+        const x = BX + dx * MG.ease.outQuad(k), y = lerp(TOP - 20 + dy * Math.sin(k * Math.PI * 0.5) * (1 - k) * 1.6, FLOOR - 6 + (i % 3) * 5, MG.ease.inQuad(k));
+        IB.woodChip(ctx, [x, y], r * (1 + k * 4), { seed: 370 + i });
+      });
 
-    IB.smear(ctx, X0 + 40, FLOOR - 9, 430, { h: 14, seed: 9 });
-    if (p.behind) { IB.axe(ctx, p.G, p.th, { flip: p.flip }); IB.figure(ctx, p, look); }
-    else {
-      IB.figure(ctx, p, look, 'far');
-      IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: IB.held(ACT, IB.frame(tt)) === SMEAR });
-      IB.figure(ctx, p, look, 'near');
-    }
-    // the weight of the raised axe: shake marks by its head for four drawings, then a dead-still hold
-    const s1 = IB.drawn(tt, 1.25);
-    if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
-    // impact: a burst at the cut for two drawings
-    const s2 = IB.drawn(tt, 2.083);
-    if (s2 >= 0 && s2 < 2) IB.burst(ctx, [BX, TOP - 20], { n: 5, a0: -2.7, da: 0.56, r0: 70 + s2 * 26, r1: 70 + s2 * 26 + 46 - s2 * 10, sy: 0.8, w: 3, seed: 410 + s2 * 9 });
-    IB.bubble(ctx, ['됐다.'], t, 4.833, { tip: [X0 + 196, HIP - 196], x: X0 + 330, y: HIP - 296, seed: 500 });
+      IB.smear(ctx, X0 + 40, FLOOR - 9, 430, { h: 14, seed: 9 });
+      if (p.behind) { IB.axe(ctx, p.G, p.th, { flip: p.flip }); IB.figure(ctx, p, look); }
+      else {
+        IB.figure(ctx, p, look, 'far');
+        IB.axe(ctx, p.G, p.th, { flip: p.flip, smear: IB.held(ACT, IB.frame(tt)) === SMEAR });
+        IB.figure(ctx, p, look, 'near');
+      }
+      // the weight of the raised axe: shake marks by its head for four drawings, then a dead-still hold
+      const s1 = IB.drawn(tt, 1.25);
+      if (s1 >= 0 && s1 < 4) { const hx = p.G[0] + Math.cos(p.th) * 330, hy = p.G[1] + Math.sin(p.th) * 330; IB.shake(ctx, hx - 20, hy - 30, 74, { a: -2.4, n: 2, seed: 400 + s1, w: 2.8, span: 0.3 }); }
+      // impact: a burst at the cut for two drawings
+      const s2 = IB.drawn(tt, 2.083);
+      if (s2 >= 0 && s2 < 2) IB.burst(ctx, [BX, TOP - 20], { n: 5, a0: -2.7, da: 0.56, r0: 70 + s2 * 26, r1: 70 + s2 * 26 + 46 - s2 * 10, sy: 0.8, w: 3, seed: 410 + s2 * 9 });
+      IB.bubble(ctx, ['됐다.'], t, 4.833, { tip: [X0 + 196, HIP - 196], x: X0 + 330, y: HIP - 296, seed: 500 });
+    });
   },
 });
 </script>

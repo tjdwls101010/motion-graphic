@@ -2,7 +2,7 @@
 
 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)에 나오는 모션그래픽을 코드로 다시 만든 레퍼런스다.
 
-- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 35개(8개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 38개(8개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -53,6 +53,7 @@ props/     소품
   office.js   앉은 포즈(IB.sit, 좌석 높이 IB.SEAT), 의자·책상·모니터·자리(IB.chair, IB.desk, IB.monitor, IB.workstation, IB.keyboard), 캔들 차트와 선 차트(IB.candles, IB.lineChart, IB.priceGrid, IB.chartAxes,
               IB.dashLine, IB.candleSmear, IB.priceTag), 커서와 팝업(IB.cursor, IB.popupTag), 화살표(IB.arrow), 벽시계(IB.wallClock), 전화 받침(IB.phoneCradle), 날리는 종이(IB.flyingSheet)
   metaphor.js 막대(IB.bar), 깃발(IB.flag), 도미노(IB.domino, IB.dominoRest), 낭떠러지와 널빤지(IB.ledge, IB.plank)
+  copyroom.js 복사실과 탕비실(모두 opts.s로 크기): 프린터(IB.printer: 출력·종이 걸림·표시등·덜컹), 쏟아지는 종이와 낱장(IB.paperSpray, IB.looseSheet), 조리대(IB.counter), 커피머신(IB.coffeeMachine: 잔 자리·물줄기·한 방울·물통·물 없음 등), 정수기(IB.waterCooler), 안고 다니는 서류 더미(IB.paperStack: lean, wave)
   classroom.js 칠판(IB.chalkboard: 써지는 획, 지우개 길로 지워짐), 자리 표시 글씨와 그림(IB.chalkScript, IB.chalkShape), 분필(IB.chalk), 칠판지우개(IB.boardEraser), 분필 가루 구름(IB.chalkDust), 아이 책상과 의자(IB.schoolDesk, IB.schoolChair), 교탁(IB.lectern)
   traffic.js  보행자 신호등(IB.walkSignal), 옆에서 본 횡단보도(IB.crosswalk), 버스 정류장(IB.busStop), 버스와 치수(IB.bus, IB.BUS), 매연(IB.exhaust), 한 사람 자전거(IB.bicycle: 탠덤의 자리 하나, 탄 사람의 자리 IB.bikeFit, 포즈 IB.ride), 벨 소리 표시(IB.bellRing)
   weather.js  장마다 새로 뿌리는 비(IB.rain, 우산 지붕 아래는 마름), 빗방울(IB.raindrop), 비구름(IB.rainCloud), 펴지는 우산(IB.umbrella), 고인 물(IB.waterPuddle), 바퀴가 쳐 올리는 물벽(IB.wheelSplash)

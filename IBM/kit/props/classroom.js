@@ -3,7 +3,7 @@
   const MG = g.MG, IB = g.IB, C = IB.C;
   const CHALK = C.paper, DUST = '#8c8c8c';
 
-  /* chalkScript(at, len, opts) — placeholder handwriting: a row of words written in looped scribbles, starting at `at` = [x, baseline] and running `len` px to the right. Returns the strokes (one point list per word, stage px) for IB.chalkboard's state.strokes; nothing is drawn. size is the height of a small letter's loop (26 px reads as board writing beside a 340 px teacher); about one loop in four is a tall letter. The same seed gives the same words. To put the chalk in a writing hand, read the tip of the stroke being drawn with IB.along(stroke, u). */
+  /* chalkScript(at, len, opts) — placeholder handwriting: a row of words written in looped scribbles, starting at `at` = [x, baseline] and running `len` px to the right. Returns the strokes (one point list per word, stage px) for IB.chalkboard's state.strokes; nothing is drawn. size sets the letters: a small letter's loop is size x 0.5 tall and a tall letter (about one loop in four) size x 0.875 (26 reads as board writing beside a 340 px teacher, 38-40 beside a 580 px one). The same seed gives the same words. To put the chalk in a writing hand, read the tip of the stroke being drawn with IB.along(stroke, u). */
   IB.chalkScript = ([x0, y], len, o = {}) => {
     const { size = 26, seed = 1 } = o, P = size * 0.5, k = P / (2 * Math.PI), c = size * 0.16, words = [];
     let x = x0, w = 0;
@@ -126,7 +126,7 @@
     ctx.restore();
   };
 
-  /* schoolDesk(ctx, at, opts) — a child's school desk seen from the side, in front of a child sitting with its hip joint at at = [x, floor] facing `dir`, sized from the child's height h (230 for a child beside a 340 px adult): a slab 0.52 h long whose top is 0.43 h off the floor (IB.sit's hands rest on it), a book box under its far half, open toward the child, two tube legs and a foot rail. Draw it in two passes round the child, like IB.figure's: only: 'legs' before the figure (the legs are the desk's far pair, behind the child's shins), then only: 'top' between the figure's far and near passes, so the near arm lies on the desk. Returns { top, near, far }: the top's y and the x of its two ends (school/hand-up-called). */
+  /* schoolDesk(ctx, at, opts) — a child's school desk seen from the side, in front of a child sitting with its hip joint at at = [x, floor] facing `dir`, sized from the child's height h (230 for a child beside a 340 px adult): a slab 0.52 h long whose top is 0.43 h off the floor (IB.sit's hands rest on it), a closed book box under its far half, two tube legs and a foot rail. Draw it in two passes round the child, like IB.figure's: only: 'legs' before the figure (the legs are the desk's far pair, behind the child's shins), then only: 'top' between the figure's far and near passes, so the near arm lies on the desk. Returns { top, near, far }: the top's y and the x of its two ends (school/hand-up-called). */
   IB.schoolDesk = (ctx, [x, floor], o = {}) => {
     const { h = 230, dir = 1, lw = 3, fill = C.paper, only = null, seed = 820 } = o, k = (dx) => x + dx * h * dir, top = floor - 0.43 * h, th = 0.03 * h;
     ctx.save();
@@ -158,7 +158,7 @@
     ctx.restore();
   };
 
-  /* lectern(ctx, at, opts) — the teacher's lectern seen from the side, standing on at = [x, floor] (its centre), sized from the teacher's height h (340): a cabinet 0.28 h deep and 0.58 h high on a plinth, a top that overhangs it with a lip on the teacher's side (the side away from dir), an inset side panel, graphite where it meets the floor. Set it behind the teacher, between her and the board (school/hand-up-called). */
+  /* lectern(ctx, at, opts) — the teacher's lectern seen from the side, standing on at = [x, floor] (its centre), sized from the teacher's height h (340): a cabinet 0.28 h deep and 0.58 h high on a plinth, a top that overhangs it with a raised lip at the end away from dir, an inset side panel, graphite under the top and its own blue chalk smear on the floor. In school/hand-up-called it stands under the board's edge with the teacher beside it, on its dir side. */
   IB.lectern = (ctx, [x, floor], o = {}) => {
     const { h = 340, dir = 1, lw = 3.2, fill = C.paper, seed = 860 } = o, H = 0.58 * h, D = 0.28 * h, top = floor - H;
     ctx.save();

@@ -31,7 +31,7 @@ for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROO
     const said = (head.match(/Needs ([^;]*?)(?:;|\. |\.?\s*\*\/|$)/) || ['', ''])[1];
     kit[rel] = { src, defines: defines(src), uses: names(src), needs: [...said.matchAll(/[\w/]+\.js/g)].map((m) => m[0]) };
   }
-  if (!Object.keys(kit).some((k) => kit[k].needs.length)) continue;   // a reference whose kit does not state its needs (pstack) is not held to this
+  if (!Object.keys(kit).some((k) => kit[k].needs.length)) continue;   // a reference whose kit does not state its needs (as the removed pstack's did not) is not held to this
   const owner = {};
   for (const [f, k] of Object.entries(kit)) for (const n of k.defines) owner[n] = f;
 

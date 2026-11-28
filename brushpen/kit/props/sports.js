@@ -209,8 +209,10 @@
     IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.green, seed: 9 });
   };
 
-  /* courtside(ctx, [x0, x1], floor, opts) — the backdrop of a basketball shot in one call: the arena crowd (IB.stands, four faint rows from floor - 600, so the hoop's ink reads over them), a padded courtside wall 110 px behind the floor line, and the wooden floor as a mustard chalk smear. opts: cheer, colors, seed. */
+  /* courtside(ctx, [x0, x1], floor, opts) — the backdrop of a basketball shot in one call: the arena crowd (IB.stands, four faint rows from floor - 600, so the hoop's ink reads over them, and an upper tier of `upper` smaller rows above them, 3 by default, for frames above the rim), a padded courtside wall 110 px behind the floor line, and the wooden floor as a mustard chalk smear. opts: cheer, colors, upper, seed. */
   IB.courtside = (ctx, [x0, x1], floor, o = {}) => {
+    const upper = o.upper == null ? 3 : o.upper, uh = 64 * 0.72;   // the upper tier: smaller and farther, so a frame above the rim is not a blank band
+    if (upper) IB.stands(ctx, [x0, x1], floor - 600 - upper * uh - 6, { rows: upper, colors: o.colors || [C.yellow, C.lavender], share: 0.3, cheer: o.cheer || 0, s: 0.72, seed: (o.seed || 720) + 500, faint: true });
     IB.stands(ctx, [x0, x1], floor - 600, { rows: 4, colors: o.colors || [C.yellow, C.lavender], share: 0.3, cheer: o.cheer || 0, s: 0.85, seed: o.seed || 720, faint: true });
     IB.ink(ctx, [[x0 - 40, floor - 150], [x1 + 40, floor - 150], [x1 + 40, floor - 110], [x0 - 40, floor - 110]], { closed: true, smooth: false, fill: C.charcoal, w: 2.6, seed: 760 });
     IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.mustard, seed: 11 });

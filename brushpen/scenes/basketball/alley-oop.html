@@ -106,10 +106,13 @@ MG.scene({
       const d = defender(f), g = guard(f);
       IB.figure(ctx, d, lookOf(d, DF));
       IB.figure(ctx, g, GD);
+      // through the slam his hand is inside the rim, so the net's front strings go over him; once he lets go and drops (FS + 2) he is on the court side of the net and his body goes over it
+      const dropped = f >= FS + 2;
+      if (dropped) { IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.3, lw: 2.6, seed: 91 }); IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' }); }
       IB.figure(ctx, fn1, lookOf(fn1, FN), 'far');
-      IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.3, lw: 2.6, seed: 91 });
+      if (!dropped) IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.3, lw: 2.6, seed: 91 });
       IB.figure(ctx, fn1, lookOf(fn1, FN), 'near');
-      IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
+      if (!dropped) IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
       const c = IB.drawn(tt, FC / 24), sl = IB.drawn(tt, FS / 24), ld = IB.drawn(tt, LAND / 24);
       if (c >= 0 && c < 1) IB.burst(ctx, CATCH, { n: 4, a0: -2.8, da: 0.6, r0: 24, r1: 44, w: 2.8, seed: 60 });
       if (sl >= 0 && sl < 2) IB.burst(ctx, [RC[0], RC[1] - 10], { n: 6, a0: -3.1, da: 0.55, r0: 40 + sl * 10, r1: 75 + sl * 8, w: 3.2, seed: 70 + sl });

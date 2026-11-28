@@ -1,4 +1,4 @@
-/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
+/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside and the arena's in IB.courtside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG;
   const MESH = '#9a9a9a';   // net strings: lighter than ink so the players and the ball read over them
@@ -160,18 +160,19 @@
 
   /* ---------- the crowd and the scoreboard ---------- */
 
-  /* stands(ctx, [x0, x1], top, opts) — the crowd behind the pitch or the court: `rows` tiers of seated fans (a head and a pair of shoulders each), the far rows smaller and greyer, a rail in front of each tier. Most fans are grey; `colors` (the two teams' colours) dress one in `share` of them. cheer: 0 seated still, 1 | 2 the two drawings of a cheer (alternate them on twos: a scattered half of the crowd throws its arms up on each), 'up' everyone standing with arms up (a goal). opts: rows (3), gap (46 px between fans), rh (row height 64 px), s, seed. */
+  /* stands(ctx, [x0, x1], top, opts) — the crowd behind the pitch or the court: `rows` tiers of seated fans (a head and a pair of shoulders each), the far rows smaller and greyer, a rail in front of each tier. Most fans are grey; `colors` (the two teams' colours) dress one in `share` of them. cheer: 0 seated still, 1 | 2 the two drawings of a cheer (alternate them on twos: a scattered half of the crowd throws its arms up on each), 'up' everyone standing with arms up (a goal). opts: rows (3), gap (46 px between fans), rh (row height 64 px), s, seed, faint (grey lines and paler fills: a crowd that sits behind something drawn in ink, like a hoop, and must not compete with it). */
   IB.stands = (ctx, [x0, x1], top, o = {}) => {
     const s = o.s || 1, rows = o.rows || 3, gap = (o.gap || 46) * s, rh = (o.rh || 64) * s, seed = o.seed || 700, cols = o.colors || [], share = o.share == null ? 0.3 : o.share, ch = o.cheer || 0;
+    const line = o.faint ? '#b4b4b4' : C.ink, greys = o.faint ? ['#ececec', '#e4e4e4', '#efefef'] : ['#dedede', '#cfcfcf', '#e6e6e6'];
     for (let row = 0; row < rows; row++) {
       const k = 0.78 + 0.22 * (row / Math.max(1, rows - 1)), y = top + row * rh, r = MG.rng(seed + row * 37), lw = 1.6 + row * 0.35;
-      IB.ink(ctx, [[x0, y + rh * 0.55], [x1, y + rh * 0.55]], { w: lw, seed: seed + 3 + row, taper: false });
+      IB.ink(ctx, [[x0, y + rh * 0.55], [x1, y + rh * 0.55]], { w: lw, color: line, seed: seed + 3 + row, taper: false });
       for (let x = x0 + (row % 2) * gap * 0.5; x < x1; x += gap * (0.9 + 0.2 * r())) {
-        const pick = r(), color = pick < share && cols.length ? cols[Math.floor(r() * cols.length)] : ['#dedede', '#cfcfcf', '#e6e6e6'][Math.floor(r() * 3)], skin = C.skin[Math.floor(r() * 5)], odd = r() < 0.5;
+        const pick = r(), color = pick < share && cols.length ? cols[Math.floor(r() * cols.length)] : greys[Math.floor(r() * 3)], skin = C.skin[Math.floor(r() * 5)], odd = r() < 0.5;
         const up = ch === 'up' || (ch === 1 && odd) || (ch === 2 && !odd), lift = up && ch === 'up' ? 0.25 * rh : 0, hr = 9 * s * k, by = y + rh * 0.5 - lift;
-        if (up) [-1, 1].forEach((sd) => IB.seg(ctx, x + sd * 8 * s * k, by - 10 * s * k, x + sd * 13 * s * k, by - 40 * s * k, { w: lw * 1.6, color: C.ink, seed: seed + row + sd }));
-        IB.ink(ctx, [[x - 15 * s * k, by + 4], [x - 13 * s * k, by - 12 * s * k], [x + 13 * s * k, by - 12 * s * k], [x + 15 * s * k, by + 4]], { closed: true, smooth: false, fill: color, w: lw, seed: seed + row * 7 + Math.round(x) });
-        IB.oval(ctx, x, by - 12 * s * k - hr, hr, hr, { fill: skin, w: lw, seed: seed + Math.round(x) + row, n: 9 });
+        if (up) [-1, 1].forEach((sd) => IB.seg(ctx, x + sd * 8 * s * k, by - 10 * s * k, x + sd * 13 * s * k, by - 40 * s * k, { w: lw * 1.6, color: line, seed: seed + row + sd }));
+        IB.ink(ctx, [[x - 15 * s * k, by + 4], [x - 13 * s * k, by - 12 * s * k], [x + 13 * s * k, by - 12 * s * k], [x + 15 * s * k, by + 4]], { closed: true, smooth: false, fill: color, w: lw, color: line, seed: seed + row * 7 + Math.round(x) });
+        IB.oval(ctx, x, by - 12 * s * k - hr, hr, hr, { fill: skin, w: lw, color: line, seed: seed + Math.round(x) + row, n: 9 });
       }
     }
   };
@@ -196,6 +197,13 @@
     IB.stands(ctx, [x0, x1], floor - 470, { colors: o.colors || [C.navy, C.yellow], share: 0.35, cheer: o.cheer || 0, s: 0.9, seed: o.seed || 710 });
     IB.adBoards(ctx, [x0 - 40, x1 + 40], floor, { back: 160, ht: 56 });
     IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.green, seed: 9 });
+  };
+
+  /* courtside(ctx, [x0, x1], floor, opts) — the backdrop of a basketball shot in one call: the arena crowd (IB.stands, four faint rows from floor - 600, so the hoop's ink reads over them), a padded courtside wall 110 px behind the floor line, and the wooden floor as a mustard chalk smear. opts: cheer, colors, seed. */
+  IB.courtside = (ctx, [x0, x1], floor, o = {}) => {
+    IB.stands(ctx, [x0, x1], floor - 600, { rows: 4, colors: o.colors || [C.yellow, C.lavender], share: 0.3, cheer: o.cheer || 0, s: 0.85, seed: o.seed || 720, faint: true });
+    IB.ink(ctx, [[x0 - 40, floor - 150], [x1 + 40, floor - 150], [x1 + 40, floor - 110], [x0 - 40, floor - 110]], { closed: true, smooth: false, fill: C.charcoal, w: 2.6, seed: 760 });
+    IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.mustard, seed: 11 });
   };
 
   /* camera(keys, f) — the crop window [x, y, w] (for IB.crop) at frame f, from [frame, [x, y, w]] keys: held before the first and after the last, eased with a smoothstep between two keys. Call it with the frame of the drawing (on twos) so the camera moves on twos with the players. */

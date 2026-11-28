@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / copyroom</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/props/copyroom.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 복사실과 탕비실 — 정면에서 본 바닥형 프린터 IB.printer(출력, 종이 걸림, 깜빡이는 표시등, 덜컹), 한꺼번에 쏟아지는 종이 IB.paperSpray와 낱장 IB.looseSheet, 탕비실 조리대 IB.counter와 커피머신 IB.coffeeMachine(잔 놓는 자리, 물줄기, 한 방울, 물통과 물 없음 표시), 정수기 IB.waterCooler, 안고 다니는 서류 더미 IB.paperStack(통째로 기울기 lean, S자 s). 크기는 s = 1에서 키 340 px 인물에 맞췄다(프린터의 출력 트레이가 엉덩이 높이 0.58 h, 스캐너 윗면이 어깨 높이 0.77 h, 조리대 윗면이 0.53 h, 커피머신은 그 인물의 절반 높이). 더 큰 인물 곁에서는 모든 부품에 opts.s = h / 340을 주어 키우고, 선은 opts.lw px로 화면에서 그대로다(work 장면들은 h 440~500에 s 1.29~1.47). 기계의 움직임(종이가 밀려 나오는 것, 표시등, 덜컹)은 1프레임 단위이고, 종이가 날고 물줄기가 흔들리고 더미가 휘는 것은 그림이라 2프레임 단위다. 위 셋은 프린터의 세 상태: 한 장씩 밀려 나와 트레이에 쌓이고(feed, out), 씹힌 종이가 지그재그 두 그림을 오가며 노란 등이 6프레임마다 깜빡이고 몸체가 한 프레임씩 3 px 떨리고(jam, light, jolt), 걸린 종이가 풀리면 열네 장이 한 장에 두 장씩 위로 쏟아져 흔들리며 떨어지고 바닥에 눕는다(paperSpray는 출발에서 센 그림 수 k만의 함수다). 아래 왼쪽은 조리대 위 커피머신이 종이컵(IB.cup)에 커피를 내리는 것, 가운데는 물통이 빈 머신의 물 없음 등과 한 방울, 그 옆 정수기의 물병에 공기 방울이 오르는 것, 오른쪽은 서류 더미가 통째로 기울었다(lean) S자로 휘었다(wave) 바로 서는 다섯 그림과 낱장의 네 모습(앞면, 거의 옆선, 뒷면에 휜 것, 바닥에 누운 것)이다. 날아가는 한 장이 포물선 한 번이면 되는 곳은 사무실의 IB.flyingSheet를 쓴다. */
+const C = IB.C, FLOOR = 900;
+// the drawings of a stack's wobble: [frame, { lean, wave }] from upright, tipping forward, the S passing up through it, back upright
+const WOBBLE = [[0, { lean: 0, wave: 0 }], [2, { lean: 34, wave: 0 }], [4, { lean: 8, wave: 14 }], [6, { lean: -16, wave: -6 }], [8, { lean: 6, wave: 4 }], [10, { lean: 0, wave: 0 }]];
+
+MG.scene({
+  title: 'props / copyroom',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/copyroom.js — printer, paper spray, counter, coffee machine, water cooler, paper stack');
+    const f = IB.frame(t), tt = IB.twos(t), k = Math.round(tt * 12), c = SAMPLE.grid(6, 3);
+    // printing: each sheet slides out over 12 frames on ones and drops onto the stack
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, 260, { h: 12, seed: 9 });
+      const n = Math.floor(f / 16) % 6, u = (f % 16) / 12;
+      IB.printer(ctx, [960, FLOOR], { out: n, feed: u <= 1 ? u : 0, light: 'ok' });
+    }, 'IB.printer({ feed, out, light: ok })');
+    // jammed: the sheet chewed into a zigzag (two drawings on twos), the warning light blinking every 6 frames, the body shuddering on ones for the first 8 frames of each loop
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, 260, { h: 12, seed: 9 });
+      const g = f % 48;
+      IB.printer(ctx, [960, FLOOR], { out: 3, jam: g < 16 ? 1 + IB.alternate(g, 2) : 2, light: IB.alternate(g, 6) ? 'off' : 'warn', jolt: g < 8 ? (g % 2 ? 3 : -3) : 0 });
+    }, 'IB.printer({ jam: 1 | 2, light: warn, jolt })');
+    // the spray: fourteen sheets out of the bay, two a drawing, landing flat round its feet
+    SAMPLE.cell(ctx, c[2], SAMPLE.fit(c[2], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, 420, { h: 12, seed: 9 });
+      const g = k % 40, p = IB.printer(ctx, [1060, FLOOR], { out: 0, light: g < 2 ? 'off' : 'ok', tilt: g === 0 ? -0.02 : 0 });
+      IB.paperSpray(ctx, p.slot, g, { floor: FLOOR });
+    }, 'IB.paperSpray(slot, k) + IB.looseSheet');
+    // the pantry: a counter, the machine pouring into a cup on its grate (stream on twos)
+    SAMPLE.cell(ctx, c[3], SAMPLE.fit(c[3], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, 420, { h: 12, seed: 9 });
+      const top = IB.counter(ctx, [960, FLOOR], { w: 440 });
+      const pour = k % 24, m = IB.coffeeMachine(ctx, [1000, top], { stream: pour < 2 ? [0.5, 1][pour] : pour < 16 ? 1 : 0, flick: k % 2, to: top - 46, tank: 0.6 - (k % 24) * 0.01, press: pour < 2 });
+      IB.cup(ctx, [m.grate[0] - 9, m.grate[1] - 6]);
+    }, 'IB.counter + IB.coffeeMachine({ stream }) + IB.cup');
+    // empty: the light on, one drop down to the cup over four drawings; the water cooler beside it, a bubble rising on twos
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, 480, { h: 12, seed: 9 });
+      const top = IB.counter(ctx, [880, FLOOR], { w: 300 });
+      const d = k % 12, m = IB.coffeeMachine(ctx, [880, top], { tank: 0, empty: true, drop: d < 4 ? d / 3 : null, to: top - 46 });
+      IB.cup(ctx, [m.grate[0] - 9, m.grate[1] - 6]);
+      IB.waterCooler(ctx, [1150, FLOOR], { level: 0.55, glug: IB.alternate(k, 1) });
+    }, 'coffeeMachine({ empty, drop }) + IB.waterCooler');
+    // the stack's wobble on twos, and loose sheets
+    SAMPLE.cell(ctx, c[5], SAMPLE.fit(c[5], [960, FLOOR], 30), () => {
+      IB.smear(ctx, 860, FLOOR - 8, 200, { h: 12, seed: 9 });
+      IB.paperStack(ctx, [820, FLOOR - 4], SAMPLE.cycle(f, WOBBLE, 14), { color: C.lavender });
+      IB.looseSheet(ctx, [1010, 560], { rot: 0.2, turn: 1 });
+      IB.looseSheet(ctx, [1100, 600], { rot: -0.5, turn: 0.2 });
+      IB.looseSheet(ctx, [1040, 700], { rot: 1.1, turn: -0.7, curl: 0.8 });
+      IB.looseSheet(ctx, [1080, FLOOR], { flat: true });
+    }, 'IB.paperStack({ lean, wave }) + IB.looseSheet');
+  },
+});
+</script>

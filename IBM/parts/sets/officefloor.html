@@ -14,7 +14,7 @@
 <script src="../../kit/sets/officefloor.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 배경 세트 견본: 사무실 층의 큰 가구 — 두 문짝이 양쪽 벽으로 미끄러지는 엘리베이터 IB.elevator(문 열린 정도 open 0..1, 화살표 불 lit, 층 표시등 floor, 'car'와 'front' 두 겹 사이에 탄 사람), 앉은 사람들이 뒤에 들어가 앉는 긴 회의 탁자 IB.meetingTable, 자리 표시 도형의 막대 차트·화살표·포스트잇이 붙은 화이트보드 IB.whiteboard(이젤, wall: true면 벽걸이), 구르는 사무 의자가 남기는 바닥 줄과 먼지 IB.chairRoll. 엘리베이터 문은 기계라 1프레임 단위로 닫히고 열리며, 안쪽 사람은 opening에 잘라 그려서 벽 뒤에 숨는다(옆 호출 버튼은 IB.callButton을 s 0.16으로). 탁자는 의자 → 사람의 먼 쪽 → 탁자 → 사람의 가까운 쪽 순서로 그려서 판이 무릎을 덮고 가까운 손이 판 위에 놓인다. 의자는 2프레임 단위로 뒤로 굴러 점점 짧아지는 간격으로 멈추고, 줄의 길이는 그 장에 움직인 거리를 따른다. */
+/* 배경 세트 견본: 사무실 층의 큰 가구 — 두 문짝이 양쪽 벽으로 미끄러지는 엘리베이터 IB.elevator(문 열린 정도 open 0..1, 화살표 불 lit, 층 표시등 floor, 'car'와 'front' 두 겹 사이에 탄 사람), 앉은 사람들이 뒤에 들어가 앉는 긴 회의 탁자 IB.meetingTable, 자리 표시 도형의 막대 차트·화살표·포스트잇이 붙은 화이트보드 IB.whiteboard(이젤, wall: true면 벽걸이), 구르는 사무 의자가 남기는 바닥 줄과 먼지 IB.chairRoll. 엘리베이터 문은 기계라 1프레임 단위로 닫히고 열리며, 가운데 선 사람 앞으로 문이 닫힌다. 안쪽 사람을 opening에 잘라 그리면 차 안 한쪽 벽 뒤에 숨길 수 있다(옆 호출 버튼은 IB.callButton을 s 0.16으로). 탁자는 의자 → 사람의 먼 쪽 → 탁자 → 사람의 가까운 쪽 순서로 그려서 판이 무릎을 덮고 가까운 손이 판 위에 놓인다. 의자는 2프레임 단위로 뒤로 굴러 점점 짧아지는 간격으로 멈추고, 줄의 길이는 그 장에 움직인 거리를 따른다. */
 const F = IB.FIG, FLOOR = 900, H = 330;
 const BOSS = { ...IB.PEOPLE.boss, h: 340, dir: -1, seed: 300 };
 const SIT = [{ ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 100, tuck: true }, { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 200, tuck: true }];   // tucked: a hanging hem would show under the slab
@@ -37,14 +37,14 @@ MG.scene({
     IB.bg(ctx);
     SAMPLE.title(ctx, 'sets/officefloor.js — lift, meeting table, whiteboard, rolling chair');
     const f = IB.frame(t), tt = IB.twos(t), k = Math.round(tt * 12), c = SAMPLE.grid(4, 2);
-    // the lift, shrunk to fit: the boss stands to one side of the car, clipped to the opening
+    // the lift, shrunk to fit: the boss stands in the middle of the car, between its two layers, so the doors close in front of him
     const sc = 0.72, vw = c[0][2] / sc, vh = c[0][3] / sc;
     SAMPLE.cell(ctx, c[0], [960 - vw / 2, FLOOR + 30 - vh, vw, vh], () => {
       const st = { open: doors(f), lit: true, floor: 2 };
       const lift = IB.elevator(ctx, [960, FLOOR], st, { layer: 'car' });
       ctx.save(); IB.clipRect(ctx, lift.opening);
-      IB.smear(ctx, 1060, FLOOR - 8, 200, { h: 10, seed: 9 });
-      IB.figure(ctx, IB.stand(1060, FLOOR, BOSS), { ...BOSS, face: { mouth: 'flat' } });
+      IB.smear(ctx, 960, FLOOR - 8, 200, { h: 10, seed: 9 });
+      IB.figure(ctx, IB.stand(960, FLOOR, BOSS), { ...BOSS, face: { mouth: 'flat' } });
       ctx.restore();
       IB.elevator(ctx, [960, FLOOR], st, { layer: 'front' });
       IB.callButton(ctx, [1180, 640], {}, { s: 0.16 });

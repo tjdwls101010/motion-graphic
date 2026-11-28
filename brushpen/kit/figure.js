@@ -444,7 +444,7 @@
 
   /* reachArm(ctx, hand, opts) — an arm from off-screen right that holds a string or a small thing: a long sleeve swept in from x `from`, a cuff, and a closed hand with three finger lines, the hand's knuckles at `hand` facing left. Coloured like the other off-screen arm (IB.pointer) but at wide-shot size: sleeve 42 px. Use it only while the arm is used: four drawings in, three out (vignette/balloons-lift-chair). New, not measured. */
   IB.reachArm = (ctx, [hx, hy], o = {}) => {
-    const { from = 2000, sleeve = C.bg, skin = C.skin[1], seed = 400 } = o;
+    const { from = 2700, sleeve = C.bg, skin = C.skin[1], seed = 400 } = o;   // 2700: past the right edge of any frame a camera takes of the stage
     ctx.save();
     IB.tube(ctx, [[from, hy + 70], [hx + 150, hy + 26], [hx + 36, hy + 4]], { w: 42, edge: 3.2, fill: sleeve, smooth: true, seed });
     IB.ink(ctx, [[hx + 44, hy - 20], [hx + 30, hy - 22], [hx + 28, hy + 30], [hx + 44, hy + 30]], { closed: true, smooth: false, fill: C.paper, w: 2.6, seed: seed + 1 });   // cuff

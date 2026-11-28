@@ -14,9 +14,10 @@
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/props/home.js"></script>
 <script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 캄캄한 화면에 눈 한 쌍만 깜빡이고, 손전등 빛의 원뿔이 위아래로 훑다가 상자 뒤에 숨은 서류에 멈추면 화면이 한 번에 밝아지며 "찾았다!", 서류가 다리로 걸어 나와 손을 흔든다. 원본에 없는 창작 장면으로, 원본 6편의 검은 화면과 하드 컷, 카피 카드의 손전등 원뿔을 찾기 은유로 옮겼다. 전달하는 생각: 어디 있는지 모르던 것을 빛을 비춰 찾아낸다.
-   Motion notes: 7.5 s, one cut. Dark half (0-4.0 s): the stage is drawn fully lit and then covered with black (#000000) everywhere except the beam, a hard-edged triangle 26 degrees wide: no glow, no gradient, no fade, the beam is a flat shape like everything else. The beam is on twos because a hand holds it: off until 0.5 s, then 22 to -24 degrees in 1 s (inOutQuad), hold 0.25 s, down to 30 degrees in 1 s, hold 0.5 s, then it snaps to the target in a single drawing at 3.25 s, landing 3 degrees past it, comes back onto it on the next drawing and stays 0.67 s. The only other thing visible in the dark is a pair of eyes (the reference's dark spot): pupils step toward the beam on twos, one blink of 2 frames at 1.75 s. The hider ducks 120 px behind the crate whenever the sweeping beam comes within 15 degrees of it (it starts down 80 px one drawing before the beam comes near and is 120 px down while it is near; back up through 50 px and one drawing popped 8 px above standing, its eyes showing from the 50 px drawing), so each slow pass finds nothing; the snap is too fast to duck and catches the eyes wide. Cut to light at 4.0 s is a hard cut on a held pose: nothing else changes on that frame. After the cut the beam stays for 1 s as a translucent white triangle (paper at 55%), the way the reference draws light on a pale stage, and nothing moves under the bubble, which shows 4.17-5.0 s and leaves on a hard cut. Only then does the arm drop (2 drawings from 5.0 s) and the document walk out: 210 px in 12 drawings (17.5 px each, tilt +-0.04 rad every 3 drawings), an arm drawn on in 2 drawings at 6.17 s, and from 6.33 s to the end only its hand moves, two drawings alternating on threes. Three colours: yellow lamp, lavender on the document, the figure's navy top. */
+   Motion notes: 7.5 s in four shots (IB.shot, on ones): 0-3.25 s a wide of the dark room (1700 px window) pushing in slowly to 1400 from 0.5 s while the beam sweeps (66 frames); 3.25 s, on the beam's snap, a snap in to a close-up of the caught eyes (600); 4.0 s the light cut is also a camera cut, to a medium two-shot of the searcher, the bubble and the crate (1300); 5.0 s, as the bubble leaves on a hard cut, a cut to the document walking out (1000) and from 6.08 s a push to its waving hand (820, 34 frames). The darkness is drawn outside the camera in screen px (IB.darkness sets its own transform): the lens is carried to the screen through the camera's transform and the beam's angle turned by the camera's roll, then the eyes are filmed again over the black. Dark half (0-4.0 s): the stage is drawn fully lit and then covered with black (#000000) everywhere except the beam, a hard-edged triangle 26 degrees wide: no glow, no gradient, no fade, the beam is a flat shape like everything else. The beam is on twos because a hand holds it: off until 0.5 s, then 22 to -24 degrees in 1 s (inOutQuad), hold 0.25 s, down to 30 degrees in 1 s, hold 0.5 s, then it snaps to the target in a single drawing at 3.25 s, landing 3 degrees past it, comes back onto it on the next drawing and stays 0.67 s. The only other thing visible in the dark is a pair of eyes (the reference's dark spot): pupils step toward the beam on twos, one blink of 2 frames at 1.75 s. The hider ducks 120 px behind the crate whenever the sweeping beam comes within 15 degrees of it (it starts down 80 px one drawing before the beam comes near and is 120 px down while it is near; back up through 50 px and one drawing popped 8 px above standing, its eyes showing from the 50 px drawing), so each slow pass finds nothing; the snap is too fast to duck and catches the eyes wide. Cut to light at 4.0 s is a hard cut on a held pose: no actor changes on that frame. After the cut the beam stays for 1 s as a translucent white triangle (paper at 55%), the way the reference draws light on a pale stage, and nothing moves under the bubble, which shows 4.17-5.0 s and leaves on a hard cut. Only then does the arm drop (2 drawings from 5.0 s) and the document walk out: 210 px in 12 drawings (17.5 px each, tilt +-0.04 rad every 3 drawings), an arm drawn on in 2 drawings at 6.17 s, and from 6.33 s to the end only its hand moves, two drawings alternating on threes. Three colours: yellow lamp, lavender on the document, the figure's navy top. */
 const { lerp, kf, clamp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 500, CUT = 4;
 const WHO = { ...IB.PEOPLE.searcher, h: 500, dir: 1, seed: 30 };
@@ -46,6 +47,13 @@ function docState(t) {
 const eyesAt = (d) => [d.x - 26, FLOOR - 12 - LEG - 150 + d.down];
 // the searcher only moves an arm, which the rig's trail does not follow, so it passes no prev
 const searcher = (t) => who(t).pose;
+// the camera, frames at 24 fps: the dark room creeping in; the snap onto the eyes; the light; the document coming out
+const SHOTS = [
+  [0, { at: [900, 600], w: 1700 }], [12, { at: [960, 620], w: 1400 }, 'push', 66],
+  [78, { at: [1330, 690], w: 600 }, 'snap'],
+  [96, { at: [960, 640], w: 1300 }, 'cut'],
+  [120, { at: [1250, 700], w: 1000 }, 'cut'], [146, { at: [1220, 720], w: 820 }, 'push', 34],
+];
 IB.actors = (t) => ({ searcher: who(t).pose, hider: docState(t) });
 
 MG.scene({
@@ -54,31 +62,36 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const tt = IB.twos(t), W = who(t), d = docState(t), dark = t < CUT, found = tt >= 3.25, look = { ...WHO, face: W.face };
-    // a hanging lamp, a crate and a plant: just enough to be somewhere
-    IB.hangingLamp(ctx, [1120, 300]);
-    IB.pottedPlant(ctx, [1640, FLOOR], IB.PLANTS.tall);
-    ctx.save(); IB.clipRect(ctx, [0, 0, MG.W, FLOOR]);   // a ducked document is taller than the crate: what would stick out under the floor line is not drawn
-    IB.hidingDoc(ctx, [d.x, FLOOR - 12 - LEG], d, { ground: FLOOR - 12 });
-    ctx.restore();
-    IB.woodCrate(ctx, [1395, FLOOR], { w: 190, h: 170 });
+    const tt = IB.twos(t), W = who(t), d = docState(t), dark = t < CUT, found = tt >= 3.25, look = { ...WHO, face: W.face }, cam = IB.shot(SHOTS, Math.floor(t * 24));
     // where the eyes look: toward the lens until the light is on them
     const [ex, ey] = eyesAt(d), dx = W.lens[0] - ex, dy = W.lens[1] - ey, n = Math.hypot(dx, dy) || 1;
     const gaze = found ? { dx: -2, dy: 0, wide: true } : { dx: (dx / n) * 6, dy: (dy / n) * 5 + (beamAt(tt) < 0 ? -3 : 2), wide: false };
     const blink = IB.frame(t) >= 42 && IB.frame(t) < 44;
-    if (d.down < 60) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink && dark });   // the eyes show whenever they are above the crate
-    IB.smear(ctx, X0, FLOOR - 9, 300, { h: 14, seed: 9 });
-    const P = searcher(t);
-    IB.figure(ctx, P, look, 'far');
-    IB.torch(ctx, W.wrist, W.a);
-    IB.figure(ctx, P, look, 'near');
-
+    let m = null;   // the camera's transform, to carry the beam to the screen
+    IB.film(ctx, cam, (ctx) => {
+      m = ctx.getTransform();
+      // a hanging lamp, a crate and a plant: just enough to be somewhere
+      IB.hangingLamp(ctx, [1120, 300]);
+      IB.pottedPlant(ctx, [1640, FLOOR], IB.PLANTS.tall);
+      ctx.save(); IB.clipRect(ctx, [0, 0, MG.W, FLOOR]);   // a ducked document is taller than the crate: what would stick out under the floor line is not drawn
+      IB.hidingDoc(ctx, [d.x, FLOOR - 12 - LEG], d, { ground: FLOOR - 12 });
+      ctx.restore();
+      IB.woodCrate(ctx, [1395, FLOOR], { w: 190, h: 170 });
+      if (d.down < 60) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink && dark });   // the eyes show whenever they are above the crate
+      IB.smear(ctx, X0, FLOOR - 9, 300, { h: 14, seed: 9 });
+      const P = searcher(t);
+      IB.figure(ctx, P, look, 'far');
+      IB.torch(ctx, W.wrist, W.a);
+      IB.figure(ctx, P, look, 'near');
+      if (!dark && W.on) IB.lightBeam(ctx, W.lens, W.a);
+      IB.bubble(ctx, ['찾았다!'], t, 50 / 12, { tip: [X0 + 62, FLOOR - 0.9 * H], x: X0 + 240, y: FLOOR - 1.13 * H, until: 5, seed: 500 });
+    });
     if (dark) {
-      // black over everything but the beam; then the eyes again, which show in the dark
-      IB.darkness(ctx, { beam: W.on ? { from: W.lens, a: W.a } : null });
-      if (d.down < 60) IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink });
-    } else if (W.on) IB.lightBeam(ctx, W.lens, W.a);
-    IB.bubble(ctx, ['찾았다!'], t, 50 / 12, { tip: [X0 + 62, FLOOR - 0.9 * H], x: X0 + 240, y: FLOOR - 1.13 * H, until: 5, seed: 500 });
+      // black over everything but the beam, in screen px (IB.darkness sets its own transform); then the eyes again, filmed over the black
+      const lens = m.transformPoint({ x: W.lens[0], y: W.lens[1] });
+      IB.darkness(ctx, { beam: W.on ? { from: [lens.x, lens.y], a: W.a + Math.atan2(m.b, m.a) } : null });
+      if (d.down < 60) IB.film(ctx, cam, (ctx) => IB.docEyes(ctx, eyesAt(d), gaze, { shut: blink }));
+    }
   },
 });
 </script>

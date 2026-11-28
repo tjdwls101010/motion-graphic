@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/parcel.js"></script>
 <script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 다리 달린 상자들이 줄지어 걸어와 하나씩 컨베이어에 뛰어오르면 다리를 접고 실려 가고, 검사대를 지날 때마다 도장이 내려와 초록 체크가 찍힌다. 늦은 꼬마 상자가 "잠깐만요!" 하며 뛰어와 마지막에 올라탄다. 원본에 없는 창작 장면으로, 원본 4편의 다리 달린 폴더·서류를 파이프라인 은유로 옮겼다. 전달하는 생각: 제각각 들어온 것들이 한 줄에 올라 같은 검사를 거친다.
-   Motion notes: one locked shot, 8 s. Two frame rates side by side and that is the point: the characters walk, hop and fold their legs on twos, the machine (belt marks, rollers, parcels riding it) runs on ones at 230 px/s. A parcel is a rigid box: its planted foot stays put in stage x for its whole step while the body walks over it; it never squashes, it tilts (walk +-0.035 rad every 6 frames, hop -0.22 rad) and its legs exist only while it needs them (gone 2 drawings after landing). Queue spacing 237 px = walk speed 190 px/s x 1.25 s between hops. Hop = one anticipation drawing (stopped where the drawing before left it, 16 px lower on shortened legs, tilted back 0.09 rad, both feet on the floor where they were) and 4 drawings over 0.33 s, peak 250 px above the floor one drawing before the landing; on the belt it rocks back 0.03 rad for one drawing (lifted by the half-width times the tilt so no corner sinks into the belt) and sits square. Stamp: the pad lifts for one drawing (the anticipation; 7-12 px, a fraction of its travel to that box's top), one drawing of the pad as a stretched smear, one drawing in contact, back up in 2 drawings; the tick is there from the contact drawing and a four-line burst lasts 2 drawings. The latecomer runs at 336 px/s with a step every 4 frames and its bubble travels with it on twos. Colour: three in the shot. Lavender (tubing and one parcel), yellow (one parcel), and the tick, which is the only green; the other parcels are white. */
+   Motion notes: 8 s in five shots (IB.shot, on ones): 0-2.25 s the whole line (1920 px window) pushing in to 1640 over 48 frames; 2.25 s a cut to a medium on the foot of the belt (1000) for the second parcel's hop; 3.08 s a measured pan (16 frames, on twos) along the belt to the stamper (900) as the first parcel rides to it; 3.92 s, on the pad's contact, a snap in to the stamp (600) with a 16 px jolt; 4.92 s, as the latecomer shouts, a cut to a medium (820) that follows it on ones while it runs on twos; 6.75 s, as its bubble goes, a cut to the wide line (1800) for its hop on. Two frame rates side by side and that is the point: the characters walk, hop and fold their legs on twos, the machine (belt marks, rollers, parcels riding it) runs on ones at 230 px/s. A parcel is a rigid box: its planted foot stays put in stage x for its whole step while the body walks over it; it never squashes, it tilts (walk +-0.035 rad every 6 frames, hop -0.22 rad) and its legs exist only while it needs them (gone 2 drawings after landing). Queue spacing 237 px = walk speed 190 px/s x 1.25 s between hops. Hop = one anticipation drawing (stopped where the drawing before left it, 16 px lower on shortened legs, tilted back 0.09 rad, both feet on the floor where they were) and 4 drawings over 0.33 s, peak 250 px above the floor one drawing before the landing; on the belt it rocks back 0.03 rad for one drawing (lifted by the half-width times the tilt so no corner sinks into the belt) and sits square. Stamp: the pad lifts for one drawing (the anticipation; 7-12 px, a fraction of its travel to that box's top), one drawing of the pad as a stretched smear, one drawing in contact, back up in 2 drawings; the tick is there from the contact drawing and a four-line burst lasts 2 drawings. The latecomer runs at 336 px/s with a step every 4 frames and its bubble travels with it on twos. Colour: three in the shot. Lavender (tubing and one parcel), yellow (one parcel), and the tick, which is the only green; the other parcels are white. */
 const C = IB.C, FLOOR = 900, BELT = 690, BX0 = 880, V = 230, SCAN = 1500, LEG = 74;
 const BOXES = [
   { w: 190, h: 150, fill: C.paper, hop: 1.25, seed: 100 },
@@ -60,6 +61,17 @@ function stamp(tt) {
 }
 
 // the parcels' drawings for tools/drawings.py: their pose, not where the belt has carried them (the belt runs on ones)
+// the camera, frames at 24 fps: the line; a hop; along the belt to the stamp, punched in on contact; the latecomer followed; the line again
+const lateX = (f) => Math.min(704, 760 - 336 * (BOXES[3].hop - f / 24));   // where the latecomer runs, read smoothly (it is drawn on twos)
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }], [0, { at: [900, 580], w: 1640 }, 'push', 48],
+  [54, { at: [860, 620], w: 1000 }, 'cut'],
+  [74, { at: [1480, 540], w: 900 }, 'pan'],
+  [94, { at: [1500, 560], w: 600 }, 'snap'],
+  [118, (f) => ({ at: [lateX(f) + 240, 710], w: 820 }), 'cut'],
+  [162, { at: [1000, 580], w: 1800 }, 'cut'],
+];
+const HITS = [94];   // the pad meets the first parcel
 IB.actors = (t) => Object.fromEntries(BOXES.map((b, i) => { const a = at(b, t); return ['parcel' + i, a.x < -200 ? null : a.riding ? { ...a, x: undefined } : a]; }));   // off-screen counts as absent
 
 MG.scene({
@@ -69,13 +81,15 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t);
-    IB.conveyor(ctx, [BX0, BELT], { travel: t * V }, { floor: FLOOR });
-    const states = BOXES.map((b) => at(b, t));
-    BOXES.forEach((b, i) => { const s = states[i]; if (!s.riding && !s.air && s.x > -200) IB.smear(ctx, s.x + 6, FLOOR - 11, b.w * 0.9, { h: 12, seed: b.seed + 30 }); });
-    BOXES.forEach((b, i) => { const s = states[i]; if (s.x > -200 && s.x < 2150) IB.parcel(ctx, [s.x, s.y], { ...s, stamped: stampStep(b, tt) >= 1 }, { w: b.w, h: b.h, fill: b.fill, seed: b.seed, leg: LEG, ground: FLOOR - 12 }); });
-    IB.stamper(ctx, [SCAN, BELT], stamp(tt));
-    const late = BOXES[3], s = states[3];
-    IB.bubble(ctx, ['잠깐만요!'], t, 4.917, { tip: [s.x + 56, s.y - late.h - 22], x: s.x + 190, y: s.y - late.h - 120, until: 6.75, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.conveyor(ctx, [BX0, BELT], { travel: t * V }, { floor: FLOOR });
+      const states = BOXES.map((b) => at(b, t));
+      BOXES.forEach((b, i) => { const s = states[i]; if (!s.riding && !s.air && s.x > -200) IB.smear(ctx, s.x + 6, FLOOR - 11, b.w * 0.9, { h: 12, seed: b.seed + 30 }); });
+      BOXES.forEach((b, i) => { const s = states[i]; if (s.x > -200 && s.x < 2150) IB.parcel(ctx, [s.x, s.y], { ...s, stamped: stampStep(b, tt) >= 1 }, { w: b.w, h: b.h, fill: b.fill, seed: b.seed, leg: LEG, ground: FLOOR - 12 }); });
+      IB.stamper(ctx, [SCAN, BELT], stamp(tt));
+      const late = BOXES[3], s = states[3];
+      IB.bubble(ctx, ['잠깐만요!'], t, 4.917, { tip: [s.x + 56, s.y - late.h - 22], x: s.x + 190, y: s.y - late.h - 120, until: 6.75, seed: 500 });
+    });
   },
 });
 </script>

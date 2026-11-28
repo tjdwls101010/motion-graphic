@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>school / lunch-tray-seat</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script src="../../kit/sets/schoolhall.js"></script>
+<script>
+/* 식판을 든 아이가 급식실에 걸어 들어와 멈춰 앞을 살피고 뒤를 돌아보며 두리번거리다, 탁자의 친구가 손을 흔들자 환해져 걸어가 몸을 숙여 식판을 내려놓고 긴 의자에 앉는다. 원본에 없는 창작 장면으로, 학교 식당 세트(IB.lunchTray, IB.trayGrips, IB.lunchTable)와 인물 리그의 걷기·앉기(IB.walk, IB.sit), 아이 체형(IB.PEOPLE.pupil, pupil2)을 썼다. 전달하는 생각: 낯선 곳에서 아는 얼굴 하나가 자리를 만든다.
+   Motion notes: one locked shot, 7 s, framed on a 1200 px wide region of the stage enlarged 1.6 times (IB.crop), so the children (290 px on the stage, headK 1.3) stand 464 px on screen with lines thickened with them (4.5 px, as the reference's enlarged drawings do); the table is end-on (top 0.43 h, benches at IB.sit's seat) under one white pendant lamp. The child carries the tray close in both hands (IB.trayGrips: tray centre 0.25 h ahead of and 0.05 h above the hip, so it rides the walk's bob). Walk in from off the left edge, 18 drawings on twos at IB.walkLen / 12 = 20.3 px a drawing (from phase 5/6, so the stop lands on 1/3: one foot planted, the other put down where it is), stop at 1.5 s with one drawing thrown forward (lean 0.1) and the stand. Looking round: 1.75 s the head tips up to look ahead (nod -0.12), 2.08 s the whole figure turns to look back over the way it came (mirrored about the hips, tray and all; the hips stay put and the spine does not tip, so the curls do not trail), 2.42 s turns front again. 2.5 s the friend at the table waves: one drawing with the hand dropped (anticipation), one with the open hand up past the wave, then 12 drawings swapping side, middle, other side, middle on twos from 2.67 s with no pose.prev (a trail would average the two sides away), the hand down through one drawing at 3.67 s. The child sees it on the wave's third drawing: 2.83 s a dip (hips 6 px down, nod 0.12, eyes shut), 2.92 s springs up past the stand onto its toes (heels up 0.4 rad lifting the ankles 13 px, so the hips go 8 px up with the toes still on the floor; spine back 0.12, eyes wide, mouth open), 3.0 s settles smiling. Walk to the table, 23 walk drawings from 3.17 s and then the stop drawing, stopping on 1/3 again beside the bench at 5.08 s (thrown, then stand). Puts the tray down in a bow: 5.33 s half way (lean 0.4, knees giving 0.04 h), 5.42 s down past (lean 0.85, hips 0.085 h lower), 5.5 s the tray on the table (lean 0.8); hands off and up through one drawing to the stand at 5.67 s. Sits in two drawings that step the feet from where they stood to under the table (5.83 s, 5.92 s: each drawing one foot planted, the other lifted 0.05 h), lands 4 px past the seat at 6.0 s and settles at 6.08 s with both hands on the tray. Every drawing passes the one before as pose.prev except the friend's wave. Still from 6.17 s, when the head's one-drawing trail has settled. Colours: the child's yellow, the friend's lavender, the mint greens on the trays. */
+const F = IB.FIG, C = IB.C, FLOOR = 960, H = 290;
+const KID = { ...IB.PEOPLE.pupil, h: H, dir: 1, seed: 40 }, FRIEND = { ...IB.PEOPLE.pupil2, h: H, dir: -1, seed: 60 };
+const PACE = IB.walkLen(KID) / 12, AY = FLOOR - F.ankle * H;
+const N1 = 18, P0 = 5 / 6, XS1 = 505, X0 = XS1 - N1 * PACE, N2 = 24, XS2 = XS1 + N2 * PACE, PH = (P0 + N1 / 12) % 1;   // both stops land on phase 1/3
+const SEAT = 1000, TABLE = [1167, FLOOR], TOP = FLOOR - 0.43 * H, EDGE = TABLE[0] - 0.95 * H / 2;
+const FRAME = [300, 380, 1200];   // the shot: this 1200 px wide region of the stage, enlarged 1.6 times (IB.crop)
+const SPOT = [EDGE + 66, TOP - 8], FRIEND_SEAT = TABLE[0] + 0.95 * H / 2 + 0.1 * H, FRIEND_TRAY = [TABLE[0] + 62, TOP - 8];
+
+/* ---------- the child ---------- */
+const carry = (p) => { const T = [p.hip[0] + 0.25 * H, p.hip[1] - 0.05 * H]; return { ...p, hands: IB.trayGrips(T), hand: ['grip', 'grip'], tray: T }; };
+const walking = (x, ph) => carry(IB.walk(x, FLOOR, KID, ph));
+const stoppedAt = (x) => ({ ...IB.stand(x, FLOOR, KID), feet: IB.walk(x, FLOOR, KID, PH).feet.map((f) => [f[0], AY, 0]) });
+const S1 = carry(stoppedAt(XS1)), S2 = stoppedAt(XS2);
+const lean = (p, more) => carry({ ...p, ...more });
+const SIT = IB.sit(SEAT, FLOOR, KID), BOW_HIP = [XS2 + 4, S2.hip[1] + 0.085 * H];
+const bow = (u, hipDrop) => ({ ...S2, hip: [XS2 + 4 * u, S2.hip[1] + hipDrop], lean: u, hands: IB.trayGrips(SPOT), hand: ['grip', 'grip'], tray: SPOT });
+const stepping = (k) => {   // sitting down: hips back and down onto the bench while the feet step under the table, one planted each drawing
+  const m = IB.poseMix(S2, SIT, k ? 0.85 : 0.45), lift = (a, b, u) => [MG.lerp(a[0], b[0], u), AY - 0.05 * H, 0.2];
+  m.feet = k ? [lift(S2.feet[0], SIT.feet[0], 0.5), [SIT.feet[1][0], AY, 0]] : [[S2.feet[0][0], AY, 0], lift(S2.feet[1], SIT.feet[1], 0.5)];
+  m.hip = k ? [SIT.hip[0] + 6, SIT.hip[1] - 10] : m.hip;
+  m.hands = [[m.hip[0] + 0.08 * H, m.hip[1] + 0.02 * H], [m.hip[0] + 0.12 * H, m.hip[1] - 0.02 * H]];
+  return { ...m, hand: ['relax', 'relax'], seated: true };
+};
+const atTray = (p) => ({ ...p, hands: IB.trayGrips(SPOT), hand: ['grip', 'grip'] });
+const W2 = 74, B = W2 + N2 * 2;   // the second walk starts after frame W2 and ends on frame B
+const KID_ACT = [
+  [N1 * 2, lean(S1, { lean: 0.1, hip: [XS1 + 5, S1.hip[1] + 2] })], [N1 * 2 + 2, S1],
+  [42, lean(S1, { nod: -0.12 })], [50, { ...S1, back: true }], [58, S1],
+  [68, lean(S1, { hip: [XS1, S1.hip[1] + 6], nod: 0.12, face: { eye: 'closed', mouth: 'flat' } })],
+  [70, lean(S1, { hip: [XS1 - 3, S1.hip[1] - 8], feet: S1.feet.map(([x]) => [x, AY - IB.footLift(0.4, H), 0.4]), lean: -0.12, nod: -0.06, face: { eye: 'wide', mouth: 'open' } })],
+  [72, lean(S1, { lean: -0.03, face: { mouth: 'smile' } })],
+  [B, lean(S2, { lean: 0.1, hip: [XS2 + 5, S2.hip[1] + 2], face: { mouth: 'smile' } })], [B + 2, { ...carry(S2), face: { mouth: 'smile' } }],
+  [B + 6, { ...bow(0.4, 0.04 * H), hands: IB.trayGrips([MG.lerp(S2.hip[0] + 0.25 * H, SPOT[0], 0.5), MG.lerp(S2.hip[1] - 0.05 * H, SPOT[1], 0.5)]), tray: [MG.lerp(S2.hip[0] + 0.25 * H, SPOT[0], 0.5), MG.lerp(S2.hip[1] - 0.05 * H, SPOT[1], 0.5)], face: { mouth: 'smile' } }],
+  [B + 8, { ...bow(0.85, 0.085 * H), face: { eye: 'closed', mouth: 'smile' } }],
+  [B + 10, { ...bow(0.8, 0.08 * H), face: { mouth: 'smile' } }],
+  [B + 12, { ...IB.poseMix(bow(0.8, 0.08 * H), S2, 0.5), hand: ['relax', 'relax'], hands: [[XS2 + 0.16 * H, S2.hip[1] + 0.02 * H], [XS2 + 0.12 * H, S2.hip[1] + 0.04 * H]], face: { mouth: 'smile' } }],
+  [B + 14, { ...S2, face: { mouth: 'smile' } }],
+  [B + 18, { ...stepping(0), face: { mouth: 'smile' } }], [B + 20, { ...stepping(1), face: { mouth: 'smile' } }],
+  [B + 22, { ...atTray({ ...SIT, hip: [SIT.hip[0], SIT.hip[1] + 4], lean: 0.1 }), seated: true, face: { eye: 'closed', mouth: 'smile' } }],
+  [B + 24, { ...atTray({ ...SIT, lean: 0.06 }), seated: true, face: { mouth: 'smile' } }],
+];
+const kidOn = (f) => {
+  if (f < N1 * 2) { const n = f >> 1; return { ...walking(X0 + n * PACE, (P0 + n / 12) % 1), face: { mouth: 'flat' } }; }
+  if (f > W2 && f < B) { const n = (f - W2) >> 1; return { ...walking(XS1 + n * PACE, (PH + n / 12) % 1), face: { mouth: 'smile' } }; }
+  return IB.held(KID_ACT, f);
+};
+const mirror = (p, c) => { const m = ([x, y, ...r]) => [2 * c - x, y, ...r]; return { ...p, hip: m(p.hip), feet: p.feet.map(m), hands: p.hands.map(m) }; };
+const kidAt = (t) => { const f = IB.frame(IB.twos(t)), p = kidOn(f), q = kidOn(Math.max(0, f - 2)); return { ...p, prev: q.back === p.back ? q : mirror(q, p.hip[0]) }; };
+
+/* ---------- the friend at the table ---------- */
+const FS = IB.sit(FRIEND_SEAT, FLOOR, FRIEND), FSH = FS.hip[1] - (F.torso - 0.012) * H, fx = (dx) => FRIEND_SEAT - dx * H;
+const waving = (dx, dy, more = {}) => ({ ...FS, hands: [[fx(dx), FSH - dy * H], FS.hands[1]], hand: ['open', 'relax'], face: { mouth: 'open' }, ...more });
+const FRIEND_ACT = [[0, { ...FS, face: { mouth: 'flat' } }], [60, { ...FS, hands: [[fx(0.12), FS.hip[1] - 0.02 * H], FS.hands[1]], face: { mouth: 'flat' } }], [62, waving(0.13, 0.25, { face: { eye: 'wide', mouth: 'open' } })]];
+for (let i = 0; i < 12; i++) FRIEND_ACT.push([64 + i * 2, [waving(0.19, 0.2), waving(0.14, 0.215), waving(0.09, 0.21), waving(0.14, 0.215)][i % 4]]);
+FRIEND_ACT.push([88, waving(0.16, 0.0, { hand: ['open', 'relax'], face: { mouth: 'smile' } })], [90, { ...FS, face: { mouth: 'smile' } }]);
+const WAVE = [64, 88];
+const friendAt = (t) => { const f = IB.frame(IB.twos(t)), p = IB.held(FRIEND_ACT, f); return { ...p, prev: f >= WAVE[0] && f < WAVE[1] ? undefined : IB.held(FRIEND_ACT, Math.max(0, f - 2)) }; };
+
+IB.actors = (t) => ({ kid: kidAt(t), friend: friendAt(t) });
+
+MG.scene({
+  title: 'school / lunch-tray-seat',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const k = kidAt(t), fr = friendAt(t), kl = { ...KID, face: k.face, tuck: (k.lean || 0) > 0.3 }, fl = { ...FRIEND, face: fr.face };
+    ctx.save(); IB.crop(ctx, FRAME);
+    IB.hangingLamp(ctx, [TABLE[0], 560], { fill: C.paper });
+    IB.smear(ctx, 900, FLOOR - 7, 1300, { h: 13, seed: 9 });
+    const onTable = IB.frame(IB.twos(t)) >= B + 8, kid = (only) => {
+      ctx.save();
+      if (k.back) { ctx.translate(2 * k.hip[0], 0); ctx.scale(-1, 1); }
+      if (only !== 'near') IB.figure(ctx, k, kl, 'far');
+      if (only !== 'near' && k.tray && !onTable) IB.lunchTray(ctx, k.tray);
+      if (only !== 'far') IB.figure(ctx, k, kl, 'near');
+      ctx.restore();
+    };
+    IB.lunchTable(ctx, TABLE, { h: H, layer: 'bench' });
+    IB.figure(ctx, fr, fl, 'far');
+    if (k.seated) kid('far');
+    IB.lunchTable(ctx, TABLE, { h: H, layer: 'table' });
+    IB.lunchTray(ctx, FRIEND_TRAY, { seed: 1020 });
+    if (onTable) IB.lunchTray(ctx, SPOT);
+    if (k.seated) kid('near'); else kid();
+    IB.figure(ctx, fr, fl, 'near');
+    ctx.restore();
+  },
+});
+</script>

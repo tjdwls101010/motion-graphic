@@ -185,3 +185,12 @@ establish, insert 계열의 문법을 원본과 다른 장소와 대상에 적�
 - **모션:** 사람은 2프레임, 엘리베이터 문과 벽시계 바늘은 1프레임 단위로 움직여 기계와 연기의 박자 차이가 그대로 보인다(문은 일정 속도로 닫히고 outCubic으로 다시 열리며, 분침은 0.4분 지나쳤다 돌아오는 딸깍). 앉은 사람의 졸음은 몸이 먼저 숙고 머리가 `pose.prev`로 한 장 늦게 따라오며, 툭 떨어진 고개는 한 장 지나쳤다 다음 장에 정착한다. 옆모습 리그는 고개만 돌릴 수 없으므로 쳐다보는 사람은 바퀴 의자째 돌아앉는다(dir을 뒤집고 그 장에서는 prev를 끊는다). 바퀴 의자는 한 장에 34 px에서 3 px까지 줄어드는 간격으로 구르고, 구르는 동안 발은 바닥에서 뜬다(`friday-stretch-roll`). 탁자 뒤에 앉은 사람은 `tuck: true`로 윗옷을 넣어 입힌다: 늘어진 밑단이 탁자 판 아래로 나와 의자 방석처럼 보인다.
 - **키트:** `kit/sets/officefloor.js` (`IB.elevator`, `IB.meetingTable`, `IB.whiteboard`, `IB.chairRoll`), `kit/props/office.js` (`IB.sit`, `IB.chair`, `IB.workstation`, `IB.wallClock`), `kit/props/home.js` (`IB.callButton`, `IB.hangingLamp`), `kit/figure.js` (`IB.run`, `IB.walk`, `IB.shake`, `IB.bubble`), `kit/cast/people.js`
 - **장면:** `scenes/work/`
+
+### school: 학교 일상
+
+교실, 복도, 급식실, 교문에서 아이들(과 선생님)에게 일어나는 작은 사건 하나와 그 반응이다. 아이는 `IB.PEOPLE.pupil`·`pupil2`·`pupil3`(머리만 큰 `headK` 1.3)이다.
+
+- **룩:** 복도·급식실·교문은 벽 없이 소품 두세 개로 세운다(교실 문, 사물함 줄, 벽의 종 / 매단 등과 끝에서 본 탁자 / 기둥과 노란 문살 판). 세트는 흰 면과 검은 선이고 색은 아이들 옷(노랑·라벤더·민트)과 소품 하나가 가져간다. 아이만 나오는 샷은 어른 키의 0.68에 매이지 않고 아이를 290–300 px로 세운 뒤 `IB.crop`으로 1.13–1.6배 당긴다. 선도 같이 굵어지는 것은 원본의 확대 규칙 그대로다.
+- **모션:** 종은 두 그림을 2프레임마다 바꾸고 멈출 때는 딱 멈춘다. 여럿이 뛰어나올 때는 한 장 간격이면 44 px 차이로 겹치므로 세 장 간격에 뛰기 위상을 서로 어긋낸다(0, 3/8, 5/8). 문 닫기·쾅은 준비 한 장, 한 장에 닫힘, 줄 전체 4 px 흔들림(잡은 손도 같이)이다. 교문은 기계라 1프레임 단위 등속이다. 옆모습 인물이 문을 지나야 하는 곳은 문을 비스듬히(깊이 z → (0.8 z, −0.3 z)) 그리고, 앞 기둥은 인물 앞에, 판은 뒤에 그린다. 리그에 정면 돌림이 없어 두리번은 몸 전체를 뒤로 돌아보는 그림으로, 몸을 틀어 끼어 지나가기는 팔을 들고 몸을 세운 까치발 게걸음으로 옮긴다. 걷기·게걸음에서 뛰기로 넘어갈 때 첫 뛰기 그림은 디딤 중간(위상 0.15, 디딘 발이 골반 바로 아래)으로 골라야 몸이 뒤로 튀지 않는다. 선 아이가 탁자(0.43 h)에 물건을 놓으려면 깊이 숙여야 한다(lean 0.8, 무릎 0.08 h). 책가방은 인물의 먼 쪽 다음, 가까운 쪽 전에 그리고 `pose.prev`로 한 장 늦게 들썩인다.
+- **키트:** `kit/sets/schoolhall.js` (`IB.classDoor`, `IB.lockerRow`, `IB.lockerEdge`, `IB.schoolBell`, `IB.lunchTray`, `IB.trayGrips`, `IB.lunchTable`, `IB.schoolGate`, `IB.gateLane`, `IB.backpack`), `kit/figure.js` (`IB.run`, `IB.walk`, `IB.shake`), `kit/props/office.js` (`IB.sit`), `kit/props/home.js` (`IB.hangingLamp`), `kit/marks.js` (`IB.burst`, `IB.breath`), `kit/cast/people.js`
+- **장면:** `scenes/school/`

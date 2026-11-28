@@ -1,0 +1,84 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>school / bell-locker-rush</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/schoolhall.js"></script>
+<script>
+/* 조용한 복도에서 벽의 종이 울리고, 한 박자 뒤 교실 문이 열리며 아이 셋이 차례로 뛰어나와 둘은 화면 밖으로 사라지고, 마지막 아이는 열려 있던 사물함 앞에 멈춰 문을 쾅 닫는다. 원본에 없는 창작 장면으로, 학교 복도 세트(IB.classDoor, IB.lockerRow, IB.lockerEdge, IB.schoolBell)와 인물 리그의 뛰기(IB.run)·아이 체형(IB.PEOPLE.pupil, pupil2, pupil3)을 썼다. 전달하는 생각: 종소리 하나가 멈춘 복도를 한꺼번에 움직이게 하고, 그 소란은 문 하나 닫히는 소리로 끝난다.
+   Motion notes: one locked shot, 7 s, framed on a 1700 px wide region of the stage enlarged 1.13 times (IB.crop), so the children (300 px on the stage, headK 1.3) stand 339 px on screen with 3.2 px lines, and the classroom door and the lockers (100 x 150, two high) run off the left and right edges. 0-0.75 s nothing moves (one locker door already hangs open, swing 0.6). The bell rings from 0.75 s to 2.25 s: two drawings swapped every 2 frames (gong knocked 3 px and 0.09 rad one way, hammer on the other rim, three ringing arcs re-seeded each drawing), 18 drawings, then it stops dead. 2.25-2.75 s a held beat with nothing moving. 2.75 s the classroom door slides open in two drawings (0.55, 1). The children burst out of the doorway three drawings apart (2.83 s, 3.08 s, 3.33 s), each at its own phase of the run (0, 3/8, 5/8 of the cycle) so their feet never match: IB.run on twos, moved IB.runLen / 8 = 55 px a drawing so the planted foot never slides. The first two run straight off the right edge (gone from 5.33 s and 5.58 s). The third runs 19 drawings and lands at 4.92 s on the near foot, brakes in one drawing (5.0 s: hips 0.1 h on, spine back 0.1 rad, the landed foot planted, open hands thrown forward), stands on the next with the other foot put down, and holds 0.5 s staring at the open door, the head trailing each drawing by one (pose.prev). The slam: the hand takes the door's edge (5.58 s), pulls it a little wider (5.67 s, swing 0.72, body back 0.08: the anticipation), and on the next drawing (5.75 s) the door is shut in one drawing with the body thrown 0.16 rad forward past where it settles; on that drawing the whole row jolts 4 px and a four-line burst flies off the door for two drawings, shake arcs flicker beside it for four, the child settles back (lean 0.12) with the hand on the door, holds it 0.33 s and lets it fall through one drawing (6.17 s). Everything is still from 6.33 s (the head's one-drawing trail settles after the last drawing at 6.25 s). Colours: the three children's tops (yellow, lavender, mint); the hallway is white and grey. */
+const F = IB.FIG, FLOOR = 960, H = 300;
+const KIDS = [
+  { look: { ...IB.PEOPLE.pupil, h: H, dir: 1, seed: 40 }, out: 68, ph: 0, face: { mouth: 'open' } },
+  { look: { ...IB.PEOPLE.pupil2, h: H, dir: 1, seed: 60 }, out: 74, ph: 3 / 8, face: { eye: 'wide', mouth: 'open' } },
+  { look: { ...IB.PEOPLE.pupil3, h: H, dir: 1, seed: 80 }, out: 80, ph: 5 / 8, face: { mouth: 'flat', brow: 1 } },
+];
+const DOOR = [120, FLOOR], DOOR_SIZE = { w: 230, h: 500 }, X_OUT = 235, PACE = IB.runLen(KIDS[0].look) / 8, BELL = [820, 300];
+const FRAME = [100, 120, 1700];   // the shot: this 1700 px wide region of the stage, enlarged 1.13 times (IB.crop): the door and the lockers run off the edges
+const LOCK = [1145, FLOOR], LOCK_SIZE = { cols: 7, w: 100, ch: 150, plinth: 24 }, OPEN_ONE = 4;   // locker 4: column 2, top row, left hanging open
+const BELL_ON = [18, 54], DOOR_KEYS = [[0, 0], [66, 0.55], [68, 1]];
+
+/* ---------- the third child: run, stop, slam ---------- */
+const C = KIDS[2], RUNS = 19, FA = C.out + RUNS * 2, XS = X_OUT + RUNS * PACE;   // lands at FA on the near foot (phase 5/8 + 19/8 = 0)
+const land = IB.run(XS, FLOOR, C.look, 0), NEAR = land.feet[1], AY = FLOOR - F.ankle * H;
+const standAt = (hx, more = {}) => ({ ...IB.stand(hx, FLOOR, C.look), feet: [[XS + 0.1 * H, AY, 0], [NEAR[0], AY, 0]], ...more });
+const edge = (u) => IB.lockerEdge(LOCK, OPEN_ONE, u, LOCK_SIZE);
+const S = standAt(XS + 0.15 * H, { face: { mouth: 'flat', brow: 1 } });
+const holdDoor = (u, more) => { const p = { ...S, ...more }; p.hands = [S.hands[0], edge(u)]; p.hand = ['relax', 'grip']; return p; };
+const SH = S.hip[1] - (F.torso - 0.012) * H;
+const DRAW = {
+  brake: { ...land, hip: [XS + 0.1 * H, land.hip[1] + 4], lean: -0.1, feet: [[XS + 0.06 * H, AY - 0.06 * H, 0.3], [NEAR[0], AY, 0]], hands: [[XS + 0.36 * H, SH + 0.1 * H], [XS + 0.33 * H, SH + 0.14 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },
+  reach: holdDoor(0.6, { lean: 0.04 }),
+  wind: holdDoor(0.72, { hip: [S.hip[0] - 4, S.hip[1]], lean: -0.08, face: { eye: 'closed', mouth: 'flat', brow: 1 } }),
+  slam: (() => { const p = holdDoor(0, { hip: [S.hip[0] + 0.05 * H, S.hip[1] + 3], lean: 0.16, nod: 0.06, face: { eye: 'closed', mouth: 'open' } }); p.hands = [p.hands[0], [p.hands[1][0] + 4, p.hands[1][1]]]; return p; })(),   // on this drawing the whole row jolts 4 px: the hand on the door goes with it
+  after: holdDoor(0, { hip: [S.hip[0] + 0.045 * H, S.hip[1] + 1], lean: 0.12, face: { mouth: 'smile' } }),
+  letGo: { ...IB.poseMix(holdDoor(0, { lean: 0.1 }), S, 0.55), hand: ['relax', 'relax'], face: { mouth: 'smile' } },
+  done: { ...S, face: { mouth: 'smile' } },
+};
+const C_ACT = [[FA + 2, DRAW.brake], [FA + 4, S], [FA + 16, DRAW.reach], [FA + 18, DRAW.wind], [FA + 20, DRAW.slam], [FA + 22, DRAW.after], [FA + 30, DRAW.letGo], [FA + 32, DRAW.done]];
+const SLAM = FA + 20;
+const LOCKER_OPEN = [[0, 0.6], [FA + 18, 0.72], [SLAM, 0]];
+
+// a child's drawing on frame f (floored to its twos), or null before it comes out of the door or once it is off screen
+function kidOn(i, f) {
+  const k = KIDS[i];
+  if (f < k.out) return null;
+  const n = (f - k.out) >> 1;
+  if (i === 2 && n > RUNS) return IB.held(C_ACT, f);
+  const x = X_OUT + n * PACE;
+  if (x > 2080) return null;
+  return { ...IB.run(x, FLOOR, k.look, (k.ph + n / 8) % 1), face: k.face };
+}
+const kidAt = (i, t) => { const f = IB.frame(IB.twos(t)), p = kidOn(i, f); if (!p) return null; const q = kidOn(i, f - 2); return { ...p, prev: q || p }; };
+const ringAt = (t) => { const f = IB.frame(IB.twos(t)); return f >= BELL_ON[0] && f < BELL_ON[1] ? 1 + IB.alternate(f - BELL_ON[0], 2) : 0; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { bell: ringAt(t), door: IB.held(DOOR_KEYS, f), locker: IB.held(LOCKER_OPEN, f), kidA: kidAt(0, t), kidB: kidAt(1, t), kidC: kidAt(2, t) }; };
+
+MG.scene({
+  title: 'school / bell-locker-rush',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    ctx.save(); IB.crop(ctx, FRAME);
+    const tt = IB.twos(t), f = IB.frame(tt), jolt = f >= SLAM && f < SLAM + 2 ? 4 : 0;
+    IB.smear(ctx, 960, FLOOR - 7, 1640, { h: 13, seed: 9 });
+    IB.classDoor(ctx, DOOR, { ...DOOR_SIZE, open: IB.held(DOOR_KEYS, f) });
+    IB.schoolBell(ctx, BELL, { r: 58, ring: ringAt(t), k: f >> 1 });
+    ctx.save(); ctx.translate(jolt, 0);
+    IB.lockerRow(ctx, LOCK, { ...LOCK_SIZE, open: (i) => (i === OPEN_ONE ? IB.held(LOCKER_OPEN, f) : 0) });
+    ctx.restore();
+    const b = IB.drawn(tt, SLAM / 24);
+    if (b >= 0 && b < 2) IB.burst(ctx, [edge(0)[0] + 10, edge(0)[1] - 60], { n: 4, a0: -1.9, da: 0.42, r0: 24 + b * 12, r1: 58 + b * 10, w: 3, seed: 300 + b * 5 });
+    if (b >= 0 && b < 4) IB.shake(ctx, LOCK[0] + 3 * 100 + 10, LOCK[1] - 250, 24, { a: 0.1, n: 3, w: 2.6, seed: 640 + b * 7 });
+    for (let i = 0; i < 3; i++) { const p = kidAt(i, t); if (p) IB.figure(ctx, p, { ...KIDS[i].look, face: p.face }); }
+    ctx.restore();
+  },
+});
+</script>

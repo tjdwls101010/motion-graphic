@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 덩크: 공을 든 선수가 달려와 한 발로 솟구치고, 공을 머리 뒤로 당겼다가 막으려 뛴 수비수 위에서 림에 내리꽂는다. 림이 휘고, 선수는 림에 매달려 한 번 흔들린 뒤 내려와 포효하고, 부딪힌 수비수는 바닥에 주저앉는다. 원본에 없는 창작 장면이다. 전달하는 생각: 덩크는 내리꽂기 직전 공을 뒤로 당기는 한 장으로 커진다.
-   Motion notes: seen from the sideline, 7 s; the camera (IB.camera, on twos) frames 1250-1300 px of the stage (1.5x), following the run and settling on the hoop by 1.5 s. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up; the dunker is 2.03 m tall (284 px) and the defender 1.9 m. The dunker runs on IB.run (IB.runLen / 8 a drawing) with the ball palmed at his side, gathers it to his chest on the penultimate step (1.08 s), plants and takes off on one foot (1.17 s) and flies a gravity arc 0.9 m up whose top is the slam (1.58 s): two drawings before it the ball is cocked behind his head (the anticipation), on it his arms come over the rim with the ball. The rim bends 12 px for the hang and the net shakes when he lets go; he hangs from its front edge and his body swings under it and back (pendulum, 3 drawings), drops 0.4 m and lands in a crouch (a thud), and roars with his fists down from 2.75 s. The ball goes through the net in one drawing and bounces away out of the frame (e 0.75). The defender crouches (1.08 s), jumps under the rim, peaks 0.55 m up a drawing before the dunk, beneath it, is knocked back and lands sitting (a thud). The crowd stands from the dunk and cheers on twos to 4.75 s; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+   Motion notes: seen from the sideline, 7 s; four shots (IB.shot, on ones): 0-0.83 s a 1000 px window running with him; 0.83 s an ease (10 frames) that lets him run ahead into the frame and stops on the hoop at 1200 px before he takes off; 1.58 s a snap in to a 640 px close-up of the rim on the slam with a 24 px jolt, held through the hang; 2.08 s, as he lets go, a cut to a low 1000 px frame under the rim; 2.58 s a push in to 760 px on the roar and the defender sitting (2.0 s). On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up; the dunker is 2.03 m tall (284 px) and the defender 1.9 m. The dunker runs on IB.run (IB.runLen / 8 a drawing) with the ball palmed at his side, gathers it to his chest on the penultimate step (1.08 s), plants and takes off on one foot (1.17 s) and flies a gravity arc 0.9 m up whose top is the slam (1.58 s): two drawings before it the ball is cocked behind his head (the anticipation), on it his arms come over the rim with the ball. The rim bends 12 px for the hang and the net shakes when he lets go; he hangs from its front edge and his body swings under it and back (pendulum, 3 drawings), drops 0.4 m and lands in a crouch (a thud), and roars with his fists down from 2.75 s. The ball goes through the net in one drawing and bounces away out of the frame (e 0.75). The defender crouches (1.08 s), jumps under the rim, peaks 0.55 m up a drawing before the dunk, beneath it, is knocked back and lands sitting (a thud). The crowd stands from the dunk and cheers on twos to 4.75 s; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
 const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], RR = 0.225 * M, RIM_F = [RC[0] - RR, RC[1]];
 const DK = IB.athlete('basketball', 'home', 1, { h: 2.03 * M, dir: 1, seed: 30 }), HD = DK.h;
@@ -70,11 +71,17 @@ FACT.push([SIT + 8, df([XSIT, FLOOR - 0.16 * HF], -0.2, [{ a: 0.22, l: 0.48, pit
 
 const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
 const dunker = withPrev(DACT), defender = withPrev(FACT);
-const CAMS = [[0, [Math.round(X0 - 250), 260, 1300]], [36, [820, 260, 1250]]];
+const SHOTS = [
+  [0, (f) => ({ at: [X0 + (Math.min(f, 24) / 2) * RL + 260, 690], w: 1000 })],   // running with him
+  [20, { at: [1550, 578], w: 1200 }, 'ease', 10],                    // lets him go ahead into the frame and stops on the hoop before he takes off
+  [FS, { at: [1690, 510], w: 640 }, 'snap'],                         // the slam
+  [LET + 2, { at: [1620, 636], w: 1000 }, 'cut'],                    // low under the rim as he drops
+  [LAND + 4, { at: [1640, 700], w: 760 }, 'push', 48],               // in on the roar
+];
 const cheerAt = (f) => (f < FS ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
 const hanging = (f) => f > FS && f < LET;
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { dunker: dunker(f), defender: defender(f), ball: ballAt(f), rim: rimAt(f), net: netAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { dunker: dunker(f), defender: defender(f), ball: ballAt(f), rim: rimAt(f), net: netAt(f), crowd: cheerAt(f) }; };
 
 MG.scene({
   title: 'basketball / slam-dunk-rim-hang',
@@ -83,19 +90,20 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), d = dunker(f), b = ballAt(f), hp = { s: HS, net: netAt(f), rim: rimAt(f) };
-    IB.crop(ctx, IB.camera(CAMS, f));
-    IB.courtside(ctx, [-200, 2200], FLOOR, { cheer: cheerAt(f) });
-    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'back' });
-    IB.figure(ctx, defender(f), DF);
-    IB.figure(ctx, d, DK, 'far');
-    IB.basketball(ctx, b, { r: R, rot: f * 0.25, lw: 2.6, seed: 91 });
-    if (!hanging(f)) IB.figure(ctx, d, DK, 'near');
-    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
-    if (hanging(f)) IB.figure(ctx, d, DK, 'near');   // the gripping hand over the rim
-    const slam = IB.drawn(tt, FS / 24), ld = IB.drawn(tt, LAND / 24), sit = IB.drawn(tt, SIT / 24);
-    if (slam >= 0 && slam < 2) IB.burst(ctx, [RC[0], RC[1] - 10], { n: 6, a0: -3.1, da: 0.55, r0: 40 + slam * 10, r1: 75 + slam * 8, w: 3.2, seed: 70 + slam });
-    if (ld >= 0 && ld < 2) IB.thud(ctx, [XL, FLOOR], { half: 0.2 * HD, k: ld });
-    if (sit >= 0 && sit < 2) IB.thud(ctx, [XSIT, FLOOR], { half: 0.2 * HF, k: sit });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: [[FS, 24]] }), (ctx) => {
+      IB.courtside(ctx, [-200, 2200], FLOOR, { cheer: cheerAt(f) });
+      IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'back' });
+      IB.figure(ctx, defender(f), DF);
+      IB.figure(ctx, d, DK, 'far');
+      IB.basketball(ctx, b, { r: R, rot: f * 0.25, lw: 2.6, seed: 91 });
+      if (!hanging(f)) IB.figure(ctx, d, DK, 'near');
+      IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
+      if (hanging(f)) IB.figure(ctx, d, DK, 'near');   // the gripping hand over the rim
+      const slam = IB.drawn(tt, FS / 24), ld = IB.drawn(tt, LAND / 24), sit = IB.drawn(tt, SIT / 24);
+      if (slam >= 0 && slam < 2) IB.burst(ctx, [RC[0], RC[1] - 10], { n: 6, a0: -3.1, da: 0.55, r0: 40 + slam * 10, r1: 75 + slam * 8, w: 3.2, seed: 70 + slam });
+      if (ld >= 0 && ld < 2) IB.thud(ctx, [XL, FLOOR], { half: 0.2 * HD, k: ld });
+      if (sit >= 0 && sit < 2) IB.thud(ctx, [XSIT, FLOOR], { half: 0.2 * HF, k: sit });
+    });
   },
 });
 </script>

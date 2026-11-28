@@ -10,11 +10,12 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 블록슛: 공을 튀기며 골밑으로 파고든 선수가 두 걸음을 밟고 올라가 백보드를 겨냥해 공을 올려놓는데, 골대 아래에서 기다리던 수비수가 한 박자 늦게 솟구쳐 공을 백보드에 그대로 찍어 누른다. 공은 유리판에 붙은 채 한 장 멈췄다가 수비수의 손으로 떨어지고, 수비수는 공을 쥐고 내려와 포효한다. 원본에 없는 창작 장면이다. 전달하는 생각: 블록은 먼저 뛰는 쪽이 아니라 공이 닿을 곳에 먼저 손을 두는 쪽이 이긴다.
-   Motion notes: seen from the sideline, 6.5 s, one camera framing (IB.crop of a 1250 px window, 1.54x). On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up, the players 1.95 m (273 px). The driver runs in on IB.run (IB.runLen / 8 a drawing) dribbling: the ball goes from his hand to the floor and back every 4 drawings. He gathers (1.17 s), takes the two steps of the layup (each a drawing on the floor), and rises on a gravity arc 0.6 m up with the ball carried up in the near hand; at the top (1.92 s) he lays it toward the glass above the rim (0.33 s away, arriving at 2.25 s). The defender, waiting under the rim, crouches as the driver gathers (the read), takes off a drawing after him and peaks with his hand flat on the glass on the drawing the ball arrives: the ball stops dead against the board for one drawing (a burst on the glass), then drops into his hand. He comes down with it in both hands (2.83 s, a thud) and roars with the ball held up from 3.17 s; the driver lands and stands with his hands on his hips. The crowd cheers on twos from the block to 4.75 s and stands; from 4.75 s nothing moves. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+   Motion notes: seen from the sideline, 6.5 s in six shots (IB.shot, on ones): 0-1.08 s a 900 px window running with the drive; 1.08 s a cut to a 720 px medium on the blocker under the rim as he reads it, the driver coming into his frame; 1.5 s a cut to a 1150 px frame of both going up, easing to 980 px and a -0.06 rad tilt by the pin; 2.25 s a cut to a 560 px close-up of the hand and the ball on the glass with a 24 px jolt; 2.67 s a cut to a 1300 px wide as both come down; 3.5 s a cut to a 600 px medium of the roar with the driver beside him, pushing in to 520 over 2.5 s. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up, the players 1.95 m (273 px). The driver runs in on IB.run (IB.runLen / 8 a drawing) dribbling: the ball goes from his hand to the floor and back every 4 drawings. He gathers (1.17 s), takes the two steps of the layup (each a drawing on the floor), and rises on a gravity arc 0.6 m up with the ball carried up in the near hand; at the top (1.92 s) he lays it toward the glass above the rim (0.33 s away, arriving at 2.25 s). The defender, waiting under the rim, crouches as the driver gathers (the read), takes off a drawing after him and peaks with his hand flat on the glass on the drawing the ball arrives: the ball stops dead against the board for one drawing (a burst on the glass), then drops into his hand. He comes down with it in both hands (2.83 s, a thud) and roars with the ball held up from 3.17 s; the driver lands and stands with his hands on his hips. The crowd cheers on twos from the block to 4.75 s and stands; from 4.75 s nothing moves. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
-const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], CAM = [820, 260, 1250];
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M];
 const DR = IB.athlete('basketball', 'home', 7, { h: 1.95 * M, dir: 1, seed: 30 }), DF = IB.athlete('basketball', 'away', 5, { h: 1.95 * M, dir: -1, seed: 40 });
 const H = DR.h, HY = IB.stand(0, FLOOR, DR).hip[1], AY = FLOOR - F.ankle * H;
 const hipForSh = (look, sh, lean) => { const o = IB.joints({ hip: [0, 0], lean, feet: [[0, 0], [0, 0]], hands: [[0, 0], [0, 0]] }, look).sh; return [sh[0] - o[0], sh[1] - o[1]]; };
@@ -84,6 +85,16 @@ function ballAt(f) {
 const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f >= 28 ? IB.held(table, f - 2) : undefined });
 const driver = withPrev(DACT), blocker = withPrev(BACT);
 const cheerAt = (f) => (f < PIN ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
+const SHOTS = [
+  [0, (f) => ({ at: [X0 + (Math.min(f, 26) / 2) * RL + 220, 700], w: 900 })],   // running with the drive
+  [26, { at: [1700, 660], w: 720 }, 'cut'],                          // the blocker under the rim reads it; the driver comes into his frame
+  [36, { at: [1640, 640], w: 1150 }, 'cut'],                         // both of them going up
+  [40, { at: [1660, 610], w: 980, tilt: -0.06 }, 'ease', PIN - 40],  // leaning off level as they rise to the ball
+  [PIN, { at: [1730, 460], w: 560 }, 'cut'],                         // the hand and the ball on the glass
+  [64, { at: [1600, 650], w: 1300 }, 'cut'],                         // both come down; the crowd
+  [84, { at: [1730, 700], w: 600 }, 'cut'],                          // his roar, the driver beside him
+  [90, { at: [1748, 690], w: 520 }, 'push', 60],
+];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { driver: driver(f), blocker: blocker(f), ball: ballAt(f), crowd: cheerAt(f) }; };
 
@@ -94,17 +105,18 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = blocker(f);
-    IB.crop(ctx, CAM);
-    IB.courtside(ctx, [600, 2200], FLOOR, { cheer: cheerAt(f) });
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back' });
-    IB.figure(ctx, driver(f), DR);
-    IB.figure(ctx, b, DF, 'far');
-    IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.2, lw: 2.6, seed: 91 });
-    IB.figure(ctx, b, DF, 'near');
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front' });
-    const pin = IB.drawn(tt, PIN / 24), ld = IB.drawn(tt, BLAND / 24);
-    if (pin >= 0 && pin < 2) IB.burst(ctx, [PINP[0] + R, PINP[1]], { n: 5, a0: 1.8, da: 0.6, r0: 30 + pin * 8, r1: 60 + pin * 8, w: 3.2, seed: 70 + pin });
-    if (ld >= 0 && ld < 2) IB.thud(ctx, [BX, FLOOR], { half: 0.2 * H, k: ld });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: [[PIN, 24]] }), (ctx) => {
+      IB.courtside(ctx, [300, 2300], FLOOR, { cheer: cheerAt(f) });
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back' });
+      IB.figure(ctx, driver(f), DR);
+      IB.figure(ctx, b, DF, 'far');
+      IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.2, lw: 2.6, seed: 91 });
+      IB.figure(ctx, b, DF, 'near');
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front' });
+      const pin = IB.drawn(tt, PIN / 24), ld = IB.drawn(tt, BLAND / 24);
+      if (pin >= 0 && pin < 2) IB.burst(ctx, [PINP[0] + R, PINP[1]], { n: 5, a0: 1.8, da: 0.6, r0: 30 + pin * 8, r1: 60 + pin * 8, w: 3.2, seed: 70 + pin });
+      if (ld >= 0 && ld < 2) IB.thud(ctx, [BX, FLOOR], { half: 0.2 * H, k: ld });
+    });
   },
 });
 </script>

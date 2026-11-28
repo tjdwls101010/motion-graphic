@@ -10,14 +10,15 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 점프슛: 공을 튀기며 수비를 기다리던 선수가 낮게 크로스오버를 하고 한 발 뒤로 물러나 공간을 만든 뒤, 무릎을 굽혔다 솟구쳐 꼭대기에서 손목을 꺾어 던진다. 뒤늦게 뛰어오른 수비수의 손끝 위로 높은 포물선이 그려지고, 공은 림을 건드리지 않고 그물만 흔든다. 슈터는 착지한 뒤에도 손목을 꺾은 채 팔을 든다. 원본에 없는 창작 장면이다. 전달하는 생각: 좋은 슛은 놓은 뒤에도 그 자세로 남는다.
-   Motion notes: seen from the sideline, 7.5 s, one camera framing (IB.crop of a 1180 px window, 1.63x). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²), the rim 3.05 m up and the ball r 17 px. The dribble is 6 drawings a bounce (0.5 s): in the hand, three drawings down, the floor, two up; twice with the near hand, then the crossover, a lower, harder bounce in front with the shoulders dropped (1.0 s), and a step-back hop of 0.3 m, picking the ball up off the bounce in both hands (1.25 s). 1.5 s the gather (ball to the chest), 1.58 s the dip (knees down 0.1 h: the anticipation), and the jump on a gravity arc 0.45 m up: the ball goes to the set point over the forehead on the way up and leaves at the top (1.92 s) with the arm straight and the wrist snapped (gooseneck), held in the air and after the landing (2.25 s). The ball flies 1.0 s on an arc 1.4 m over the rim and drops through its middle: the net stretches and whips back over 6 drawings (IB.hoop net swish) while the ball slows through it and falls out, bouncing on the floor (e 0.75). The defender closes out from 1.25 s and jumps a drawing after the shot, peaking below the ball. After the swish the shooter's arm comes down and he backpedals; the defender's hands go to his head. The crowd cheers on twos from the swish to 4.75 s and stands; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard and the floor's mustard smear. */
+   Motion notes: seen from the sideline, 7.5 s in five shots (IB.shot, on ones): 0-1.42 s a 1150 px window on the dribble pushing in to 920; 1.5 s, on the gather, a cut to a low 780 px frame with his feet on the bottom edge and the air above him empty for the jump; 1.92 s, as the ball leaves his hand, an ease (6 frames) onto a 1000 px window that follows the ball toward the hoop; 2.83 s, as it drops, a cut to a 560 px close-up of the net for the swish; 3.42 s a cut to a 1340 px wide of the reaction, pushing in to 1060 over 3.0 s. On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²), the rim 3.05 m up and the ball r 17 px. The dribble is 6 drawings a bounce (0.5 s): in the hand, three drawings down, the floor, two up; twice with the near hand, then the crossover, a lower, harder bounce in front with the shoulders dropped (1.0 s), and a step-back hop of 0.3 m, picking the ball up off the bounce in both hands (1.25 s). 1.5 s the gather (ball to the chest), 1.58 s the dip (knees down 0.1 h: the anticipation), and the jump on a gravity arc 0.45 m up: the ball goes to the set point over the forehead on the way up and leaves at the top (1.92 s) with the arm straight and the wrist snapped (gooseneck), held in the air and after the landing (2.25 s). The ball flies 1.0 s on an arc 1.4 m over the rim and drops through its middle: the net stretches and whips back over 6 drawings (IB.hoop net swish) while the ball slows through it and falls out, bouncing on the floor (e 0.75). The defender closes out from 1.25 s and jumps a drawing after the shot, peaking below the ball. After the swish the shooter's arm comes down and he backpedals; the defender's hands go to his head. The crowd cheers on twos from the swish to 4.75 s and stands; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard and the floor's mustard smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
 const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M];
 const SHO = IB.athlete('basketball', 'home', 5, { h: H, dir: 1, seed: 30 });
 const DEF = IB.athlete('basketball', 'away', 0, { h: H, dir: -1, seed: 40 });
-const HY = IB.stand(0, FLOOR, SHO).hip[1], AY = FLOOR - F.ankle * H, CAM = [860, 300, 1180];
+const HY = IB.stand(0, FLOOR, SHO).hip[1], AY = FLOOR - F.ankle * H;
 const toward = (look, p, i, target, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(target[1] - j.sh[1], target[0] - j.sh[0]), l = Math.min(Math.hypot(target[0] - j.sh[0], target[1] - j.sh[1]), max * look.h); p.hands[i] = IB.polar(j.sh, a, l); return p.hands[i]; };
 
 /* ---------- the shooter ---------- */
@@ -93,6 +94,15 @@ const DRIBBLING = [0, 30];   // two drawings alternate with the bounce: no prev 
 const shooter = (f) => { const p = IB.held(SACT, f); return { ...p, prev: f >= DRIBBLING[1] ? IB.held(SACT, f - 2) : undefined }; };
 const defender = withPrev(DACT);
 const cheerAt = (f) => (f < SWISH ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
+const SHOTS = [
+  [0, { at: [1180, 690], w: 1150 }],
+  [0, { at: [1110, 700], w: 920 }, 'push', 34],                      // in on the handle while he dribbles
+  [36, { at: [1110, 696], w: 780 }, 'cut'],                          // low: his feet on the bottom edge, the air above him empty for the jump
+  [46, (f) => { const q = IB.flight(SHOT, Math.max(0, f - REL) / 24).p; return { at: [Math.min(1560, q[0] + 160), Math.min(600, q[1] + 230)], w: 1000 }; }, 'ease', 6],   // after the ball as it leaves his hand
+  [68, { at: [1690, 500], w: 560 }, 'cut'],                          // the net as it goes through
+  [82, { at: [1330, 690], w: 1340 }, 'cut'],                         // the reaction: shooter, defender, crowd
+  [90, { at: [1180, 700], w: 1060 }, 'push', 72],
+];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), defender: defender(f), ball: ballAt(f), net: f >= SWISH && f < SWISH + 12 ? f - SWISH : null, crowd: cheerAt(f) }; };
 
@@ -103,14 +113,15 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(IB.twos(t)), s = shooter(f), b = ballAt(f), net = f >= SWISH && f < SWISH + 12 ? { swish: (f - SWISH) / 2 } : {};
-    IB.crop(ctx, CAM);
-    IB.courtside(ctx, [600, 2100], FLOOR, { cheer: cheerAt(f) });
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
-    IB.figure(ctx, defender(f), DEF);
-    IB.figure(ctx, s, SHO, 'far');
-    IB.basketball(ctx, b, { r: R, rot: ballRot(f), lw: 2.6, seed: 91 });
-    IB.figure(ctx, s, SHO, 'near');
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.courtside(ctx, [600, 2100], FLOOR, { cheer: cheerAt(f) });
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
+      IB.figure(ctx, defender(f), DEF);
+      IB.figure(ctx, s, SHO, 'far');
+      IB.basketball(ctx, b, { r: R, rot: ballRot(f), lw: 2.6, seed: 91 });
+      IB.figure(ctx, s, SHO, 'near');
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+    });
   },
 });
 </script>

@@ -10,11 +10,12 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 자유투: 자유투 라인의 선수가 공을 세 번 튀기고 손끝으로 돌린 뒤 숨을 고르고 던진다. 공은 림 앞쪽에 맞아 튀어 오르고, 뒤쪽 림에 떨어져 림 위를 한 바퀴 돌다가 겨우 안으로 떨어진다. 그동안 경기장 전체가 숨을 멈추고, 들어가는 순간 관중이 일어선다. 원본에 없는 창작 장면이다. 전달하는 생각: 같은 동작을 되풀이하는 루틴이 마지막 운을 부른다.
-   Motion notes: seen from the sideline, 8 s; the camera (IB.camera, on twos) frames 1150 px of the stage (1.67x), pushes in to a 640 px window on the rim (3x) as the ball reaches it (3.42-3.83 s), holds while it rolls and drops, and eases back out from 5.33 s to 5.75 s for the reaction. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up and the free-throw line 4.6 m from the board; players 1.9 m (266 px). The routine: three bounces, each 4 drawings with the knees dipping as the ball goes down (0-1.33 s), the ball turned in the fingertips on twos (1.42-1.75 s), a breath (shoulders up and back for 0.33 s, held still 0.42 s), the dip (2.67 s: knees bent, ball low, the anticipation) and the shot without a jump (2.83 s): up on the toes, the arm straight and the wrist snapped, held. The ball (backspin) hits the front of the rim 0.8 s later (a small burst), pops up 0.35 m, lands on the back of the rim and rolls round it: on the stage that is the ball running along the rim's ellipse, front to back and back to front, slowing, for 1.0 s, until it drops through (the net swishes) and bounces on the floor. The two players in the lane watch it and step in on the shot (a drawing each). Nothing in the crowd moves until it drops; then it stands and cheers on twos to 6.5 s and the shooter pumps a fist. From 6.5 s nothing moves but the loose ball. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+   Motion notes: seen from the sideline, 8 s; five shots (IB.shot, on ones): 0-2.5 s a 900 px window on the routine pushing in to 580 on his face and the ball for the breath; 2.42 s, before the dip, a cut to a 1220 px wide of the line and the hoop for the shot; 3.5 s a cut to a 620 px close-up of the rim as the ball comes down, a 16 px jolt as it hits the front rim (3.67 s); 4.17 s, as it rolls, a push to 500 px tilted -0.06 rad over the 1.0 s roll; 5.25 s, as it drops, a cut to a 1400 px wide of the arena getting up, pushing in to 1080. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up and the free-throw line 4.6 m from the board; players 1.9 m (266 px). The routine: three bounces, each 4 drawings with the knees dipping as the ball goes down (0-1.33 s), the ball turned in the fingertips on twos (1.42-1.75 s), a breath (shoulders up and back for 0.33 s, held still 0.42 s), the dip (2.67 s: knees bent, ball low, the anticipation) and the shot without a jump (2.83 s): up on the toes, the arm straight and the wrist snapped, held. The ball (backspin) hits the front of the rim 0.8 s later (a small burst), pops up 0.35 m, lands on the back of the rim and rolls round it: on the stage that is the ball running along the rim's ellipse, front to back and back to front, slowing, for 1.0 s, until it drops through (the net swishes) and bounces on the floor. The two players in the lane watch it and step in on the shot (a drawing each). Nothing in the crowd moves until it drops; then it stands and cheers on twos to 6.5 s and the shooter pumps a fist. From 6.5 s nothing moves but the loose ball. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
-const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], RR = 0.225 * M, RY = 0.035 * M, CAM = [900, 240, 1150];
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], RR = 0.225 * M, RY = 0.035 * M;
 const SH = IB.athlete('basketball', 'home', 0, { h: 1.9 * M, dir: 1, seed: 30 }), H = SH.h, HY = IB.stand(0, FLOOR, SH).hip[1], AY = FLOOR - F.ankle * H;
 const LANE = [IB.athlete('basketball', 'away', 4, { h: 2.0 * M, dir: -1, seed: 40 }), IB.athlete('basketball', 'home', 6, { h: 1.95 * M, dir: -1, seed: 50 })];
 const reachTo = (look, p, i, t, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(t[1] - j.sh[1], t[0] - j.sh[0]); p.hands[i] = IB.polar(j.sh, a, Math.min(max * look.h, Math.hypot(t[0] - j.sh[0], t[1] - j.sh[1]))); return p.hands[i]; };
@@ -69,13 +70,21 @@ const lane = (n, x, step) => {
 };
 const LACT = [lane(0, 1430, 2), lane(1, 1530, 4)];
 
-const CAMS = [[0, CAM], [HIT1 - 6, CAM], [HIT1 + 4, [1420, 250, 640]], [DROP + 4, [1420, 250, 640]], [DROP + 14, CAM]];   // pushes in on the rim while it rolls, back out for the reaction
+const SHOTS = [
+  [0, { at: [XS + 40, 716], w: 900 }],
+  [0, { at: [XS + 30, 650], w: 580 }, 'push', 60],                   // in on the routine, to his face for the breath
+  [FD - 6, { at: [1400, 640], w: 1220 }, 'cut'],                     // the line and the hoop: the shot
+  [HIT1 - 4, { at: [1700, 455], w: 620 }, 'cut'],                    // the rim as the ball comes down on it
+  [HIT2, { at: [1706, 468], w: 500, tilt: -0.06 }, 'push', ROLL],    // closer and off level while it rolls
+  [DROP + 2, { at: [1400, 690], w: 1400 }, 'cut'],                   // the arena gets up
+  [DROP + 10, { at: [1260, 700], w: 1080 }, 'push', 56],
+];
 const shooter = (f) => { const p = IB.held(SACT, f); return { ...p, prev: f >= 24 ? IB.held(SACT, f - 2) : undefined }; };
 const laners = LACT.map((t) => (f) => ({ ...IB.held(t, f), prev: f > 0 ? IB.held(t, f - 2) : undefined }));
 const cheerAt = (f) => (f < DROP ? 0 : f < 156 ? 1 + (f / 2) % 2 : 'up');
 const netAt = (f) => (f >= DROP && f < DROP + 12 ? { swish: (f - DROP) / 2 } : {});
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), lane0: laners[0](f), lane1: laners[1](f), ball: ballAt(f).p, net: netAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), lane0: laners[0](f), lane1: laners[1](f), ball: ballAt(f).p, net: netAt(f), crowd: cheerAt(f) }; };
 
 MG.scene({
   title: 'basketball / free-throw-rim-roll',
@@ -84,20 +93,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), net = netAt(f);
-    IB.crop(ctx, IB.camera(CAMS, f));
-    IB.courtside(ctx, [800, 2200], FLOOR, { cheer: cheerAt(f) });
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
-    IB.figure(ctx, laners[1](f), LANE[1]);
-    IB.figure(ctx, laners[0](f), LANE[0]);
-    const s = shooter(f);
-    IB.figure(ctx, s, SH, 'far');
-    const onRim = f >= HIT2 && f < DROP && Math.sin(((f - HIT2) / ROLL) * 2 * PI * 1.25) > 0;   // on the near half of the rim it rolls in front of the rim's front edge
-    if (!onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    IB.figure(ctx, s, SH, 'near');
-    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
-    if (onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    const h1 = IB.drawn(tt, HIT1 / 24);
-    if (h1 >= 0 && h1 < 1) IB.burst(ctx, FRONT, { n: 3, a0: -2.4, da: 0.6, r0: 22, r1: 40, w: 2.6, seed: 66 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: [[HIT1, 16]] }), (ctx) => {
+      IB.courtside(ctx, [500, 2200], FLOOR, { cheer: cheerAt(f) });
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
+      IB.figure(ctx, laners[1](f), LANE[1]);
+      IB.figure(ctx, laners[0](f), LANE[0]);
+      const s = shooter(f);
+      IB.figure(ctx, s, SH, 'far');
+      const onRim = f >= HIT2 && f < DROP && Math.sin(((f - HIT2) / ROLL) * 2 * PI * 1.25) > 0;   // on the near half of the rim it rolls in front of the rim's front edge
+      if (!onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      IB.figure(ctx, s, SH, 'near');
+      IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+      if (onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      const h1 = IB.drawn(tt, HIT1 / 24);
+      if (h1 >= 0 && h1 < 1) IB.burst(ctx, FRONT, { n: 3, a0: -2.4, da: 0.6, r0: 22, r1: 40, w: 2.6, seed: 66 });
+    });
   },
 });
 </script>

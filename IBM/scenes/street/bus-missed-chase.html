@@ -14,19 +14,19 @@
 <script src="../../kit/props/traffic.js"></script>
 <script>
 /* 정류장에 선 버스의 문이 닫히고, 서류 가방을 든 사람이 손을 흔들며 뛰어와 거의 따라잡지만 버스는 매연을 한 번 뱉고 멀어지고, 정류장 앞에 멈춰 선 사람의 어깨가 툭 떨어진다. 원본에 없는 창작 장면으로, 버스(IB.bus)와 매연(IB.exhaust), 정류장(IB.busStop), 뛰기(IB.run), 서류 가방(IB.briefcase)을 썼다. 전달하는 생각: 놓친 것은 멀어지는 버스가 아니라 그 뒤의 멈춤이 말한다.
-   Motion notes: one locked shot, 6 s. Two clocks: the bus is a machine on ones (door, pull-away, wheels), the runner and the puff are drawings on twos. The bus (1100 x 440 body, green) stands with its door open; the door folds shut over 0.42-0.75 s; the bus holds still, its tail shakes for three drawings (1.17-1.42 s: the engine), and at 1.42 s it pulls away at 1600 px/s² (nose up 0.012 rad for 6 frames, 0.005 for 4), its spokes turning with the distance; it is off the right edge at 2.96 s. The puff is coughed once at 1.42 s, four drawings at the pipe where the bus stood (it does not follow the bus). The runner (h 330, line 3 px) runs in from off-screen left from the first frame at IB.runLen / 8 = 60.5 px a drawing (726 px/s), waving the far hand from the third drawing, two open-hand positions swapping every drawing (the far hand so the face stays clear; no prev while it waves, which would average the wave away). Closest it gets to the door is 84 px at 1.83 s, while the bus is still slower than a run; then the bus outruns it. 2.33 s: the last run drawing lands the far foot ahead (x 1657); 2.42 s brake (leaning back 0.14, the hip 0.12 h behind the landed foot, the other foot put down 0.3 h behind it), 2.5 s the back foot steps up in the air, 2.58 s standing, the far hand still reaching after the bus; every drawing from the stop passes the one before as pose.prev. Holds 0.67 s, the hand comes down in one in-between (3.33, 3.42 s), hold 0.33 s; 3.83 s the shoulders go up (lean -0.08, the hip 5 px up: the anticipation), 3.92 s they drop past where they stop (lean 0.27, nod 0.42, the hip 10 px down, hands hanging forward), 4.0 s settle (lean 0.23, nod 0.36); the head settles a drawing later, and from 4.08 s nothing moves but the bubble, which opens at 4.25 s and holds from 4.42 s. Colours: the bus's green and the runner's sky shirt; the briefcase is charcoal and the shelter (IB.busStop, panel left open so the bus shows through it) white and grey. */
-const C = IB.C, F = IB.FIG, H = 330, FLOOR = 930, ROAD = 850;
+   Motion notes: one shot that pans once, 6 s. Two clocks: the bus is a machine on ones (door, pull-away, wheels), the runner, the puff and the camera are on twos. The camera pans 560 px right with the runner from 1.0 to 2.67 s (smoothstep on twos: slow out, across, slow in), so the stop lands left of centre with the empty shelter beside it; the scene is drawn in world px under that pan. The bus (IB.bus at s 1.15: a 1265 x 506 green body, lines kept at 3.4 px) stands with its door open; the door folds shut over 0.42-0.75 s; the bus holds still, its tail shakes for three drawings (1.42-1.67 s: the engine), and at 1.67 s it pulls away at 2400 px/s² (nose up 0.012 rad for 6 frames, 0.005 for 4), its wheels turning with the distance; it is out of the panned frame at 3.08 s. The puff (IB.exhaust at s 1.15) is coughed once at 1.67 s, four drawings at the pipe where the bus stood: it does not follow the bus. The runner (h 360, line 3.1 px) runs in from off-screen left from the first frame at IB.runLen / 8 = 66 px a drawing (792 px/s), waving the far hand from the third drawing, two open-hand positions swapping every drawing (the far hand so the face stays clear; no prev while it waves, which would average the wave away). The closest it gets to the door is 79 px at 2.0 s, while the bus is still slower than a run; then the bus outruns it. 2.33 s: the last run drawing lands the far foot ahead; 2.42 s brake (leaning back 0.14, the hip 0.12 h behind the landed foot, the other foot put down 0.3 h behind it), 2.5 s the back foot steps up in the air, 2.58 s standing, the far hand still reaching after the bus; every drawing from the stop passes the one before as pose.prev. Holds 0.67 s, the hand comes down in one in-between (3.33, 3.42 s), hold 0.33 s; 3.83 s the shoulders go up (lean -0.08, the hip 5 px up: the anticipation), 3.92 s they drop past where they stop (lean 0.27, nod 0.42, the hip 10 px down, hands hanging forward), 4.0 s settle (lean 0.23, nod 0.36); the head settles a drawing later, and from 4.08 s nothing moves but the bubble, which opens at 4.25 s and holds from 4.42 s. Colours: the bus's green and the runner's sky shirt; the briefcase is charcoal and the shelter (IB.busStop 520 x 470, panel left open so the bus shows through it) white and grey. */
+const C = IB.C, F = IB.FIG, H = 360, FLOOR = 1000, ROAD = 920, S = 1.15;   // S: the bus is drawn 1.15 times IB.BUS
 const WHO = { ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 30 };
-const RUN = IB.runLen(WHO) / 8, X0 = -110, STOPK = 28;   // runs from off-screen left; the last run drawing (k 28, phase 0.5) lands the far foot ahead
+const RUN = IB.runLen(WHO) / 8, X0 = -227, STOPK = 28;   // runs from off-screen left; the last run drawing (k 28, phase 0.5) lands the far foot ahead
 
 /* ---------- the bus: a machine, on ones ---------- */
-const BX = 720, CLOSE = [10, 18], GO = 34, ACC = 1600;   // door closes over frames 10-17; pulls away at frame 34 at 1600 px/s²
+const BX = 790, CLOSE = [10, 18], GO = 40, ACC = 2400;   // door closes over frames 10-17; pulls away at frame 40 at 2400 px/s²
 const busAt = (f) => {
   const tau = Math.max(0, (f - GO) / 24), dist = 0.5 * ACC * tau * tau;
-  if (BX + dist - IB.BUS.len / 2 > 1990) return null;   // gone off the right edge (2.96 s)
+  if (BX + dist - (IB.BUS.len / 2) * S > 1990 + PAN_BY) return null;   // gone off the right edge of the panned frame
   return { x: BX + dist, spin: dist / IB.BUS.r, door: f < CLOSE[0] ? 1 : f < CLOSE[1] ? 1 - (f - CLOSE[0]) / (CLOSE[1] - CLOSE[0]) : 0, pitch: f >= GO && f < GO + 6 ? 0.012 : f >= GO + 6 && f < GO + 10 ? 0.005 : 0 };
 };
-const PIPE = [BX - IB.BUS.len / 2 - 12, ROAD - IB.BUS.r + 15];   // where the pipe's mouth is while the bus stands: the puff stays there
+const PIPE = [BX + (-IB.BUS.len / 2 - 12) * S, ROAD + (-IB.BUS.r + 15) * S];   // where the pipe's mouth is while the bus stands: the puff stays there
 
 /* ---------- the runner: on twos ---------- */
 const shoulderOf = (p) => [p.hip[0] + Math.sin(p.lean || 0) * (F.torso - 0.012) * H, p.hip[1] - Math.cos(p.lean || 0) * (F.torso - 0.012) * H];
@@ -54,7 +54,10 @@ const ACT = [[STOPK * 2 + 2, DRAW.brake], [STOPK * 2 + 4, DRAW.stepIn], [STOPK *
 const poseOn = (f) => (f <= STOPK * 2 ? running(f >> 1) : IB.held(ACT, f));
 const poseAt = (t) => { const f = IB.frame(IB.twos(t)), p = poseOn(f); return f > STOPK * 2 ? { ...p, prev: poseOn(f - 2) } : p; };   // while it runs and waves no prev: the wave flips every drawing
 const puff = (f) => { const k = (f - GO) >> 1; return k >= 0 && k < 4 ? k : null; };   // GO is even: one puff drawing per two frames
-IB.actors = (t) => ({ runner: poseAt(t), bus: busAt(IB.frame(t)), puff: puff(IB.frame(t)) });
+/* ---------- the camera: pans with the runner on twos, slow out, across, slow in, so the stop lands left of centre with the stop beside it ---------- */
+const PAN = [24, 64], PAN_BY = 560;
+const camAt = (f) => { const u = MG.clamp((f - PAN[0]) / (PAN[1] - PAN[0])); return PAN_BY * u * u * (3 - 2 * u); };
+IB.actors = (t) => ({ runner: poseAt(t), bus: busAt(IB.frame(t)), puff: puff(IB.frame(t)), camera: camAt(IB.frame(IB.twos(t))) });
 IB.actors.step = { bus: 1 };
 
 MG.scene({
@@ -64,19 +67,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t), ft = IB.frame(IB.twos(t)), b = busAt(f), alt = IB.alternate(f, 2);
+    ctx.save(); ctx.translate(-camAt(ft), 0);
     if (b) {
-      for (const ax of IB.BUS.axles) IB.ripples(ctx, [b.x + ax, ROAD], { alt, seed: 70 + ax });
-      IB.bus(ctx, [b.x, ROAD], b);
+      for (const ax of IB.BUS.axles) IB.ripples(ctx, [b.x + ax * S, ROAD], { alt, seed: 70 + ax });
+      IB.bus(ctx, [b.x, ROAD], b, { s: S });
     }
     if (ft >= GO - 6 && ft < GO) IB.shake(ctx, PIPE[0] + 10, PIPE[1] - 14, 18, { a: Math.PI + 0.3, n: 2, seed: 400 + ft, w: 2.4 });   // the engine revs: shake marks at the tail for three drawings
     const k = puff(f);
-    if (k != null) IB.exhaust(ctx, PIPE, { k });
-    IB.smear(ctx, 1020, FLOOR - 39, 560, { h: 12, seed: 6 });
-    IB.busStop(ctx, [1000, FLOOR - 30], { sign: 1, panel: false });
-    IB.smear(ctx, 960, FLOOR - 9, 1900, { h: 16, seed: 8, alpha: 0.7 });
+    if (k != null) IB.exhaust(ctx, PIPE, { k }, { s: S });
+    IB.smear(ctx, 1070, FLOOR - 43, 600, { h: 12, seed: 6 });
+    IB.busStop(ctx, [1060, FLOOR - 34], { sign: 1, panel: false, w: 520, ht: 470 });
+    IB.smear(ctx, 960 + PAN_BY / 2, FLOOR - 9, 1900 + PAN_BY, { h: 16, seed: 8, alpha: 0.7 });
     const p = poseAt(t), j = IB.figure(ctx, p, { ...WHO, face: p.face });
     IB.briefcase(ctx, j.hands[1], { h: H, fill: C.charcoal, lw: IB.figLine(H), seed: 60 });
-    IB.bubble(ctx, ['놓쳤다…'], t, IB.T(51), { tip: [XS + 0.1 * H, HY - 0.5 * H], x: XS + 0.42 * H, y: HY - 0.86 * H, seed: 500 });
+    IB.bubble(ctx, ['놓쳤다…'], t, IB.T(51), { tip: [XS - 0.02 * H, HY - 0.52 * H], x: XS - 0.2 * H, y: HY - 0.86 * H, seed: 500 });
+    ctx.restore();
   },
 });
 </script>

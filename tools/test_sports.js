@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-/* Contract of the ball physics in IBM/kit/props/sports.js that the soccer and basketball scenes rely on. Run: node tools/test_sports.js (exit 1 on failure).
+/* Contract of the ball physics in brushpen/kit/props/sports.js that the soccer and basketball scenes rely on. Run: node tools/test_sports.js (exit 1 on failure).
    A ball is a point under constant gravity g (px/s², +y down) until its centre reaches the floor line; there its vertical speed is reversed and scaled by e, its horizontal speed by mu; once a bounce would rise less than `settle` px/s it rolls, slowing by `roll` px/s² until it stops. The expected values are worked by hand from the kinematics (y = y0 + vy t + g t²/2), not read from the code. */
 global.window = global;
 require('../core/motion.js');
-require('../IBM/kit/ink.js');
-require('../IBM/kit/props/sports.js');
+require('../brushpen/kit/ink.js');
+require('../brushpen/kit/props/sports.js');
 const IB = global.IB;
 let failed = 0;
 const near = (name, got, want, tol = 1e-6) => {

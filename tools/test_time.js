@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-/* Contract of IBM/kit/time.js that scenes and kit parts rely on. Run: node tools/test_time.js (exit 1 on failure).
-   Drawn acting in the IBM look is a list of drawings, not a curve (IBM/STYLE.md "연기는 곡선이 아니라 그림 목록이다"): a [frame, drawing] table holds each drawing until the next key, beats sit on the 12 fps grid, and in-betweens are a short table of mix ratios. The expected values below are worked by hand from those rules, and the settle values are the ones measured from the reference frames. */
+/* Contract of brushpen/kit/time.js that scenes and kit parts rely on. Run: node tools/test_time.js (exit 1 on failure).
+   Drawn acting in the IBM look is a list of drawings, not a curve (brushpen/STYLE.md "연기는 곡선이 아니라 그림 목록이다"): a [frame, drawing] table holds each drawing until the next key, beats sit on the 12 fps grid, and in-betweens are a short table of mix ratios. The expected values below are worked by hand from those rules, and the settle values are the ones measured from the reference frames. */
 global.window = global;
 require('../core/motion.js');
-require('../IBM/kit/ink.js');
-require('../IBM/kit/time.js');
+require('../brushpen/kit/ink.js');
+require('../brushpen/kit/time.js');
 const IB = global.IB;
 let failed = 0;
 const check = (name, got, want) => {
@@ -51,7 +51,7 @@ check('loop on threes', [0, 2, 3, 5, 6].map((f) => IB.loop(f, ['p', 'q'], 3)), [
 // play: a move written in frames from its own start, placed into a scene's [frame, drawing] table at f0
 check('play shifts a move to its start frame', IB.play([[0, 'lift'], [2, 'land'], [6, 'settle']], 40), [[40, 'lift'], [42, 'land'], [46, 'settle']]);
 
-// settle: the measured head copy (71 px, tau 0.2, still after 0.79 s) closes 60, 48, 38, 31, 25, 20, 16, 13, 10 px frame by frame (IBM/STYLE.md); the fitted curve stays within 3 px of every measured frame
+// settle: the measured head copy (71 px, tau 0.2, still after 0.79 s) closes 60, 48, 38, 31, 25, 20, 16, 13, 10 px frame by frame (brushpen/STYLE.md); the fitted curve stays within 3 px of every measured frame
 const measured = [60, 48, 38, 31, 25, 20, 16, 13, 10];
 check('settle stays within 3 px of the measured copy slide', measured.every((px, i) => Math.abs(71 * (1 - IB.settle((i + 1) / 24, 0.2, 0.79)) - px) <= 3), true);
 check('settle is exactly still at its stop', IB.settle(0.79, 0.2, 0.79), 1);

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Count each actor's drawings in a scene: where a new drawing shows, how many drawings a second while it moves, its longest hold, and the drawings kept longer than its step without being a hold. This is the number the acting of a scene is judged by (IBM/STYLE.md: acting is a list of drawings, on twos while moving, dead holds between).
+"""Count each actor's drawings in a scene: where a new drawing shows, how many drawings a second while it moves, its longest hold, and the drawings kept longer than its step without being a hold. This is the number the acting of a scene is judged by (brushpen/STYLE.md: acting is a list of drawings, on twos while moving, dead holds between).
 
 The count comes from the scene's own pose tables, not from pixels: a belt or a background that slides on ones would make every frame differ. A scene opts in by defining IB.actors(t), a pure function returning {actor name: the pose or state object that actor is drawn from at t}. Two frames show the same drawing of an actor when that object serialises the same (numbers rounded to 0.01). A heavy actor that moves on threes is declared with IB.actors.step = {name: 3}.
 
   drawings.py                                  every scene that defines IB.actors
-  drawings.py IBM/scenes/acting/*.html         only these
+  drawings.py brushpen/scenes/acting/*.html         only these
   drawings.py --hold 8 --json <scene>          a hold is a run of at least 8 frames (default 6); print JSON
 
 Per actor:
@@ -13,7 +13,7 @@ Per actor:
   longest    its longest run [first frame, frames]
   stale      runs longer than the actor's step and shorter than a hold [first frame, frames]: a drawing kept too long while it moves
 
-It measures and does not judge: the reference's own spot keeps some drawings 4-5 frames while moving (IBM/STYLE.md), so a stale drawing is something to look at, not an error. Exit 0 unless a scene fails to load. Scenes without IB.actors are named on stderr and not counted. Requires: pip install playwright, Google Chrome.
+It measures and does not judge: the reference's own spot keeps some drawings 4-5 frames while moving (brushpen/STYLE.md), so a stale drawing is something to look at, not an error. Exit 0 unless a scene fails to load. Scenes without IB.actors are named on stderr and not counted. Requires: pip install playwright, Google Chrome.
 """
 import argparse
 import json

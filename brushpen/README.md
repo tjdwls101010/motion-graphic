@@ -28,7 +28,7 @@ ink.js     붓펜 선과 질감: 팔레트(IB.C), 무대(IB.bg), 선과 채움(I
 time.js    시계와 그림 목록: 24fps(IB.FPS), 12fps·8fps 양자화(IB.twos, IB.threes), 프레임 번호(IB.frame), 정착 곡선(IB.settle), 12fps 격자(IB.T, IB.drawn),
            그림 목록 조회(IB.held, IB.heldRow), 동작을 표에 끼워 넣기(IB.play), 사이 그림 비율(IB.inbetween), 두 장 교대(IB.alternate), 순환(IB.loop), 도착한 것의 감쇠 출렁임(IB.bob)
 marks.js   효과 표시: 터짐선(IB.burst), 쿵(IB.thud), 입김(IB.breath), 연기(IB.smoke), 물방울과 튐(IB.drop, IB.splash), 어둠과 빛줄기(IB.darkness, IB.lightBeam),
-           휩에 뜯기는 화면(IB.whipBreakup), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
+           휩에 뜯기는 화면(IB.whipBreakup), 한 덩어리로 뭉친 짙은 연기(IB.billow), 문지른 흑연(IB.smudge), 신발 밑 웅덩이(IB.puddle), 바퀴 밑 물결선과 먼지(IB.ripples, IB.wheelDust)
 figure.js  옆모습 인물 리그(IB.figure: 손 그림 pose.hand, 한 장 늦게 따라오는 머리 pose.prev; IB.stand, IB.walk, IB.walkLen, IB.run, IB.runLen, 어깨·골반 위치 IB.joints와 각도·길이로 손발을 놓는 IB.polar·IB.posed, 아이 체형 look.headK, 경기복의 양말·장갑·민소매·반바지 길이(look.socks, gloves, topKind 'tank', shortsLen), IB.poseMix(u > 1은 지나침), IB.footLift, 비례는 IB.FIG, 선 굵기는 IB.figLine, 관절 풀이 IB.ik, 팔다리 IB.limb), 다리 달린 사물의 팔다리와 손(IB.peg, IB.hose, IB.boot, IB.mitt, IB.clasp),
            화면 밖에서 온 손과 팔(IB.pointer, IB.reachArm), 말풍선(IB.bubble), 흔들림선(IB.shake)
 camera.js  카메라: 무대를 한 번 세우고 샷 목록으로 찍는다(IB.shot: 컷, 원본의 팬과 밀기, 펀치 인, 휩, 흔들림, 기울임; IB.film: 그 시점으로 그리기). 문법은 STYLE.md의 "카메라"

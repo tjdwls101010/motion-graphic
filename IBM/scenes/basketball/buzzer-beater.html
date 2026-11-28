@@ -1,0 +1,111 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>basketball / buzzer-beater</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 버저비터: 한 점 뒤진 채 3초가 남았다. 공을 잡은 선수가 두 번 튀기며 달려와 멀리서 뛰어올라 던지고, 공이 하늘 높이 떠 있는 동안 시계가 0이 되며 버저가 울린다. 공은 그 뒤에 그물만 흔들며 들어가고, 점수판이 101로 바뀌자 선수가 뛰어오르고 동료가 달려와 안긴다. 원본에 없는 창작 장면이다. 전달하는 생각: 버저가 울린 뒤의 0.1초가 경기를 바꾼다.
+   Motion notes: seen from the sideline, 8 s. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up, the shot 11 m from it; players 1.9 m. The camera (IB.camera, on twos) frames 1300 px (1.48x) on the shooter, pans with the ball to the hoop over 1.0 s after the release, holds, and pulls back to a 1960 px frame (0.98x) for the celebration from 3.75 s. The game clock runs on ones (an interface, like the reference's cursor) from 3.0 to 0.0 at 3.0 s, when the clock digits turn white and a burst flashes for 4 drawings round the scoreboard and round the game clock hung over the backboard (so the buzzer is in the frame with the ball in the air). The shooter dribbles in on IB.run (the ball to the floor and back every 4 drawings), gathers (1.25 s), dips (1.42 s) and jumps, releasing at 1.67 s with the arm straight; the ball flies 1.42 s, 2.9 m over the release, and drops through 0.08 s after the buzzer (the net swishes); the score turns from 98 to 101 two drawings later. The defender closes out and jumps a drawing late. The shooter lands (2.17 s), watches with the arm held up, and leaps with both fists up when it drops (3.33 s); a teammate runs in from off the left edge and they hug from 4.67 s. The crowd stands and cheers on twos from the swish to 6.5 s; from 6.5 s nothing moves but the loose ball. Colours: the two kits' yellow and lavender, the ball's mustard, the board's yellow clock; the floor is a mustard smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], SB = [420, 250];
+const SHO = IB.athlete('basketball', 'home', 5, { h: 1.9 * M, dir: 1, seed: 30 }), MATE = IB.athlete('basketball', 'home', 1, { h: 1.95 * M, dir: 1, seed: 60 }), DEF = IB.athlete('basketball', 'away', 2, { h: 1.95 * M, dir: -1, seed: 40 });
+const H = SHO.h, HY = IB.stand(0, FLOOR, SHO).hip[1], AY = FLOOR - F.ankle * H;
+const reachTo = (look, p, i, t, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(t[1] - j.sh[1], t[0] - j.sh[0]); p.hands[i] = IB.polar(j.sh, a, Math.min(max * look.h, Math.hypot(t[0] - j.sh[0], t[1] - j.sh[1]))); return p.hands[i]; };
+const hold2 = (look, p, b) => { reachTo(look, p, 0, [b[0] - 0.02 * look.h, b[1] + 3]); reachTo(look, p, 1, [b[0], b[1] + R * 0.7]); return p; };
+
+/* ---------- the shooter ---------- */
+const FR = 40, XJ = RC[0] - 11 * M, RL = IB.runLen(SHO) / 8, X0 = XJ - 0.3 * H - 13 * RL;
+const sp = (hip, lean, feet, hands, more = {}) => IB.posed(SHO, { hip, lean, feet, hands, ...more });
+const SACT = [], BALL = [];
+for (let k = 0; k < 13; k++) { const p = IB.run(X0 + k * RL, FLOOR, SHO, (k / 8) % 1), hand = reachTo(SHO, p, 1, [X0 + k * RL + 0.2 * H, HY + 0.05 * H]), u = [0, 0.55, 1, 0.45][k % 4]; p.face = { eye: 'dot', mouth: 'flat', brow: 1 }; SACT.push([k * 2, p]); BALL.push([k * 2, [hand[0] + 0.04 * H, MG.lerp(hand[1] + R, FLOOR - R, u)]]); }
+const stance = (x, down, lean, more = {}) => sp([x, HY + down], lean, [[x - 0.1 * H, AY, 0], [x + 0.12 * H, AY, 0]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat', brow: 1 }, ...more });
+{ const p = stance(XJ - 0.05 * H, 0.05 * H, 0.15), b = IB.polar(IB.joints(p, SHO).sh, 0.45, 0.22 * H); SACT.push([30, hold2(SHO, p, b)]); BALL.push([30, b]); }
+{ const p = stance(XJ, 0.11 * H, 0.2), b = IB.polar(IB.joints(p, SHO).sh, 0.6, 0.22 * H); SACT.push([34, hold2(SHO, p, b)]); BALL.push([34, b]); }
+const UP = 0.4 * M, jHip = (f) => { const dt = (f - FR) / 24; return [XJ + 0.02 * H, HY - UP + (G / 2) * dt * dt]; };
+{ const p = sp(jHip(38), 0.0, [{ a: PI / 2 + 0.1, l: 0.5, pitch: 0.5 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.5 }], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), b = IB.polar(IB.joints(p, SHO).sh, -1.2, 0.25 * H); SACT.push([38, hold2(SHO, p, b)]); BALL.push([38, b]); }
+const rel = sp(jHip(FR), -0.05, [{ a: PI / 2 + 0.1, l: 0.5, pitch: 0.5 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.5 }], [{ a: -1.5, l: 0.24 }, { a: -0.95, l: 0.285 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'open' } });
+SACT.push([FR, rel]);
+const RP = [rel.hands[1][0] + 0.03 * H, rel.hands[1][1] - R * 0.8];
+let LAND = FR + 2; while (jHip(LAND)[1] < HY + 0.02 * H) LAND += 2;
+const armUp = (p) => { const j = IB.joints(p, SHO); p.hands = [IB.polar(j.sh, 0.9, 0.22 * H), IB.polar(j.sh, -0.95, 0.285 * H)]; p.hand = ['relax', 'relax']; return p; };
+for (let f = FR + 2; f < LAND; f += 2) SACT.push([f, armUp(sp(jHip(f), 0.0, [{ a: PI / 2 + 0.1, l: Math.min(0.5, (AY - jHip(f)[1]) / H), pitch: 0.5 }, { a: PI / 2 - 0.05, l: Math.min(0.5, (AY - jHip(f)[1]) / H), pitch: 0.5 }], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'open' } }))]);
+const XL = XJ + 0.02 * H;
+SACT.push([LAND, armUp(stance(XL, 0.06 * H, 0.05, { face: { eye: 'dot', mouth: 'open' } }))], [LAND + 4, armUp(stance(XL, 0.01 * H, -0.05, { nod: -0.15, face: { eye: 'wide', mouth: 'open' } }))]);
+
+/* ---------- the ball and the clock ---------- */
+const TF = 1.42, SWISH = FR + Math.round((TF * 24) / 2) * 2, BUZZ = 72;
+const SHOT = { p: RP, v: IB.aim(RP, [RC[0] - 2, RC[1] - 2], TF, G), g: G };
+const NETB = [RC[0] + 6, RC[1] + 0.5 * M], OUT = { p: NETB, v: [80, 300], g: G, floor: FLOOR - R, e: 0.75, mu: 0.75, roll: 2 * M };
+function ballAt(f) {
+  if (f < FR) return IB.held(BALL, f);
+  if (f < SWISH) return IB.flight(SHOT, (f - FR) / 24).p;
+  if (f < SWISH + 6) return [MG.lerp(RC[0] - 2, NETB[0], (f - SWISH) / 6), MG.lerp(RC[1] - 2, NETB[1], (f - SWISH) / 6)];
+  return IB.flight(OUT, (f - SWISH - 6) / 24).p;
+}
+const clockAt = (t) => { const left = Math.max(0, 3 - Math.floor(t * 24) / 24); return '0:0' + Math.floor(left) + '.' + Math.floor((left % 1) * 10 + 1e-6); };
+
+/* ---------- the celebration ---------- */
+const LEAP = SWISH + 6, leapHip = (f) => { const u = (f - LEAP) / 10; return [XL, HY - 0.35 * M * 4 * u * (1 - u)]; };
+for (let f = LEAP; f < LEAP + 10; f += 2) { const hip = leapHip(f), l = Math.min(0.5, (AY - hip[1]) / H); SACT.push([f, sp(hip, -0.1, [{ a: PI / 2 + 0.35, l: Math.min(l, 0.46), pitch: 0.6 }, { a: PI / 2 - 0.1, l, pitch: 0.5 }], [{ a: -1.2, l: 0.285 }, { a: -1.9, l: 0.285 }], { hand: ['grip', 'grip'], nod: -0.3, face: { eye: 'closed', mouth: 'open' } })]); }
+const HUG = 112, mateStop = XL - 0.3 * H, MR = IB.runLen(MATE) / 8, MS = mateStop - ((HUG - 80) / 2) * MR;
+SACT.push([LEAP + 10, sp([XL, HY + 0.03 * H], -0.08, [[XL - 0.08 * H, AY, 0], [XL + 0.1 * H, AY, 0]], [{ a: -1.25, l: 0.285 }, { a: -1.85, l: 0.285 }], { hand: ['grip', 'grip'], nod: -0.25, face: { eye: 'closed', mouth: 'open' } })]);
+const BACKS = { ...SHO, dir: -1 };
+SACT.push([HUG, { ...IB.posed(BACKS, { hip: [XL, HY + 0.08 * H], lean: 0.45, feet: [[XL + 0.1 * H, AY, 0], [XL - 0.1 * H, AY, 0]], hands: [{ a: 0.2, l: 0.285 }, { a: 0.0, l: 0.285 }], hand: ['open', 'open'], nod: 0.2, face: { eye: 'closed', mouth: 'smile' } }), dir: -1 }]);
+const MACT = [[0, IB.stand(MS - 0.4 * H, FLOOR, MATE)]];
+for (let f = 80; f < HUG; f += 2) MACT.push([f, { ...IB.run(MS + ((f - 80) / 2) * MR, FLOOR, MATE, ((f - 80) / 16) % 1), face: { eye: 'closed', mouth: 'open' } }]);
+MACT.push([HUG, IB.posed(MATE, { hip: [mateStop, HY + 0.08 * MATE.h], lean: 0.5, feet: [[mateStop - 0.12 * MATE.h, AY, 0.2], [mateStop + 0.08 * MATE.h, AY, 0]], hands: [{ a: 0.1, l: 0.285 }, { a: -0.1, l: 0.285 }], hand: ['open', 'open'], nod: 0.2, face: { eye: 'closed', mouth: 'open' } })]);
+
+/* ---------- the defender ---------- */
+const XD = XJ + 0.9 * H, HD = DEF.h, HYD = IB.stand(0, FLOOR, DEF).hip[1], AYD = FLOOR - F.ankle * HD;
+const df = (hip, lean, feet, hands, more = {}) => IB.posed(DEF, { hip, lean, feet, hands, ...more });
+const dUp = (f) => { const dt = (f - (FR + 6)) / 24; return [XD - 20, HYD - 0.3 * M + (G / 2) * dt * dt]; };
+const DACT = [[0, df([XD + 0.6 * H, HYD + 0.08 * HD], 0.2, [[XD + 0.6 * H - 0.12 * HD, AYD, 0], [XD + 0.6 * H + 0.1 * HD, AYD, 0]], [{ a: 0.5, l: 0.26 }, { a: 0.3, l: 0.26 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } })]];
+for (let k = 0; k < 4; k++) DACT.push([24 + k * 2, IB.run(XD + 0.6 * H - k * IB.runLen(DEF) / 8, FLOOR, DEF, (k / 8) % 1)]);
+for (let f = FR - 2; f < FR + 14; f += 2) { const hip = dUp(f), y = Math.min(hip[1], HYD), l = Math.min(0.5, (AYD - y) / HD); DACT.push([f, df([hip[0], y], 0.05, [{ a: PI / 2 + 0.1, l, pitch: 0.5 }, { a: PI / 2 - 0.05, l, pitch: 0.5 }], [{ a: 0.6, l: 0.24 }, { a: -1.4, l: 0.285 }], { hand: ['relax', 'open'], nod: -0.2, face: { eye: 'wide', mouth: 'open' } })]); }
+DACT.push([FR + 14, df([XD - 20, HYD + 0.02 * HD], -0.1, [[XD - 20 - 0.08 * HD, AYD, 0], [XD - 20 + 0.08 * HD, AYD, 0]], [{ a: 1.2, l: 0.26 }, { a: 1.6, l: 0.26 }], { nod: -0.4, face: { eye: 'wide', mouth: 'open' } })]);
+DACT.push([SWISH + 6, df([XD - 20, HYD + 0.04 * HD], 0.3, [[XD - 20 - 0.08 * HD, AYD, 0], [XD - 20 + 0.08 * HD, AYD, 0]], [{ a: 1.4, l: 0.27 }, { a: 1.6, l: 0.27 }], { hand: ['open', 'open'], nod: 0.3, face: { eye: 'closed', mouth: 'frown' } })]);   // hands on his knees
+
+const withPrev = (table, from = 0) => (f) => { const p = IB.held(table, f), q = IB.held(table, f - 2); return { ...p, prev: f >= from && f > 0 && (p.dir || 0) === (q.dir || 0) ? q : undefined }; };
+const shooter = withPrev(SACT, 26), mate = withPrev(MACT), defender = withPrev(DACT);
+const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+const CAMS = [[0, [XJ - 700, 230, 1300]], [FR + 2, [XJ - 700, 230, 1300]], [FR + 26, [820, 230, 1300]], [90, [820, 230, 1300]], [104, [-120, 110, 1960]]];
+const cheerAt = (f) => (f < SWISH ? 0 : f < 156 ? 1 + (f / 2) % 2 : 'up');
+const netAt = (f) => (f >= SWISH && f < SWISH + 12 ? { swish: (f - SWISH) / 2 } : {});
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), mate: mate(f), defender: defender(f), ball: ballAt(f), net: netAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+
+MG.scene({
+  title: 'basketball / buzzer-beater',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), s = shooter(f), net = netAt(f), d = defender(f);
+    IB.crop(ctx, IB.camera(CAMS, f));
+    IB.courtside(ctx, [-900, 2500], FLOOR, { cheer: cheerAt(f) });
+    const out = t >= 3 - 1e-9;
+    IB.scoreboard(ctx, SB, { home: f >= SWISH + 4 ? 101 : 98, away: 99, clock: clockAt(t), clockColor: out ? IB.C.paper : IB.C.yellow }, { colors: [IB.C.yellow, IB.C.lavender], w: 560 });
+    // the game clock over the backboard, as arenas hang one there: it is in the frame when the buzzer goes
+    const BC = [BOARD - 0.55 * M, FLOOR - 4.3 * M];
+    IB.ink(ctx, [[BC[0] - 62, BC[1] - 26], [BC[0] + 62, BC[1] - 26], [BC[0] + 62, BC[1] + 26], [BC[0] - 62, BC[1] + 26]], { closed: true, smooth: false, fill: IB.C.charcoal, w: 2.8, seed: 850 });
+    IB.seg(ctx, BC[0], BC[1] + 26, BC[0] + 0.3 * M, FLOOR - 3.95 * M, { w: 2.6, seed: 851 });
+    IB.segDigits(ctx, [BC[0] - 50, BC[1] - 15], clockAt(t).slice(2), { size: 30, color: out ? IB.C.paper : IB.C.yellow, seed: 852 });
+    const bz = IB.drawn(tt, BUZZ / 24);
+    if (bz >= 0 && bz < 4) { IB.burst(ctx, [SB[0], SB[1] + 65], { n: 8, a0: 0, da: (2 * PI) / 8, r0: 300 + (bz % 2) * 12, r1: 340 + (bz % 2) * 16, w: 3.4, seed: 80 + bz }); IB.burst(ctx, BC, { n: 7, a0: 0, da: (2 * PI) / 7, r0: 80 + (bz % 2) * 8, r1: 110 + (bz % 2) * 10, w: 3.2, seed: 90 + bz }); }
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
+    IB.figure(ctx, d, lookOf(d, DEF));
+    IB.figure(ctx, mate(f), MATE);
+    IB.figure(ctx, s, lookOf(s, SHO), 'far');
+    IB.basketball(ctx, ballAt(f), { r: R, rot: f < FR ? 0 : -(f - FR) * 0.5, lw: 2.6, seed: 91 });
+    IB.figure(ctx, s, lookOf(s, SHO), 'near');
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+  },
+});
+</script>

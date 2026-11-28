@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>basketball / free-throw-rim-roll</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 자유투: 자유투 라인의 선수가 공을 세 번 튀기고 손끝으로 돌린 뒤 숨을 고르고 던진다. 공은 림 앞쪽에 맞아 튀어 오르고, 뒤쪽 림에 떨어져 림 위를 한 바퀴 돌다가 겨우 안으로 떨어진다. 그동안 경기장 전체가 숨을 멈추고, 들어가는 순간 관중이 일어선다. 원본에 없는 창작 장면이다. 전달하는 생각: 같은 동작을 되풀이하는 루틴이 마지막 운을 부른다.
+   Motion notes: seen from the sideline, 8 s; the camera (IB.camera, on twos) frames 1150 px of the stage (1.67x), pushes in to a 640 px window on the rim (3x) as the ball reaches it (3.42-3.83 s), holds while it rolls and drops, and eases back out from 5.33 s to 5.75 s for the reaction. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up and the free-throw line 4.6 m from the board; players 1.9 m (266 px). The routine: three bounces, each 4 drawings with the knees dipping as the ball goes down (0-1.33 s), the ball turned in the fingertips on twos (1.42-1.75 s), a breath (shoulders up and back for 0.33 s, held still 0.42 s), the dip (2.67 s: knees bent, ball low, the anticipation) and the shot without a jump (2.83 s): up on the toes, the arm straight and the wrist snapped, held. The ball (backspin) hits the front of the rim 0.8 s later (a small burst), pops up 0.35 m, lands on the back of the rim and rolls round it: on the stage that is the ball running along the rim's ellipse, front to back and back to front, slowing, for 1.0 s, until it drops through (the net swishes) and bounces on the floor. The two players in the lane watch it and step in on the shot (a drawing each). Nothing in the crowd moves until it drops; then it stands and cheers on twos to 6.5 s and the shooter pumps a fist. From 6.5 s nothing moves but the loose ball. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], RR = 0.225 * M, RY = 0.035 * M, CAM = [900, 240, 1150];
+const SH = IB.athlete('basketball', 'home', 0, { h: 1.9 * M, dir: 1, seed: 30 }), H = SH.h, HY = IB.stand(0, FLOOR, SH).hip[1], AY = FLOOR - F.ankle * H;
+const LANE = [IB.athlete('basketball', 'away', 4, { h: 2.0 * M, dir: -1, seed: 40 }), IB.athlete('basketball', 'home', 6, { h: 1.95 * M, dir: -1, seed: 50 })];
+const reachTo = (look, p, i, t, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(t[1] - j.sh[1], t[0] - j.sh[0]); p.hands[i] = IB.polar(j.sh, a, Math.min(max * look.h, Math.hypot(t[0] - j.sh[0], t[1] - j.sh[1]))); return p.hands[i]; };
+const hold2 = (p, b) => { reachTo(SH, p, 0, [b[0] - 0.02 * H, b[1] + 3]); reachTo(SH, p, 1, [b[0], b[1] + R * 0.7]); return p; };
+
+/* ---------- the routine ---------- */
+const XS = BOARD - 4.6 * M;
+const sp = (down, lean, more = {}) => IB.posed(SH, { hip: [XS, HY + down], lean, feet: [[XS - 0.06 * H, AY, 0], [XS + 0.1 * H, AY, 0]], hands: [[0, 0], [0, 0]], face: { eye: 'dot', mouth: 'flat' }, ...more });
+const SACT = [], BALL = [], ROT = [];
+for (let k = 0; k < 12; k++) {   // three bounces, 4 drawings each: hand, half down, floor, half up
+  const u = [0, 0.5, 1, 0.5][k % 4], p = sp(0.04 * H + u * 0.04 * H, 0.15 + u * 0.08), j = IB.joints(p, SH), hand = IB.polar(j.sh, 0.95, 0.26 * H);
+  p.hands = [IB.polar(j.sh, 0.7, 0.22 * H), hand];
+  SACT.push([k * 2, p]); BALL.push([k * 2, [hand[0] + 0.02 * H, MG.lerp(hand[1] + R, FLOOR - R, u)]]); ROT.push([k * 2, 0]);
+}
+for (let k = 0; k < 5; k++) { const p = sp(0.03 * H, 0.08), b = IB.polar(IB.joints(p, SH).sh, 0.6, 0.22 * H); SACT.push([24 + k * 2, hold2(p, b)]); BALL.push([24 + k * 2, b]); ROT.push([24 + k * 2, k * 1.3]); }   // turned in the fingertips
+{ const p = sp(0.0, -0.06, { nod: -0.12, face: { eye: 'closed', mouth: 'flat' } }), b = IB.polar(IB.joints(p, SH).sh, 0.75, 0.22 * H); SACT.push([36, hold2(p, b)]); BALL.push([36, b]); ROT.push([36, 6.5]); }   // the breath
+{ const p = sp(0.02 * H, 0.04, { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), b = IB.polar(IB.joints(p, SH).sh, 0.6, 0.22 * H); SACT.push([54, hold2(p, b)]); BALL.push([54, b]); ROT.push([54, 6.5]); }
+const FD = 64, FR = 68;
+{ const p = sp(0.1 * H, 0.15, { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), b = IB.polar(IB.joints(p, SH).sh, 0.1, 0.22 * H); SACT.push([FD, hold2(p, b)]); BALL.push([FD, b]); ROT.push([FD, 6.5]); }   // the dip
+{ const p = sp(0.04 * H, 0.05), b = IB.polar(IB.joints(p, SH).sh, -1.1, 0.24 * H); SACT.push([FD + 2, hold2(p, b)]); BALL.push([FD + 2, b]); ROT.push([FD + 2, 6.5]); }
+const toes = (lift) => [[XS - 0.06 * H, AY - IB.footLift(lift, H), lift], [XS + 0.1 * H, AY - IB.footLift(lift, H), lift]];
+const shot = IB.posed(SH, { hip: [XS + 4, HY - 0.03 * H], lean: -0.02, feet: toes(0.6), hands: [{ a: -1.5, l: 0.24 }, { a: -1.05, l: 0.285 }], hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat' } });
+SACT.push([FR, shot]);
+const RP = [shot.hands[1][0] + 0.03 * H, shot.hands[1][1] - R * 0.8];
+const goose = IB.posed(SH, { hip: [XS + 4, HY - 0.02 * H], lean: -0.02, feet: toes(0.45), hands: [{ a: 0.9, l: 0.22 }, { a: -1.05, l: 0.285 }], hand: ['relax', 'relax'], face: { eye: 'dot', mouth: 'flat' } });
+SACT.push([FR + 2, goose], [FR + 6, IB.posed(SH, { ...goose, hip: [XS + 4, HY], feet: [[XS - 0.06 * H, AY, 0], [XS + 0.1 * H, AY, 0]], hands: [{ a: 0.9, l: 0.22 }, { a: -1.05, l: 0.285 }] })]);
+
+/* ---------- the ball: front rim, up, back rim, round the rim, in ---------- */
+const FRONT = [RC[0] - RR + 2, RC[1] - R * 0.9], T1 = 0.8, HIT1 = FR + Math.round((T1 * 24) / 2) * 2;
+const SHOT = { p: RP, v: IB.aim(RP, FRONT, T1, G), g: G };
+const BACK = [RC[0] + RR - 4, RC[1] - R * 0.95], T2 = 0.5, HIT2 = HIT1 + Math.round((T2 * 24) / 2) * 2;
+const POP = { p: FRONT, v: IB.aim(FRONT, BACK, T2, G), g: G };
+const ROLL = 24, DROP = HIT2 + ROLL;                                // a second round the rim
+const rollAt = (f) => { const u = (f - HIT2) / ROLL, th = u * 2 * PI * 1.25, amp = 1 - 0.6 * u; return [RC[0] + Math.cos(th) * RR * 0.95 * amp, RC[1] - R * 0.92 + Math.sin(th) * RY * 0.8]; };
+const IN = rollAt(DROP), NETB = [RC[0] + 4, RC[1] + 0.5 * M], OUT = { p: NETB, v: [-120, 420], g: G, floor: FLOOR - R, e: 0.75, mu: 0.8, roll: 1.5 * M };
+function ballAt(f) {
+  if (f < FR) return { p: IB.held(BALL, f), rot: IB.held(ROT, f) };
+  if (f < HIT1) return { p: IB.flight(SHOT, (f - FR) / 24).p, rot: 6.5 - (f - FR) * 0.5 };
+  if (f < HIT2) return { p: IB.flight(POP, (f - HIT1) / 24).p, rot: 6.5 - (f - FR) * 0.5 };
+  if (f < DROP) return { p: rollAt(f), rot: -((f - HIT2) / 2) * 0.6 };
+  if (f < DROP + 6) return { p: [MG.lerp(IN[0], NETB[0], (f - DROP) / 6), MG.lerp(IN[1], NETB[1], (f - DROP) / 6)], rot: 0 };
+  return { p: IB.flight(OUT, (f - DROP - 6) / 24).p, rot: (f - DROP) * 0.3 };
+}
+const pump = IB.posed(SH, { hip: [XS + 4, HY + 0.05 * H], lean: 0.15, feet: [[XS - 0.06 * H, AY, 0], [XS + 0.1 * H, AY, 0]], hands: [{ a: 0.8, l: 0.24 }, { a: 1.0, l: 0.18 }], hand: ['relax', 'grip'], elbow: [1, -1], nod: 0.1, face: { eye: 'closed', mouth: 'open' } });
+SACT.push([DROP + 4, pump], [DROP + 8, IB.posed(SH, { ...pump, hip: [XS + 4, HY + 0.02 * H], lean: 0.05, hands: [{ a: 0.8, l: 0.24 }, { a: 1.1, l: 0.2 }] })]);
+
+/* ---------- the lane ---------- */
+const lane = (n, x, step) => {
+  const look = LANE[n], hy = IB.stand(0, FLOOR, look).hip[1], ay = FLOOR - F.ankle * look.h;
+  const p = (dx, nod) => IB.posed(look, { hip: [x - dx, hy + 0.07 * look.h], lean: 0.2, nod, feet: [[x - dx - 0.12 * look.h, ay, 0], [x - dx + 0.1 * look.h, ay, 0]], hands: [{ a: 0.4, l: 0.26 }, { a: 0.7, l: 0.25 }], hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } });
+  return [[0, p(0, 0.05)], [FR + step, p(0.08 * look.h, -0.15)], [FR + step + 2, p(0.1 * look.h, -0.3)]];
+};
+const LACT = [lane(0, 1430, 2), lane(1, 1530, 4)];
+
+const CAMS = [[0, CAM], [HIT1 - 6, CAM], [HIT1 + 4, [1420, 250, 640]], [DROP + 4, [1420, 250, 640]], [DROP + 14, CAM]];   // pushes in on the rim while it rolls, back out for the reaction
+const shooter = (f) => { const p = IB.held(SACT, f); return { ...p, prev: f >= 24 ? IB.held(SACT, f - 2) : undefined }; };
+const laners = LACT.map((t) => (f) => ({ ...IB.held(t, f), prev: f > 0 ? IB.held(t, f - 2) : undefined }));
+const cheerAt = (f) => (f < DROP ? 0 : f < 156 ? 1 + (f / 2) % 2 : 'up');
+const netAt = (f) => (f >= DROP && f < DROP + 12 ? { swish: (f - DROP) / 2 } : {});
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), lane0: laners[0](f), lane1: laners[1](f), ball: ballAt(f).p, net: netAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+
+MG.scene({
+  title: 'basketball / free-throw-rim-roll',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), net = netAt(f);
+    IB.crop(ctx, IB.camera(CAMS, f));
+    IB.courtside(ctx, [800, 2200], FLOOR, { cheer: cheerAt(f) });
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
+    IB.figure(ctx, laners[1](f), LANE[1]);
+    IB.figure(ctx, laners[0](f), LANE[0]);
+    const s = shooter(f);
+    IB.figure(ctx, s, SH, 'far');
+    const onRim = f >= HIT2 && f < DROP && Math.sin(((f - HIT2) / ROLL) * 2 * PI * 1.25) > 0;   // on the near half of the rim it rolls in front of the rim's front edge
+    if (!onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+    IB.figure(ctx, s, SH, 'near');
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+    if (onRim) IB.basketball(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+    const h1 = IB.drawn(tt, HIT1 / 24);
+    if (h1 >= 0 && h1 < 1) IB.burst(ctx, FRONT, { n: 3, a0: -2.4, da: 0.6, r0: 22, r1: 40, w: 2.6, seed: 66 });
+  },
+});
+</script>

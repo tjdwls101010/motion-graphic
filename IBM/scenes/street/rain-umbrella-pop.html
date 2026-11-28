@@ -1,0 +1,104 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>street / rain-umbrella-pop</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/weather.js"></script>
+<script>
+/* 접은 우산을 들고 걷던 사람의 머리에 첫 빗방울이 톡 떨어져 멈춰 서서 올려다보고, 한 박자 뒤 비가 쏟아지자 움츠렸다가 서둘러 우산을 펴는데 한 번 걸려 덜컥거리다 펑 하고 펴지고, 안도한 얼굴로 다시 걸어 나간다. 원본에 없는 창작 장면으로, 새 부품 비·빗방울·비구름·우산(props/weather.js: IB.rain, IB.raindrop, IB.rainCloud, IB.umbrella)에 출연진 clerk, 머리 위의 작은 튐(IB.burst)과 흔들림선(IB.shake)을 조립했다. 전달하는 생각: 걸렸다가 펴지는 한 번이 그냥 펴지는 것보다 크게 보인다.
+   Motion notes: one locked shot, 8 s, figure 480 px (line 3.5 px, a standing reaction, so large), umbrella s 1.45 (shaft 247 px, ribs 171 px, canopy 333 px across when open), all acting on twos; the rain is weather, re-drawn from a new seed every drawing (12 fields a second) over the whole street, not a scroll. Walk-in 0-1.33 s: 16 drawings at IB.walkLen / 12 = 33.6 px a drawing, the furled umbrella hanging back from the near hand like a cane; three rain clouds roll in from off the left edge on twos (48, 87 and 127 px a drawing) and stop at 1.25 s. The first drop falls in four drawings (the last stretched 1.5x) and lands on the head at 1.25 s (a three-line burst for 2 drawings); she stops on phase 1/3 at 1.33 s thrown forward one drawing, eyes wide, and looks up through an in-between (nod -0.4). Dead hold 1.5-2.08 s. The downpour starts at 2.08 s on one drawing (130 strokes, 56 px, slant 0.16, splashes on the floor); she flinches a drawing later (hunched, lean 0.18, far hand up over her head, shake marks) and holds 0.17 s. The umbrella: 2.33 s an in-between, 2.42 s swung out level, 2.5 s upright in front of her face, held high (the handle at 0.3 h above the hip) with the far hand on the runner; 2.58 s pushed (open 0.15), 2.67 s it catches (open 0.3, the right side held back, skew 0.7) and jiggles between two drawings for 0.42 s with shake marks (no prev through them); 3.08 s the hands drop it a little (open 0.2, the anticipation), 3.17 s it pops: one drawing past round (open 1.14, flatter and wider, burst lines round it) while she rocks back (lean -0.12), 3.25 s 0.95, 3.33 s round, shake marks fading over 3 drawings; 3.42 s an in-between down and 3.5 s held over her head, the shaft tipped back 0.28 rad behind her head (the umbrella is drawn before her then). From the pop the canopy is a roof: no stroke reaches under it and drops bounce off its top. 3.67 s her eyes close and her shoulders drop through an in-between (relief, held to 4.17 s). She walks on at 4.17 s from phase 1/3, the umbrella held over her head, and is out of the frame at 7.25 s; the last 0.75 s is the empty street with only the rain. Every drawing of her passes the one before as pose.prev except through the jiggle. Three colours: the sky shirt, the yellow canopy, the blue rain. */
+const { lerp } = MG;
+const F = IB.FIG, FLOOR = 980, H = 480, US = H / 330, WHO = { ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 60 };
+const PACE = IB.walkLen(WHO) / 12, IN = 16, XS = 900, X0 = XS - IN * PACE, PH = (IN / 12) % 1;   // 16 drawings in, stopping on phase 1/3
+const HANG = Math.PI / 2 + 0.8, POUR = 50, WALK = 100;   // the furled umbrella hangs back from the hand; the downpour's frame; the walk-on's frame
+const CLOUDS = [[-720, 140, 620, 250, 100, 941], [-1300, 700, 1220, 210, 90, 942], [-1900, 1280, 1820, 260, 96, 943]];   // [x offset at frame 0, x0, x1, base, height, seed]: each drifts in on twos and stops at frame 30
+
+/* ---------- her drawings: a pose with the umbrella it holds (umb: IB.umbrella's state) ---------- */
+const S = { ...IB.stand(XS, FLOOR, WHO), feet: IB.walk(XS, FLOOR, WHO, PH).feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]) };
+const HY = S.hip[1], SH = HY - (F.torso - 0.012) * H, NEAR = S.hands[1];
+const hold = (more, hands, umb) => ({ ...S, hands: [hands[0] || S.hands[0], hands[1] || NEAR], hand: ['relax', 'grip'], umb: { open: 0, a: HANG, ...umb }, ...more });
+const GRIP = [XS + 0.15 * H, HY - 0.3 * H], RUN = [XS + 0.14 * H, HY - 0.43 * H];   // the near hand on the handle at the chest, the far hand up on the runner
+const up = (open, skew, more = {}) => hold({ hand: ['grip', 'grip'], ...more }, [RUN.map((v, i) => v + (i ? -open * 0.05 * H : 0)), GRIP], { open, skew, a: -Math.PI / 2 });
+const OVER = { a: -Math.PI / 2 - 0.28, open: 1, behind: true };   // held over her head: the shaft tipped back so the canopy is over her
+const OVER_HAND = (hip) => [hip[0] + 0.08 * H, hip[1] - 0.22 * H];
+const relief = hold({ hip: [XS, HY + 4], nod: 0.1, face: { eye: 'closed', mouth: 'smile' } }, [null, OVER_HAND([XS, HY + 4])], OVER);
+const D = {
+  thrown: hold({ lean: 0.12, hip: [XS + 6, HY + 2], face: { eye: 'wide', mouth: 'flat' } }, []),
+  look: hold({ lean: -0.05, nod: -0.4, face: { eye: 'wide', mouth: 'open' } }, []),
+  flinch: hold({ lean: 0.18, nod: 0.15, hip: [XS - 4, HY + 0.02 * H], face: { eye: 'closed', mouth: 'frown', brow: 1 } }, [[XS + 0.03 * H, SH - 0.17 * H]]),
+  swing: hold({ lean: 0.1, nod: 0.05, hand: ['open', 'grip'], face: { eye: 'wide', mouth: 'frown' } }, [[XS + 0.06 * H, SH - 0.1 * H], [XS + 0.13 * H, HY - 0.12 * H]], { a: 0 }),
+  upright: up(0, 0, { face: { eye: 'wide', mouth: 'flat' } }),
+  push: up(0.15, 0, { face: { eye: 'wide', mouth: 'flat', brow: 1 } }),
+  stuckA: up(0.3, 0.7, { lean: 0.04, face: { eye: 'dot', mouth: 'frown', brow: 1 } }),
+  stuckB: up(0.27, 0.62, { lean: 0.06, hip: [XS + 2, HY + 2], face: { eye: 'dot', mouth: 'frown', brow: 1 } }),
+  tug: up(0.2, 0.6, { hip: [XS, HY + 6], nod: 0.08, face: { eye: 'closed', mouth: 'frown', brow: 1 } }),
+  pop: up(1.14, 0, { lean: -0.12, nod: -0.12, face: { eye: 'wide', mouth: 'open' } }),
+  pop2: up(0.95, 0, { lean: -0.05, face: { eye: 'wide', mouth: 'open' } }),
+  open: hold({ face: { eye: 'wide', mouth: 'flat' } }, [null, OVER_HAND([XS, HY])], OVER),
+  relief,
+};
+D.relieving = { ...IB.poseMix(D.open, relief, 0.5), hands: [S.hands[0], OVER_HAND([XS, HY + 2])], umb: OVER, face: relief.face };
+const JIG = [64, 74];   // the catch: two drawings alternating, no prev
+const ACT = [
+  [32, D.thrown], [34, IB.poseMix(D.thrown, D.look, 0.5)], [36, D.look],
+  [52, D.flinch], [56, { ...IB.poseMix(D.flinch, D.swing, 0.6), umb: { open: 0, a: 1.2 } }], [58, D.swing], [60, D.upright],
+  [62, D.push], [64, D.stuckA], [66, D.stuckB], [68, D.stuckA], [70, D.stuckB], [72, D.stuckA],
+  [74, D.tug], [76, D.pop], [78, D.pop2], [80, { ...up(1, 0), face: { eye: 'wide', mouth: 'flat' } }],
+  [82, { ...IB.poseMix(up(1, 0), D.open, 0.55), hand: ['relax', 'grip'], umb: { open: 1, a: -Math.PI / 2 - 0.14, behind: true }, face: D.open.face }], [84, D.open],
+  [88, D.relieving], [90, relief],
+];
+// walking: the cane swings with the hand; walking on, the umbrella rides over her head with the hand fixed to the hip
+const walkIn = (k) => { const p = IB.walk(X0 + k * PACE, FLOOR, WHO, (k / 12) % 1); return { ...p, hand: ['relax', 'grip'], umb: { open: 0, a: HANG } }; };
+const walkOn = (k) => { const p = IB.walk(XS + k * PACE, FLOOR, WHO, (PH + k / 12) % 1); return { ...p, hands: [p.hands[0], OVER_HAND(p.hip)], hand: ['relax', 'grip'], umb: OVER, face: { mouth: 'smile' } }; };
+function poseOn(f) {
+  if (f < IN * 2) return walkIn(f >> 1);
+  if (f >= WALK) return walkOn((f - WALK) >> 1);
+  return IB.held(ACT, f);
+}
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)), p = poseOn(f), jig = f >= JIG[0] && f < JIG[1]; return { ...p, prev: f > 0 && !jig ? poseOn(f - 2) : undefined }; };
+
+/* ---------- the first drop: four drawings falling onto her head at frame 30 ---------- */
+const HEAD_X = walkIn(15).hip[0] + 0.02 * H, HEAD_TOP = FLOOR - H - 4;
+const dropAt = (f) => (f >= 22 && f < 30 ? [HEAD_X, lerp(270, HEAD_TOP, [0.2, 0.45, 0.7, 0.92][(f - 22) >> 1])] : null);
+const cloudX = (c, f) => c[0] * (1 - Math.min(15, f >> 1) / 15);
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { person: poseAt(t), drop: dropAt(f), clouds: cloudX(CLOUDS[0], f) }; };
+
+MG.scene({
+  title: 'street / rain-umbrella-pop',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), p = poseAt(t);
+    for (const c of CLOUDS) { const dx = cloudX(c, f); IB.rainCloud(ctx, [c[1] + dx, c[2] + dx, c[3], c[4]], { seed: c[5] }); }
+    const fx = Math.max(p.feet[0][0], p.feet[1][0]), bx = Math.min(p.feet[0][0], p.feet[1][0]);
+    IB.smear(ctx, (fx + bx) / 2, FLOOR - 9, fx - bx + 200, { h: 14, seed: 9 });
+    // her, in two passes with the umbrella between her hands; held over her head, its shaft goes behind her head, so it is drawn first (the hand target is within reach, so the hand lands on it)
+    const look = { ...WHO, face: p.face }, UO = { s: US, lw: IB.figLine(H) };
+    const u0 = p.umb.behind ? IB.umbrella(ctx, p.hands[1], p.umb, UO) : null, j = IB.figure(ctx, p, look, 'far');
+    const u = u0 || IB.umbrella(ctx, j.hands[1], p.umb, UO);
+    IB.figure(ctx, p, look, 'near');
+    // the first drop and its little splash on her head
+    const d = dropAt(f);
+    if (d) IB.raindrop(ctx, d, { s: 1.3, stretch: f >= 28 ? 1.5 : 1 });
+    const b = IB.drawn(tt, 30 / 24);
+    if (b >= 0 && b < 2) IB.burst(ctx, [HEAD_X, HEAD_TOP + 2], { n: 3, a0: -2.5, da: 0.5, r0: 10 + b * 6, r1: 24 + b * 8, w: 2.4, color: IB.C.blue, seed: 520 + b });
+    // the flinch, the catch and the pop: marks beside her and round the canopy
+    const fl = IB.drawn(tt, 52 / 24);
+    if (fl >= 0 && fl < 2) IB.shake(ctx, j.headAt[0] - 20, j.headAt[1] - 10, 40, { a: Math.PI + 0.4, n: 2, seed: 540 + fl });
+    if (f >= JIG[0] && f < JIG[1]) { const k = (f - JIG[0]) >> 1; IB.shake(ctx, u.rim[1][0] + 16, u.rim[1][1] - 20, 22, { a: 0, n: 2, seed: 560 + k }); IB.shake(ctx, u.rim[0][0] - 16, u.rim[0][1] - 20, 22, { a: Math.PI, n: 2, seed: 570 + k }); }
+    const pk = IB.drawn(tt, 76 / 24), top = u.roof[Math.floor(u.roof.length / 2)];
+    if (pk >= 0 && pk < 2) IB.burst(ctx, [top[0], top[1] + 60], { angles: [-2.9, -2.4, -1.9, -1.25, -0.75, -0.25], r0: (150 + pk * 14) * US, r1: (186 + pk * 18) * US, w: 3, seed: 580 + pk });
+    if (pk >= 2 && pk < 5) { IB.shake(ctx, u.rim[1][0] + 10, u.rim[1][1] - 26, 26, { a: -0.3, n: 3 - (pk - 2), seed: 590 + pk }); IB.shake(ctx, u.rim[0][0] - 10, u.rim[0][1] - 26, 26, { a: Math.PI + 0.3, n: 3 - (pk - 2), seed: 600 + pk }); }
+    // the rain: from the downpour on, a new field every drawing; the open canopy is a roof
+    if (f >= POUR) IB.rain(ctx, [60, 270, 1900, FLOOR], { d: f >> 1 }, { n: 130, len: 56, roofs: f >= 76 ? [u.roof] : [], floor: FLOOR + 6, seed: 900 });
+  },
+});
+</script>

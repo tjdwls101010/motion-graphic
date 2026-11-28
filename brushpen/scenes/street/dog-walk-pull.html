@@ -12,9 +12,10 @@
 <script src="../../kit/cast/dog.js"></script>
 <script src="../../kit/cast/cat.js"></script>
 <script src="../../kit/props/home.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 개를 산책시키던 사람 앞에서 개가 상자 위에 잠든 고양이를 보고 한 발을 든 채 얼어붙었다가 확 당기고, 사람은 뒤꿈치로 버티다 바닥에 자국을 남기며 끌려가는데, 고양이가 눈을 번쩍 뜨자 개가 귀를 젖히고 얌전히 앉는다. 원본에 없는 창작 장면으로, 새 부품 개와 목줄(cast/dog.js: IB.dog, IB.dogWalk, IB.dogMix, IB.leash)에 출연진 commuter, 의자 고양이(IB.chairCat, vignette/balloons-lift-chair)와 나무 상자(IB.woodCrate, metaphor/flashlight-finds-file), 미끄러지는 발의 먼지(IB.wheelDust)와 늘어나는 스미어를 조립했다. 전달하는 생각: 큰 힘은 얼어붙은 한 박자 뒤에 오고, 더 큰 힘 앞에서는 한순간에 꺾인다.
-   Motion notes: one locked shot, 7 s, figure 360 px (line 3.1 px), dog at s 0.93 (shoulder 89 px, line 3 px), a crate 210 x 300 with the cat at 0.9x on it, all acting on twos. Walk-in 0-2.33 s: the person comes in from off the left edge, 28 drawings at IB.walkLen / 12 = 25.2 px a drawing, and stops on phase 1/3; the dog trots 290 px ahead at the same 25.2 px a drawing, 6 drawings a cycle (trot, stride 40.6: IB.dogWalkLen = 151.2 px), tail wagging on twos. The dog freezes first, at 2.0 s on a drawing with all four paws down (one drawing thrown 12% past, then the point: head up, ears up, tail stiff, near front paw lifted), so the person takes four more drawings and the leash goes slack; the person stops thrown forward one drawing (lean 0.12). Dead hold 2.42-3.0 s. The lunge: 3.0 s the dog's weight goes back in an in-between and is held 4 frames (crouch), 3.25 s one drawing 10% past the pull with its front paws off the floor and its hind paws pushing off exactly where they stood in the crouch, while the leash snaps straight (shake marks for 3 drawings); 3.33 s the front paws land in the pull with the hind paws in the air, coming down on the next drawing where the scrabble plants them. The person answers a drawing later: 3.33 s jerked forward (lean 0.2, arm out, eyes wide), 3.42 s a front foot in the air, 3.5 s braced (lean -0.3, both hands on the leash, front heel dug in with the toe up 0.5 rad). The drag, 3.42-5.5 s: the dog scrabbles in the pull pose (trot, 4 drawings a cycle, stride 16.1) and moves 15 px a drawing, its planted paws fixed (the rig lowers the torso wherever a stride would take a paw past its leg's reach, so every planted paw is exactly on the floor); the person slides with it 15 px a drawing from 3.58 s, alternating two straining drawings (no prev through them), the floor smear stretching behind into a 360 px skid with dust off the front heel every drawing. The dog stops at 5.5 s with all four paws down; the person, pulled no longer, is thrown back one drawing (lean -0.38) and comes up over two. 5.67 s the cat's eyes open; 5.75 s the dog recoils with its ears flat, sits in three drawings (5.83 s all four paws lifted as the haunches go down, 5.92 s 6% past the sit, 6.0 s the sit) and the leash goes slack. Still from 6.0 s. Every drawing of the person passes the one before as pose.prev except through the strain. Two colours: the navy jacket and the collar's blue (with the floor smear). */
+   Motion notes: 7 s in eight shots (IB.shot, on ones): 0-2.0 s a medium (1100 px window) following the person's hip in; 2.0 s a cut to the dog freezing and pointing (680); 2.5 s a cut to what it sees, the cat asleep on the crate (600); 2.92 s a cut to the two (1100); 3.25 s a snap in (880) on the lunge with a 18 px jolt as the leash snaps straight; 3.67 s a steady push back out to 1400 with a -0.05 rad tilt (44 frames) as he is dragged toward the crate; 5.5 s a cut to the cat (520), whose eyes open at 5.67 s; 5.92 s a cut to the three (1300) for the sit. Actors are staged once in stage px: figure 360 px (line 3.1 px), dog at s 0.93 (shoulder 89 px, line 3 px), a crate 210 x 300 with the cat at 0.9x on it, all acting on twos. Walk-in 0-2.33 s: the person comes in from off the left edge, 28 drawings at IB.walkLen / 12 = 25.2 px a drawing, and stops on phase 1/3; the dog trots 290 px ahead at the same 25.2 px a drawing, 6 drawings a cycle (trot, stride 40.6: IB.dogWalkLen = 151.2 px), tail wagging on twos. The dog freezes first, at 2.0 s on a drawing with all four paws down (one drawing thrown 12% past, then the point: head up, ears up, tail stiff, near front paw lifted), so the person takes four more drawings and the leash goes slack; the person stops thrown forward one drawing (lean 0.12). Dead hold 2.42-3.0 s. The lunge: 3.0 s the dog's weight goes back in an in-between and is held 4 frames (crouch), 3.25 s one drawing 10% past the pull with its front paws off the floor and its hind paws pushing off exactly where they stood in the crouch, while the leash snaps straight (shake marks for 3 drawings); 3.33 s the front paws land in the pull with the hind paws in the air, coming down on the next drawing where the scrabble plants them. The person answers a drawing later: 3.33 s jerked forward (lean 0.2, arm out, eyes wide), 3.42 s a front foot in the air, 3.5 s braced (lean -0.3, both hands on the leash, front heel dug in with the toe up 0.5 rad). The drag, 3.42-5.5 s: the dog scrabbles in the pull pose (trot, 4 drawings a cycle, stride 16.1) and moves 15 px a drawing, its planted paws fixed (the rig lowers the torso wherever a stride would take a paw past its leg's reach, so every planted paw is exactly on the floor); the person slides with it 15 px a drawing from 3.58 s, alternating two straining drawings (no prev through them), the floor smear stretching behind into a 360 px skid with dust off the front heel every drawing. The dog stops at 5.5 s with all four paws down; the person, pulled no longer, is thrown back one drawing (lean -0.38) and comes up over two. 5.67 s the cat's eyes open; 5.75 s the dog recoils with its ears flat, sits in three drawings (5.83 s all four paws lifted as the haunches go down, 5.92 s 6% past the sit, 6.0 s the sit) and the leash goes slack. Still from 6.0 s. Every drawing of the person passes the one before as pose.prev except through the strain. Two colours: the navy jacket and the collar's blue (with the floor smear). */
 const { lerp, clamp } = MG;
 const F = IB.FIG, FLOOR = 930, H = 360, WHO = { ...IB.PEOPLE.commuter, h: H, dir: 1, seed: 50 };
 const PACE = IB.walkLen(WHO) / 12, X0 = -150, IN = 28, XS = X0 + IN * PACE, PH = (IN / 12) % 1;   // 28 drawings in, stopping on phase 1/3
@@ -82,6 +83,18 @@ function dogOn(f) {
 // the leash: straight from the lunge until the dog recoils; otherwise as slack as the gap allows
 const tautOn = (f, hand, collar) => (f >= 78 && f < 138 ? 1 : clamp((Math.hypot(collar[0] - hand[0], collar[1] - hand[1]) - 150) / 110, 0, 0.9));
 
+/* ---------- the camera: follows the walk, cuts between the dog and what it sees, punches in on the lunge, pulls back with a tilt through the drag, the cat's eyes, the sit ---------- */
+const SHOTS = [
+  [0, (f) => ({ at: [X0 + Math.min(f / 2, IN) * PACE + 300, 760], w: 1100 })],   // follows the person's hip (smoothly, on ones) and stops where he stops
+  [48, { at: [DXF + 40, 765], w: 680 }, 'cut'],   // the dog freezes and points
+  [60, { at: [CAT[0] + 10, CAT[1] - 30], w: 600 }, 'cut'],   // what it sees: the cat asleep on the crate
+  [70, { at: [760, 760], w: 1100 }, 'cut'],
+  [78, { at: [740, 790], w: 880 }, 'snap'],   // the lunge, the leash snapping straight
+  [88, { at: [1020, 760], w: 1400, tilt: -0.05 }, 'push', 44],   // pulled across: the camera backs off to take in the crate ahead, tipping with the strain
+  [132, { at: [CAT[0] + 10, CAT[1] - 40], w: 520 }, 'cut'],   // the cat; its eyes open at 136
+  [142, { at: [1150, 760], w: 1300 }, 'cut'],
+];
+const HITS = [[78, 18]];
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { person: personAt(t), dog: dogOn(f), cat: f >= CAT_EYES ? 'wide' : 'shut' }; };
 
 MG.scene({
@@ -91,21 +104,23 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), p = personAt(t), [dx, dp] = dogOn(f);
-    // the crate and the cat asleep on it, until its eyes open
-    IB.woodCrate(ctx, CRATE, { w: 210, h: 300 });
-    ctx.save(); IB.place(ctx, CAT, { s: CAT_S }); IB.chairCat(ctx, CAT, { eyes: f >= CAT_EYES ? 'wide' : 'shut' }); ctx.restore();
-    // the person's smear stretches into a skid behind the front heel once the slide starts
-    const fx = Math.max(p.feet[0][0], p.feet[1][0]), bx = Math.min(p.feet[0][0], p.feet[1][0]);
-    if (f >= 84) { const x0 = BACK - 40, x1 = fx + 60; IB.smear(ctx, (x0 + x1) / 2, FLOOR - 9, x1 - x0, { h: 14, seed: 9 }); }
-    else IB.smear(ctx, (fx + bx) / 2, FLOOR - 9, fx - bx + 200, { h: 14, seed: 9 });
-    IB.smear(ctx, dx + 4, FLOOR - 8, 210, { h: 12, seed: 12 });
-    if (f >= 86 && f < 134) IB.wheelDust(ctx, [fx + 44, FLOOR - 36], { d: (f - 86) >> 1 });
-    const dog = IB.dog(ctx, [dx, FLOOR], dp, { s: DS, seed: 600 });
-    const j = IB.figure(ctx, p, { ...WHO, face: p.face });
-    const mid = IB.leash(ctx, j.hands[1], dog.collar, { taut: tautOn(f, j.hands[1], dog.collar) });
-    // the leash snaps straight: shake marks above it for three drawings
-    const k = IB.drawn(tt, 78 / 24);
-    if (k >= 0 && k < 3) { IB.shake(ctx, mid[0], mid[1] - 6, 18, { a: -Math.PI / 2, n: 2, seed: 660 + k }); IB.shake(ctx, mid[0], mid[1] + 6, 18, { a: Math.PI / 2, n: 2, seed: 670 + k }); }
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      // the crate and the cat asleep on it, until its eyes open
+      IB.woodCrate(ctx, CRATE, { w: 210, h: 300 });
+      ctx.save(); IB.place(ctx, CAT, { s: CAT_S }); IB.chairCat(ctx, CAT, { eyes: f >= CAT_EYES ? 'wide' : 'shut' }); ctx.restore();
+      // the person's smear stretches into a skid behind the front heel once the slide starts
+      const fx = Math.max(p.feet[0][0], p.feet[1][0]), bx = Math.min(p.feet[0][0], p.feet[1][0]);
+      if (f >= 84) { const x0 = BACK - 40, x1 = fx + 60; IB.smear(ctx, (x0 + x1) / 2, FLOOR - 9, x1 - x0, { h: 14, seed: 9 }); }
+      else IB.smear(ctx, (fx + bx) / 2, FLOOR - 9, fx - bx + 200, { h: 14, seed: 9 });
+      IB.smear(ctx, dx + 4, FLOOR - 8, 210, { h: 12, seed: 12 });
+      if (f >= 86 && f < 134) IB.wheelDust(ctx, [fx + 44, FLOOR - 36], { d: (f - 86) >> 1 });
+      const dog = IB.dog(ctx, [dx, FLOOR], dp, { s: DS, seed: 600 });
+      const j = IB.figure(ctx, p, { ...WHO, face: p.face });
+      const mid = IB.leash(ctx, j.hands[1], dog.collar, { taut: tautOn(f, j.hands[1], dog.collar) });
+      // the leash snaps straight: shake marks above it for three drawings
+      const k = IB.drawn(tt, 78 / 24);
+      if (k >= 0 && k < 3) { IB.shake(ctx, mid[0], mid[1] - 6, 18, { a: -Math.PI / 2, n: 2, seed: 660 + k }); IB.shake(ctx, mid[0], mid[1] + 6, 18, { a: Math.PI / 2, n: 2, seed: 670 + k }); }
+    });
   },
 });
 </script>

@@ -11,9 +11,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/props/home.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 포니테일의 사람이 복도를 걸어 들어오다 멈춰 서서, 화면 밖 누군가에게 손을 흔들고, 그쪽에 대고 노란 문을 손가락으로 가리키며 "저기!" 한다. 원본에 없는 창작 장면으로, 인물 리그의 손 그림(늘어뜨림, 쥔 손, 편 손, 가리킴)와 한 장 늦게 따라오는 머리채(pose.prev)를 한 연기 안에서 보여 주는 견본 겸 장면이다. 전달하는 생각: 멈춤과 손짓 사이의 준비 한 장이 몸짓을 읽히게 한다.
-   Motion notes: one locked shot, 7 s, figure 330 px tall (line 3 px), dir 1. All on twos as one walk and a list of drawings, every drawing passing the one before as pose.prev except through the wave (the rig trails only the body, which is still while she waves; prev is left off there for clarity). Walk in for 28 drawings at IB.walkLen / 12 a drawing, so the planted foot never slides, and stop on phase 1/3 (one foot planted under the body, the other in the air, put down where it is). The stop: one drawing thrown forward (lean 0.14), then upright; her ponytail, lifted by the walk, settles over two drawings. Hold 0.42 s. The wave: an anticipation drawing with the far hand dropped down and back, then the open hand up past where it waves (one drawing), then the wave on twos: side, middle, other side, middle, three times (12 drawings); the hand comes down through a half-way drawing. Hold 0.33 s. The point: the near arm draws back with a fist (anticipation), swings out in one drawing past its mark with the index finger out, and settles straight out at the door's middle; the head follows a drawing late, past and back (nod 0.06). She is still from 4.67 s; the bubble opens at 5.25 s and from 5.42 s nothing moves. Three colours: the mint top, the yellow door and the mustard frame. */
+   Motion notes: 7 s in three shots (IB.shot, on ones), the whole body in frame through the wave and the point: 0-1.83 s a wide of the corridor (1700 px window) as she walks in, easing from 1.83 s (14 frames, done just after she stops) to a medium of her full figure (1000) for the wave; 4.17 s, in the hold after the wave, a cut to a wider shot that holds her and the door together (1300) for the point; 4.83 s, once she is still, a slow push in on her, the pointing hand, the bubble and the door (1100, 48 frames). Figure 330 px tall (line 3 px), dir 1. All on twos as one walk and a list of drawings, every drawing passing the one before as pose.prev except through the wave (the rig trails only the body, which is still while she waves; prev is left off there for clarity). Walk in for 28 drawings at IB.walkLen / 12 a drawing, so the planted foot never slides, and stop on phase 1/3 (one foot planted under the body, the other in the air, put down where it is). The stop: one drawing thrown forward (lean 0.14), then upright; her ponytail, lifted by the walk, settles over two drawings. Hold 0.42 s. The wave: an anticipation drawing with the far hand dropped down and back, then the open hand up past where it waves (one drawing), then the wave on twos: side, middle, other side, middle, three times (12 drawings); the hand comes down through a half-way drawing. Hold 0.33 s. The point: the near arm draws back with a fist (anticipation), swings out in one drawing past its mark with the index finger out, and settles straight out at the door's middle; the head follows a drawing late, past and back (nod 0.06). She is still from 4.67 s; the bubble opens at 5.25 s and from 5.42 s nothing moves. Three colours: the mint top, the yellow door and the mustard frame. */
 const F = IB.FIG, FLOOR = 900, H = 330, WHO = { ...IB.PEOPLE.passenger, h: H, dir: 1, seed: 70 };
 const PACE = IB.walkLen(WHO) / 12, X0 = 260, IN = 28, XS = X0 + IN * PACE, PH = (IN / 12) % 1;   // 28 drawings in; phase 1/3 to stop on
 
@@ -49,6 +50,12 @@ function poseOn(f) {
 const poseAt = (t) => { const f = IB.frame(IB.twos(t)), p = poseOn(f), waving = f >= WAVE[0] && f < WAVE[1]; return { ...p, prev: f > 0 && !waving ? poseOn(f - 2) : undefined }; };
 IB.actors = (t) => ({ walker: poseAt(t) });
 
+// the camera, frames at 24 fps: the corridor, closing on her as she stops; her and the door for the point; a push in on the held point
+const SHOTS = [
+  [0, { at: [900, 560], w: 1700 }], [44, { at: [1000, 700], w: 1000 }, 'ease', 14],
+  [100, { at: [1180, 680], w: 1300 }, 'cut'], [116, { at: [1170, 660], w: 1100 }, 'push', 48],
+];
+
 MG.scene({
   title: 'acting / wave-then-point',
   duration: 7, ref: null, fps: 24,
@@ -56,12 +63,14 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const p = poseAt(t);
-    IB.pictureFrame(ctx, [700, 330], { w: 180, h: 140, seed: 700 });
-    IB.door(ctx, [1460, FLOOR]);
-    IB.pottedPlant(ctx, [1820, FLOOR], IB.PLANTS.tall);
-    IB.smear(ctx, (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 9, 300, { h: 14, seed: 9 });
-    IB.figure(ctx, p, { ...WHO, face: p.face });
-    IB.bubble(ctx, ['저기!'], t, 5.25, { tip: [XS + 30, SH - 0.17 * H], x: XS + 60, y: SH - 0.42 * H, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.pictureFrame(ctx, [700, 330], { w: 180, h: 140, seed: 700 });
+      IB.door(ctx, [1460, FLOOR]);
+      IB.pottedPlant(ctx, [1820, FLOOR], IB.PLANTS.tall);
+      IB.smear(ctx, (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 9, 300, { h: 14, seed: 9 });
+      IB.figure(ctx, p, { ...WHO, face: p.face });
+      IB.bubble(ctx, ['저기!'], t, 5.25, { tip: [XS + 30, SH - 0.17 * H], x: XS + 60, y: SH - 0.42 * H, seed: 500 });
+    });
   },
 });
 </script>

@@ -11,9 +11,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/sets/officefloor.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 회의 탁자에 앉아 화이트보드 앞 사장의 발표를 듣던 사람의 고개가 꾸벅, 또 꾸벅 하다 세 번째에 툭 떨어지고, 번쩍 깨어 꼿꼿이 앉자 앞자리 사람이 의자를 돌려 쳐다본다. 원본에 없는 창작 장면으로, 회의 탁자(IB.meetingTable, 화면 왼쪽 밖으로 잘림; 앉은 두 사람은 윗옷을 넣어 입어 밑단이 판 아래로 나오지 않는다)와 화이트보드(IB.whiteboard, s 1.5), 앉은 포즈와 의자(IB.sit, IB.chair), 일상 인물(IB.PEOPLE.clerk, designer, boss), 흔들림선(IB.shake)으로 지었다. 전달하는 생각: 졸음은 두 번 봐주고 세 번째에 들킨다.
-   Motion notes: one locked shot framed close on the two sitters and the presenter (the table runs off the left edge, the action spans x 390-1820, 75% of the width), 7 s, sitters 500 px tall (line 3.6 px) behind a table whose far edge is 205 px up (0.41 h, their elbow height, slab 24 px, top face 32 px deep), the presenter 520 px (3.7 px) beside a board 450 x 330 whose lines grow with it (s 1.5); all on twos as lists of drawings, every drawing passing the one before as pose.prev, so the nodder's head (and her bun) trails her body by one drawing on every dip and every snap. The presenter gestures through three drawings (an open hand at the board, both hands out explaining, a pointing finger at a note), each reached through one in-between and held 12-16 frames, his near hand within 0.29 h of the shoulder. The nodder: eyes shut at 1.0 s, nod 1 at 1.17 s (spine 0.08, head 0.3 over two drawings, held 0.42 s, back up through one drawing 0.04 past upright); nod 2 at 2.42 s a little deeper (0.12 / 0.4, held 0.42 s); nod 3 at 3.67 s sinks over two drawings (0.16 / 0.45) and at 3.92 s drops in one drawing past its mark (spine 0.46, head 0.78), settles on the next (0.42 / 0.7) and holds dead still to 4.33 s. 4.33 s the snap: one drawing bolt upright past the mark (hips 12 px up, spine -0.14, head -0.18, eyes wide, both hands off the table) with three shake arcs (50 px out, 13 px apart) by her head for two drawings, then stiff upright (spine -0.06, hips 6 px up) and held. The presenter has held his last point since 4.0 s; on the snap he only shuts his mouth, and two drawings later goes wide-eyed. 4.5 s the neighbour in front leans back (the anticipation), 4.67 s swivels his chair round to face her (the chair and figure flip, dir -1, there is no front view) and one drawing later settles with his head tipped toward her. 5.17 s the nodder's sheepish smile. From 5.25 s nothing moves. Colours: the nodder's yellow (and the board's yellow notes), the neighbour's sky, the board's blue bar; the presenter is in charcoal. */
+   Motion notes: 7 s in four shots (IB.shot, on ones): 0-2.08 s the meeting (the whole stage; the table runs off the left edge, the action spans x 390-1820) pushing in to a 1720 px window; 2.08 s a cut to a medium on the nodder (900) for the second nod; 3.0 s a push in to her face (640, 24 frames) that lands on the drop at 3.92 s and holds through the snap; 4.5 s, as the neighbour leans back, a cut out to the whole room (1760) so the neighbour's swivel and the presenter's wide eyes are in one shot; 5.17 s a cut to a two-shot of her and the turned neighbour (900) for the sheepish smile. Actors are staged once in stage px: sitters 500 px tall (line 3.6 px) behind a table whose far edge is 205 px up (0.41 h, their elbow height, slab 24 px, top face 32 px deep), the presenter 520 px (3.7 px) beside a board 450 x 330 whose lines grow with it (s 1.5); all on twos as lists of drawings, every drawing passing the one before as pose.prev, so the nodder's head (and her bun) trails her body by one drawing on every dip and every snap. The presenter gestures through three drawings (an open hand at the board, both hands out explaining, a pointing finger at a note), each reached through one in-between and held 12-16 frames, his near hand within 0.29 h of the shoulder. The nodder: eyes shut at 1.0 s, nod 1 at 1.17 s (spine 0.08, head 0.3 over two drawings, held 0.42 s, back up through one drawing 0.04 past upright); nod 2 at 2.42 s a little deeper (0.12 / 0.4, held 0.42 s); nod 3 at 3.67 s sinks over two drawings (0.16 / 0.45) and at 3.92 s drops in one drawing past its mark (spine 0.46, head 0.78), settles on the next (0.42 / 0.7) and holds dead still to 4.33 s. 4.33 s the snap: one drawing bolt upright past the mark (hips 12 px up, spine -0.14, head -0.18, eyes wide, both hands off the table) with three shake arcs (50 px out, 13 px apart) by her head for two drawings, then stiff upright (spine -0.06, hips 6 px up) and held. The presenter has held his last point since 4.0 s; on the snap he only shuts his mouth, and two drawings later goes wide-eyed. 4.5 s the neighbour in front leans back (the anticipation), 4.67 s swivels his chair round to face her (the chair and figure flip, dir -1, there is no front view) and one drawing later settles with his head tipped toward her. 5.17 s the nodder's sheepish smile. From 5.25 s nothing moves. Colours: the nodder's yellow (and the board's yellow notes), the neighbour's sky, the board's blue bar; the presenter is in charcoal. */
 const F = IB.FIG, FLOOR = 990, H = 500, TABLE = [480, FLOOR], TOP = Math.round(0.41 * H), DEPTH = 32;
 const B = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 40, tuck: true }, C = { ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 60, tuck: true };
 const BOSS = { ...IB.PEOPLE.boss, h: 520, dir: -1, seed: 80 };
@@ -64,6 +65,16 @@ const nodderAt = at(NODDER), presenterAt = at(PRESENTER);
 const neighbourAt = (t) => { const c = at(NEIGHBOUR)(t); return c.prev && !c.prev.swung !== !c.swung ? { ...c, prev: undefined } : c; };   // no trail across the swivel: the figure flips
 IB.actors = (t) => ({ nodder: nodderAt(t), neighbour: neighbourAt(t), presenter: presenterAt(t) });
 
+// the camera: the meeting, pushing in; a cut to a medium on the nodder for the second nod; a push in to her face through the third that lands on the drop and holds on the snap; a cut out to the whole room as the neighbour leans back (who saw it); a cut to the two of them for the sheepish smile
+const SHOTS = [
+  [0, { at: [960, 560], w: 1920 }],
+  [0, { at: [980, 610], w: 1720 }, 'push', 50],
+  [50, { at: [560, 640], w: 900 }, 'cut'],
+  [72, { at: [520, 660], w: 640 }, 'push', 24],
+  [108, { at: [1010, 600], w: 1760 }, 'cut'],
+  [124, { at: [700, 640], w: 900 }, 'cut'],
+];
+
 MG.scene({
   title: 'work / meeting-nod-off',
   duration: 7, ref: null, fps: 24,
@@ -71,19 +82,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt);
-    const c = neighbourAt(t), sitters = [[nodderAt(t), B, XB], [c, c.swung ? C2 : C, XC]];
-    IB.smear(ctx, TABLE[0] + 160, FLOOR - 8, 1300, { h: 16, seed: 9 });
-    IB.smear(ctx, XP - 120, FLOOR - 10, 560, { h: 15, seed: 10 });
-    sitters.forEach(([p, look, x], i) => IB.chair(ctx, x, FLOOR, H, look.dir, { seed: 700 + i * 10 }));
-    sitters.forEach(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'far'));
-    IB.meetingTable(ctx, TABLE, { w: 1460, top: TOP, depth: DEPTH, thick: 24, lw: IB.figLine(H), sheets: [-420, 260] });
-    const heads = sitters.map(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'near'));
-    // shake arcs behind the nodder's head on the snap
-    const k = IB.drawn(tt, 104 / 24);
-    if (k >= 0 && k < 2) IB.shake(ctx, heads[0].headAt[0] - 14, heads[0].headAt[1] - 8, 50, { a: Math.PI * 1.15, n: 3, gap: 13, w: 3.4, seed: 600 + k * 9 });
-    IB.whiteboard(ctx, BOARD, { s: 1.5, lw: IB.figLine(BOSS.h) / 1.5, notes: 3 });
-    const p = presenterAt(t);
-    IB.figure(ctx, p, { ...BOSS, face: p.face });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      const c = neighbourAt(t), sitters = [[nodderAt(t), B, XB], [c, c.swung ? C2 : C, XC]];
+      IB.smear(ctx, TABLE[0] + 160, FLOOR - 8, 1300, { h: 16, seed: 9 });
+      IB.smear(ctx, XP - 120, FLOOR - 10, 560, { h: 15, seed: 10 });
+      sitters.forEach(([p, look, x], i) => IB.chair(ctx, x, FLOOR, H, look.dir, { seed: 700 + i * 10 }));
+      sitters.forEach(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'far'));
+      IB.meetingTable(ctx, TABLE, { w: 1460, top: TOP, depth: DEPTH, thick: 24, lw: IB.figLine(H), sheets: [-420, 260] });
+      const heads = sitters.map(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'near'));
+      // shake arcs behind the nodder's head on the snap
+      const k = IB.drawn(tt, 104 / 24);
+      if (k >= 0 && k < 2) IB.shake(ctx, heads[0].headAt[0] - 14, heads[0].headAt[1] - 8, 50, { a: Math.PI * 1.15, n: 3, gap: 13, w: 3.4, seed: 600 + k * 9 });
+      IB.whiteboard(ctx, BOARD, { s: 1.5, lw: IB.figLine(BOSS.h) / 1.5, notes: 3 });
+      const p = presenterAt(t);
+      IB.figure(ctx, p, { ...BOSS, face: p.face });
+    });
   },
 });
 </script>

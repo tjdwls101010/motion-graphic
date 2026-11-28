@@ -11,9 +11,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 차트 선을 레일 삼은 노란 카트가 딸깍딸깍 느리게 꼭대기까지 올라가 한참 멈췄다가, 한 장에 바닥까지 곤두박질치고 남은 힘으로 작은 언덕을 넘어 서자 탄 사람이 "…내려 주세요." 한다. 원본에 없는 창작 장면으로, 원본의 "긴 준비, 스미어 한 장, 긴 정지"와 3프레임 단위의 느린 연기를 주가 차트 은유로 옮겼다. 전달하는 생각: 오르는 데는 오래 걸리고 떨어지는 것은 한순간이다.
-   Motion notes: one locked shot, 7.5 s. The rail is the chart line itself (one ink stroke through 11 points) on two axes; the cart is rigid and is placed by its two wheels: the rear wheel's centre is one radius off the curve along the curve's normal, and the front wheel's place on the curve is searched (bisection) until its centre, set off the same way, is exactly one wheelbase from the rear one. The body spans the line between the two centres, so both drawn wheels touch the line through every bend. Climb 0.5-3.0 s on threes (8 fps), 21 drawings whose steps shrink toward the top (1 - (1 - u)^1.5), a tick mark flipping sides behind the wheel on every drawing: slow and countable is what climbing looks like. Three more drawings creep the last 24 px onto the crest, then the cart is dead still 0.63 s (3.38-4.0 s) while shake marks flicker for 4 drawings. The plunge is ONE drawing at 4.0 s: the cart halfway down, where the rail is straight enough to take its length, stretched 2.1x along the rail, four speed lines trailing, arms already up. On the next drawing it is at the lowest point of the dip with a four-line burst for 2 drawings, then it runs on twos: up the small hill in 6 drawings (outQuad) with the raised arms flailing between two drawings, over and along to the end in 8 (inOutQuad), one drawing 12 px past the stop with the rider thrown forward (lean 0.3), stopped at 5.33 s. The rider passes the drawing before as pose.prev, so her head and ponytail trail the changes of lean (the plunge, the jolt at the stop); her hips ride with the cart, so the ponytail does not trail the cart's travel. The last second's rocking head gets no prev. The bubble shows 6.0-6.75 s over a still pose and leaves on a hard cut; from then only the rider's head rocks, two drawings alternating on threes. The climb's beats are on the threes grid (eighths of a second); it hands over to twos at 4.0 s, which is on both grids. The cart is rigid and turns with the rail's slope; the rider is drawn inside the cart's turned frame, so the body tips with it. Two colours: the yellow cart, the mint top. */
+   Motion notes: 7.5 s in five shots (IB.shot, on ones): 0-0.58 s the whole chart (1920); 0.58 s an ease in to the foot of the climb (1240, 16 frames) and from 1.25 s a steady push up the hill with the cart (1040, 51 frames); 3.38 s, as the cart goes dead still on the crest, a cut to a close-up of her tilted 0.07 rad (640); 4.0 s, on the plunge drawing, a cut back to the whole chart, with a 22 px jolt as it hits the bottom of the dip (4.08 s); 4.33 s an ease over to where it stops (1100, 24 frames), a 14 px jolt on the stop (5.25 s); 5.5 s a slow push to her and her line (900, 48 frames). The rail is the chart line itself (one ink stroke through 11 points) on two axes; the cart is rigid and is placed by its two wheels: the rear wheel's centre is one radius off the curve along the curve's normal, and the front wheel's place on the curve is searched (bisection) until its centre, set off the same way, is exactly one wheelbase from the rear one. The body spans the line between the two centres, so both drawn wheels touch the line through every bend. Climb 0.5-3.0 s on threes (8 fps), 21 drawings whose steps shrink toward the top (1 - (1 - u)^1.5), a tick mark flipping sides behind the wheel on every drawing: slow and countable is what climbing looks like. Three more drawings creep the last 24 px onto the crest, then the cart is dead still 0.63 s (3.38-4.0 s) while shake marks flicker for 4 drawings. The plunge is ONE drawing at 4.0 s: the cart halfway down, where the rail is straight enough to take its length, stretched 2.1x along the rail, four speed lines trailing, arms already up. On the next drawing it is at the lowest point of the dip with a four-line burst for 2 drawings, then it runs on twos: up the small hill in 6 drawings (outQuad) with the raised arms flailing between two drawings, over and along to the end in 8 (inOutQuad), one drawing 12 px past the stop with the rider thrown forward (lean 0.3), stopped at 5.33 s. The rider passes the drawing before as pose.prev, so her head and ponytail trail the changes of lean (the plunge, the jolt at the stop); her hips ride with the cart, so the ponytail does not trail the cart's travel. The last second's rocking head gets no prev. The bubble shows 6.0-6.75 s over a still pose and leaves on a hard cut; from then only the rider's head rocks, two drawings alternating on threes. The climb's beats are on the threes grid (eighths of a second); it hands over to twos at 4.0 s, which is on both grids. The cart is rigid and turns with the rail's slope; the rider is drawn inside the cart's turned frame, so the body tips with it. Two colours: the yellow cart, the mint top. */
 const { lerp } = MG;
 const AX = 220, BASE = 900;
 const P = [[270, 838], [430, 792], [690, 340], [820, 246], [905, 330], [1030, 730], [1200, 806], [1390, 580], [1520, 530], [1650, 596], [1790, 580]];
@@ -54,6 +55,17 @@ const prevT = (t) => (IB.twos(t) < 4 - 1e-6 ? IB.threes(t) : IB.twos(t)) - 1e-4;
 const riderAt = (t) => { const r = ride(t), now = rider(r), was = t > 1e-4 && r.rock == null ? rider(ride(prevT(t))).pose : undefined; return { ...now, pose: { ...now.pose, prev: was } }; };   // no prev through the last second's rocking head: a lag would blur its two drawings on threes
 IB.actors = (t) => { const r = ride(t); return { cart: Math.round(r.s), rider: rider(r).pose }; };
 IB.actors.step = { cart: 3 };
+// the camera on ones: the whole chart, up the climb with the cart, a tilted close-up on the crest, the plunge in the wide, over to where it stops, then a slow push to her and her line
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [14, { at: [600, 600], w: 1240 }, 'ease', 16],
+  [30, { at: [780, 330], w: 1040 }, 'push', 51],
+  [81, { at: [820, 170], w: 640, tilt: 0.07 }, 'cut'],
+  [96, { at: [960, 540], w: 1920 }, 'cut'],
+  [104, { at: [1500, 410], w: 1100 }, 'ease', 24],
+  [132, { at: [1520, 370], w: 900 }, 'push', 48],
+];
+const HITS = [[98, 22], [126, 14]];   // the cart hits the bottom of the dip; it stops dead
 
 MG.scene({
   title: 'market / chart-rollercoaster-rider',
@@ -62,17 +74,19 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const r = ride(t);
-    // axes with ticks, supports from the rail down to the axis, then the rail
-    IB.chartAxes(ctx, [AX, BASE]);
-    IB.coasterTrack(ctx, RAIL, { base: BASE, layer: 'supports' });
-    IB.smear(ctx, 1010, BASE + 2, 1500, { h: 12, seed: 9 });
-    IB.coasterTrack(ctx, RAIL, { layer: 'rail' });
-    const c = IB.coasterCart(ctx, RAIL, r.s, { stretch: r.smear ? 2.1 : 1, K, rider: riderAt(t) });
-    if (r.tick != null && r.tick > 0) IB.coasterClack(ctx, c, r.tick, { K });   // the clack of each notch
-    if (r.shake != null && r.shake >= 0 && r.shake < 4) { IB.shake(ctx, c.p[0] + 70, c.p[1] - 70, 26, { a: -0.5, n: 2, seed: 80 + r.shake, w: 2.8 }); IB.shake(ctx, c.p[0] - 80, c.p[1] - 40, 22, { a: Math.PI + 0.4, n: 2, seed: 90 + r.shake, w: 2.8 }); }
-    if (r.smear) IB.coasterSpeedLines(ctx, RAIL, S(3) + 30, r.s - 150);
-    if (r.thud != null) IB.burst(ctx, [c.p[0], c.p[1] - 20], { a0: -2.6, da: 0.7, r0: 96 + r.thud * 20, r1: 96 + r.thud * 20 + 44, sy: 0.7, w: 3, seed: 110 + r.thud * 5 });
-    IB.bubble(ctx, ['…내려 주세요.'], t, IB.T(72), { until: IB.T(81), tip: [c.p[0] - 10, c.p[1] - 1.12 * WHO.h], x: c.p[0] - 210, y: c.p[1] - 1.62 * WHO.h, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      // axes with ticks, supports from the rail down to the axis, then the rail
+      IB.chartAxes(ctx, [AX, BASE]);
+      IB.coasterTrack(ctx, RAIL, { base: BASE, layer: 'supports' });
+      IB.smear(ctx, 1010, BASE + 2, 1500, { h: 12, seed: 9 });
+      IB.coasterTrack(ctx, RAIL, { layer: 'rail' });
+      const c = IB.coasterCart(ctx, RAIL, r.s, { stretch: r.smear ? 2.1 : 1, K, rider: riderAt(t) });
+      if (r.tick != null && r.tick > 0) IB.coasterClack(ctx, c, r.tick, { K });   // the clack of each notch
+      if (r.shake != null && r.shake >= 0 && r.shake < 4) { IB.shake(ctx, c.p[0] + 70, c.p[1] - 70, 26, { a: -0.5, n: 2, seed: 80 + r.shake, w: 2.8 }); IB.shake(ctx, c.p[0] - 80, c.p[1] - 40, 22, { a: Math.PI + 0.4, n: 2, seed: 90 + r.shake, w: 2.8 }); }
+      if (r.smear) IB.coasterSpeedLines(ctx, RAIL, S(3) + 30, r.s - 150);
+      if (r.thud != null) IB.burst(ctx, [c.p[0], c.p[1] - 20], { a0: -2.6, da: 0.7, r0: 96 + r.thud * 20, r1: 96 + r.thud * 20 + 44, sy: 0.7, w: 3, seed: 110 + r.thud * 5 });
+      IB.bubble(ctx, ['…내려 주세요.'], t, IB.T(72), { until: IB.T(81), tip: [c.p[0] - 10, c.p[1] - 1.12 * WHO.h], x: c.p[0] - 210, y: c.p[1] - 1.62 * WHO.h, seed: 500 });
+    });
   },
 });
 </script>

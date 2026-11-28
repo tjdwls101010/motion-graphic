@@ -1,4 +1,4 @@
-/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside and the arena's in IB.courtside), the corner flag (IB.cornerFlag), a camera that eases between crop windows (IB.camera) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits), the clock over a backboard (IB.gameClock) and the penalty mark (IB.penaltySpot). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
+/* props/sports.js — the ball games: the flight of a ball under gravity with its bounces and roll (IB.flight, IB.aim), the balls (IB.soccerBall, IB.basketball, IB.ballTrail), a football goal and a basketball hoop seen from the side with a hint of depth (IB.soccerGoal, IB.hoop), the crowd in the stands and the hoarding in front of them (IB.stands, IB.adBoards, both with the grass in IB.pitchside and the arena's in IB.courtside), the corner flag (IB.cornerFlag) and a scoreboard of drawn segment digits (IB.scoreboard, IB.segDigits), the clock over a backboard (IB.gameClock) and the penalty mark (IB.penaltySpot). Sizes are for a wide shot where a 1.8 m player is 360 px tall (200 px a metre); opts.s scales a part from there, and line widths stay in screen px. Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG;
   const MESH = '#9a9a9a';   // net strings: lighter than ink so the players and the ball read over them
@@ -214,14 +214,6 @@
     IB.stands(ctx, [x0, x1], floor - 600, { rows: 4, colors: o.colors || [C.yellow, C.lavender], share: 0.3, cheer: o.cheer || 0, s: 0.85, seed: o.seed || 720, faint: true });
     IB.ink(ctx, [[x0 - 40, floor - 150], [x1 + 40, floor - 150], [x1 + 40, floor - 110], [x0 - 40, floor - 110]], { closed: true, smooth: false, fill: C.charcoal, w: 2.6, seed: 760 });
     IB.smear(ctx, (x0 + x1) / 2, floor - 6, x1 - x0 + 200, { h: 16, color: C.mustard, seed: 11 });
-  };
-
-  /* camera(keys, f) — the crop window [x, y, w] (for IB.crop) at frame f, from [frame, [x, y, w]] keys: held before the first and after the last, eased with a smoothstep between two keys. Call it with the frame of the drawing (on twos) so the camera moves on twos with the players. */
-  IB.camera = (keys, f) => {
-    let i = 0; while (i < keys.length - 1 && f >= keys[i + 1][0]) i++;
-    if (i === keys.length - 1 || f <= keys[0][0]) return keys[f <= keys[0][0] ? 0 : i][1];
-    const [f0, a] = keys[i], [f1, b] = keys[i + 1], u = (f - f0) / (f1 - f0), k = u * u * (3 - 2 * u);
-    return a.map((v, j) => v + (b[j] - v) * k);
   };
 
   /* segDigits(ctx, [x, y], text, opts) — numbers drawn as seven-segment strokes in ink (a scoreboard is a drawn object here, not typeset copy): digits, ':' and '.'; [x, y] is the top left, each digit `size` px tall and 0.55 of that wide. Returns the width drawn. opts: size (40), color, lw, seed. */

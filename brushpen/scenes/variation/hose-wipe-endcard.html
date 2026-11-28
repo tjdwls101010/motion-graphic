@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 호스를 잡고 버틴 사람 손에서 물줄기가 터져 나와 점점 퍼지더니 화면을 통째로 덮고, 그대로 하드 컷으로 엔드카드가 되어 파란 분필 스미어와 마무리 한 줄이 밀려와 멈추고 남은 물방울이 떨어진다. 원본에 없는 창작 장면으로, 원본 3편의 "본편의 마지막 소품이 엔드카드로 넘어가는 전환"과 엔드카드의 정착을 다른 상황에 썼다. 전달하는 생각: 본편의 마지막 동작이 그대로 끝맺음이 된다.
-   Motion notes: two shots, 6 s. Shot A (0-2.5 s), on twos: braced pose held 0.75 s; a bulge runs up the hose to the nozzle in 6 drawings; one drawing before the water bursts she digs in (further forward and lower), it bursts at 1.25 s and she is thrown back in the same drawing (spine from 0.2 rad in the brace to -0.14 rad, shake marks 4 drawings), rebounds a little forward on the next and settles; her curls trail by one drawing (pose.prev). The stream is a flat blue wedge with an ink edge from the nozzle to past the frame, its white streaks re-rolled on every drawing; half-angle 3, 4, 5, 6, 7, 8, 8 degrees over 7 drawings, then it opens 12, 18, 26, 38, 55, 80 degrees and the last two drawings are the whole frame in blue: the prop becomes the wipe. Shot B from 2.5 s is the end card and uses the reference's measured numbers (STYLE.md endcard, IB.TYPE.tag): hard cut, the line (64 px, royal, centred, glyph top y=508) and the chalk smear (1000 x 34 at y=910) arrive together 39 px left of their place and settle on ones in 0.5 s (IB.settle tau 0.152). The line is a placeholder for a closing line. What carries over the cut is the water: five drops fall on twos, 260 px per drawing, from 2.75 s at 0.25 s intervals, each ending in a three-line splash on the smear for 2 drawings; from 4.5 s the card is dead still. Royal blue appears only in the smear and the line, the water is the lighter blue. */
+   Motion notes: two shots, 6 s. Shot A (0-2.5 s), on twos, filmed through IB.shot on ones: her and the hose (1500); 0.75 s, as the bulge sets off, a cut to a close-up of her hands and the nozzle (760), shaken 22 px by the burst at 1.25 s; 1.33 s an ease out to the whole stage (22 frames) while the stream opens, so the water reaches the frame's edges as the frame widens. The acting: braced pose held 0.75 s; a bulge runs up the hose to the nozzle in 6 drawings; one drawing before the water bursts she digs in (further forward and lower), it bursts at 1.25 s and she is thrown back in the same drawing (spine from 0.2 rad in the brace to -0.14 rad, shake marks 4 drawings), rebounds a little forward on the next and settles; her curls trail by one drawing (pose.prev). The stream is a flat blue wedge with an ink edge from the nozzle to past the frame, its white streaks re-rolled on every drawing; half-angle 3, 4, 5, 6, 7, 8, 8 degrees over 7 drawings, then it opens 12, 18, 26, 38, 55, 80 degrees and the last two drawings are the whole frame in blue: the prop becomes the wipe. Shot B from 2.5 s is the end card and uses the reference's measured numbers (STYLE.md endcard, IB.TYPE.tag): hard cut, the line (64 px, royal, centred, glyph top y=508) and the chalk smear (1000 x 34 at y=910) arrive together 39 px left of their place and settle on ones in 0.5 s (IB.settle tau 0.152). The line is a placeholder for a closing line. What carries over the cut is the water: five drops fall on twos, 260 px per drawing, from 2.75 s at 0.25 s intervals, each ending in a three-line splash on the smear for 2 drawings; from 4.5 s the card is dead still. Royal blue appears only in the smear and the line, the water is the lighter blue. */
 const { lerp } = MG;
 const C = IB.C, F = IB.FIG, FLOOR = 930, X0 = 560, DEG = Math.PI / 180, CUT = 2.5, BURST = 15 / 12;
 const WHO = { ...IB.PEOPLE.chopper, bottom: C.bg, h: 520, dir: 1, seed: 10 };   // the same person in white trousers
@@ -31,16 +32,24 @@ function hose(p) {
   const far = p.hands[0], near = p.hands[1], a = Math.atan2(far[1] - near[1], far[0] - near[0]), u = [Math.cos(a), Math.sin(a)];
   return { path: [[-60, FLOOR - 18], [X0 - 0.62 * H, FLOOR - 18], [X0 - 0.36 * H, FLOOR - 70], [X0 - 0.12 * H, p.hip[1] + 0.2 * H], [near[0] - u[0] * 50, near[1] - u[1] * 50 + 16], near], a, tip: [far[0] + u[0] * 96, far[1] + u[1] * 96], near, far };
 }
+// shot A's camera on ones: her and the hose, a cut in to her hands and the nozzle as the bulge sets off, the burst shakes it, and it eases out to the whole stage while the stream opens, so the water reaches the frame's edges as the frame widens
+const SHOTS = [
+  [0, { at: [760, 600], w: 1500 }],
+  [18, { at: [690, 560], w: 760 }, 'cut'],
+  [32, { at: [960, 540], w: 1920 }, 'ease', 22],
+];
 function shotA(ctx, t) {
   const tt = IB.twos(t), p = drawnAt(t), hz = hose(p), k = IB.drawn(tt, BURST);
   if (k >= SPREAD.length) return IB.bg(ctx, C.blue);   // the stream has covered the frame
-  IB.smear(ctx, X0 + 10, FLOOR - 9, 430, { h: 14, seed: 9 });
-  IB.gardenHose(ctx, hz.path, { bulge: IB.drawn(tt, 0.75) });   // the bulge on its way to the nozzle
-  IB.figure(ctx, p, { ...WHO, face: p.face }, 'far');
-  if (k >= 0) IB.waterJet(ctx, hz.tip, hz.a, { k, half: SPREAD[k] * DEG });
-  IB.nozzle(ctx, hz.near, hz.a);
-  IB.figure(ctx, p, { ...WHO, face: p.face }, 'near');
-  if (k >= 0 && k < 4) { IB.shake(ctx, p.hip[0] - 0.12 * H, p.hip[1] - 0.14 * H, 26, { a: Math.PI, n: 3, seed: 330 + k, w: 3 }); IB.shake(ctx, p.feet[1][0] - 30, FLOOR - 24, 18, { a: Math.PI * 0.9, n: 2, seed: 340 + k, w: 3 }); }
+  IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: [[30, 22]] }), (ctx) => {
+    IB.smear(ctx, X0 + 10, FLOOR - 9, 430, { h: 14, seed: 9 });
+    IB.gardenHose(ctx, hz.path, { bulge: IB.drawn(tt, 0.75) });   // the bulge on its way to the nozzle
+    IB.figure(ctx, p, { ...WHO, face: p.face }, 'far');
+    if (k >= 0) IB.waterJet(ctx, hz.tip, hz.a, { k, half: SPREAD[k] * DEG });
+    IB.nozzle(ctx, hz.near, hz.a);
+    IB.figure(ctx, p, { ...WHO, face: p.face }, 'near');
+    if (k >= 0 && k < 4) { IB.shake(ctx, p.hip[0] - 0.12 * H, p.hip[1] - 0.14 * H, 26, { a: Math.PI, n: 3, seed: 330 + k, w: 3 }); IB.shake(ctx, p.feet[1][0] - 30, FLOOR - 24, 18, { a: Math.PI * 0.9, n: 2, seed: 340 + k, w: 3 }); }
+  });
 }
 
 const DROPS = [[760, 0], [1130, 3], [930, 6], [1290, 9], [1010, 12]];   // x, and the drawing (after 2.75 s) it enters on

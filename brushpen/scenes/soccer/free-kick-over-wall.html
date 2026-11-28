@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 프리킥: 수비 세 명이 벽을 세우고, 키커가 세 걸음 달려 감아 찬다. 벽이 함께 뛰어오르지만 공은 그 머리 위를 넘어 떨어지며 골대 윗구석으로 들어가고, 뒤늦게 솟은 골키퍼의 손끝 위로 그물이 불룩해진다. 원본에 없는 창작 장면이다. 전달하는 생각: 벽을 넘는 공은 떨어지는 힘으로 들어간다.
-   Motion notes: seen from the touchline, 8 s. On the stage the players are 252 px (1.8 m, 140 px a metre); the camera (IB.camera, on twos) frames 1250 px of it (1.54x) on the kicker and the wall, pans with the ball to the goal in 7 drawings from 1.67 s, and at the end pulls back to 1700 px to hold the kicker's celebration and the goal. The ball has topspin, so it falls under 1.3 g (the Magnus force pulling it down: 1785 px/s²): it leaves at 10 m/s and 1185 px/s up, passes 2.5 m up over the wall 0.4 s after the kick (peaking near 2.9 m), and dips under the bar into the top corner 1.0 s after it, spinning forward on twos. The wall (three defenders, standing with their hands crossed low) jumps together on the drawing after the kick, the outer two a drawing later (0.35 m on a gravity arc, eyes shut), lands and turns to look. The keeper reads it late: a step, and a leap back towards the corner from 2.17 s, peaking just under the ball, which goes in over his fingertips (the back net bulges round it for 6 drawings); he falls on his back. The kicker runs 3 drawings, strikes like the penalty (cock, swing, contact with a burst, one drawing past), watches, and leaps with both fists up at the goal. The crowd stands and cheers on twos; from 6.17 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 8 s. On the stage the players are 252 px (1.8 m, 140 px a metre); the camera (IB.shot, on ones) films it in four shots: 0-1.42 s from behind the kicker, a 1080 px frame on him and the wall pushing in to 900; 1.42 s a cut to a 540 px close-up of the boot and the ball, shaking 20 px on the contact (1.5 s); 1.58 s a cut to a 1000 px frame that follows the ball's flight on ones, 220 px ahead of it (stopping with the goal in frame), and snaps in to 640 px on the net as the ball hits it (2.67 s, shaking 22 px); 2.92 s a 6-frame whip back to the kicker's leap (820 px), and from 4.33 s an ease out to a 1700 px wide of the kicker, the wall and the goal (24 frames). The ball has topspin, so it falls under 1.3 g (the Magnus force pulling it down: 1785 px/s²): it leaves at 10 m/s and 1185 px/s up, passes 2.5 m up over the wall 0.4 s after the kick (peaking near 2.9 m), and dips under the bar into the top corner 1.0 s after it, spinning forward on twos. The wall (three defenders, standing with their hands crossed low) jumps together on the drawing after the kick, the outer two a drawing later (0.35 m on a gravity arc, eyes shut), lands and turns to look. The keeper reads it late: a step, and a leap back towards the corner from 2.17 s, peaking just under the ball, which goes in over his fingertips (the back net bulges round it for 6 drawings); he falls on his back. The kicker runs 3 drawings, strikes like the penalty (cock, swing, contact with a burst, one drawing past), watches, and leaps with both fists up at the goal. The crowd stands and cheers on twos; from 6.17 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M, PI = Math.PI;
 const GX = 1800, GS = 0.7;
 const KICK = IB.athlete('soccer', 'away', 3, { h: H, dir: 1, seed: 30 });
@@ -94,11 +95,21 @@ GACT.push([GL + 4, gp([FX, FLOOR - 0.12 * H], -1.1, [{ a: 0.25, l: 0.5, pitch: -
 
 const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
 const kicker = withPrev(KACT), keeper = withPrev(GACT), wall = WACT.map(withPrev);
-const CAMS = [[0, [60, 330, 1250]], [KF + 4, [60, 330, 1250]], [KF + 18, [700, 330, 1250]], [HIT + 22, [700, 330, 1250]], [HIT + 36, [260, 250, 1700]]];
+// the camera (IB.shot, on ones): behind the kicker pushing in, the boot, a follow on the ball's flight (on ones, ahead of it), a punch-in on the net, a whip back to the kicker's leap, and the wide
+const SHOTS = [
+  [0, { at: [640, 690], w: 1080 }],
+  [0, { at: [560, 710], w: 900 }, 'push', 34],
+  [34, { at: [430, 785], w: 540 }, 'cut'],
+  [KF + 2, (f) => ({ at: [Math.min(1780, IB.flight(SHOT, (f - KF) / 24).p[0] + 220), 640], w: 1000 }), 'cut'],
+  [HIT, { at: [1990, 660], w: 640 }, 'snap'],
+  [70, { at: [480, 690], w: 820 }, 'whip', 6],
+  [104, { at: [1150, 650], w: 1700 }, 'ease', 24],
+];
+const HITS = [[KF, 20], [HIT, 22]];
 const cheerAt = (f) => (f < HIT ? 0 : f < 148 ? 1 + (f / 2) % 2 : 'up');
 const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kicker(f), keeper: keeper(f), wall0: wall[0](f), wall1: wall[1](f), wall2: wall[2](f), ball: ballAt(f).p, net: bulgeAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kicker(f), keeper: keeper(f), wall0: wall[0](f), wall1: wall[1](f), wall2: wall[2](f), ball: ballAt(f).p, net: bulgeAt(f), crowd: cheerAt(f) }; };
 
 MG.scene({
   title: 'soccer / free-kick-over-wall',
@@ -107,20 +118,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), k = keeper(f);
-    IB.crop(ctx, IB.camera(CAMS, f));
-    IB.pitchside(ctx, [-20, 2200], FLOOR, { cheer: cheerAt(f) });
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
-    if (f < KF) IB.penaltySpot(ctx, [BALL0[0], FLOOR]);
-    [2, 1, 0].forEach((n) => { const p = wall[n](f); IB.figure(ctx, p, lookOf(p, WALL[n])); });
-    IB.figure(ctx, kicker(f), KICK);
-    IB.figure(ctx, k, GK, 'far');
-    if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
-    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
-    IB.figure(ctx, k, GK, 'near');
-    const hit = IB.drawn(tt, KF / 24), gl = IB.drawn(tt, GL / 24);
-    if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
-    if (gl >= 0 && gl < 2) IB.thud(ctx, [FX, FLOOR], { half: 0.3 * H, k: gl });
-    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.pitchside(ctx, [-300, 2500], FLOOR, { cheer: cheerAt(f) });
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
+      if (f < KF) IB.penaltySpot(ctx, [BALL0[0], FLOOR]);
+      [2, 1, 0].forEach((n) => { const p = wall[n](f); IB.figure(ctx, p, lookOf(p, WALL[n])); });
+      IB.figure(ctx, kicker(f), KICK);
+      IB.figure(ctx, k, GK, 'far');
+      if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+      IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+      IB.figure(ctx, k, GK, 'near');
+      const hit = IB.drawn(tt, KF / 24), gl = IB.drawn(tt, GL / 24);
+      if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
+      if (gl >= 0 && gl < 2) IB.thud(ctx, [FX, FLOOR], { half: 0.3 * H, k: gl });
+      IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+    });
   },
 });
 </script>

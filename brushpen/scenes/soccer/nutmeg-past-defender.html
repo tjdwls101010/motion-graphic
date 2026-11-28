@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/athletes.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 알까기: 공을 몰고 달려오던 공격수가 버티고 선 수비수 앞에서 멈칫해 어깨를 흔들고, 수비수가 발을 뻗으며 다리를 벌리는 순간 공을 그 다리 사이로 찔러 넣고 옆으로 빠져나가 다시 공을 잡는다. 수비수는 다리 사이를 내려다본 뒤 돌아서 두 손을 벌린다. 원본에 없는 창작 장면이다. 전달하는 생각: 속임수는 상대가 먼저 움직이게 만드는 한 장이다.
-   Motion notes: seen from the touchline, 7.5 s, the camera (IB.crop of a 1250 px window, 1.54x) follows the attacker on twos until 2.5 s and eases on (to 3.5 s) to a frame that holds both. On the stage the players are 252 px (1.8 m, 140 px a metre). The attacker jogs with the ball (IB.run with step 0.17: 3 m/s, IB.runLen / 8 a drawing), the ball rolling just ahead and pushed on at each stride's touch; the defender waits in a jockeying crouch, shuffling on twos (two drawings, no prev). 1.67 s the attacker brakes, 1.75 s drops his shoulder and sways back (the feint, a drawing); 1.83 s the defender bites, lunging his near foot out and opening his stance (0.4 m between his feet); the same drawing the attacker toes the ball between them (5 m/s, rolling to a stop under 2.9 m/s²) and runs on at full speed (IB.runLen / 8), passing the defender in front of him and taking the ball on where it has rolled to; he jogs it on and stops at 3.75 s with his sole on it and a fist up. The defender looks down between his legs (2.08 s), turns (2.33 s, a drawing with no prev) and spreads his hands (2.67 s). The crowd cheers on twos from the nutmeg to 4.5 s and stands; from 4.5 s nothing moves. Colours: the two kits' navy and yellow; the pitch is a green chalk smear. */
+   Motion notes: seen from the touchline, 7.5 s, the camera (IB.shot, on ones) films it in five shots: 0-1.42 s a 1500 px wide pushing in to 1100 as he dribbles at the defender; 1.42 s a cut to a two-shot tilted 0.07 rad (720 px) for the stand-off and the feint; 1.83 s a cut to a 480 px close-up of their feet as the ball goes between the defender's legs; 2.25 s a cut to a 1200 px wide and from 2.67 s the measured pan (16 frames) as he runs on and stops; 4.0 s a cut to the beaten defender (620 px) pushing in to 480 px over 60 frames. On the stage the players are 252 px (1.8 m, 140 px a metre). The attacker jogs with the ball (IB.run with step 0.17: 3 m/s, IB.runLen / 8 a drawing), the ball rolling just ahead and pushed on at each stride's touch; the defender waits in a jockeying crouch, shuffling on twos (two drawings, no prev). 1.67 s the attacker brakes, 1.75 s drops his shoulder and sways back (the feint, a drawing); 1.83 s the defender bites, lunging his near foot out and opening his stance (0.4 m between his feet); the same drawing the attacker toes the ball between them (5 m/s, rolling to a stop under 2.9 m/s²) and runs on at full speed (IB.runLen / 8), passing the defender in front of him and taking the ball on where it has rolled to; he jogs it on and stops at 3.75 s with his sole on it and a fist up. The defender looks down between his legs (2.08 s), turns (2.33 s, a drawing with no prev) and spreads his hands (2.67 s). The crowd cheers on twos from the nutmeg to 4.5 s and stands; from 4.5 s nothing moves. Colours: the two kits' navy and yellow; the pitch is a green chalk smear. */
 const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, R = 0.11 * M, PI = Math.PI;
 const ATT = IB.athlete('soccer', 'away', 7, { h: H, dir: 1, seed: 30 });
 const DEF = IB.athlete('soccer', 'home', 4, { h: H, dir: -1, seed: 40 });
@@ -63,12 +64,20 @@ const SHUFFLE = [8, FB];
 const atk = (f) => ({ ...IB.held(AACT, f), prev: f > 0 ? IB.held(AACT, f - 2) : undefined });
 const dfd = (f) => { const p = IB.held(DACT, f), q = IB.held(DACT, f - 2), alt = f >= SHUFFLE[0] && f < SHUFFLE[1]; return { ...p, prev: f > 0 && !alt && (p.dir || -1) === (q.dir || -1) ? q : undefined }; };
 const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
-const follow = (f) => [MG.clamp(IB.held(AACT, f).hip[0] - 430, 0, 2000), 330, 1250];
-const CAMK = [[60, follow(60)], [84, [Math.round(DX - 350), 330, 1250]]];
-const camAt = (f) => (f < 60 ? follow(f) : IB.camera(CAMK, f));
+// the camera (IB.shot, on ones): a wide pushing in as he dribbles at the defender, a tilted two-shot for the stand-off and the feint, a close-up of the feet as the ball goes through, the wide and the measured pan as he runs on, and a slow push on the beaten defender
+const SHOTS = [
+  [0, { at: [760, 640], w: 1500 }],
+  [0, { at: [960, 700], w: 1100 }, 'push', 34],
+  [34, { at: [1040, 740], w: 720, tilt: 0.07 }, 'cut'],
+  [FP, { at: [1080, 860], w: 480 }, 'cut'],
+  [54, { at: [1300, 680], w: 1200 }, 'cut'],
+  [64, { at: [1550, 680], w: 1200 }, 'pan', 16],
+  [96, { at: [1200, 670], w: 620 }, 'cut'],
+  [96, { at: [1210, 650], w: 480 }, 'push', 60],
+];
 const cheerAt = (f) => (f < FP + 2 ? 0 : f < 108 ? 1 + (f / 2) % 2 : 'up');
 
-IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { attacker: atk(f), defender: dfd(f), ball: ballAt(f).p, crowd: cheerAt(f), camera: camAt(f) }; };
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { attacker: atk(f), defender: dfd(f), ball: ballAt(f).p, crowd: cheerAt(f) }; };
 
 MG.scene({
   title: 'soccer / nutmeg-past-defender',
@@ -77,13 +86,14 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), d = dfd(f);
-    IB.crop(ctx, camAt(f));
-    IB.pitchside(ctx, [-20, 2700], FLOOR, { cheer: cheerAt(f) });
-    IB.figure(ctx, d, lookOf(d, DEF));
-    IB.soccerBall(ctx, b.p, { r: R, rot: (b.x - X0) / R, lw: 2.6, seed: 91 });
-    IB.figure(ctx, atk(f), ATT);
-    const pk = IB.drawn(tt, FP / 24);
-    if (pk >= 0 && pk < 2) IB.burst(ctx, [BX + R, FLOOR - R], { n: 3, a0: -2.2, da: 0.5, r0: 18 + pk * 6, r1: 34 + pk * 5, w: 2.6, seed: 70 + pk });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.pitchside(ctx, [-20, 2700], FLOOR, { cheer: cheerAt(f) });
+      IB.figure(ctx, d, lookOf(d, DEF));
+      IB.soccerBall(ctx, b.p, { r: R, rot: (b.x - X0) / R, lw: 2.6, seed: 91 });
+      IB.figure(ctx, atk(f), ATT);
+      const pk = IB.drawn(tt, FP / 24);
+      if (pk >= 0 && pk < 2) IB.burst(ctx, [BX + R, FLOOR - R], { n: 3, a0: -2.2, da: 0.5, r0: 18 + pk * 6, r1: 34 + pk * 5, w: 2.6, seed: 70 + pk });
+    });
   },
 });
 </script>

@@ -12,9 +12,10 @@
 <script src="../../kit/props/handheld.js"></script>
 <script src="../../kit/props/vehicles.js"></script>
 <script src="../../kit/props/traffic.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 횡단보도 앞에서 셋이 빨간불을 기다리다 초록불로 바뀌자 한 박자 멈춘 뒤 한 장씩 늦게 차례로 건너가고, 맨 뒤에서 휴대폰만 보던 사람은 늦게 알아채고 뛰어서 둘을 앞질러 건너편 정류장에 먼저 닿지만, 숨을 몰아쉬는 사이 둘이 느긋하게 걸어와 나란히 선다. 원본에 없는 창작 장면으로, 보행자 신호등(IB.walkSignal)과 옆에서 본 횡단보도(IB.crosswalk), 정류장(IB.busStop), 걷기와 뛰기(IB.walk, IB.run), 휴대폰(IB.mobilePhone), 입김(IB.breath)을 썼다. 전달하는 생각: 신호는 모두에게 같은 순간에 바뀌지만 사람은 저마다 한 박자씩 다르게 출발하고, 서둘러도 도착은 같다.
-   Motion notes: one shot that pans once, 7.5 s. Three figures h 360 (line 3.1 px: crossing the stage, so the wide-shot size) on three floor rows 14 px apart (946, 960, 974: the nearer one drawn later); the signal is IB.walkSignal at s 1.2 on the far side, the shelter (480 x 440) beyond it. All acting on twos as [frame, drawing] functions floored to the drawing; the drawing before is passed as pose.prev wherever it moved the hip, lean or nod, except through the tap and the panting (two drawings swapping). Each waiter stands in a walk's stride (IB.walk at phase 1/3, feet put down flat 25 px either side of the hip), so the walk starts from it with the planted foot where it was. Red: the far walker glances up at the signal at 0.67 s (nod -0.08, then -0.14, held); the middle one taps the front foot, toe up 0.5 rad on the heel, at 0.5 s and 0.83 s, each drawing held 4 frames, down for good at 1.0 s; the near one reads a phone held at the chest, head down (nod 0.34). Nothing moves from 1.0 s. 1.5 s the signal goes green (a machine: on ones), ten cells lit, one going out every 0.5 s; everything stays still one more beat (0.42 s). 1.92 s the far walker's anticipation (weight back: hip 6 px back, lean -0.05), one drawing, and the walk from 2.0 s at IB.walkLen / 12 = 25.2 px a drawing (302 px/s); the middle one a drawing later each time (2.0, 2.08 s). 2.33-6.5 s the camera pans 640 px with them (smoothstep on twos). 2.5 s the phone reader's head snaps up past where it stops (nod -0.14, eyes wide, the phone dropping half way) with three burst lines over the cap for two drawings, settles at 2.58 s and holds 0.33 s; 2.92 s anticipation (hip 14 px back, lean -0.08, fists back); from 3.0 s a run at IB.runLen / 8 = 66 px a drawing (792 px/s, 2.6 times the walk) from run phase 0.198, whose planted near foot is where the stride put it with the body where it stood, so the first run drawing neither steps back nor moves a foot on the floor. It passes the tapper at 3.92 s and the leader at 4.29 s in the middle of the frame; its 20th run drawing (4.58 s) lands the far foot ahead, 4.67 s brake (leaning back 0.12, the hip 0.1 h behind that foot, the other foot down 0.28 h behind), 4.75 s the back foot steps up in the air, 4.83-5.5 s panting at the shelter: leaning 0.16 / 0.1 swapping every 4 frames, with three breath lines (IB.breath, big 0.6) over the first three drawings; 5.5 s upright with a small smile, held. The two walkers walk on and stop at the shelter on their 54th drawing (phase 5/6, the lifted foot put down where it is): one drawing thrown forward (lean 0.12), then upright, the leader at 6.5 s, the tapper at 6.58 s, both still from 6.67 s; the last cell goes out at 6.5 s and the signal turns red at 6.75 s, the last thing to change. At 0.72 of the scene (5.4 s) all three are in the middle of the frame by the shelter. The crossing's stripes are 84 px with 66 px gaps, from 38 px above the floor line to 40 below, 3.5% perspective about x 940. Colours: the signal's red or green (one lit at a time) and the phone reader's navy; the others in charcoal and white. */
+   Motion notes: 7.5 s in six shots (IB.shot, on ones): 0-1.08 s the three at the kerb under the signal (1600 px window); 1.08 s a cut to a close-up of the signal (560), red, then green at 1.5 s; 1.83 s a cut to the kerb (1040) as the walkers step off and the reader stays on the phone; 2.5 s a snap in to his face (620) as his head comes up; 3.0 s, on the first run drawing, a cut to a medium (1250) that follows his hip across; 4.83 s an ease (1560, 30 frames) to all three at the shelter with the signal over them, held to the end. Three figures h 360 (line 3.1 px: crossing the stage, so the wide-shot size) on three floor rows 14 px apart (946, 960, 974: the nearer one drawn later); the signal is IB.walkSignal at s 1.2 on the far side, the shelter (480 x 440) beyond it. All acting on twos as [frame, drawing] functions floored to the drawing; the drawing before is passed as pose.prev wherever it moved the hip, lean or nod, except through the tap and the panting (two drawings swapping). Each waiter stands in a walk's stride (IB.walk at phase 1/3, feet put down flat 25 px either side of the hip), so the walk starts from it with the planted foot where it was. Red: the far walker glances up at the signal at 0.67 s (nod -0.08, then -0.14, held); the middle one taps the front foot, toe up 0.5 rad on the heel, at 0.5 s and 0.83 s, each drawing held 4 frames, down for good at 1.0 s; the near one reads a phone held at the chest, head down (nod 0.34). Nothing moves from 1.0 s. 1.5 s the signal goes green (a machine: on ones), ten cells lit, one going out every 0.5 s; everything stays still one more beat (0.42 s). 1.92 s the far walker's anticipation (weight back: hip 6 px back, lean -0.05), one drawing, and the walk from 2.0 s at IB.walkLen / 12 = 25.2 px a drawing (302 px/s); the middle one a drawing later each time (2.0, 2.08 s). 2.5 s the phone reader's head snaps up past where it stops (nod -0.14, eyes wide, the phone dropping half way) with three burst lines over the cap for two drawings, settles at 2.58 s and holds 0.33 s; 2.92 s anticipation (hip 14 px back, lean -0.08, fists back); from 3.0 s a run at IB.runLen / 8 = 66 px a drawing (792 px/s, 2.6 times the walk) from run phase 0.198, whose planted near foot is where the stride put it with the body where it stood, so the first run drawing neither steps back nor moves a foot on the floor. It passes the tapper at 3.92 s and the leader at 4.29 s in the middle of the frame; its 20th run drawing (4.58 s) lands the far foot ahead, 4.67 s brake (leaning back 0.12, the hip 0.1 h behind that foot, the other foot down 0.28 h behind), 4.75 s the back foot steps up in the air, 4.83-5.5 s panting at the shelter: leaning 0.16 / 0.1 swapping every 4 frames, with three breath lines (IB.breath, big 0.6) over the first three drawings; 5.5 s upright with a small smile, held. The two walkers walk on and stop at the shelter on their 54th drawing (phase 5/6, the lifted foot put down where it is): one drawing thrown forward (lean 0.12), then upright, the leader at 6.5 s, the tapper at 6.58 s, both still from 6.67 s; the last cell goes out at 6.5 s and the signal turns red at 6.75 s, the last thing to change. At 0.72 of the scene (5.4 s) all three are in the middle of the frame by the shelter. The crossing's stripes are 84 px with 66 px gaps, from 38 px above the floor line to 40 below, 3.5% perspective about x 940. Colours: the signal's red or green (one lit at a time) and the phone reader's navy; the others in charcoal and white. */
 const C = IB.C, F = IB.FIG, H = 360, FLOOR = 960;
 const GREEN = 36, RED = 162;   // the frames the signal turns green and back to red
 // three waiting, far to near; each stands in a walk's stride (phase 1/3: one foot under the body, put down where it is) so the walk can start from it without the planted foot moving
@@ -83,12 +84,19 @@ const poseAt = (who, t) => {
   const f = IB.frame(IB.twos(t)), p = poseOf[who](f), still = (who === 'tapper' && tapping(f)) || (who === 'hero' && panting(f));
   return f > 0 && !still ? trail(p, poseOf[who](f - 2)) : p;
 };
-/* the camera pans with the crossing on twos (slow out, across, slow in), so the three end at the shelter in the middle of the frame */
-const PAN = [56, 156], PAN_BY = 640;
-const camAt = (f) => { const u = MG.clamp((f - PAN[0]) / (PAN[1] - PAN[0])); return PAN_BY * u * u * (3 - 2 * u); };
+/* the camera: the three waiting, the signal turning green, them stepping off, a punch-in on the late one's head coming up, his run followed, then all three at the shelter */
+const heroX = (f) => HERO.x + MG.clamp((f - DASH) / 2, 0, RK) * RUN;   // where the runner's hip is, smoothly (on ones)
+const SHOTS = [
+  [0, { at: [820, 545], w: 1600 }],   // the three at the kerb, the signal over them
+  [26, { at: [1300, 270], w: 560 }, 'cut'],   // the signal: red, then green at 36
+  [44, { at: [420, 760], w: 1040 }, 'cut'],   // the walkers step off; the reader still on the phone
+  [60, { at: [HERO.x + 30, 650], w: 620 }, 'snap'],   // his head snaps up
+  [72, (f) => ({ at: [heroX(f) + 260, 730], w: 1250 }), 'cut'],   // the run, followed
+  [116, { at: [1460, 565], w: 1560 }, 'ease', 30],   // all three at the shelter, the signal behind them
+];
 // the signal: red, then green with ten cells that go out one every 0.5 s from 2.0 s, and red again once they are all across
 const signal = (f) => ({ go: f >= GREEN && f < RED, left: f < GREEN || f >= RED ? 0 : Math.max(0, 10 - Math.floor((f - GREEN) / 12)) });
-IB.actors = (t) => ({ lead: poseAt('lead', t), tapper: poseAt('tapper', t), hero: poseAt('hero', t), signal: signal(IB.frame(t)), camera: camAt(IB.frame(IB.twos(t))) });
+IB.actors = (t) => ({ lead: poseAt('lead', t), tapper: poseAt('tapper', t), hero: poseAt('hero', t), signal: signal(IB.frame(t)) });
 
 MG.scene({
   title: 'street / crosswalk-green-cross',
@@ -97,23 +105,23 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t), ft = IB.frame(IB.twos(t));
-    ctx.save(); ctx.translate(-camAt(ft), 0);
-    IB.smear(ctx, 1630, FLOOR - 49, 500, { h: 12, seed: 7 });
-    IB.busStop(ctx, [1620, FLOOR - 40], { sign: 1, seed: 960, w: 480, ht: 440 });
-    IB.walkSignal(ctx, [1300, FLOOR - 52], { ...signal(f), n: 10 }, { s: 1.2 });
-    IB.smear(ctx, 300, FLOOR - 9, 620, { h: 16, seed: 8 });
-    IB.crosswalk(ctx, [620, 1250, FLOOR], { vx: 940, stripe: 84, gap: 66, far: 38, near: 40 });
-    IB.smear(ctx, 940, FLOOR - 9, 660, { h: 14, seed: 9, alpha: 0.45 });
-    IB.smear(ctx, 1800, FLOOR - 9, 1060, { h: 16, seed: 10 });
-    for (const [who, w] of [['lead', LEAD], ['tapper', TAPPER], ['hero', HERO]]) {
-      const p = poseAt(who, t), j = IB.figure(ctx, p, { ...w, face: p.face || { mouth: 'flat' } });
-      if (who !== 'hero') continue;
-      const [hx, hy] = j.hands[1], running = ft >= DASH - 2;
-      IB.mobilePhone(ctx, [hx + (running ? 2 : 6), hy - (running ? 22 : 30)], { lw: 2.2, seed: 823 });
-      if (ft >= NOTICE && ft < NOTICE + 4) IB.burst(ctx, [j.headAt[0] + 8, j.headAt[1] - 6], { r0: 34 + (ft - NOTICE) * 4, r1: 52 + (ft - NOTICE) * 8, n: 3, a0: -2.2, da: 0.55, seed: 300 + ft, w: 2.4 });
-      if (ft >= PANTING[0] && ft < PANTING[0] + 6) IB.breath(ctx, j.headAt, { k: (ft - PANTING[0]) >> 1, big: 0.6, seed: 700 });
-    }
-    ctx.restore();
+    IB.film(ctx, IB.shot(SHOTS, f), (ctx) => {
+      IB.smear(ctx, 1630, FLOOR - 49, 500, { h: 12, seed: 7 });
+      IB.busStop(ctx, [1620, FLOOR - 40], { sign: 1, seed: 960, w: 480, ht: 440 });
+      IB.walkSignal(ctx, [1300, FLOOR - 52], { ...signal(f), n: 10 }, { s: 1.2 });
+      IB.smear(ctx, 300, FLOOR - 9, 620, { h: 16, seed: 8 });
+      IB.crosswalk(ctx, [620, 1250, FLOOR], { vx: 940, stripe: 84, gap: 66, far: 38, near: 40 });
+      IB.smear(ctx, 940, FLOOR - 9, 660, { h: 14, seed: 9, alpha: 0.45 });
+      IB.smear(ctx, 1800, FLOOR - 9, 1060, { h: 16, seed: 10 });
+      for (const [who, w] of [['lead', LEAD], ['tapper', TAPPER], ['hero', HERO]]) {
+        const p = poseAt(who, t), j = IB.figure(ctx, p, { ...w, face: p.face || { mouth: 'flat' } });
+        if (who !== 'hero') continue;
+        const [hx, hy] = j.hands[1], running = ft >= DASH - 2;
+        IB.mobilePhone(ctx, [hx + (running ? 2 : 6), hy - (running ? 22 : 30)], { lw: 2.2, seed: 823 });
+        if (ft >= NOTICE && ft < NOTICE + 4) IB.burst(ctx, [j.headAt[0] + 8, j.headAt[1] - 6], { r0: 34 + (ft - NOTICE) * 4, r1: 52 + (ft - NOTICE) * 8, n: 3, a0: -2.2, da: 0.55, seed: 300 + ft, w: 2.4 });
+        if (ft >= PANTING[0] && ft < PANTING[0] + 6) IB.breath(ctx, j.headAt, { k: (ft - PANTING[0]) >> 1, big: 0.6, seed: 700 });
+      }
+    });
   },
 });
 </script>

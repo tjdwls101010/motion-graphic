@@ -10,9 +10,10 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 큰 상자를 끌어안고 용을 써 보지만 꿈쩍도 않자 한숨 쉬고 다시 자세를 잡아, 한 번에 들어 올려 세 걸음 휘청이며 옮겨 놓고 "휴." 한다. 원본에 없는 창작 장면으로, 원본의 느린 연기(3프레임에 한 장)를 무게를 보여 주는 데 썼다. 전달하는 생각: 무거운 것은 느리게, 끊어서 움직인다.
-   Motion notes: one locked shot, 8 s, figure 540 px tall. The rule here is that weight is frame rate: everything light is on twos (12 fps), everything that fights the box is on threes (8 fps). Timeline in seconds: stand 0-1; bend to the box in 4 drawings on twos (poseMix 0.4, 0.8, an overshoot 1.06 where the back dips past the grip while the hands stay on the box, 1); strain 1.5-2.5 on threes, 8 drawings alternating two poses 16 px apart while the box does not move and shake marks re-roll each drawing; slump held 0.5 s; a deeper grip, one in-between and then dead still 0.42 s (the anticipation); lift at 3.5 in 3 drawings on twos, box up 60, 200, 256 px, body leaning back 0.2 rad; three staggering steps 4.0-5.5 on threes, 4 drawings per step, 110 px per step (0.2 h, half the unloaded walk's 0.42 h), the box sagging 10 px on each passing drawing; set down in 2 drawings with a four-line burst and two dust puffs for 2 drawings; rest on the box 0.83 s; stand and wipe the brow at 6.5, bubble at 6.83. The box is rigid throughout: it tilts 0.02 rad under strain and never squashes. Feet: she stands, lifts and sets down in one wide stance (110 px), the stagger starts and ends on a drawing whose planted foot is where the stance had it, and when she straightens only the free foot steps in, lifted off the floor on the in-between drawing, so no foot ever slides along the floor. The hand targets of every held pose are within the arm's reach of that pose and the near hand grips the same spot on the box through the whole strain, so no hand floats off the box or slides on it. The figure is drawn in two passes with the box between its arms (IB.figure `only`). Follow-through: every drawing passes the drawing before it as pose.prev, so on the lift (frames 84-88) the head stays bowed one drawing after the back has straightened and the bun tips back a drawing late; the strain, a tremble between two poses, gets no prev (a one-drawing lag would average it away); the drawing after a move repeats its own pose as prev, so every hold is dead still. */
+   Motion notes: 8 s in four shots (IB.shot, on ones), the whole body in frame through the strain, the lift and the carry: 0-2.5 s her full figure and the box (1350 px window) pushing in to 1250 over 36 frames; 2.5 s, on the slump, a cut to a close-up of her face over the box (640) for the sigh; 3.0 s a cut back to the full figure (1250) for the regrip and the lift, easing along with the carry from 4.08 s (36 frames, starting after her and stopping before) and shaking 16 px when the box is set down (5.67 s); 6.0 s a cut to a medium of her resting, the wipe and the bubble (1100). Figure 540 px tall. The rule here is that weight is frame rate: everything light is on twos (12 fps), everything that fights the box is on threes (8 fps). Timeline in seconds: stand 0-1; bend to the box in 4 drawings on twos (poseMix 0.4, 0.8, an overshoot 1.06 where the back dips past the grip while the hands stay on the box, 1); strain 1.5-2.5 on threes, 8 drawings alternating two poses 16 px apart while the box does not move and shake marks re-roll each drawing; slump held 0.5 s; a deeper grip, one in-between and then dead still 0.42 s (the anticipation); lift at 3.5 in 3 drawings on twos, box up 60, 200, 256 px, body leaning back 0.2 rad; three staggering steps 4.0-5.5 on threes, 4 drawings per step, 110 px per step (0.2 h, half the unloaded walk's 0.42 h), the box sagging 10 px on each passing drawing; set down in 2 drawings with a four-line burst and two dust puffs for 2 drawings; rest on the box 0.83 s; stand and wipe the brow at 6.5, bubble at 6.83. The box is rigid throughout: it tilts 0.02 rad under strain and never squashes. Feet: she stands, lifts and sets down in one wide stance (110 px), the stagger starts and ends on a drawing whose planted foot is where the stance had it, and when she straightens only the free foot steps in, lifted off the floor on the in-between drawing, so no foot ever slides along the floor. The hand targets of every held pose are within the arm's reach of that pose and the near hand grips the same spot on the box through the whole strain, so no hand floats off the box or slides on it. The figure is drawn in two passes with the box between its arms (IB.figure `only`). Follow-through: every drawing passes the drawing before it as pose.prev, so on the lift (frames 84-88) the head stays bowed one drawing after the back has straightened and the bun tips back a drawing late; the strain, a tremble between two poses, gets no prev (a one-drawing lag would average it away); the drawing after a move repeats its own pose as prev, so every hold is dead still. */
 const { lerp } = MG;
 const F = IB.FIG, FLOOR = 930, X0 = 760, STEPX = 110, BW = 230, BH = 210;
 const WHO = { ...IB.PEOPLE.lifter, h: 540, dir: 1, seed: 20 };
@@ -60,6 +61,15 @@ const strain = (t) => IB.twos(t) >= 1.5 && IB.threes(t) < 2.5;   // the strain f
 const poseAt = (t) => { const start = onThrees(t) ? IB.threes(t) : IB.twos(t); return { ...state(t).pose, prev: start > 0 && !strain(t) ? state(start - 1e-4).pose : undefined }; };
 IB.actors = (t) => ({ lifter: poseAt(t) });   // tools/drawings.py counts it on twos, so the strain and the stagger on threes show as 3-frame drawings
 
+// the camera, frames at 24 fps: the full figure for the effort; her face for the sigh; the full figure for the lift, followed through the carry; a medium for the rest
+const SHOTS = [
+  [0, { at: [900, 600], w: 1350 }], [0, { at: [890, 610], w: 1250 }, 'push', 36],
+  [60, { at: [900, 600], w: 640 }, 'cut'],
+  [72, { at: [900, 600], w: 1250 }, 'cut'], [98, { at: [1170, 600], w: 1250 }, 'ease', 36],
+  [144, { at: [1240, 560], w: 1100 }, 'cut'],
+];
+const HITS = [136];   // the box is set down
+
 MG.scene({
   title: 'acting / lift-heavy-box',
   duration: 8, ref: null, fps: 24,
@@ -67,19 +77,21 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const s = { ...state(t), pose: poseAt(t) }, look = { ...WHO, face: s.pose.face }, [bx, by] = s.box, X = s.pose.feet[1][0];
-    IB.smear(ctx, (s.pose.feet[0][0] + s.pose.feet[1][0]) / 2 + 20, FLOOR - 9, 330, { h: 14, seed: 9 });
-    if (!s.carried) IB.smear(ctx, bx, FLOOR - 4, BW * 1.2, { h: 11, seed: 10 });
-    IB.figure(ctx, s.pose, look, 'far');
-    IB.cardboardBox(ctx, s.box, { tilt: s.box[2] }, { w: BW, h: BH });
-    IB.figure(ctx, s.pose, look, 'near');
-    if (s.shake != null) {   // strain: the box and her back tremble, re-rolled on every drawing
-      IB.shake(ctx, bx + BW / 2 + 8, by - BH + 10, 18, { a: -0.7, n: 2, seed: s.shake, w: 2.8 });
-      IB.shake(ctx, bx - BW / 2 - 6, by - 20, 16, { a: 2.5, n: 2, seed: s.shake + 50, w: 2.8 });
-      IB.shake(ctx, s.pose.hip[0] - 40, s.pose.hip[1] - 70, 22, { a: Math.PI * 1.15, n: 3, seed: s.shake + 90, w: 2.8 });
-    }
-    if (s.thud != null && s.thud < 2) IB.thud(ctx, [bx, FLOOR], { half: BW / 2, k: s.thud });   // set down: a burst along the floor and two dust puffs, two drawings
-    const X1 = X0 + 3 * STEPX;
-    IB.bubble(ctx, ['휴.'], t, 82 / 12, { tip: [X1 + 104, HIPY - 196], x: X1 + 250, y: HIPY - 300, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.smear(ctx, (s.pose.feet[0][0] + s.pose.feet[1][0]) / 2 + 20, FLOOR - 9, 330, { h: 14, seed: 9 });
+      if (!s.carried) IB.smear(ctx, bx, FLOOR - 4, BW * 1.2, { h: 11, seed: 10 });
+      IB.figure(ctx, s.pose, look, 'far');
+      IB.cardboardBox(ctx, s.box, { tilt: s.box[2] }, { w: BW, h: BH });
+      IB.figure(ctx, s.pose, look, 'near');
+      if (s.shake != null) {   // strain: the box and her back tremble, re-rolled on every drawing
+        IB.shake(ctx, bx + BW / 2 + 8, by - BH + 10, 18, { a: -0.7, n: 2, seed: s.shake, w: 2.8 });
+        IB.shake(ctx, bx - BW / 2 - 6, by - 20, 16, { a: 2.5, n: 2, seed: s.shake + 50, w: 2.8 });
+        IB.shake(ctx, s.pose.hip[0] - 40, s.pose.hip[1] - 70, 22, { a: Math.PI * 1.15, n: 3, seed: s.shake + 90, w: 2.8 });
+      }
+      if (s.thud != null && s.thud < 2) IB.thud(ctx, [bx, FLOOR], { half: BW / 2, k: s.thud });   // set down: a burst along the floor and two dust puffs, two drawings
+      const X1 = X0 + 3 * STEPX;
+      IB.bubble(ctx, ['휴.'], t, 82 / 12, { tip: [X1 + 104, HIPY - 196], x: X1 + 250, y: HIPY - 300, seed: 500 });
+    });
   },
 });
 </script>

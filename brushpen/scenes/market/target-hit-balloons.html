@@ -12,9 +12,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/party.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 책상에 앉은 사람이 목표선을 향해 오르는 차트를 지켜보다, 선에 닿은 차트가 숨을 멈춘 듯 한 박자 멈춘 뒤 뚫고 올라가자 웅크렸다가 두 손을 번쩍 들고, 모니터 뒤에서 풍선이 떠오른다. 원본에 없는 창작 장면이자 부품 시트의 조립 시험(계획 5단계)으로, 다섯 장면에서 온 부품만으로 지었다: 앉은 사람·의자·책상·키보드·모니터·선 차트(market/watched-chart-drops), 점선 목표선(market/monitor-candles-breakout), 풍선(vignette/balloons-lift-chair), 하트 풍선(spot/folder-meets-document), 펼친 손(cast/figure-hands). 전달하는 생각: 목표에 닿는 순간보다 그 직전의 멈춤이 더 길다.
-   Motion notes: one locked shot, 7.5 s, figure 520 px tall seated (IB.sit), line 3.7 px. All acting on twos as one list of drawings (ACT), every drawing passing the one before as pose.prev. Beats: watching 0-1.5 s; leans in at 1.5 s in one in-between, one drawing 10% past and the hold. The chart gains a point every 2 drawings from 0.5 s (17 px apart), climbing with small dips toward a dashed target line drawn on in 4 drawings at 0.25 s. At 2.67 s the last point touches the line; on the next drawing the face goes wide, and from 2.83 s to 3.17 s nothing moves at all (the chart has stopped 0.5 s): the hold is the suspense. 3.17 s: the breakout point arrives in one drawing, 41 px above the line on screen, a four-line burst at the chart's end for 2 drawings; on that same drawing the sitter sinks over the keyboard with both fists on it (the anticipation), then throws both hands up open, one drawing higher than where they hold (rising off the seat), and holds. Two balloons rise from behind the monitor one drawing apart (IB.settle tau 0.3 s), tied to its top corners, bob once (damped, cut 1 s after) and are still. 5.0 s: leans back with the hands behind the head in one in-between and an overshoot; bubble 5.5-6.5 s. 6.25 s the heart balloon rises from behind the desk (one narrow drawing as it turns into view, then tau 0.45 s) with its string flicking side to side on twos: from 6.5 s it is the only thing that moves. Colours: the two balloons' lavender and sky and the heart balloon's yellow, and the chart's blue rising (red on the drawings where a point dips, as IB.lineChart draws a falling step); the sitter is in white and charcoal so the balloons carry the colour. */
+   Motion notes: 7.5 s in five shots (IB.shot, on ones): the desk (1400) and from 0.5 s a steady push over it (1060, 52 frames); 2.67 s, as the chart touches the line, a cut to a close-up of its end tilted -0.06 rad (560) for the hold and the breakout; 3.25 s, on the hands going up, a cut out to the whole desk with the top of the frame left empty for the balloons (1500); 5.0 s an ease to her (1200, 12 frames) for the lean back and the bubble; 6.5 s a cut back to the desk with the heart balloon up (1500) and a slow push in (1300, 48 frames). The figure 520 px tall seated (IB.sit), line 3.7 px. All acting on twos as one list of drawings (ACT), every drawing passing the one before as pose.prev. Beats: watching 0-1.5 s; leans in at 1.5 s in one in-between, one drawing 10% past and the hold. The chart gains a point every 2 drawings from 0.5 s (17 px apart), climbing with small dips toward a dashed target line drawn on in 4 drawings at 0.25 s. At 2.67 s the last point touches the line; on the next drawing the face goes wide, and from 2.83 s to 3.17 s nothing moves at all (the chart has stopped 0.5 s): the hold is the suspense. 3.17 s: the breakout point arrives in one drawing, 41 px above the line on screen, a four-line burst at the chart's end for 2 drawings; on that same drawing the sitter sinks over the keyboard with both fists on it (the anticipation), then throws both hands up open, one drawing higher than where they hold (rising off the seat), and holds. Two balloons rise from behind the monitor one drawing apart (IB.settle tau 0.3 s), tied to its top corners, bob once (damped, cut 1 s after) and are still. 5.0 s: leans back with the hands behind the head in one in-between and an overshoot; bubble 5.5-6.5 s. 6.25 s the heart balloon rises from behind the desk (one narrow drawing as it turns into view, then tau 0.45 s) with its string flicking side to side on twos: from 6.5 s it is the only thing that moves. Colours: the two balloons' lavender and sky and the heart balloon's yellow, and the chart's blue rising (red on the drawings where a point dips, as IB.lineChart draws a falling step); the sitter is in white and charcoal so the balloons carry the colour. */
 const { lerp } = MG;
 const FLOOR = 930, X0 = 640, DESK = 716;
 const WHO = { ...IB.PEOPLE.typist, h: 520, dir: 1, seed: 30 };
@@ -57,6 +58,17 @@ const MON = [1180, DESK, 520, 340];   // the monitor: centre x, bottom, width, h
 const bob = IB.bob;   // kit/time.js
 const BALLOONS = [{ at: 82, to: [-150, -170], fill: IB.C.lavender, seed: 110, knot: -0.42 }, { at: 84, to: [70, -205], fill: IB.C.sky, seed: 120, knot: 0.42 }];
 
+// the camera on ones: a push over the desk as the chart climbs, a tilted close-up on the line for the hold, a cut out wide on the hands going up, the top of the frame left empty for the balloons to rise into, an ease to her for the lean back and her line, and a cut back to the whole desk as the heart balloon comes up, pushing in slowly
+const SHOTS = [
+  [0, { at: [1000, 580], w: 1400 }],
+  [12, { at: [1000, 540], w: 1060 }, 'push', 52],
+  [64, { at: [1150, 450], w: 560, tilt: -0.06 }, 'cut'],
+  [78, { at: [1010, 480], w: 1500 }, 'cut'],
+  [120, { at: [800, 520], w: 1200 }, 'ease', 12],
+  [156, { at: [1060, 480], w: 1500 }, 'cut'],
+  [158, { at: [1100, 470], w: 1300 }, 'push', 48],
+];
+
 IB.actors = (t) => { const tt = IB.twos(t), f = IB.frame(tt); return { heart: tt < 6.25 - 1e-6 ? null : IB.settle(tt - 6.25, 0.45, 2.4), sitter: poseAt(t), chart: series(f).length, balloons: BALLOONS.map((b) => (f < b.at ? null : [IB.settle(tt - b.at / 24, 0.3), bob(tt - b.at / 24 - 0.5, 10, 1.0)])) }; };
 
 MG.scene({
@@ -66,31 +78,33 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), p = poseAt(t), look = { ...WHO, face: p.face };
-    const top = MON[1] - MON[3] * 1.16, scrTop = top;   // the monitor's top edge (its neck is 0.16 of its height)
-    IB.smear(ctx, X0 + 20, FLOOR - 6, 330, { h: 12, seed: 9 });
-    IB.smear(ctx, 1150, FLOOR - 4, 720, { h: 11, seed: 10 });
-    // balloons behind the monitor: up from behind it on IB.settle, tied to its two top corners
-    BALLOONS.forEach((b) => {
-      if (f < b.at) return;
-      const u = IB.settle(tt - b.at / 24, 0.3), knot = [MON[0] + b.knot * MON[2], scrTop + 6], from = [MON[0] + b.to[0] * 0.4, scrTop + 120];
-      IB.balloon(ctx, [lerp(from[0], MON[0] + b.to[0], u), lerp(from[1], scrTop + b.to[1], u) - bob(tt - b.at / 24 - 0.5, 10, 1.0)], { from: knot, fill: b.fill, seed: b.seed });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      const top = MON[1] - MON[3] * 1.16, scrTop = top;   // the monitor's top edge (its neck is 0.16 of its height)
+      IB.smear(ctx, X0 + 20, FLOOR - 6, 330, { h: 12, seed: 9 });
+      IB.smear(ctx, 1150, FLOOR - 4, 720, { h: 11, seed: 10 });
+      // balloons behind the monitor: up from behind it on IB.settle, tied to its two top corners
+      BALLOONS.forEach((b) => {
+        if (f < b.at) return;
+        const u = IB.settle(tt - b.at / 24, 0.3), knot = [MON[0] + b.knot * MON[2], scrTop + 6], from = [MON[0] + b.to[0] * 0.4, scrTop + 120];
+        IB.balloon(ctx, [lerp(from[0], MON[0] + b.to[0], u), lerp(from[1], scrTop + b.to[1], u) - bob(tt - b.at / 24 - 0.5, 10, 1.0)], { from: knot, fill: b.fill, seed: b.seed });
+      });
+      // the heart balloon: from behind the desk's right end, its string flicking on twos
+      if (tt >= 6.25 - 1e-6) IB.heartBalloon(ctx, [1500, lerp(760, 430, IB.settle(tt - 6.25, 0.45, 2.4))], { sway: IB.alternate(f, 2) ? 1 : -1, edge: f < 152 });
+      IB.chair(ctx, X0, FLOOR, H, 1);
+      IB.figure(ctx, p, look, 'far');
+      IB.desk(ctx, 740, 1560, DESK, FLOOR, { lw: 3.6 });
+      IB.keyboard(ctx, [740 + 24, DESK]);
+      const scr = IB.monitor(ctx, MON[0], MON[1], MON[2], MON[3], { lw: 3.8, seed: 60 });
+      // the target: a dashed line across the screen, drawn on in 4 drawings
+      const ty = scr[1] + scr[3] - 30 - ((TARGET - MIN) / SPAN) * (scr[3] - 70);
+      if (f >= 6) IB.dashLine(ctx, [scr[0] + 14, ty], scr[2] - 28, { dashes: 14, drawn: Math.min(14, Math.ceil(((f - 6) / 2 + 1) * 3.5)), w: 4 });
+      IB.lineChart(ctx, scr, series(f), { min: MIN, span: SPAN });
+      // the breakout: a burst where the chart came through, two drawings
+      const b = IB.drawn(tt, 76 / 24);
+      if (b >= 0 && b < 2) { const n = series(f).length, x = scr[0] + 22 + (n - 1) * 17; IB.burst(ctx, [x, ty - 20], { n: 4, a0: -2.5, da: 0.55, r0: 26 + b * 12, r1: 60 + b * 8, w: 3.2, seed: 300 + b * 5 }); }
+      IB.figure(ctx, p, look, 'near');
+      IB.bubble(ctx, ['찍었다!'], t, 5.5, { until: 6.5, tip: [X0 - 30, HY - 0.45 * H], x: X0 - 220, y: HY - 0.7 * H, seed: 500 });
     });
-    // the heart balloon: from behind the desk's right end, its string flicking on twos
-    if (tt >= 6.25 - 1e-6) IB.heartBalloon(ctx, [1500, lerp(760, 430, IB.settle(tt - 6.25, 0.45, 2.4))], { sway: IB.alternate(f, 2) ? 1 : -1, edge: f < 152 });
-    IB.chair(ctx, X0, FLOOR, H, 1);
-    IB.figure(ctx, p, look, 'far');
-    IB.desk(ctx, 740, 1560, DESK, FLOOR, { lw: 3.6 });
-    IB.keyboard(ctx, [740 + 24, DESK]);
-    const scr = IB.monitor(ctx, MON[0], MON[1], MON[2], MON[3], { lw: 3.8, seed: 60 });
-    // the target: a dashed line across the screen, drawn on in 4 drawings
-    const ty = scr[1] + scr[3] - 30 - ((TARGET - MIN) / SPAN) * (scr[3] - 70);
-    if (f >= 6) IB.dashLine(ctx, [scr[0] + 14, ty], scr[2] - 28, { dashes: 14, drawn: Math.min(14, Math.ceil(((f - 6) / 2 + 1) * 3.5)), w: 4 });
-    IB.lineChart(ctx, scr, series(f), { min: MIN, span: SPAN });
-    // the breakout: a burst where the chart came through, two drawings
-    const b = IB.drawn(tt, 76 / 24);
-    if (b >= 0 && b < 2) { const n = series(f).length, x = scr[0] + 22 + (n - 1) * 17; IB.burst(ctx, [x, ty - 20], { n: 4, a0: -2.5, da: 0.55, r0: 26 + b * 12, r1: 60 + b * 8, w: 3.2, seed: 300 + b * 5 }); }
-    IB.figure(ctx, p, look, 'near');
-    IB.bubble(ctx, ['찍었다!'], t, 5.5, { until: 6.5, tip: [X0 - 30, HY - 0.45 * H], x: X0 - 220, y: HY - 0.7 * H, seed: 500 });
   },
 });
 </script>

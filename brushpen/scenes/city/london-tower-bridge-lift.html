@@ -9,16 +9,25 @@
 <script src="../../kit/marks.js"></script>
 <script src="../../kit/props/nature.js"></script>
 <script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/camera.js"></script>
 <script src="../../kit/props/citylife.js"></script>
 <script>
 /* 런던 타워 브리지: 강 위 다리에 빨간 2층 버스가 멈춰 서고, 두 도개교가 천천히 들려 올라간다. 돛을 접은 범선이 그 사이로 지나가고 갈매기가 따라 날다가, 배가 지나가면 도개교가 내려오고 버스가 다리를 건너간다. 원본에 없는 창작 장면이다. 전달하는 생각: 도시는 멈춰서 길을 내준다.
-   Motion notes: one locked shot (IB.crop of a 1520 px window, 1.26x), 9 s. The bridge (towers 420 px to the pinnacles) is a machine and moves on ones: the bascules lift from 0.75 s to 2.75 s with a smoothstep to 1.4 rad, hold, and come down from 6.75 s to 8.0 s. The tall ship (masts 260 px over the water, under the high walkways as the real ones are) is a machine too, crossing on ones at 320 px/s from off the left edge; its tallest mast passes between the open bascules at 4.6 s. The bus stops at the barrier on the near side span before the lift (it is still from 0 s) and drives across on ones once the deck is down (8.0-9.0 s, 380 px/s, its wheels turning). Gulls cross on twos, wings alternating up and down each drawing; the river's waves are a new drawing every 2 frames. Clouds are still. Colours: the bus's red (its own colour), the towers' navy roofs and the walkways' sky blue, the ship's charcoal. */
+   Motion notes: 9 s in five shots (IB.shot, on ones): 0-0.75 s a 720 px medium of the bus at the barrier with the near tower going up out of the top of the frame; from 0.75 s, as the bascules start up, a steady pull back (push, 48 frames) to the whole bridge (1520 px window); 2.92 s a cut to a 1100 px shot that rides along with the ship (its view follows shipX) toward the gap; 4.33 s a cut under the walkways to a 640 px close-up of the masts passing between the raised bascules (the tallest at 4.6 s); 5.58 s a cut back to the 1520 wide for the bascules coming down; 8.0 s an ease (20 frames) onto the bus (1200 px) that then goes with it across. The bridge (towers 420 px to the pinnacles) is a machine and moves on ones: the bascules lift from 0.75 s to 2.75 s with a smoothstep to 1.4 rad, hold, and come down from 6.75 s to 8.0 s. The tall ship (masts 260 px over the water, under the high walkways as the real ones are) is a machine too, crossing on ones at 320 px/s from off the left edge; its tallest mast passes between the open bascules at 4.6 s. The bus stops at the barrier on the near side span before the lift (it is still from 0 s) and drives across on ones once the deck is down (8.0-9.0 s, 380 px/s, its wheels turning). Gulls cross on twos, wings alternating up and down each drawing; the river's waves are a new drawing every 2 frames. Clouds are still. Colours: the bus's red (its own colour), the towers' navy roofs and the walkways' sky blue, the ship's charcoal. */
 const RIVER = 760, CX = 960, H = 420, BUS_X0 = 560;
 const LIFT = [[0, 0], [18, 0], [66, 1], [162, 1], [192, 0]];   // [frame, lift] on ones, smoothstep between
 const liftAt = (f) => { let i = 0; while (i < LIFT.length - 1 && f >= LIFT[i + 1][0]) i++; if (i === LIFT.length - 1) return LIFT[i][1]; const [f0, a] = LIFT[i], [f1, b] = LIFT[i + 1], u = (f - f0) / (f1 - f0), k = u * u * (3 - 2 * u); return a + (b - a) * k; };
 const SHIP_V = 320, SHIP_X0 = -520, shipX = (t) => SHIP_X0 + SHIP_V * t;
 const BUS_GO = 8.0, busX = (t) => BUS_X0 + Math.max(0, t - BUS_GO) * 380;
 const gullAt = (i, tt) => [((i * 520 + tt * (140 + i * 30)) % 2000), 260 + i * 60 + Math.sin(tt * 2 + i) * 14];
+const SHOTS = [
+  [0, { at: [600, 640], w: 720 }],                                             // the bus at the barrier, the near tower going up out of the frame
+  [18, [200, 150, 1520], 'push', 48],                                          // pulls back as the bascules lift, to the whole bridge
+  [70, (f) => ({ at: [shipX(f / 24) + 230, 600], w: 1100 }), 'cut'],           // rides along with the ship toward the gap
+  [104, { at: [960, 560], w: 640 }, 'cut'],                                    // under the walkways: the mast between the raised bascules
+  [134, [200, 150, 1520], 'cut'],                                              // the wide again for the bascules coming down
+  [192, (f) => ({ at: [busX(f / 24) + 160, 640], w: 1200 }), 'ease', 20],       // and goes with the bus across
+];
 
 IB.actors = (t) => { const tt = IB.twos(t), d = Math.round(tt * 12); return { lift: liftAt(Math.floor(t * 24)), ship: shipX(Math.floor(t * 24) / 24), bus: busX(Math.floor(t * 24) / 24), gulls: [0, 1, 2].map((i) => [...gullAt(i, tt), d % 2]) }; };
 
@@ -29,14 +38,15 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = Math.floor(t * 24), t1 = f / 24, tt = IB.twos(t), d = Math.round(tt * 12);
-    IB.crop(ctx, [200, 150, 1520]);
-    IB.cloud(ctx, [260, 640, 250, 56], { seed: 3 });
-    IB.cloud(ctx, [1250, 1640, 230, 62], { seed: 4 });
-    IB.river(ctx, [0, 1920], RIVER, { d, h: 320 });
-    IB.tallShip(ctx, [shipX(t1), RIVER + 40], { s: 0.5 });
-    const br = IB.towerBridge(ctx, [CX, RIVER + 30], { h: H, lift: liftAt(f) });
-    IB.doubleDecker(ctx, [busX(t1), br.deck], { spin: (busX(t1) - BUS_X0) / 30 }, { s: 0.32, lw: 2.4 });
-    [0, 1, 2].forEach((i) => IB.flapper(ctx, gullAt(i, tt), { wing: (d + i) % 2, s: 1.1, color: IB.C.paper, seed: 40 + i * 7 }));
+    IB.film(ctx, IB.shot(SHOTS, f), (ctx) => {
+      IB.cloud(ctx, [260, 640, 250, 56], { seed: 3 });
+      IB.cloud(ctx, [1250, 1640, 230, 62], { seed: 4 });
+      IB.river(ctx, [0, 1920], RIVER, { d, h: 320 });
+      IB.tallShip(ctx, [shipX(t1), RIVER + 40], { s: 0.5 });
+      const br = IB.towerBridge(ctx, [CX, RIVER + 30], { h: H, lift: liftAt(f) });
+      IB.doubleDecker(ctx, [busX(t1), br.deck], { spin: (busX(t1) - BUS_X0) / 30 }, { s: 0.32, lw: 2.4 });
+      [0, 1, 2].forEach((i) => IB.flapper(ctx, gullAt(i, tt), { wing: (d + i) % 2, s: 1.1, color: IB.C.paper, seed: 40 + i * 7 }));
+    });
   },
 });
 </script>

@@ -9,9 +9,10 @@
 <script src="../../kit/marks.js"></script>
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/props/metaphor.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 왼쪽에서 온 손가락이 첫 도미노를 튕기자 줄줄이 넘어가다가, 위에서 내려온 손가락이 파란 도미노 하나를 눌러 잡는 순간 연쇄가 거기서 멈춘다. 원본에 없는 창작 장면으로, 원본의 "쓰는 동안만 있는 팔"과 한 장씩 어긋나며 번지는 박자를 연쇄 반응 은유로 옮겼다. 전달하는 생각: 한 곳의 문제는 줄줄이 번지고, 한 번의 개입이 그것을 끊는다.
-   Motion notes: one locked shot, 5 s, all on twos. Twelve dominoes 124 px apart (57 x 208). Each starts exactly one drawing (2 frames) after the one before it: the offset of one drawing per item is the whole effect, a wave that travels 124 px per drawing = 1488 px/s. A falling domino would go 19, 44, 68, 90 degrees from upright on successive drawings, but it can never pass the one it falls on, so its angle on every drawing is the smaller of that and where it comes to rest against its neighbour's angle on the same drawing (IB.dominoRest, solved from the two rectangles): 18.7 degrees against one still upright, about 62 once the row lies stacked. No domino ever overlaps another. The flicking finger comes in from the left in 3 drawings (tip 150, 60, 14 px short), pulls back to 44 px on the 4th (the anticipation), flicks on the 5th at 1.0 s following the tipped face, and is gone in 2 more. The stopping finger starts down from the top on that same drawing, presses 6 px into the domino's top on its third drawing and rests on it from 1.25 s, 0.33 s before the wave reaches it at 1.58 s: the save is set up while the chain is still running. The eighth domino stops at 18.7 degrees against the held one; a three-line burst and shake marks on the held domino for 2 drawings; then dead still for 1.25 s. The finger lifts at 3.0 s in 2 drawings, the blue domino trembles (shake marks, 4 drawings) and stands. Two colours: the yellow sleeves, the one blue domino. */
+   Motion notes: 5 s in four shots (IB.shot, on ones): 0-1.08 s a close-up of the first dominoes and the flicking finger (860 px window) pushing in to 760; 1.08 s, just after the flick, a cut to a medium on the blue domino (1000) so the stopping finger is seen coming down while the wave runs in from the left of the frame; 1.58 s, as the wave hits the held domino, a snap in to a close-up of it (680) with a 16 px jolt; 2.5 s, in the dead-still hold, a cut to the wide of the whole row (1700), fallen on the left and standing on the right, pushing in slowly toward the blue domino (1200, 60 frames) through the lift and the tremble. Actors all on twos. Twelve dominoes 124 px apart (57 x 208). Each starts exactly one drawing (2 frames) after the one before it: the offset of one drawing per item is the whole effect, a wave that travels 124 px per drawing = 1488 px/s. A falling domino would go 19, 44, 68, 90 degrees from upright on successive drawings, but it can never pass the one it falls on, so its angle on every drawing is the smaller of that and where it comes to rest against its neighbour's angle on the same drawing (IB.dominoRest, solved from the two rectangles): 18.7 degrees against one still upright, about 62 once the row lies stacked. No domino ever overlaps another. The flicking finger comes in from the left in 3 drawings (tip 150, 60, 14 px short), pulls back to 44 px on the 4th (the anticipation), flicks on the 5th at 1.0 s following the tipped face, and is gone in 2 more. The stopping finger starts down from the top on that same drawing, presses 6 px into the domino's top on its third drawing and rests on it from 1.25 s, 0.33 s before the wave reaches it at 1.58 s: the save is set up while the chain is still running. The eighth domino stops at 18.7 degrees against the held one; a three-line burst and shake marks on the held domino for 2 drawings; then dead still for 1.25 s. The finger lifts at 3.0 s in 2 drawings, the blue domino trembles (shake marks, 4 drawings) and stands. Two colours: the yellow sleeves, the one blue domino. */
 const C = IB.C, FLOOR = 840, N = 12, GAP = 124, X0 = 278, S = 1.3, DW = 44 * S, DH = 160 * S, HELD = 8, DEG = Math.PI / 180;   // a domino is drawn 44 x 160 and scaled by S
 const FLICK = 1, WAVE = 1 / 12, FREE = [19, 44, 68, 90];   // seconds: the first domino starts; delay from one domino to the next. FREE: degrees per drawing with nothing in the way
 const xOf = (i) => X0 + i * GAP;
@@ -26,6 +27,14 @@ function angles(tt) {
   return out;
 }
 // what moves, for tools/drawings.py: every domino's angle and the two fingers' distance from their marks
+// the camera, frames at 24 fps: the flick close; the save set up; the hit punched in; the whole row after
+const SHOTS = [
+  [0, { at: [470, 680], w: 860 }], [0, { at: [440, 690], w: 760 }, 'push', 24],
+  [26, { at: [1180, 600], w: 1000 }, 'cut'],
+  [38, { at: [1230, 650], w: 680 }, 'snap'],
+  [60, { at: [960, 640], w: 1700 }, 'cut'], [60, { at: [1150, 660], w: 1200 }, 'push', 60],
+];
+const HITS = [[38, 16]];   // the wave reaches the held domino
 IB.actors = (t) => { const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), b = n(FLICK), up = n(3); return { dominoes: angles(tt).map((x) => Math.round(x * 10) / 10), flick: Math.max(-1, Math.min(7, n(FLICK - 4 / 12))), stop: b < 0 || up >= 2 ? null : up >= 0 ? 'up' + up : Math.min(b, 3) }; };
 
 MG.scene({
@@ -35,27 +44,29 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), n = (t0) => IB.drawn(tt, t0), ang = angles(tt);
-    IB.smear(ctx, X0 + ((N - 1) * GAP) / 2, FLOOR - 3, N * GAP + 60, { h: 12, seed: 9 });
-    for (let i = N - 1; i >= 0; i--) IB.domino(ctx, [xOf(i) + DW / 2, FLOOR], { deg: ang[i], face: i }, { s: S, fill: i === HELD ? C.blue : C.paper, seed: 100 + i * 7 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: HITS }), (ctx) => {
+      IB.smear(ctx, X0 + ((N - 1) * GAP) / 2, FLOOR - 3, N * GAP + 60, { h: 12, seed: 9 });
+      for (let i = N - 1; i >= 0; i--) IB.domino(ctx, [xOf(i) + DW / 2, FLOOR], { deg: ang[i], face: i }, { s: S, fill: i === HELD ? C.blue : C.paper, seed: 100 + i * 7 });
 
-    // the finger that starts it: in from the left, flick, gone. On the flick it rides the face it has just tipped
-    // in, almost touching, pulled back (the anticipation), flick, gone
-    const a = n(FLICK - 4 / 12), tipY = FLOOR - DH + 34;
-    if (a >= 0 && a < 7) { const lean = (FLOOR - tipY) * Math.tan(ang[0] * DEG), gap = [150, 60, 14, 44, -lean, 120, 420][a]; IB.pointer(ctx, [xOf(0) - DW / 2 - gap, tipY + Math.max(0, gap) * 0.1], { scale: 0.44, flip: true, lw: 3.4, seed: 540 }); }
-    // the finger that stops it: down from the top onto the blue domino, held, lifted
-    // down, pressing 8 px past the top for one drawing, then resting on it, held, lifted
-    const b = n(FLICK), up = n(3), top = [xOf(HELD), FLOOR - DH - 2];
-    if (b >= 0 && up < 2) { const gap = up >= 0 ? [90, 420][up] : [330, 120, -8][b] ?? 0; IB.pointer(ctx, [top[0], top[1] - gap], { scale: 0.44, rot: -Math.PI / 2, lw: 3.4, seed: 560 }); }
+      // the finger that starts it: in from the left, flick, gone. On the flick it rides the face it has just tipped
+      // in, almost touching, pulled back (the anticipation), flick, gone
+      const a = n(FLICK - 4 / 12), tipY = FLOOR - DH + 34;
+      if (a >= 0 && a < 7) { const lean = (FLOOR - tipY) * Math.tan(ang[0] * DEG), gap = [150, 60, 14, 44, -lean, 120, 420][a]; IB.pointer(ctx, [xOf(0) - DW / 2 - gap, tipY + Math.max(0, gap) * 0.1], { scale: 0.44, flip: true, lw: 3.4, seed: 540 }); }
+      // the finger that stops it: down from the top onto the blue domino, held, lifted
+      // down, pressing 8 px past the top for one drawing, then resting on it, held, lifted
+      const b = n(FLICK), up = n(3), top = [xOf(HELD), FLOOR - DH - 2];
+      if (b >= 0 && up < 2) { const gap = up >= 0 ? [90, 420][up] : [330, 120, -8][b] ?? 0; IB.pointer(ctx, [top[0], top[1] - gap], { scale: 0.44, rot: -Math.PI / 2, lw: 3.4, seed: 560 }); }
 
-    // the wave arrives at the held domino: a burst between the two and a tremble, two drawings
-    const hit = n(FLICK + (HELD - 1) * WAVE);
-    if (hit >= 0 && hit < 2) {
-      IB.burst(ctx, [top[0] - DW / 2 - 6, top[1] + 30], { n: 3, a0: -2.0, da: 0.5, r0: 26 + hit * 12, r1: 26 + hit * 12 + 30, seed: 300 + hit * 5 });
-      IB.shake(ctx, top[0] + DW / 2 + 10, top[1] + 60, 16, { a: 0, n: 2, seed: 310 + hit, w: 2.6 });
-    }
-    // let go: it trembles for four drawings and stands
-    const free = n(3 + 2 / 12);
-    if (free >= 0 && free < 4) { IB.shake(ctx, top[0] + DW / 2 + 10, top[1] + 40, 16, { a: 0, n: 2, seed: 320 + free, w: 2.6 }); IB.shake(ctx, top[0] - DW / 2 - 10, top[1] + 40, 16, { a: Math.PI, n: 2, seed: 330 + free, w: 2.6 }); }
+      // the wave arrives at the held domino: a burst between the two and a tremble, two drawings
+      const hit = n(FLICK + (HELD - 1) * WAVE);
+      if (hit >= 0 && hit < 2) {
+        IB.burst(ctx, [top[0] - DW / 2 - 6, top[1] + 30], { n: 3, a0: -2.0, da: 0.5, r0: 26 + hit * 12, r1: 26 + hit * 12 + 30, seed: 300 + hit * 5 });
+        IB.shake(ctx, top[0] + DW / 2 + 10, top[1] + 60, 16, { a: 0, n: 2, seed: 310 + hit, w: 2.6 });
+      }
+      // let go: it trembles for four drawings and stands
+      const free = n(3 + 2 / 12);
+      if (free >= 0 && free < 4) { IB.shake(ctx, top[0] + DW / 2 + 10, top[1] + 40, 16, { a: 0, n: 2, seed: 320 + free, w: 2.6 }); IB.shake(ctx, top[0] - DW / 2 - 10, top[1] + 40, 16, { a: Math.PI, n: 2, seed: 330 + free, w: 2.6 }); }
+    });
   },
 });
 </script>

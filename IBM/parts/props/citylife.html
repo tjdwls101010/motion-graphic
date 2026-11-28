@@ -1,0 +1,32 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / citylife</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 도시의 움직이는 것들 IB.doubleDecker(런던 2층 버스), IB.phoneBox(전화 부스), IB.ferry(여객선), IB.tallShip(범선), IB.river(강물), IB.shinkansen(신칸센), IB.cableCar(케이블카), IB.sakura와 IB.petals(벚나무와 꽃잎), IB.lamppost(파리 가로등), IB.cafeTable(카페 탁자), IB.fountainBridge(반포대교 분수), IB.flapper(나는 비둘기). 기계(버스, 기차, 배, 케이블카)는 1프레임 단위로 움직이고, 그린 것(꽃잎, 물결, 날갯짓, 물줄기)은 2프레임마다 새 그림이다. 빨강은 그것이 곧 그 사물인 곳(2층 버스, 전화 부스)에만 쓴다. */
+const C = IB.C;
+MG.scene({
+  title: 'props / citylife',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'city life: buses, boats, trains, cable car, blossom, café, fountain (props/citylife.js)');
+    const c = SAMPLE.grid(8, 4), d = Math.round(IB.twos(t) * 12), f = Math.round(t * 24), win = (i) => SAMPLE.window([960, 900], (c[i][2] * 560) / c[i][3], 560, 30);
+    SAMPLE.cell(ctx, c[0], win(0), () => { IB.smear(ctx, 960, 895, 700, { h: 12, seed: 9 }); IB.doubleDecker(ctx, [960, 900], { spin: f * 0.3, door: d % 8 < 4 }, { s: 0.9 }); }, 'IB.doubleDecker({ spin, door })');
+    SAMPLE.cell(ctx, c[1], win(1), () => { IB.smear(ctx, 960, 895, 500, { h: 12, seed: 10 }); IB.phoneBox(ctx, [880, 900], { open: (d % 12) / 12 }); IB.lamppost(ctx, [1080, 900], { h: 420, lit: d % 2 }); }, 'IB.phoneBox({ open }), IB.lamppost({ lit })');
+    SAMPLE.cell(ctx, c[2], win(2), () => { IB.river(ctx, [600, 1320], 780, { d, h: 200 }); IB.ferry(ctx, [960 + ((f * 3) % 200) - 100, 800], { s: 0.9 }); }, 'IB.river({ d }), IB.ferry');
+    SAMPLE.cell(ctx, c[3], win(3), () => { IB.river(ctx, [600, 1320], 820, { d, h: 160 }); IB.tallShip(ctx, [940, 840], { s: 0.8 }); }, 'IB.tallShip');
+    SAMPLE.cell(ctx, c[4], win(4), () => { IB.seg(ctx, 500, 905, 1420, 905, { w: 4, seed: 11 }); IB.shinkansen(ctx, [700 + ((f * 40) % 900), 900], { s: 0.9 }); }, 'IB.shinkansen (on ones)');
+    SAMPLE.cell(ctx, c[5], win(5), () => { IB.ink(ctx, [[600, 420], [1320, 700]], { w: 3, seed: 12, taper: false }); const u = (f % 96) / 96, at = [600 + u * 720, 420 + u * 280]; IB.cableCar(ctx, at, { sway: Math.sin(f / 6) * 0.04 }); }, 'IB.cableCar({ sway })');
+    SAMPLE.cell(ctx, c[6], win(6), () => { IB.smear(ctx, 960, 895, 500, { h: 12, seed: 13 }); IB.sakura(ctx, [960, 900], { h: 380 }); IB.petals(ctx, [640, 420, 1280, 900], { d, wind: 6 }); }, 'IB.sakura, IB.petals({ d, wind })');
+    SAMPLE.cell(ctx, c[7], win(7), () => { IB.river(ctx, [600, 1320], 760, { d, h: 220 }); IB.fountainBridge(ctx, [600, 1320, 520], { k: Math.min(1, (d % 24) / 4), d }); IB.cafeTable(ctx, [700, 900], { s: 0.6 }); [0, 1, 2].forEach((i) => IB.flapper(ctx, [900 + i * 90 + (d % 12) * 8, 400 - i * 20 - (d % 12) * 4], { wing: (d + i) % 2, seed: 30 + i })); }, 'IB.fountainBridge({ k, d }), IB.cafeTable, IB.flapper({ wing })');
+  },
+});
+</script>

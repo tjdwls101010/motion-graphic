@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>city / seoul-namsan-cablecar</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script>
+/* 서울 남산: 한옥 지붕들 너머로 남산과 N서울타워가 서 있고, 두 대의 케이블카가 한 줄에 매달려 하나는 오르고 하나는 내려온다. 출발할 때 덜컹 흔들린 차가 산 중턱에서 서로 엇갈리고, 까치 두 마리가 지붕 위를 가로질러 날아간다. 원본에 없는 창작 장면이다. 전달하는 생각: 오르는 것과 내려가는 것은 가운데에서 한 번 스친다.
+   Motion notes: one locked wide shot, 8 s. The hill rises 300 px from the line behind the houses and the tower stands 420 px on it. The two cars are machines on ones: they leave their stations at 0.5 s, ease in over 0.5 s (a smoothstep start) and travel the cable's length in 6 s, passing at its middle at 3.5 s; on leaving each swings on its grip, 0.08 rad decaying over 5 drawings (a damped sine, IB.bob's shape). The magpies cross on twos, wings alternating each drawing. The roofs in front are still. Colours: the hill's mint, the cars' yellow, the tower's paper white; the roofs charcoal. */
+const LOW = [260, 640], HIGH = [1330, 455], GAP = 22, START = 0.5, RUN = 6;
+const along = (u) => { const k = MG.clamp(u, 0, 1), e = k < 0.083 ? (k / 0.083) ** 2 * 0.0415 : k > 0.917 ? 1 - ((1 - k) / 0.083) ** 2 * 0.0415 : k; return e; };   // ease in and out of the stations
+const carAt = (t, up) => { const u = along((t - START) / RUN), w = up ? u : 1 - u, off = up ? 0 : GAP; return [MG.lerp(LOW[0], HIGH[0], w), MG.lerp(LOW[1], HIGH[1], w) + off]; };
+const swayAt = (t) => { const dt = t - START; return dt > 0 && dt < 1.2 ? 0.08 * Math.exp(-dt / 0.3) * Math.sin((dt * 2 * Math.PI) / 0.42) : 0; };
+const birdAt = (i, tt) => [-120 + (tt - 1 - i * 0.4) * 420, 740 - i * 40 - Math.sin(tt * 3) * 10];
+
+IB.actors = (t) => { const ff = Math.floor(t * 24) / 24, tt = IB.twos(t), d = Math.round(tt * 12); return { up: carAt(ff, true).map(Math.round), down: carAt(ff, false).map(Math.round), sway: +swayAt(ff).toFixed(3), birds: [0, 1].map((i) => [...birdAt(i, tt).map(Math.round), d % 2]) }; };
+
+MG.scene({
+  title: 'city / seoul-namsan-cablecar',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const ff = Math.floor(t * 24) / 24, tt = IB.twos(t), d = Math.round(tt * 12);
+    IB.cloud(ctx, [200, 620, 210, 58], { seed: 3 });
+    IB.cloud(ctx, [1500, 1840, 160, 52], { seed: 4 });
+    IB.namsanTower(ctx, [1450, 880], { h: 420, hill: 300 });
+    IB.ink(ctx, [[0, 880], [1920, 880]], { w: 3, seed: 5, taper: false });
+    // the stations and the two cables
+    [[LOW[0] - 70, LOW[1] - 10, 120], [HIGH[0] - 30, HIGH[1] - 20, 110]].forEach(([x, y, w], i) => IB.ink(ctx, [[x, y], [x + w, y], [x + w, y + 80], [x, y + 80]], { closed: true, smooth: false, fill: IB.C.paper, w: 3, seed: 10 + i }));
+    IB.ink(ctx, [LOW, HIGH], { w: 3, seed: 12, taper: false });
+    IB.ink(ctx, [[LOW[0], LOW[1] + GAP], [HIGH[0], HIGH[1] + GAP]], { w: 3, seed: 13, taper: false });
+    IB.cableCar(ctx, carAt(ff, true), { s: 0.8, sway: swayAt(ff), seed: 20 });
+    IB.cableCar(ctx, carAt(ff, false), { s: 0.8, sway: -swayAt(ff), seed: 30 });
+    // the roofs in front, a row of hanok seen over their walls
+    [[120, 360, 210], [470, 330, 190], [820, 380, 220], [1180, 340, 200], [1540, 360, 215], [1880, 330, 190]].forEach(([x, w, h], i) => IB.hanok(ctx, [x, 1100], { w, h, seed: 1150 + i * 17 }));
+    [0, 1].forEach((i) => { const p = birdAt(i, tt); if (p[0] > -60 && p[0] < 1980) IB.flapper(ctx, p, { wing: (d + i) % 2, s: 1.3, color: IB.C.ink, seed: 40 + i * 9 }); });
+  },
+});
+</script>

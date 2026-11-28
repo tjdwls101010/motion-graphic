@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>work / files-tower-wobble</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/copyroom.js"></script>
+<script>
+/* 서류 더미를 턱까지 안은 사람이 종종걸음으로 걸어오다 멈추자 더미가 앞으로 쏠렸다 S자로 휘청이며 돌아온다. 겨우 잡고 안도의 한숨을 내쉬자 그 입김에 맨 위 한 장이 날아가고, 두 손이 묶여 고개만 그 종이를 따라 올렸다 내린다. 원본에 없는 창작 장면으로, 인물 리그(IB.figure, IB.walk의 stride, IB.poseMix), 일상 인물(IB.PEOPLE.designer), 서류 더미(IB.paperStack)와 날리는 종이(IB.flyingSheet), 흔들림선(IB.shake), 입김(IB.breath), 말풍선을 썼다. 전달하는 생각: 손이 묶인 사람의 연기는 고개 하나로 한다.
+   Motion notes: one locked shot, 7 s, figure 440 px tall (line 3.4 px), dir 1; the stack is IB.paperStack at s 1.29 (9 bundles, 134 px wide, about 120 px tall, its top at her chin) carried on both hands at the waist 0.25 h ahead of the hip, drawn between the figure's far and near passes so the near arm is over it and her face is clear of it. All on twos, every drawing passing the one before as pose.prev, so the bun and the head trail each move by one drawing. The careful walk: stride 0.16 (IB.walkLen 0.64 h = 281.6 px a cycle), 28 drawings at 23.5 px each from x 150 (0-2.33 s), the stack's top swaying 4 px against each step; the stop on phase 1/3, one drawing thrown forward (lean 0.14). The wobble is a list of stack drawings on twos, [lean px of the top, S px], while the feet stay planted and the body leans against it: (39, 0), (57, -10), (13, 21), (-31, -13), (18, 8), (-8, -4), (0, 0) from 2.33 s to 2.83 s, each bundle turning a third of the way with the curve; shake marks beside the stack for 4 drawings after it. Held 0.33 s, then relief (eyes shut, 3.0 s); a breath in (3.67 s, leaning back 0.04) and out (3.83 s) with IB.breath (big 1.29) for 3 drawings; the loose top sheet lifts its front edge at 3.92 s and leaves on 4.0 s on IB.flyingSheet drawn 1.29 times larger about where it leaves (14 drawings, a 427 px arc) to land 491 px ahead at 5.17 s. Her body starts after it for one drawing (lean +0.06, the stack tipping 16 px) and stops itself; her head follows the sheet one drawing behind, up to nod -0.36 at the top of the arc and down to 0.32 where it lands. Still from 5.25 s; the bubble opens at 5.5 s and from 5.67 s nothing moves. Two colours: her yellow tee and the lavender folders; the sheets are paper white. */
+const F = IB.FIG, FLOOR = 960, H = 440, K = H / 340, WHO = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 150 }, STRIDE = 0.16;   // K: the copy-room parts are drawn for a 340 px figure
+const PACE = IB.walkLen(WHO, STRIDE) / 12, IN = 28, X0 = 150, XS = X0 + IN * PACE, PH = (IN / 12) % 1, W0 = IN * 2;   // 28 drawings in: phase 1/3 to stop on
+
+/* the carry: both hands under the stack at the waist, the stack 0.2 h ahead of the hip; it rides on the hands */
+const carry = (p, more = {}) => { const hx = p.hip[0], hy = p.hip[1]; return { ...p, hands: [[hx + 0.18 * H, hy + 0.035 * H], [hx + 0.14 * H, hy + 0.045 * H]], hand: ['grip', 'grip'], ...more }; };
+const stackAt = (p) => [p.hip[0] + 0.25 * H, p.hip[1] + 0.025 * H];   // the middle of the stack's bottom edge
+const stopped = () => ({ ...IB.stand(XS, FLOOR, WHO), feet: IB.walk(XS, FLOOR, WHO, PH, { stride: STRIDE }).feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]) });
+const S = stopped(), HY = S.hip[1];
+const at = (dx, dy, lean, more = {}) => carry({ ...S, hip: [XS + dx * K, HY + dy * K], lean }, more);
+const pile = (lean, wave) => ({ lean: lean * K, wave: wave * K });   // the stack's drawing: px of the top's lean and of the S, at a 340 px figure's size
+// [frame, drawing, stack]: the stop and the wobble, the relief, the breath, the chase with the head
+const ACT = [
+  [W0, at(6, 2, 0.14, { face: { mouth: 'flat' } }), pile(30, 0)],
+  [W0 + 2, at(-4, 4, -0.08, { face: { eye: 'wide', mouth: 'open', brow: 1 } }), pile(44, -8)],
+  [W0 + 4, at(-8, 6, -0.12, { face: { eye: 'wide', mouth: 'open', brow: 1 } }), pile(10, 16)],
+  [W0 + 6, at(2, 4, 0.06, { face: { eye: 'wide', mouth: 'flat', brow: 1 } }), pile(-24, -10)],
+  [W0 + 8, at(-2, 2, -0.04, { face: { eye: 'wide', mouth: 'flat', brow: 1 } }), pile(14, 6)],
+  [W0 + 10, at(0, 0, 0.02, { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), pile(-6, -3)],
+  [W0 + 12, at(0, 0, 0, { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), pile(0, 0)],
+  [72, at(0, 0, 0, { nod: 0.06, face: { eye: 'closed', mouth: 'smile' } }), pile(0, 0)],
+  [88, at(-2, -2, -0.04, { nod: -0.08, face: { eye: 'closed', mouth: 'flat' } }), pile(0, 0)],
+  [92, at(0, 0, 0.02, { nod: 0.04, face: { eye: 'closed', mouth: 'open' } }), pile(0, 0)],
+  [98, at(4, 0, 0.06, { nod: -0.2, face: { eye: 'wide', mouth: 'open' } }), pile(12, 0)],
+  [100, at(0, 0, 0, { nod: -0.32, face: { eye: 'wide', mouth: 'open' } }), pile(-6, 0)],
+  [102, at(0, 0, 0, { nod: -0.36, face: { eye: 'wide', mouth: 'open' } }), pile(0, 0)],
+  [106, at(0, 0, 0, { nod: -0.3, face: { eye: 'wide', mouth: 'open' } }), pile(0, 0)],
+  [110, at(0, 0, 0, { nod: -0.14, face: { eye: 'wide', mouth: 'flat' } }), pile(0, 0)],
+  [114, at(0, 0, 0, { nod: 0.06, face: { eye: 'wide', mouth: 'flat' } }), pile(0, 0)],
+  [118, at(0, 0, 0, { nod: 0.2, face: { eye: 'dot', mouth: 'flat' } }), pile(0, 0)],
+  [124, at(0, 0, 0.02, { nod: 0.32, face: { eye: 'dot', mouth: 'frown', brow: -0.6 } }), pile(0, 0)],
+];
+function poseOn(f) {
+  if (f < W0) {   // the careful walk, the stack swaying 4 px against each step
+    const k = f >> 1, p = carry({ ...IB.walk(X0 + k * PACE, FLOOR, WHO, (k / 12) % 1, { stride: STRIDE, lean: 0.03 }), face: { mouth: 'flat' } });
+    return { ...p, stack: pile(k % 6 < 3 ? 3 : -3, 0) };
+  }
+  const row = IB.heldRow(ACT, f, ACT[0]);
+  return { ...row[1], stack: row[2] };
+}
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)), p = poseOn(f); return { ...p, prev: f > 0 ? poseOn(f - 2) : undefined }; };
+
+const LIFT = 94, FLY = 96, TO = [XS + 0.2 * H + 380 * K, FLOOR - 2];   // the top sheet lifts its edge, then flies; where it lands
+IB.actors = (t) => { const tt = IB.twos(t), f = IB.frame(tt); return { carrier: poseAt(t), sheet: f < LIFT ? 'on' : f < FLY ? 'lift' : Math.min(14, IB.drawn(tt, FLY / 24)) }; };
+
+MG.scene({
+  title: 'work / files-tower-wobble',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), p = poseAt(t), look = { ...WHO, face: p.face };
+    IB.wallClock(ctx, [1560, 300], { r: 70, hands: [[0, -44], [-26, 18]], lw: 3.8, hw: 3.6 });
+    IB.smear(ctx, (p.feet[0][0] + p.feet[1][0]) / 2, FLOOR - 10, 380, { h: 16, seed: 9 });
+    const j = IB.figure(ctx, p, look, 'far');
+    const st = IB.paperStack(ctx, stackAt(p), { n: 9, ...p.stack }, { color: IB.C.lavender, s: K, lw: 3, seed: 1500 });
+    // the loose top sheet: lying on the stack, its front edge lifting, then away on the breath (IB.flyingSheet drawn K times larger about where it leaves)
+    if (f < LIFT) IB.looseSheet(ctx, st.top, { flat: true, rot: Math.atan2(p.stack.lean * 2, 105 * K) * 0.5 }, { s: K, lw: 3, seed: 1560 });
+    else if (f < FLY) IB.looseSheet(ctx, [st.top[0] + 4, st.top[1] - 4], { flat: true, rot: -0.35 }, { s: K, lw: 3, seed: 1560 });
+    else {
+      const from = [st.top[0] + 10, st.top[1] - 20];
+      ctx.save(); ctx.translate(from[0], from[1]); ctx.scale(K, K);
+      IB.flyingSheet(ctx, [0, 0], [(TO[0] - from[0]) / K, (TO[1] - from[1]) / K], IB.drawn(tt, FLY / 24), { seed: 1561 });
+      ctx.restore();
+    }
+    IB.figure(ctx, p, look, 'near');
+    const w = IB.drawn(tt, (W0 + 12) / 24);
+    if (w >= 0 && w < 4) { const [sx, sy] = stackAt(p); IB.shake(ctx, sx + 84, sy - 104, 22, { a: -0.4, n: 2, seed: 700 + w, w: 3.2 }); IB.shake(ctx, sx - 78, sy - 110, 20, { a: Math.PI + 0.4, n: 2, seed: 720 + w, w: 3.2 }); }
+    const b = IB.drawn(tt, 92 / 24);
+    if (b >= 0 && b < 3) IB.breath(ctx, j.headAt, { k: b, big: K, seed: 740 });
+    IB.bubble(ctx, ['아…'], t, 5.5, { tip: [XS - 20, HY - 0.48 * H], x: XS - 160, y: HY - 0.64 * H, seed: 500 });
+  },
+});
+</script>

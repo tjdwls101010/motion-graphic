@@ -229,6 +229,24 @@
     return { hip, sh, headAt, knees: legs.map((l) => l.k), elbows: arms.map((a) => a.el), feet: legs.map((l) => l.e), hands: arms.map((a) => a.e), drag: [-vx * 0.5, -vy * 0.5] };
   };
 
+  /* joints(pose, look) — where IB.figure will put the shoulder and the two hip roots of a pose, without drawing it: { sh, roots: [far, near], arm, leg } with the arm's and the leg's full reach in px. A scene that places hands and feet by angle and length from these (IB.polar) cannot ask the IK for more than the limb has, which is how an overshoot drawing loses its hand. */
+  IB.joints = (pose, look) => {
+    const h = look.h, d = look.dir || 1, lean = pose.lean || 0, sx = Math.sin(lean) * d, sy = -Math.cos(lean), fx = Math.cos(lean) * d, fy = Math.sin(lean);
+    const at = (u, f) => [pose.hip[0] + sx * u * h + fx * f * h, pose.hip[1] + sy * u * h + fy * f * h];
+    return { sh: at(F.torso - 0.012, 0.004), roots: [at(0, 0.024), at(0, -0.024)], arm: (F.upper + F.fore) * h, leg: (F.thigh + F.shin) * h };
+  };
+  /* polar(from, ang, len) — the point len px from `from` at angle ang (rad, 0 = +x, +y down). */
+  IB.polar = (p, ang, len) => [p[0] + Math.cos(ang) * len, p[1] + Math.sin(ang) * len];
+
+  /* posed(look, o) — a pose built from the body out: o is a pose ({ hip, lean, nod, hand, face, ... }) whose feet and hands may be given as reach instead of points. A foot { a, l, pitch } sits l x h from its hip root at angle a, a hand { a, l } l x h from the shoulder; a is measured as the figure faces (0 forward, -π/2 straight up, π/2 straight down, π back) so the same numbers work for dir 1 and -1, and l is held inside the limb (0.51 h a leg, 0.285 h an arm) so the IK never has to pull a hand or foot off its mark. A point [x, y(, pitch)] is kept as given (a planted foot). Feet and hands are far side first. */
+  IB.posed = (look, o) => {
+    const d = look.dir || 1, h = look.h, p = { lean: 0, nod: 0, ...o, feet: [], hands: [[0, 0], [0, 0]] }, j = IB.joints(p, look);
+    const ang = (a) => (d === 1 ? a : Math.PI - a);
+    p.feet = o.feet.map((f, i) => (Array.isArray(f) ? f : [...IB.polar(j.roots[i], ang(f.a), Math.min(f.l, 0.51) * h), f.pitch || 0]));
+    p.hands = o.hands.map((w) => (Array.isArray(w) ? w : IB.polar(j.sh, ang(w.a), Math.min(w.l, 0.285) * h)));
+    return p;
+  };
+
   /* stand(x, floor, look) — the neutral pose of a figure standing at x on the floor line: feet together, arms hanging. Every other pose is this with a few joints moved. */
   IB.stand = (x, floor, look) => {
     const h = look.h, d = look.dir || 1, hy = floor - (F.ankle + F.shin + F.thigh) * h + 0.004 * h;

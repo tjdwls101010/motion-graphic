@@ -5,18 +5,29 @@
 
   // the rig at s = 1, in px: a medium dog for a figure 330 px tall (shoulder 96 px off the floor, 150 px nose to rump)
   const SH = [50, -2], HIP = [-52, -4], NECK = [54, -22], TAIL = [-70, -20];   // joints on the torso, about its centre, x forward and y down
-  const FRONT = [46, 48], BACK = [46, 46], NECK_LEN = 46, PAW = 6;             // bone lengths; the paw's centre is PAW above the floor
+  const FRONT = [47, 48], BACK = [48, 48], NECK_LEN = 46, PAW = 6;             // bone lengths; the paw's centre is PAW above the floor
+  /* drop(pose) — how far the torso has to come down from pose.body for every paw to be within its leg's reach (0 when it already is): legs do not stretch, so a long stride or a wide stance lowers the body instead of lifting a paw off the floor. */
+  function drop(p) {
+    const t = p.tilt || 0, c = Math.cos(t), sn = Math.sin(t);
+    let d = 0;
+    (p.feet || IB.dog.POSE.stand.feet).forEach(([fx, fy], i) => {
+      const [jx, jy] = i % 2 === 0 ? SH : HIP, [a, b] = i % 2 === 0 ? FRONT : BACK, L = a + b - 1;
+      const x = p.body[0] + jx * c - jy * sn, y = p.body[1] + jx * sn + jy * c, dx = fx - x;
+      if (Math.abs(dx) < L) d = Math.max(d, fy - PAW - y - Math.sqrt(L * L - dx * dx));
+    });
+    return d;
+  }
 
   /* dog(ctx, at, pose, opts) — draw the dog. `at` = [x, the floor line]; every number in the pose is in px at s = 1, x forward along the way it faces and y down, about `at`, so the same pose faces either way.
-     pose { body: [x, y] the torso's centre (y about -96 standing), tilt (rad, + dips the chest), neck (rad up from forward, in stage terms: 1 looks ahead, 0.5 reaches forward, -1.2 is down at the floor), head (rad, + tips the nose down), mouth 0..1 (open: a bark, a pant), ear -1..1 (0 hanging, 1 pricked up, -1 blown flat back), eye 'dot' | 'wide' | 'closed', tail (rad up from straight back: 1.1 stiff and high, 0.2 level, -0.6 tucked), wag 0 | 1 (two drawings of a wag, swap them on twos; null for a still tail), sniff 0 | 1 (two little lines at the nose; null for none), fold [1, 1, 1, 1] (-1 folds that leg's joint the other way: the hind legs of a sitting dog, knee forward), feet [[x, y] far front, far back, near front, near back] the paws (y 0 on the floor) }.
+     pose { body: [x, y] the torso's centre (y about -96 standing; drawn lower when a paw would be out of its leg's reach, so every paw lands exactly on its mark), tilt (rad, + dips the chest), neck (rad up from forward, in stage terms: 1 looks ahead, 0.5 reaches forward, -1.2 is down at the floor), head (rad, + tips the nose down), mouth 0..1 (open: a bark, a pant), ear -1..1 (0 hanging, 1 pricked up, -1 blown flat back), eye 'dot' | 'wide' | 'closed', tail (rad up from straight back: 1.1 stiff and high, 0.2 level, -0.6 tucked), wag 0 | 1 (two drawings of a wag, swap them on twos; null for a still tail), sniff 0 | 1 (two little lines at the nose; null for none), fold [1, 1, 1, 1] (-1 folds that leg's joint the other way: the hind legs of a sitting dog, knee forward), feet [[x, y] far front, far back, near front, near back] the paws (y 0 on the floor) }.
      opts { s (scale, 1), dir (1 faces right), lw (3), coat (C.paper), ears (C.ink), collar (C.blue), seed }. The far legs are drawn first and a shade greyer; the legs' tops go under the torso.
      Returns, in stage px, { collar: where a leash clips on, nose, head, tail (its tip), feet }. POSE: stand, point (frozen, a front paw up), crouch (weight back before a lunge), pull, sniff, sit. MOVE: freeze, lunge, wag, sniffing, sitDown (frames from each one's first drawing). */
   IB.dog = (ctx, [ax, floor], p, o = {}) => {
     const { s = 1, dir: d = 1, lw = 3, coat = C.paper, ears = C.ink, collar = C.blue, seed = 600 } = o;
     const W = ([x, y]) => [ax + d * s * x, floor + s * y];   // pose units to stage px
-    const tilt = p.tilt || 0, ct = Math.cos(tilt), st = Math.sin(tilt), [bx, by] = p.body;
+    const tilt = p.tilt || 0, ct = Math.cos(tilt), st = Math.sin(tilt), feet = p.feet || IB.dog.POSE.stand.feet, bx = p.body[0], by = p.body[1] + drop(p);
     const T = ([x, y]) => [bx + x * ct - y * st, by + x * st + y * ct];   // torso-local to pose units
-    const legs = (p.feet || IB.dog.POSE.stand.feet).map((f, i) => {
+    const legs = feet.map((f, i) => {
       const front = i % 2 === 0, A = W(T(front ? SH : HIP)), E = W([f[0], f[1] - PAW]), [a, b] = front ? FRONT : BACK;
       const [J, end] = IB.ik(A, E, a * s, b * s, (front ? -d : d) * ((p.fold && p.fold[i]) || 1));   // a front leg folds forward at the wrist, a hind leg back at the hock; fold -1 turns it the other way (a sitting dog's haunch)
       return { A, J, E: end, front, far: i < 2 };

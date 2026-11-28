@@ -49,14 +49,13 @@ T_ACT.push([60, TP.hear], [64, TP.squash], [66, TP.turn], [68, TP.reachPast], [7
 
 /* ---------- the plane: thrown at frame 46, on twos, 12 drawings to the hand ---------- */
 const THROW = 46, CATCH = 70;
+const HELD = [-8 * U, -6 * U], GRIP = [0.07 * H, -4 * U];   // the plane's centre from the fist that holds it: the thrower's, and the teacher's (the nose clear of her face)
 const handAt = (p) => p.hands[0];
-const START = [BX - 0.22 * KH, FLOOR - 0.335 * KH - 0.3 * KH], END = handAt(TP.catch);
 function plane(f) {
   if (f < THROW) return null;
   const n = Math.min(CATCH, f - (f % 2)) - THROW, u = n / (CATCH - THROW);
   if (f >= CATCH) return { caught: true };
-  const x = MG.lerp(START[0], END[0] + 6 * U, u), y = MG.lerp(START[1], END[1] - 4 * U, u) - Math.sin(u * Math.PI) * 120 * U, u2 = Math.min(1, u + 0.05);
-  const x2 = MG.lerp(START[0], END[0] + 6 * U, u2), y2 = MG.lerp(START[1], END[1] - 4 * U, u2) - Math.sin(u2 * Math.PI) * 120 * U;
+  const at = (v) => [MG.lerp(START[0], END[0], v), MG.lerp(START[1], END[1], v) - Math.sin(v * Math.PI) * 120 * U], [x, y] = at(u), [x2, y2] = at(Math.min(1, u + 0.05));
   return { at: [x, y], rot: Math.atan2(y2 - y, x - x2) };
 }
 
@@ -79,6 +78,7 @@ const AP = {
   duck: kid(AX, AS, [AX, AY + 3 * U], 0.2, -0.2, { eye: 'wide', mouth: 'open' }),
   look: kid(AX, AS, [AX, AY + U], 0.12, -0.12, { eye: 'wide', mouth: 'open' }),
 };
+const START = [BP.throwPast.hands[0][0] + HELD[0], BP.throwPast.hands[0][1] + HELD[1]], END = [TP.catch.hands[0][0] + GRIP[0], TP.catch.hands[0][1] + GRIP[1]];   // the flight leaves the throwing hand and ends where the catching fist holds it
 const A_ACT = [[0, AP.sit], [52, IB.poseMix(AP.sit, AP.duck, 0.6)], [54, AP.duck], [74, IB.poseMix(AP.duck, AP.look, 0.5)], [76, AP.look]];
 
 function drawing(act, f) {
@@ -112,13 +112,14 @@ MG.scene({
     const f = IB.frame(t), s = state(t), p = s.teacher;
     IB.chalkboard(ctx, [380, 460], { strokes: STROKES, drawn: s.drawn, smudges: [[200, 440, 300, 46]] }, { w: 1200, h: 600, lw: 4.2, frame: 22 });
     seat(ctx, AX, s.front, A, 860);
+    // the plane in the thrower's far hand, behind its head: drawn before the child, so the head and the fist cover it
+    if (f >= 28 && f < THROW) { const h = s.back.hands[0]; ctx.save(); ctx.translate(h[0] + HELD[0], h[1] + HELD[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: 0.3 }); ctx.restore(); }
     const jb = seat(ctx, BX, s.back, B, 900);
     if (f >= 72 && f < 78) IB.shake(ctx, jb.headAt[0] + 4 * U, jb.headAt[1] - 6 * U, 26 * U, { a: -Math.PI / 2, n: 2, span: 0.55, gap: 13, seed: 80 + (f >> 1) * 3, w: 3.2 });
     // the plane, before the teacher so the hand that catches it closes over it; it points left, so it is mirrored
     const pl = s.plane;
     if (pl && pl.caught) { const h = p.hands[0]; ctx.save(); ctx.translate(h[0] + 6 * U, h[1] - 4 * U); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: -0.25 }); ctx.restore(); }
     else if (pl) { ctx.save(); ctx.translate(pl.at[0], pl.at[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: pl.rot }); ctx.restore(); }
-    else if (f >= 30) { const h = s.back.hands[0]; ctx.save(); ctx.translate(h[0] - 8 * U, h[1] - 6 * U); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: 0.3 }); ctx.restore(); }
     IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
     const look = { ...T, dir: p.dir, face: p.face }, j = IB.figure(ctx, p, look);
     if (p.tip) { const hd = j.hands[1]; IB.chalk(ctx, [(hd[0] + p.tip[0]) / 2, (hd[1] + p.tip[1]) / 2], { rot: Math.atan2(p.tip[1] - hd[1], p.tip[0] - hd[0]), len: 18 * U, wd: 6 * U }); }

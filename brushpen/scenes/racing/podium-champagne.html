@@ -1,0 +1,139 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / podium-champagne</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/pitlane.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 시상대의 샴페인: 레이스가 끝난 시상대에서 우승자가 트로피를 머리 위로 들어 올리고, 엄지로 밀어낸 코르크가 터지자 세 드라이버가 서로에게 샴페인을 뿌린다. 거품 줄기는 2위의 얼굴에 정통으로 맞는다. 원본에 없는 창작 장면이다. 전달하는 생각: 58랩을 버틴 긴장은 코르크 하나로 풀린다.
+   Motion notes: 8 s, five shots and a whip (IB.shot, on ones), the live bug over every shot and the final order and a banner '결승 · 우승 #7' over the wides. Drivers 302 px tall (1.8 m at 168 px a metre) on a podium of 330 px blocks 0.9 / 0.6 / 0.4 m high. 0-1.5 s the wide, pushing in from 1920 to 1700 px: the winner (navy, #7) lifts the trophy over his head in four drawings from 0.5 s (a dip, up, an overshoot 0.3 h above the shoulder, settled), the other two clap on twos, the crowd in front throws its arms up, ticker tape comes down from 0.58 s (90-200 px/s, tumbling, on twos); 1.5 s a low angle under the winner (w 900, tilted -0.06, the step's edge at the bottom of the frame, a slow push to 820) as he pumps the trophy every 6 frames; 3.0 s a close-up of the bottle's neck: his thumb pushes the cork out over 5 drawings, it pops at 3.5 s (the frame jolts 22 px, burst lines for 2 drawings, the cork gone in 3 drawings, foam gushing as arcs); 3.92 s a whip (8 frames, the old view out in 2, bare 2, in over 4) to a medium wide (w 1500) on all three spraying: the winner's streams land on second place's face after 0.42 s of flight (gravity 9.81 m/s² = 1648 px/s²), second flinches behind a raised hand, third sprays the winner from 4.3 s, second sprays back from 5.0 s; 6.25 s a closer shot on second place soaked (w 760, pushing to 680) as he turns his face away laughing and sprays back. Arcs, droplets, foam and tape are drawn on twos, re-rolled each drawing; people on twos; the camera on ones. No brand on bottles, boards or suits. */
+const C = IB.C, PI = Math.PI, M = 168, G = 9.81 * M, H = 1.8 * M;
+const FLOOR = 1010, PODIUM = { w: 330, band: C.navy }, TOP = IB.podiumTops([960, FLOOR], PODIUM);
+const L1 = IB.driverLook(7, 0, { h: H, dir: -1, seed: 3400 }), L2 = IB.driverLook(16, 1, { h: H, dir: 1, seed: 3440 }), L3 = IB.driverLook(3, 2, { h: H, dir: -1, seed: 3480 });
+const LIFT = 12, CU = 72, POP = 84, WHIP = 94, SP3 = 104, SP2 = 120, HIT = 150;
+const TS = 0.7, BS = 0.55;                                          // trophy and bottle sizes in the wide
+const SHOT = [[0, 'wide'], [36, 'low'], [CU, 'cork'], [WHIP + 2, 'spray'], [HIT, 'hit']];
+const SHOTS = [
+  [0, { at: [960, 640], w: 1600 }], [0, { at: [960, 630], w: 1420 }, 'push', 36],
+  [36, { at: [960, 626], w: 900, tilt: -0.06 }, 'cut'], [38, { at: [960, 610], w: 820, tilt: -0.06 }, 'push', 34],
+  [CU, { at: [960, 540], w: 1920 }, 'cut'],
+  [WHIP, { at: [960, 630], w: 1400 }, 'whip', 8],
+  [HIT, { at: [700, 640], w: 760 }, 'cut'], [HIT + 2, { at: [690, 630], w: 680 }, 'push', 40],
+];
+
+/* ---------- the three drivers, on twos ---------- */
+const base = (look, n, more = {}) => { const p = IB.stand(TOP[n][0], TOP[n][1], look); return { ...p, ...more, hip: more.dy ? [p.hip[0], p.hip[1] + more.dy] : p.hip }; };
+const shoulder = (p, look) => IB.joints(p, look).sh;
+const headOf = (p, look) => { const s = shoulder(p, look); return [s[0] + (look.dir || 1) * 0.02 * look.h, s[1] - 0.1 * look.h]; };
+const clap = (look, n, fd, from) => {   // clapping in front of the chest: hands together and apart, a drawing each
+  const p = base(look, n), s = shoulder(p, look), d = look.dir, k = fd >= from && fd < 60 ? (fd / 2) % 2 : 1;
+  p.hands = k ? [[s[0] + d * 0.15 * H, s[1] + 0.12 * H], [s[0] + d * 0.15 * H, s[1] + 0.13 * H]] : [[s[0] + d * 0.19 * H, s[1] + 0.1 * H], [s[0] + d * 0.08 * H, s[1] + 0.12 * H]];
+  p.hand = ['open', 'open']; p.face = { eye: 'dot', mouth: fd >= from ? 'open' : 'smile' };
+  return p;
+};
+// a bottle held in both hands at the chest, aimed: its mouth, angle and the hands on it
+const aim = (p, look, target, lift, jig) => {
+  const s = shoulder(p, look), d = look.dir, mouth = [s[0] + d * 0.3 * H, s[1] + 0.03 * H - lift * H];
+  const ang = Math.atan2(target[1] - mouth[1], target[0] - mouth[0]) - d * (0.35 + jig);
+  return { mouth, ang, hands: IB.bottleGrips(mouth, ang, BS) };
+};
+
+const winner = (fd) => {
+  const d = L1.dir;
+  if (fd < CU) {
+    const pump = fd >= 24 && Math.floor((fd - 24) / 6) % 2 === 0;
+    const key = fd < LIFT ? 'chest' : fd < LIFT + 2 ? 'dip' : fd < LIFT + 4 ? 'rise' : fd < LIFT + 6 ? 'over' : pump ? 'pump' : 'up';
+    const p = base(L1, 1, { dy: key === 'dip' ? 0.03 * H : key === 'over' ? -0.015 * H : 0, lean: key === 'dip' ? 0.12 : key === 'pump' ? -0.08 : 0 }), s = shoulder(p, L1);
+    const hy = { chest: s[1] + 0.12 * H, dip: s[1] + 0.16 * H, rise: s[1] - 0.06 * H, over: s[1] - 0.265 * H, up: s[1] - 0.25 * H, pump: s[1] - 0.262 * H }[key];
+    const hx = s[0] + d * (key === 'chest' ? 0.17 : key === 'dip' ? 0.15 : key === 'rise' ? 0.1 : 0.02) * H;
+    p.hands = [[hx - 24 * d, hy], [hx + 24 * d, hy]]; p.hand = ['grip', 'grip'];
+    p.face = key === 'chest' ? { eye: 'dot', mouth: 'smile' } : { eye: 'closed', mouth: 'open' };
+    if (key === 'over' || key === 'pump') p.feet = p.feet.map(([x, y]) => [x, y - IB.footLift(0.45, H), 0.45]);   // up on his toes
+    return { p, trophy: [hx, hy + 12 * TS] };
+  }
+  const p = base(L1, 1, { lean: -0.05 }), jig = (fd / 2) % 2 ? 0.06 : -0.04, b = aim(p, L1, headOf(second(fd).p, L2), 0, jig);
+  p.hands = b.hands; p.hand = ['grip', 'grip']; p.face = { eye: 'closed', mouth: 'open' };
+  return { p, bottle: b, trophy: null };
+};
+function second(fd) {
+  if (fd < CU) return { p: clap(L2, 2, fd, LIFT + 4) };
+  if (fd < SP2) {   // hit: leaning away behind a raised hand, his bottle hanging in the other
+    const p = base(L2, 2, { lean: -0.16, nod: -0.25 + ((fd / 2) % 2) * 0.06 }), s = shoulder(p, L2), d = L2.dir;
+    p.hands = [[s[0] + d * 0.12 * H, s[1] + 0.24 * H], [s[0] + d * 0.17 * H, s[1] - 0.12 * H]]; p.hand = ['grip', 'open']; p.face = { eye: 'closed', mouth: 'open' };
+    return { p, bottle: { mouth: [p.hands[0][0] + d * 18, p.hands[0][1] + 70], ang: PI / 2 - d * 0.5, hands: null } };
+  }
+  const p = base(L2, 2, { lean: -0.12, nod: 0.3 + ((fd / 2) % 2) * 0.08 }), jig = (fd / 2) % 2 ? 0.05 : -0.05, b = aim(p, L2, headOf(base(L1, 1), L1), 0.04, jig);
+  p.hands = b.hands; p.hand = ['grip', 'grip']; p.face = { eye: 'closed', mouth: 'open' };
+  return { p, bottle: b };
+}
+const third = (fd) => {
+  if (fd < CU) return { p: clap(L3, 3, fd, LIFT + 6) };
+  const p = base(L3, 3, { lean: 0.04 }), jig = (fd / 2) % 2 ? -0.05 : 0.04, b = aim(p, L3, headOf(base(L1, 1), L1), 0.06, jig);
+  p.hands = b.hands; p.hand = ['grip', 'grip']; p.face = { eye: 'dot', mouth: 'open' };
+  return { p, bottle: b };
+};
+const withPrev = (fn) => (fd) => { const a = fn(fd); if (fd > 0) a.p.prev = fn(fd - 2).p; return a; };
+const W1 = withPrev(winner), W2 = withPrev(second), W3 = withPrev(third);
+
+// one driver in two passes with what he holds between his arms
+const driver = (ctx, a, look, more) => {
+  IB.figure(ctx, a.p, look, 'far');
+  if (a.trophy) IB.trophy(ctx, a.trophy, { s: TS });
+  if (a.bottle) IB.bottle(ctx, a.bottle.mouth, a.bottle.ang, { s: BS, cork: more.cork });
+  IB.figure(ctx, a.p, look, 'near');
+};
+const sprays = (ctx, fd, a1, a2, a3) => {
+  const tw = fd / 24;
+  IB.champagne(ctx, a1.bottle.mouth, { to: headOf(a2.p, L2), T: 0.42, t: tw - POP / 24, d: fd / 2, g: G, s: 1, splat: true, seed: 3900 });
+  if (fd >= SP3) IB.champagne(ctx, a3.bottle.mouth, { to: headOf(a1.p, L1), T: 0.4, t: tw - SP3 / 24, d: fd / 2, g: G, s: 0.9, n: 5, splat: true, seed: 3950 });
+  if (fd >= SP2) IB.champagne(ctx, a2.bottle.mouth, { to: headOf(a1.p, L1), T: 0.45, t: tw - SP2 / 24, d: fd / 2, g: G, s: 0.8, n: 4, seed: 3990 });
+};
+const cheer = (fd) => (fd >= LIFT + 4 && fd < 40 ? 'up' : 1 + (fd / 2) % 2);
+const ROWS = [{ num: 7, color: C.navy, gap: '우승', hi: true }, { num: 16, color: C.yellow, gap: '+3.2' }, { num: 3, color: C.mint, gap: '+8.9' }];
+
+IB.actors = (t) => { const fd = IB.frame(IB.twos(t)), f = Math.floor(t * 24); return { shot: IB.held(SHOT, f), winner: W1(fd).p, second: W2(fd).p, third: W3(fd).p, crowd: cheer(fd) }; };
+
+MG.scene({
+  title: 'racing / podium-champagne',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), fd = IB.frame(IB.twos(t)), shot = IB.held(SHOT, f), tw = IB.twos(t);
+    const cam = IB.shot(SHOTS, f, { jolt: [[POP, 22]] });
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'cork') {
+        // the close-up at the neck: the thumb works the cork out, it pops and the foam gushes
+        const mouth = [1010, 420], ang = -PI / 2 + 0.42, s = 3, dir = [Math.cos(ang), Math.sin(ang)], k = (fd - POP) / 2;
+        IB.tickerTape(ctx, tw, { area: [0, -100, 1920, 1080], n: 26, s: 3, seed: 4100 });
+        IB.bottle(ctx, mouth, ang, { s, hand: C.skin[4], sleeve: C.navy, thumb: Math.min(1, (fd - CU) / 12), cork: false });
+        if (fd < POP) { const out = 4 + Math.max(0, fd - CU) * 1.6; IB.cork(ctx, [mouth[0] + dir[0] * out * s, mouth[1] + dir[1] * out * s], { s, rot: ang, lw: 7 }); }
+        else {
+          if (k < 3) IB.cork(ctx, [mouth[0] + dir[0] * (90 + k * 260) + k * 60, mouth[1] + dir[1] * (90 + k * 260)], { s, rot: ang + k * 1.4, lw: 7 });
+          if (k < 2) IB.burst(ctx, mouth, { angles: [-2.9, -2.4, -1.9, -0.7, -0.2, 0.3].map((a) => a + 0.4), r0: 70 + k * 40, r1: 150 + k * 60, w: 7, seed: 300 + k * 9 });
+          IB.champagne(ctx, [mouth[0] + dir[0] * 10, mouth[1] + dir[1] * 10], { to: [mouth[0] + 760, mouth[1] - 120], T: 0.32, t: (fd - POP) / 24, d: fd / 2, g: G * 3, s: 2.6, n: 7, spread: 0.2, lw: 4, seed: 3920 });
+        }
+        return;
+      }
+      IB.podium(ctx, [960, FLOOR], PODIUM);
+      const a1 = W1(fd), a2 = W2(fd), a3 = W3(fd);
+      if (fd >= CU) IB.trophy(ctx, [TOP[1][0] + 0.32 * H, TOP[1][1] + 4], { s: TS });   // put down on the top step while he sprays
+      driver(ctx, a2, L2, {}); driver(ctx, a3, L3, {}); driver(ctx, a1, L1, {});
+      if (fd >= CU) sprays(ctx, fd, a1, a2, a3);
+      IB.tickerTape(ctx, tw, { area: [-200, 140, 2120, 1100], n: 100, s: 1.3, from: 14 / 24, seed: 4000 });
+      IB.stands(ctx, [-260, 2180], FLOOR - 46, { rows: 2, s: 1.7, rh: 60, colors: [C.navy, C.yellow, C.mint], share: 0.45, cheer: cheer(fd), seed: 720 });
+    });
+    if (shot === 'wide' || shot === 'spray') IB.broadcast(ctx, { rows: ROWS, banner: '결승 · 우승 #7' });
+    else IB.broadcast(ctx, {});
+  },
+});
+</script>

@@ -15,8 +15,8 @@
 <script src="../sample.js"></script>
 <script>
 /* 소품 견본: 피트 레인과 시상대. 피트 박스를 높은 와이드로 본 차(잭에 들려 바퀴 하나가 빠진)와 휠건을 든 크루, 타이어를 든 크루, 잭과 출발 신호등, 바퀴 높이의 휠건 인서트, 시상대와 드라이버와 트로피, 샴페인 병과 코르크, 스프레이와 종이 꽃가루.
-   Motion notes: 2 s loop. The wheel gun's spin marks turn on ones (a machine); the crew are drawn on twos. */
-const C = IB.C, R = { c: null };
+   Motion notes: 2 s loop. The wheel gun's spin marks turn on ones (a machine); the crew, the cork, the spray and the tape are drawn on twos. */
+const C = IB.C, R = { c: null }, PI_ = Math.PI;
 const HW = { at: [960, 760], yaw: 0, look: 0.42, f: 1500, s: 1.15 };   // the high wide of a pit box
 const crewAt = (V, x, z, look) => { const sp = IB.space({ ...V, at: V.at }), U = 140 * V.s, p = sp([x * U, 0, z * U]); return { floor: p[1], x: p[0], h: 1.8 * U * (V.f / (V.f + p[2])) }; };
 const boxCell = (k, f) => {
@@ -48,6 +48,33 @@ const CELLS = [
     pose.hands = [[t.at[0] - t.r * 0.1, t.at[1] - t.r * 0.95], [t.at[0] - t.r * 0.7, t.at[1] + t.r * 0.5]]; pose.hand = ['grip', 'grip'];
     IB.crewman(R.c, pose, lk);
   }, [4], [560, 380, 800, 700]],
+  ['podium, drivers, trophy, bottles', (k) => {
+    const FL = 980, top = IB.podiumTops([960, FL]);
+    IB.podium(R.c, [960, FL], { band: IB.TEAMS[7].color });
+    [[2, 16, 1], [3, 3, -1], [1, 7, -1]].forEach(([n, num, d], i) => {
+      const lk = IB.driverLook(num, i, { h: 300, dir: d }), p = IB.stand(top[n][0], top[n][1], lk);
+      const sh = IB.joints(p, lk).sh;
+      if (n === 1) {   // the trophy overhead, hands on its base
+        const b = [sh[0] - 6, sh[1] - 0.25 * lk.h + 10];
+        p.hands = [[b[0] - 24, b[1] - 10], [b[0] + 24, b[1] - 10]]; p.hand = ['grip', 'grip']; p.face = { eye: 'closed', mouth: 'open' };
+        IB.figure(R.c, p, lk, 'far'); IB.trophy(R.c, b, { s: 0.7 }); IB.figure(R.c, p, lk, 'near');
+      } else {   // a bottle at the chest, hands on it where IB.bottleGrips says
+        const mouth = [sh[0] + d * 90, sh[1] + 6], ang = d > 0 ? -0.35 : PI_ + 0.35;
+        p.hands = IB.bottleGrips(mouth, ang, 0.55); p.hand = ['grip', 'grip'];
+        IB.figure(R.c, p, lk, 'far'); IB.bottle(R.c, mouth, ang, { s: 0.55, cork: true }); IB.figure(R.c, p, lk, 'near');
+      }
+    });
+  }, [5, 6], [160, 140, 1600, 900]],
+  ['bottle, thumb, cork pop', (k) => {
+    const pop = k % 12 >= 6, kk = k % 6;
+    IB.bottle(R.c, [900, 520], -Math.PI / 2 + 0.3, { s: 2.2, cork: !pop, hand: C.skin[1], sleeve: C.yellow, thumb: pop ? 1 : (k % 12) / 6 });
+    if (pop) { IB.cork(R.c, [920 + kk * 40, 380 - kk * 70], { s: 2.2, rot: -1.2 + kk * 0.9 }); if (kk < 2) IB.burst(R.c, [905, 470], { n: 7, a0: -2.7, da: 0.4, r0: 50 + kk * 30, r1: 110 + kk * 40, w: 5 }); }
+  }, [7], [560, 160, 800, 700]],
+  ['champagne (splat), ticker tape', (k) => {
+    IB.tickerTape(R.c, k / 12, { area: [0, 0, 1920, 1080], n: 70, s: 1.6, from: -4 });
+    IB.bottle(R.c, [1180, 520], Math.PI + 0.5, { s: 1 });
+    IB.champagne(R.c, [1080, 470], { to: [640, 560], T: 0.45, t: 0.5 + (k % 12) / 24, d: k, s: 1.4, splat: true });
+  }, [8, 9], [0, 0, 1920, 1080]],
 ];
 MG.scene({
   title: 'props / racing-pitlane',
@@ -55,8 +82,8 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx); R.c = ctx;
-    SAMPLE.title(ctx, 'pit lane (props/pitlane.js)');
-    const c = SAMPLE.grid(5, 5), k = Math.round(IB.twos(t) * 12), f = Math.floor(t * 24);
+    SAMPLE.title(ctx, 'pit lane and podium (props/pitlane.js)');
+    const c = SAMPLE.grid(10, 5), k = Math.round(IB.twos(t) * 12), f = Math.floor(t * 24);
     CELLS.forEach(([label, draw, cells, view]) => SAMPLE.cell(ctx, cells.length > 1 ? SAMPLE.span(c, cells[0], cells[cells.length - 1]) : c[cells[0]], view, () => draw(k, f), label));
   },
 });

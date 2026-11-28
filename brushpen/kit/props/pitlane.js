@@ -1,9 +1,9 @@
-/* props/pitlane.js — the pit lane of a motor race, for the racing scenes beside props/racing.js. Needs ink.js, solid.js and figure.js.
-   The pit lane is drawn in the same metre space as IB.racer (pass the same view: at, yaw, pitch, look, f, s), so the car, its loose tyres and the box markings line up: the lane with its garages and pit wall (IB.pitLane), a wheel taken off or carried (IB.tyre). The crew are the figure rig in team overalls under full-face helmets (IB.crewLook, IB.crewman), with their tools in stage px: the wheel gun (IB.wheelGun), the jacks (IB.pitJack) and the release light over the box (IB.releaseLight).
-   No real team, sponsor, maker or series mark: teams are a palette colour and a number (IB.TEAMS). Red is not used: it belongs to the start lights and the rain light. */
+/* props/pitlane.js — the pit lane and the podium of a motor race, for the racing scenes beside props/racing.js. Needs ink.js, solid.js and figure.js.
+   The pit lane is drawn in the same metre space as IB.racer (pass the same view: at, yaw, pitch, look, f, s), so the car, its loose tyres and the box markings line up: the lane with its garages and pit wall (IB.pitLane), a wheel taken off or carried (IB.tyre). The crew are the figure rig in team overalls under full-face helmets (IB.crewLook, IB.crewman), with their tools in stage px: the wheel gun (IB.wheelGun), the jacks (IB.pitJack) and the release light over the box (IB.releaseLight). After the race: the podium (IB.podium), the drivers in their suits and caps (IB.driverLook), the trophy (IB.trophy), the champagne bottle and its cork (IB.bottle, IB.cork), the spray (IB.champagne) and the ticker tape coming down (IB.tickerTape).
+   No real team, sponsor, maker or series mark: teams are a palette colour and a number (IB.TEAMS), bottles and boards are blank. Red is not used: it belongs to the start lights and the rain light. */
 (function (window) {
   const IB = window.IB, C = IB.C, MG = window.MG;
-  const DARK = '#2a2a2a', TYRE = '#262626', GREY = '#8a8a8a', PI2 = Math.PI * 2;
+  const DARK = '#2a2a2a', TYRE = '#262626', GREY = '#8a8a8a', CORK = C.skin[2], PI2 = Math.PI * 2;
 
   /* TEAMS — the four teams of the racing scenes: number -> { color (cars, overalls, suits), accent (stripes, helmets, caps) }. */
   IB.TEAMS = {
@@ -18,6 +18,12 @@
   IB.crewLook = (num, i = 0, more = {}) => {
     const t = IB.TEAMS[num] || IB.TEAMS[7];
     return { skin: C.skin[SKINS[i % 5]], top: t.color, topKind: 'long', bottom: t.color, shoe: DARK, gloves: C.charcoal, hair: 'bald', helmet: t.accent, stripe: t.color, seed: 3000 + i * 40, ...more };
+  };
+
+  /* driverLook(num, i, more) — a look for IB.figure: the driver of team `num` out of the car, in a race suit of the team colour (one piece, long sleeves), dark boots and a team cap in the accent colour, face showing. i picks the face (skin). */
+  IB.driverLook = (num, i = 0, more = {}) => {
+    const t = IB.TEAMS[num] || IB.TEAMS[7];
+    return { skin: C.skin[SKINS[i % 5]], top: t.color, topKind: 'long', bottom: t.color, shoe: DARK, hair: 'cap', hat: t.accent, face: { eye: 'dot', mouth: 'smile' }, seed: 3400 + i * 40, ...more };
   };
 
   /* ---------- the crew ---------- */
@@ -176,5 +182,120 @@
       line([[x0, -1.0, -7], [x0, -3.2, -7]], { w: lw * 0.6, color: GREY, seed: seed + 1200 + k });
     }
     if (o.wall !== false) line(xs(from, to, 1).map((x) => [x, -3.2, -7]), { w: lw * 0.6, color: GREY, seed: seed + 903 });
+  };
+
+  /* ---------- the podium ---------- */
+
+  /* podium(ctx, [x, floor], opts) — the three steps after the race, seen from the front: the winner's block in the middle (h1 tall), second on the left (h2), third on the right (h3), each `w` wide with its place set in big numbers on its face and a strip of its top showing, and behind them a blank backdrop wall (no marks) with a band in `band`. s scales it (block 270 px wide; heights 150, 100, 66: 0.9, 0.6, 0.4 m at 167 px a metre); lw, seed. Returns the middle of each block's top: { 1: [x, y], 2: [x, y], 3: [x, y] }, where the drivers stand; IB.podiumTops([x, floor], opts) gives the same without drawing, for poses worked out before it is drawn. */
+  const podiumSize = (x, o) => { const s = o.s || 1, W = (o.w || 270) * s; return { s, W, top: 22 * s, H: { 1: (o.h1 || 150) * s, 2: (o.h2 || 100) * s, 3: (o.h3 || 66) * s }, X: { 1: x, 2: x - W, 3: x + W } }; };
+  IB.podiumTops = ([x, floor], o = {}) => { const { H, X, top } = podiumSize(x, o), out = {}; [1, 2, 3].forEach((n) => { out[n] = [X[n], floor - H[n] - top * 0.5]; }); return out; };
+  IB.podium = (ctx, [x, floor], o = {}) => {
+    const { s, W, top, H, X } = podiumSize(x, o), lw = o.lw || 2.8, seed = o.seed || 3600;
+    if (o.backdrop !== false) {
+      const bw = W * 2.05, bt = floor - 600 * s;
+      IB.ink(ctx, [[x - bw, bt], [x + bw, bt], [x + bw, floor - 40 * s], [x - bw, floor - 40 * s]], { closed: true, smooth: false, fill: C.paper, w: lw, seed });
+      IB.ink(ctx, [[x - bw, bt + 40 * s], [x + bw, bt + 40 * s], [x + bw, bt + 76 * s], [x - bw, bt + 76 * s]], { closed: true, smooth: false, fill: o.band || C.navy, w: lw * 0.8, seed: seed + 1 });
+      for (let k = -1; k <= 1; k++) IB.ink(ctx, [[x + k * bw * 0.5, bt + 76 * s], [x + k * bw * 0.5, floor - 40 * s]], { w: lw * 0.5, color: '#c4c4c4', seed: seed + 3 + k, taper: false });   // the backdrop's panel joins
+    }
+    [2, 3, 1].forEach((n) => {
+      const cx = X[n], y = floor - H[n];
+      IB.ink(ctx, [[cx - W / 2, y], [cx + W / 2, y], [cx + W / 2, floor], [cx - W / 2, floor]], { closed: true, smooth: false, fill: n === 1 ? C.paper : '#f6f6f6', w: lw, seed: seed + 10 + n });
+      IB.ink(ctx, [[cx - W / 2, y], [cx + W / 2, y], [cx + W / 2 - 14 * s, y - top], [cx - W / 2 + 14 * s, y - top]], { closed: true, smooth: false, fill: '#e2e2e2', w: lw, seed: seed + 20 + n });   // the top, seen a little from above
+      ctx.save(); ctx.font = `800 ${Math.round(Math.min(H[n] * 0.7, 96 * s))}px ${IB.FONT}`; ctx.fillStyle = C.charcoal; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(n), cx, y + H[n] * 0.54); ctx.restore();
+    });
+    return IB.podiumTops([x, floor], o);
+  };
+
+  /* trophy(ctx, [x, y], opts) — the winner's cup: a dark base, a stem and a gold bowl with two handles. [x, y] is the bottom of the base; rot tips it about there (rad, + clockwise); s scales it (150 px tall at 1); lw, seed. Returns { handles: [left, right], base: [left, right] (the sides of the base, where hands hold it up overhead), top } in stage px. */
+  IB.trophy = (ctx, [x, y], o = {}) => {
+    const s = o.s || 1, lw = o.lw || 2.8, seed = o.seed || 3700, r = o.rot || 0, c = Math.cos(r), sn = Math.sin(r);
+    const P = ([px, py]) => [x + (px * c - py * sn) * s, y + (px * sn + py * c) * s];
+    [-1, 1].forEach((sd) => IB.ink(ctx, [[30 * sd, -126], [62 * sd, -124], [62 * sd, -96], [26 * sd, -82]].map(P), { w: 9 * s, seed: seed + 1 + sd, taper: false }));   // handles
+    IB.ink(ctx, [[-36, 0], [36, 0], [30, -26], [-30, -26]].map(P), { closed: true, smooth: false, fill: C.charcoal, w: lw, seed: seed + 3 });
+    IB.ink(ctx, [[-8, -26], [8, -26], [6, -62], [-6, -62]].map(P), { closed: true, smooth: false, fill: C.mustard, w: lw, seed: seed + 4 });
+    IB.ink(ctx, [[-14, -60], [14, -60], [36, -84], [44, -118], [46, -146], [-46, -146], [-44, -118], [-36, -84]].map(P), { closed: true, fill: C.yellow, w: lw, seed: seed + 5 });
+    IB.ink(ctx, [[-30, -132], [-26, -98]].map(P), { w: lw * 1.6, color: C.paper, seed: seed + 6 });   // the shine
+    return { handles: [P([-62, -110]), P([62, -110])], base: [P([-34, -12]), P([34, -12])], top: P([0, -146]) };
+  };
+
+  /* bottle(ctx, mouth, ang, opts) — a magnum of champagne in stage px with no label but a blank one: dark glass, gold foil on the neck, `mouth` the end of the neck and ang (rad) the way it points (from the base to the mouth). cork: true while the cork is still in (popped corks fly as IB.cork). hand: a skin or glove colour to draw a fist round the neck with its thumb pushing the cork up (the close-up of the pop; thumb 0..1 how far it has pushed; sleeve: a colour for the forearm running out of the frame); s scales it (210 px long at 1); lw, seed. Returns { mouth, base, grips: [neck, body] } in stage px; IB.bottleGrips(mouth, ang, s) gives the same grips without drawing, for the hands of a figure drawn before it. */
+  IB.bottleGrips = (mouth, ang, s = 1) => [[mouth[0] - Math.cos(ang) * 40 * s, mouth[1] - Math.sin(ang) * 40 * s], [mouth[0] - Math.cos(ang) * 165 * s, mouth[1] - Math.sin(ang) * 165 * s]];
+  IB.bottle = (ctx, mouth, ang, o = {}) => {
+    const s = o.s || 1, lw = o.lw || 2.8 * Math.max(1, s * 0.8), seed = o.seed || 3800, c = Math.cos(ang), sn = Math.sin(ang);
+    const P = ([px, py]) => [mouth[0] + (px * c - py * sn) * s, mouth[1] + (px * sn + py * c) * s];
+    IB.ink(ctx, [[0, -9], [-60, -10], [-90, -25], [-98, -27], [-204, -27], [-210, -20], [-210, 20], [-204, 27], [-98, 27], [-90, 25], [-60, 10], [0, 9]].map(P), { closed: true, fill: C.charcoal, w: lw, seed });
+    IB.ink(ctx, [[2, -10], [-56, -11], [-62, -14], [-62, 14], [-56, 11], [2, 10]].map(P), { closed: true, fill: C.yellow, w: lw * 0.8, seed: seed + 1 });   // foil
+    IB.ink(ctx, [[-118, -27], [-178, -27], [-178, 27], [-118, 27]].map(P), { closed: true, smooth: false, fill: C.paper, w: lw * 0.8, seed: seed + 2 });   // a blank label
+    IB.ink(ctx, [[-130, 8], [-166, 8]].map(P), { w: lw * 0.6, color: GREY, seed: seed + 3 });
+    IB.ink(ctx, [[-186, -18], [-112, -18]].map(P), { w: lw * 1.4, color: '#6b6b6b', seed: seed + 4 });   // the glass's shine
+    if (o.cork) IB.ink(ctx, [[0, -8], [10, -9], [18, -13], [24, 0], [18, 13], [10, 9], [0, 8]].map(P), { closed: true, fill: CORK, w: lw * 0.8, seed: seed + 5 });
+    if (o.hand) {
+      const th = o.thumb || 0;
+      if (o.sleeve) IB.tube(ctx, [[-52, 24], [-58, 150], [-90, 420]].map(P), { w: 40 * s, edge: lw, fill: o.sleeve, seed: seed + 12 });   // the forearm, out of the frame
+      IB.ink(ctx, [[-72, -20], [-26, -20], [-20, -12], [-20, 26], [-30, 34], [-72, 32], [-80, 20], [-80, -12]].map(P), { closed: true, fill: o.hand, w: lw, seed: seed + 6 });   // the fingers wrapped round the neck, seen from their backs
+      [-60, -48, -36].forEach((x, i) => IB.ink(ctx, [[x, 6], [x, 32]].map(P), { w: lw * 0.6, seed: seed + 7 + i }));   // the joins between the fingers
+      IB.tube(ctx, [[-50, -18], [-24, -24], [-2, -20 - th * 2], [10 + th * 8, -15 - th * 2]].map(P), { w: 15 * s, edge: lw, fill: o.hand, seed: seed + 10 });   // the thumb up the neck, pushing the cork
+    }
+    return { mouth: P([0, 0]), base: P([-210, 0]), grips: IB.bottleGrips(mouth, ang, s) };
+  };
+
+  /* cork(ctx, [x, y], opts) — a champagne cork in flight: the mushroom head and its swollen plug, turned by rot (rad); s scales it (34 px long at 1); lw, seed. Put IB.burst at the mouth for the pop. */
+  IB.cork = (ctx, [x, y], o = {}) => {
+    const s = o.s || 1, r = o.rot || 0, c = Math.cos(r), sn = Math.sin(r), P = ([px, py]) => [x + (px * c - py * sn) * s, y + (px * sn + py * c) * s];
+    IB.ink(ctx, [[-14, -8], [2, -9], [8, -14], [18, -10], [20, 0], [18, 10], [8, 14], [2, 9], [-14, 8]].map(P), { closed: true, fill: CORK, w: o.lw || 2.8, seed: o.seed || 3850 });
+    IB.ink(ctx, [[8, -12], [8, 12]].map(P), { w: (o.lw || 2.8) * 0.6, seed: (o.seed || 3850) + 1 });
+  };
+
+  /* champagne(ctx, mouth, opts) — the spray from a shaken bottle: `n` streams of golden liquid as ballistic arcs out of `mouth`, broken into dashes, with white foam bulging at the mouth and droplets flying off the streams; all re-rolled every drawing (pass time on twos). The main stream is aimed at `to` (stage px) and gets there after T seconds (the others fan out `spread` rad either side and fall short or long); g is gravity in px/s² (1640 at 167 px a metre); t: seconds since the spray began (it grows out of the mouth until T, then streams steadily); d: the drawing number (the roll); s scales the foam and drops; splat: true bursts drops off the target once the stream arrives (it hits someone). Returns { tips: the stage points where each stream's front is, hit: whether the main stream has arrived }. */
+  IB.champagne = (ctx, [mx, my], o = {}) => {
+    const T = o.T || 0.45, to = o.to || [mx - 300, my], g = o.g || 1640, t = Math.max(0, o.t || 0), n = o.n || 7, spread = o.spread == null ? 0.12 : o.spread, s = o.s || 1, d = o.d || 0, seed = o.seed || 3900, lw = o.lw || 2.6;
+    const r = MG.rng(seed + d * 31), vx0 = (to[0] - mx) / T, vy0 = (to[1] - my) / T - (g * T) / 2, sp0 = Math.hypot(vx0, vy0), a0 = Math.atan2(vy0, vx0);
+    const age = Math.min(t, T * 1.15), tips = [];
+    for (let i = 0; i < n; i++) {
+      const u = n > 1 ? i / (n - 1) - 0.5 : 0, a = a0 + u * 2 * spread + (r() - 0.5) * 0.04, v = sp0 * (1 + (r() - 0.5) * 0.12 - Math.abs(u) * 0.1), vx = Math.cos(a) * v, vy = Math.sin(a) * v;
+      const P = (tt) => [mx + vx * tt, my + vy * tt + 0.5 * g * tt * tt];
+      // the stream: dashes along the arc, longer near the mouth where it is still a jet
+      const steps = 22;
+      for (let k = 0; k < steps; ) {
+        const len = 2 + Math.floor(r() * 4), k1 = Math.min(steps, k + len), pts = [];
+        for (let m = k; m <= k1; m++) pts.push(P((m / steps) * age));
+        const u0 = k / steps;
+        if (r() > u0 * 0.5) IB.ink(ctx, pts, { w: (7 - u0 * 4) * s * (i === Math.floor(n / 2) ? 1.4 : 1), color: r() < 0.7 ? C.yellow : C.mustard, seed: seed + i * 50 + k + d });
+        k = k1 + (r() < 0.35 ? 1 : 0);
+      }
+      // droplets thrown off it, further out the further along
+      for (let k = 0; k < 7; k++) {
+        const tt = (0.2 + r() * 0.85) * age, p = P(tt), off = tt * 220 * s, rr = (4 + r() * 5) * s;
+        IB.oval(ctx, p[0] + (r() - 0.5) * off, p[1] + (r() - 0.5) * off, rr, rr, { fill: r() < 0.5 ? C.paper : C.yellow, w: lw * 0.5, color: GREY, n: 7, seed: seed + 600 + i * 10 + k + d });
+      }
+      tips.push(P(age));
+    }
+    // foam bulging out of the mouth
+    for (let k = 0; k < 5; k++) { const b = (8 + r() * 12) * s, tt = r() * 0.06; IB.oval(ctx, mx + vx0 * tt + (r() - 0.5) * 18 * s, my + vy0 * tt + (r() - 0.5) * 18 * s, b * 1.2, b, { fill: C.paper, w: lw * 0.7, color: GREY, n: 9, seed: seed + 800 + k + d }); }
+    const hit = t >= T;
+    if (hit && o.splat) {   // it lands on someone: drops burst back off the target and run down
+      const back = Math.sign(mx - to[0]) || 1;   // the drops bounce back toward the bottle and fall
+      for (let k = 0; k < 12; k++) {
+        const a = -Math.PI / 2 + back * r() * 1.4 + (r() - 0.5) * 0.6, l = (24 + r() * 80) * s, p = [to[0] + Math.cos(a) * l, to[1] + Math.sin(a) * l * 0.7 + r() * 60 * s];
+        IB.oval(ctx, p[0], p[1], (3 + r() * 3) * s, (3 + r() * 4) * s, { fill: r() < 0.5 ? C.paper : C.yellow, w: lw * 0.5, color: GREY, n: 7, seed: seed + 900 + k + d });
+      }
+      for (let k = 0; k < 2; k++) { const b = (7 + r() * 7) * s; IB.oval(ctx, to[0] + back * (8 + r() * 24) * s, to[1] - (6 + r() * 16) * s, b * 1.2, b, { fill: C.paper, w: lw * 0.7, color: GREY, n: 9, seed: seed + 950 + k + d }); }
+    }
+    return { tips, hit };
+  };
+
+  /* tickerTape(ctx, t, opts) — strips of paper coming down over the podium, tumbling: n strips in the box `area` [x0, y0, x1, y1], each falling at its own speed (90-200 px/s x s) and swaying, its length showing and hiding as it turns over. t: seconds (pass it on twos: paper is drawn, not filmed), from: when it was let go (no strips before; each starts somewhere in the 0.3 x height above the box and falls in, then comes round again from the top); colors (C.paper and C.yellow); s scales the strips (34 x 10 px at 1); seed. */
+  IB.tickerTape = (ctx, t, o = {}) => {
+    const [x0, y0, x1, y1] = o.area || [0, 0, 1920, 1080], n = o.n || 60, s = o.s || 1, seed = o.seed || 4000, cols = o.colors || [C.paper, C.yellow], tt = t - (o.from || 0);
+    if (tt < 0) return;
+    const r = MG.rng(seed), H = y1 - y0;
+    for (let i = 0; i < n; i++) {
+      const x = x0 + r() * (x1 - x0), v = (90 + r() * 110) * s, ph = r() * PI2, start = r() * 0.3 * H, col = cols[Math.floor(r() * cols.length)], spin = 3 + r() * 4;
+      const y = y0 - 0.3 * H + ((0.3 * H - start + v * tt) % (1.3 * H));   // from above the box, down through it, round again
+      if (y < y0 - 40 || y > y1) continue;
+      const cx = x + Math.sin(ph + tt * 2.2) * 26 * s, a = ph + tt * 1.1, k = Math.cos(ph + tt * spin), L = 17 * s, Wd = 5 * s * (0.3 + 0.7 * Math.abs(k));
+      const c = Math.cos(a), sn = Math.sin(a), P = ([px, py]) => [cx + px * c - py * sn, y + px * sn + py * c];
+      IB.ink(ctx, [[-L, -Wd], [L, -Wd], [L, Wd], [-L, Wd]].map(P), { closed: true, smooth: false, fill: col, w: 1.4 * s, color: GREY, seed: seed + i });
+    }
   };
 })(window);

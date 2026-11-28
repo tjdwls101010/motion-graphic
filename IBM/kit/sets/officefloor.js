@@ -60,7 +60,7 @@
     return [x0, back, w, depth];
   };
 
-  /* whiteboard(ctx, at, opts) — a whiteboard w x h (300 x 220) whose content is placeholder shapes, never words: a bar chart of `bars` heights (0..1, the last one in `accent`), a rising arrow, two scribbled lines of "text" and `notes` sticky notes in yellow. `at` = [its centre x, the floor line]; the board's bottom edge is `lift` px above the floor (210: its middle at a 330 px figure's head). On an easel by default (two front legs splayed to the floor, a back leg, a marker tray); wall: true hangs it with no legs. `s` enlarges the whole board and its contents about `at` for a closer shot (1.5 beside a 520 px figure, work/meeting-nod-off); every line grows with it, so give `lw` as the wanted outline over s. Returns the board [x, y, w, h] in stage px, to point a hand at. */
+  /* whiteboard(ctx, at, opts) — a whiteboard w x h (300 x 220) whose content is placeholder shapes, never words: a bar chart of `bars` heights (0..1, the last one in `accent`), a rising arrow, two scribbled lines of "text" and `notes` sticky notes in yellow, kept inside the board (in columns right of the chart, then rows; those that do not fit are left off). `at` = [its centre x, the floor line]; the board's bottom edge is `lift` px above the floor (210: its middle at a 330 px figure's head). On an easel by default (two front legs splayed to the floor, a back leg, a marker tray); wall: true hangs it with no legs. `s` enlarges the whole board and its contents about `at` for a closer shot (1.5 beside a 520 px figure, work/meeting-nod-off); every line grows with it, so give `lw` as the wanted outline over s. Returns the board [x, y, w, h] in stage px, to point a hand at. */
   IB.whiteboard = (ctx, [cx, floor], o = {}) => {
     const { w = 300, h = 220, lift = 210, wall = false, bars = [0.35, 0.55, 0.85], accent = C.blue, notes = 2, lw = 3.2, s: S = 1, seed = 970 } = o;
     const x0 = cx - w / 2, y1 = floor - lift, y0 = y1 - h;
@@ -83,9 +83,10 @@
     IB.ink(ctx, [[bx + 6, by - bh * 0.5], [bx + 50, by - bh * 0.62], [bx + 80, by - bh * 0.56], [bx + 120, by - bh * 0.92]], { w: 2.4, smooth: false, seed: seed + 14 });
     IB.ink(ctx, [[bx + 104, by - bh * 0.92], [bx + 120, by - bh * 0.92], [bx + 118, by - bh * 0.76]], { w: 2.4, smooth: false, seed: seed + 15 });
     for (let i = 0; i < 2; i++) IB.ink(ctx, [[ax, y0 + 30 + i * 22], [ax + 30, y0 + 27 + i * 22], [ax + 60 - i * 18, y0 + 31 + i * 22]], { w: 2, seed: seed + 16 + i });
-    // sticky notes, a little crooked
-    for (let i = 0; i < notes; i++) {
-      const nx = ax + 6 + i * 44, ny = y0 + 86 + (i % 2) * 18, a = (i % 2 ? 1 : -1) * 0.08, c = Math.cos(a), s = Math.sin(a), p = (dx, dy) => [nx + dx * c - dy * s, ny + dx * s + dy * c];
+    // sticky notes, a little crooked, in as many columns as the board has room for right of the chart and then in rows below; any that would run off the bottom are left off
+    const cols = Math.max(1, Math.floor((x0 + w - 10 - (ax + 6) - 36) / 44) + 1), rows = Math.floor((h - 8 - 66 - 50) / 46) + 1;
+    for (let i = 0; i < Math.min(notes, cols * rows); i++) {
+      const col = i % cols, row = Math.floor(i / cols), nx = ax + 6 + col * 44, ny = y0 + 66 + row * 46 + (col % 2) * 14, a = (i % 2 ? 1 : -1) * 0.08, c = Math.cos(a), s = Math.sin(a), p = (dx, dy) => [nx + dx * c - dy * s, ny + dx * s + dy * c];
       IB.ink(ctx, [p(0, 0), p(36, 0), p(36, 36), p(0, 36)], { closed: true, smooth: false, fill: C.yellow, w: 2, seed: seed + 20 + i });
     }
     ctx.restore();

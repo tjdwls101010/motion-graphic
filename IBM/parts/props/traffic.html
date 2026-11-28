@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / traffic</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/props/traffic.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 거리의 것 — 보행자 신호등 IB.walkSignal, 버스 정류장 IB.busStop, 한 사람이 타는 자전거 IB.bicycle과 탄 사람의 자리 IB.bikeFit·IB.ride, 자전거 벨 소리 표시 IB.bellRing. 신호등은 카메라를 향해 서고 위 칸이 빨간 멈춤, 아래 칸이 초록 걸음이며 켜진 쪽의 작은 사람은 흰 자리 표시 도형이다. 옆의 남은 시간 칸은 초록일 때만 켜지고 아래부터 센다(기계라 1프레임 단위로 한 칸씩 끈다). 정류장의 표지판은 글자 대신 회색 막대 둘이다. 자전거는 탠덤(props/vehicles-tandem)의 자리 하나짜리를 1.25배로 키운 것이라 바퀴 반지름 62, 축간 212px이고, 탄 사람(키 330)은 bikeFit이 주는 안장 위 골반, 페달 위 발목, 핸들 끝 손에 IB.ride로 앉는다: 척추 0.5rad, 페달은 열두 장에 한 바퀴. 벨 소리는 핸들 옆에 작은 종이 장마다 반대로 기울며 6px씩 떠오르고 양옆에 흔들림선이 붙는 네 장이다. */
+const C = IB.C, FLOOR = 930, RIDER = { ...IB.PASSERSBY[4], h: 330, dir: 1, seed: 60 };
+MG.scene({
+  title: 'props / traffic',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/traffic.js — walkSignal, busStop, bicycle, bikeFit, ride, bellRing');
+    const c = SAMPLE.grid(3, 3), f = IB.frame(t), d2 = Math.floor(f / 2), go = f >= 24, left = go ? Math.max(0, 8 - Math.floor((f - 24) / 12)) : 0;
+    SAMPLE.cell(ctx, c[0], SAMPLE.fit(c[0], [960, FLOOR], 60), () => {
+      IB.smear(ctx, 960, FLOOR - 6, 120, { h: 10, seed: 3 });
+      IB.walkSignal(ctx, [960, FLOOR], { go, left });
+    }, `IB.walkSignal(at, { go: ${go}, left: ${left} })`);
+    SAMPLE.cell(ctx, c[1], SAMPLE.fit(c[1], [940, FLOOR], 60), () => {
+      IB.smear(ctx, 940, FLOOR - 6, 520, { h: 12, seed: 4 });
+      IB.busStop(ctx, [900, FLOOR], { sign: 1 });
+    }, 'IB.busStop(at, { sign: 1 })');
+    SAMPLE.cell(ctx, c[2], SAMPLE.fit(c[2], [960, FLOOR], 60), () => {
+      const crank = (d2 / 12) * Math.PI * 2, alt = IB.alternate(f, 2), at = [930, FLOOR];
+      IB.ripples(ctx, [at[0] - 106, FLOOR], { alt, seed: 70 }); IB.ripples(ctx, [at[0] + 106, FLOOR], { alt, seed: 80 });
+      const fit = IB.bicycle(ctx, at, { crank, alt });
+      IB.figure(ctx, IB.ride(fit, RIDER), { ...RIDER, face: { mouth: 'smile' } });
+      const k = d2 % 12;
+      if (k < 4) IB.bellRing(ctx, IB.bikeFit(at, crank).bell, { k });
+    }, 'IB.bicycle + IB.ride(fit, look); IB.bellRing({ k })');
+  },
+});
+</script>

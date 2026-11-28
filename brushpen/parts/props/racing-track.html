@@ -12,7 +12,7 @@
 <script src="../../kit/props/racing.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 소품 견본: 레이싱 장면의 나머지 부품. 차와 같은 3D 공간에 그리는 트랙 IB.trackStrip(뒤 아래에서 따라가는 샷: 연석과 벽이 run만큼 뒤로 흘러 서 있는 차가 달린다), 출발 신호 IB.gantry(하나씩 켜지고 꺼지면 출발), 정면 헬멧 클로즈업 IB.helmet(긴장한 눈, 땀), 온보드 IB.cockpit, 타이어 연기 IB.tyreSmoke, 불꽃 IB.sparks, 물보라 IB.spray, 체커기 IB.chequer, 옆에서 본 트랙 IB.trackside, 중계 그래픽 IB.broadcast.
+/* 소품 견본: 레이싱 장면의 나머지 부품. 차와 같은 3D 공간에 그리는 트랙 IB.trackStrip(뒤 아래에서 따라가는 샷: 연석과 벽이 run만큼 뒤로 흘러 서 있는 차가 달린다), 출발 신호 IB.gantry(하나씩 켜지고 꺼지면 출발), 정면 헬멧 클로즈업 IB.helmet(긴장한 눈, 땀), 온보드 IB.cockpit, 타이어 연기 IB.tyreSmoke(겹친 덩어리를 한 윤곽의 구름으로 그리는 IB.billow), 불꽃 IB.sparks, 물보라 IB.spray, 체커기 IB.chequer, 옆에서 본 트랙 IB.trackside, 중계 그래픽 IB.broadcast.
    Motion notes: 4 s loop on twos; the chase cell launches with IB.drive (1500 px/s² for 2 s), the onboard cell runs 60 m a second (216 km/h). */
 const C = IB.C, ctxRef = { c: null };
 const CHASE = { at: [960, 860], yaw: Math.PI / 2, look: 0.07, f: 800, s: 1.2 };
@@ -23,6 +23,7 @@ const CELLS = [
   ['IB.trackStrip + IB.cockpit', (k) => { IB.trackStrip(ctxRef.c, { at: [960, 600], yaw: Math.PI / 2, look: 0.06, f: 700, s: 1, run: k * 5, from: 1, to: 140, half: 5 }); IB.cockpit(ctxRef.c, { steer: Math.sin(k / 6) * 0.3, shake: 4, d: k }); }],
   ['IB.tyreSmoke + IB.sparks', (k) => { IB.racer(ctxRef.c, { at: [960, 860], yaw: 0, s: 0.9, look: 0.08, steer: 0.1 }); IB.tyreSmoke(ctxRef.c, [960 + 1.75 * 126, 860], { k: k % 10, seed: 2100 + k }); IB.sparks(ctxRef.c, [880, 858], { d: k }); }],
   ['IB.spray (wet), rain light', (k) => { IB.spray(ctxRef.c, [960 - 1.85 * 126, 850], { d: k, len: 900 }); IB.racer(ctxRef.c, { at: [960, 860], yaw: 0, s: 0.9, look: 0.08, lit: k % 4 < 2, color: C.yellow, accent: C.navy }); }],
+  ['IB.billow: puffs as one cloud, ageing', (k) => IB.billow(ctxRef.c, Array.from({ length: 9 }, (_, i) => ({ x: 600 + i * 95, y: 640 - i * 14, r: 60 + i * 14, age: Math.min(0.98, ((8 - i) / 9 + (k % 24) / 48) % 1) })), { lw: 3.2 })],
   ['IB.chequer({ wave })', (k) => IB.chequer(ctxRef.c, [800, 420], { s: 1.4, wave: k % 2 })],
   ['IB.trackside({ run, blur })', (k) => IB.trackside(ctxRef.c, [200, 1720], 900, { run: k * 2, blur: 1 })],
 ];

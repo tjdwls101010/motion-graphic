@@ -1,4 +1,4 @@
-/* props/racing-weather.js — the race away from the dry straight: rain (the rooster tail of spray seen from any angle, the rain light glowing through it, drops on the lens, standing water), a circuit with curves for the helicopter (IB.trackPath, IB.circuit) with the cars' sun shadows, rubber marks and the smoke of a drift drawn in the same space, a raised apex kerb for a camera on the tarmac, the pit wall the team climbs to cheer, and the marshal's post with the chequered flag. Everything that lies on the track takes `map`, the view's space in metres (IB.trackSpace with the same view opts as IB.racer), so it stays glued to the cars in any shot. New, not measured: the reference has no racing. Needs ink.js, solid.js, figure.js and props/racing.js. */
+/* props/racing-weather.js — the race away from the dry straight: rain (the rooster tail of spray seen from any angle, the rain light glowing through it, drops on the lens, standing water), a circuit with curves for the helicopter (IB.trackPath, IB.circuit) with the cars' sun shadows, rubber marks and the smoke of a drift drawn in the same space, a raised apex kerb for a camera on the tarmac, the pit wall the team climbs to cheer, and the marshal's post with the chequered flag. Everything that lies on the track takes `map`, the view's space in metres (IB.trackSpace with the same view opts as IB.racer), so it stays glued to the cars in any shot. New, not measured: the reference has no racing. Needs ink.js, solid.js, marks.js, figure.js and props/racing.js. */
 (function (window) {
   const IB = window.IB, C = IB.C;
   const MIST = 'rgba(226, 233, 239, 0.45)', MIST_LINE = 'rgba(130, 150, 170, 0.35)', SPRAY = '#9fb3c6', WATER = '#d5e4f1', SHADE = '#d2d2d2', RUBBER = '#4a4a4a';
@@ -155,10 +155,10 @@
         const r = MG.rng((o.seed || 3800) + n * 13 + e * 7), [x, z] = fn(tb), rad = r0 + grow * age * (0.8 + r() * 0.4);
         const p = [x + vx * age + (r() - 0.5) * (0.6 + age), -(rad * 0.7 + rise * age), z + vz * age + (r() - 0.5) * (0.6 + age)], q = map(p);
         const side = o.split == null || !o.pass ? true : o.pass === 'far' ? q[2] > o.split : q[2] <= o.split;
-        if (ok(map, q) && side) items.push({ z: q[2], draw: () => { const R = rad * pxm(map, p), old = age > life * 0.5; IB.oval(ctx, q[0], q[1], R * 1.15, R * 0.9, { fill: old ? '#f6f6f6' : C.paper, color: old ? '#b4b4b4' : '#8a8a8a', w: Math.max(1, lw * (1 - (age / life) * 0.6) * Math.min(1.4, R / 70)), n: 14, seed: (o.seed || 3800) + n * 3 + e }); } });
+        if (ok(map, q) && side) items.push({ z: q[2], x: q[0], y: q[1], r: rad * pxm(map, p), age: age / life });
       }
     });
-    items.sort((p, q) => q.z - p.z).forEach((it) => it.draw());
+    IB.billow(ctx, items.sort((p, q) => q.z - p.z), { lw, seed: o.seed || 3800 });   // far to near, drawn as one cloud
   };
 
   /* apexKerb(ctx, map, opts) — the raised kerb at an apex, for a camera down on the tarmac: blocks `len` m (1.2) long and `h` m (0.06) high with a sloped inner face, yellow and white, from x `from` to `to` (m along the track, sliding back by `run` like IB.trackStrip's), between z0 and z1 m across (the inner edge first), drawn far to near so the block nearest the lens is in front. opts { from, to, run, z0, z1, h, len, seed, lw }. */

@@ -40,6 +40,32 @@
     ctx.restore();
   };
 
+  /* billow(ctx, puffs, opts) — a cloud of thick smoke (a locked or spinning tyre, a burnout) drawn as ONE mass: puffs [{ x, y, r, age }] (stage px; age 0 just born .. 1 gone) are inked as a single outline round their union, so overlapping puffs never show the seams between them, with the reference's only tone, graphite, stippled into the underside of the young, dense puffs, and a curl line inside a few of them. As a puff ages its share of the outline pales and thins and it frays into a few smaller satellites before it vanishes. Pass the puffs of one cloud together, oldest first; opts: lw (outline, 2.6), fill, seed. */
+  IB.billow = (ctx, puffs, o = {}) => {
+    const lw = o.lw || 2.6, seed = o.seed || 4100, P = [];
+    puffs.forEach((p, i) => {
+      if (p.age >= 1 || p.r <= 0) return;
+      const r = MG.rng(seed + i * 17);
+      P.push({ ...p, i, rx: p.r * 1.12, ry: p.r * 0.94 });
+      if (p.age > 0.6) for (let k = 0; k < 3; k++) { const a = r() * 6.28, d = p.r * (0.9 + r() * 0.5), sr = p.r * (0.22 + r() * 0.18) * (1.4 - p.age); P.push({ x: p.x + Math.cos(a) * d, y: p.y + Math.sin(a) * d * 0.7, r: sr, rx: sr, ry: sr * 0.9, age: Math.min(0.99, p.age + 0.15), i: i * 10 + k + 1000 }); }   // fraying
+    });
+    const grey = (age) => { const v = Math.round(60 + 140 * Math.max(0, age - 0.25) / 0.75); return `rgb(${v},${v},${v})`; };
+    const shape = (p) => IB.ellipse(p.x, p.y, p.rx, p.ry, 16);
+    // 1. every puff's outline at twice the width; 2. every puff filled over it: only the outer half of the union's edge is left
+    P.forEach((p) => IB.ink(ctx, shape(p), { closed: true, fill: null, w: lw * 2 * (1 - 0.55 * Math.max(0, p.age - 0.3)), color: grey(p.age), seed: seed + p.i, grain: 0 }));
+    P.forEach((p) => IB.ink(ctx, shape(p), { closed: true, fill: o.fill || (p.age > 0.7 ? '#f8f8f8' : C.paper), w: 0, seed: seed + p.i, grain: 0 }));
+    // graphite under the dense puffs, and a curl in a few young ones
+    const inside = (q, x, y) => ((x - q.x) / q.rx) ** 2 + ((y - q.y) / q.ry) ** 2 < 1;
+    P.forEach((p) => {
+      if (p.age > 0.45 || p.r < 14) return;
+      if (P.some((q) => q !== p && inside(q, p.x, p.y + p.ry * 0.85))) return;   // only puffs on the cloud's bottom edge: tone under a covered puff would show through the mass
+      ctx.save(); ctx.beginPath(); ctx.ellipse(p.x, p.y, p.rx * 0.98, p.ry * 0.98, 0, 0, Math.PI * 2); ctx.clip();
+      IB.shade(ctx, p.x - p.rx, p.y + p.ry * 0.15, p.rx * 2, p.ry * 0.85, { from: 'bottom', alpha: 0.24 * (1 - p.age * 2), seed: seed + p.i });
+      ctx.restore();
+      if (p.i % 3 === 0) { const a0 = 3.6 + (p.i % 5) * 0.2; IB.ink(ctx, Array.from({ length: 6 }, (_, k) => { const a = a0 + k * 0.32; return [p.x + Math.cos(a) * p.rx * 0.55, p.y + Math.sin(a) * p.ry * 0.5]; }), { w: lw * 0.7, color: '#a8a8a8', seed: seed + p.i + 5 }); }
+    });
+  };
+
   /* drop(ctx, at, opts) — one falling drop of water, 51 px tall, its round end at `at` (variation/hose-wipe-endcard). */
   IB.drop = (ctx, [x, y], o = {}) => {
     const { fill = C.blue, seed = 700 } = o;

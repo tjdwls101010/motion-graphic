@@ -262,13 +262,14 @@
     IB.ink(ctx, [[-40, 260], [420, 70], [960, 30], [1500, 70], [1960, 260]], { w: 70, color: C.charcoal, seed: seed + 11, taper: false });
   };
 
-  /* tyreSmoke(ctx, [x, y], opts) — the white smoke off a locked or spinning tyre at its contact patch: k puffs (drawing number since it started, 0..), each growing and drifting back (dir -1: toward -x) and up; s scales it. Re-seed with the drawing. */
+  /* tyreSmoke(ctx, [x, y], opts) — the thick white smoke off a locked or spinning tyre at its contact patch [x, y]: one puff born every drawing (k: drawings since it started), each swelling fast then slowly (to about 80 px x s), drifting back (dir -1: toward -x) and easing to a stop, rising a little, and gone after `life` drawings (10); all drawn as one cloud with IB.billow (marks.js). s scales it; seed changes the cloud. */
   IB.tyreSmoke = (ctx, [x, y], o = {}) => {
-    const k = o.k || 0, s = o.s || 1, dir = o.dir || -1, r = MG.rng((o.seed || 2100) + k * 13);
-    for (let i = 0; i <= Math.min(k, 7); i++) {
-      const age = k - i, rad = (22 + age * 14) * s * (0.8 + r() * 0.4);
-      IB.oval(ctx, x + dir * (age * 34 + r() * 20) * s, y - rad * 0.6 - age * 6 * s, rad * 1.3, rad, { fill: age > 4 ? '#f6f6f6' : C.paper, w: Math.max(1, 2.6 - age * 0.3) * s, color: '#8a8a8a', n: 12, seed: (o.seed || 2100) + i * 7 + k });
+    const k = o.k || 0, s = o.s || 1, dir = o.dir || -1, life = o.life || 10, seed = o.seed || 2100, puffs = [];
+    for (let b = Math.max(0, k - life + 1); b <= k; b++) {
+      const age = k - b, r = MG.rng(seed + b * 13), rad = (16 + 64 * (1 - Math.exp(-age / 3))) * s * (0.85 + r() * 0.3);
+      puffs.push({ x: x + dir * (1 - Math.exp(-age / 4)) * 190 * s + (r() - 0.5) * 24 * s, y: y - rad * 0.6 - age * 6 * s + (r() - 0.5) * 10 * s, r: rad, age: age / life });
     }
+    IB.billow(ctx, puffs.reverse(), { lw: 2.6 * Math.min(1.4, Math.max(0.6, s)), seed });
   };
 
   /* sparks(ctx, [x, y], opts) — the yellow sparks from a car's plank scraping the tarmac: n short streaks thrown back (dir), re-rolled every drawing d. */

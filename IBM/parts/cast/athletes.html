@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / athletes</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 공 경기 선수 IB.KITS(팀 유니폼), IB.PLAYERS(얼굴 여덟), IB.athlete(입히기). 한 팀은 한 색이다. 축구는 색 셔츠에 반바지, 무릎 아래까지 끌어올린 양말(리그의 look.socks)이고 골키퍼는 아무 필드 선수도 입지 않는 민트 긴소매에 흰 장갑(look.gloves)이다. 농구는 민소매(topKind 'tank')에 무릎까지 오는 반바지(shortsLen 0.9), 발목의 흰 양말(sockHi 0.3)이다. 와이드 샷 키 360 px(1 m = 200 px)에 공을 같은 축척으로 함께 세웠다. */
+const C = IB.C, FLOOR = 900, H = 360;
+const ROW = [['soccer', 'home', 0], ['soccer', 'home', 3], ['soccer', 'away', 1], ['soccer', 'away', 6], ['soccer', 'keeper', 2], ['soccer', 'ref', 4], ['basketball', 'home', 5], ['basketball', 'home', 7], ['basketball', 'away', 0], ['basketball', 'away', 3]];
+MG.scene({
+  title: 'cast / athletes',
+  duration: 3, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, `IB.KITS (${Object.keys(IB.KITS).join(', ')}), IB.PLAYERS (${IB.PLAYERS.length}), IB.athlete — at h 360 (cast/athletes.js)`);
+    const c = SAMPLE.grid(ROW.length, 5);
+    ROW.forEach(([sport, side, i], n) => {
+      const who = IB.athlete(sport, side, i, { h: H, dir: 1, seed: 20 + n * 11 });
+      SAMPLE.cell(ctx, c[n], SAMPLE.window([960, FLOOR], (c[n][2] * 420) / c[n][3], 420), () => {
+        IB.smear(ctx, 960, FLOOR - 9, 220, { h: 14, seed: 9 + n });
+        const p = IB.stand(960, FLOOR, who);
+        if (side === 'keeper') p.hands = [[960 + 0.2 * H, p.hip[1] - 0.12 * H], [960 + 0.22 * H, p.hip[1] - 0.06 * H]], p.hand = ['open', 'open'];
+        IB.figure(ctx, p, who);
+        if (sport === 'soccer' && n % 2 === 0) IB.soccerBall(ctx, [1040, FLOOR - 22], { seed: 30 + n });
+        if (sport === 'basketball' && n % 2 === 0) IB.basketball(ctx, [1040, FLOOR - 24], { seed: 40 + n });
+      }, `${sport}.${side} #${i}`);
+    });
+  },
+});
+</script>

@@ -31,17 +31,17 @@ const tipAt = (u) => { const n = u * ROW.length, i = Math.min(ROW.length - 1, Ma
 
 /* ---------- the teacher ---------- */
 const TS = { ...IB.stand(TX, FLOOR, T), dir: -1, hand: ['relax', 'grip'], face: { mouth: 'flat' } }, TY = TS.hip[1];
-const writing = (u) => { const tip = tipAt(u); return { ...TS, hip: [TX + (-10 + 16 * u) * U, TY], lean: 0.3 - 0.16 * u, nod: 0.04, hands: [TS.hands[0], [tip[0] + 10 * U, tip[1] + 6 * U]], face: { mouth: 'flat', brow: 0.4 }, tip }; };
-const ST = { ...IB.stand(TX + 6 * U, FLOOR, { ...T, dir: 1 }), dir: 1, hand: ['open', 'grip'] };   // facing the class
-const turned = (more, dx, dy) => set({ ...ST, ...more }, T, 0, dx, dy);
+const writing = (u) => { const tip = tipAt(u); return { ...TS, hip: [TX + (-10 + 16 * u) * U, TY + 4], lean: 0.3 - 0.16 * u, nod: 0.04, hands: [TS.hands[0], [tip[0] + 10 * U, tip[1] + 6 * U]], face: { mouth: 'flat', brow: 0.4 }, tip }; };
+const ST = { ...IB.stand(TX + 6 * U, FLOOR, { ...T, dir: 1 }), hip: [TX + 6 * U, TY + 5], dir: 1, hand: ['open', 'grip'] };   // facing the class; the hips 5 px lower so the feet she turned on reach the floor
+const turned = (more, dx, dy) => set({ ...ST, feet: TS.feet, ...more }, T, 0, dx, dy);   // she turns on the spot: the shoes swing round where they stand, so no foot jumps
 const TP = {
   hear: { ...writing(1), nod: -0.04, face: { eye: 'wide', mouth: 'flat' } },
   squash: { ...writing(1), hip: [TX + 4 * U, TY + 6 * U], lean: 0.18, nod: 0.06, face: { eye: 'wide', mouth: 'flat', brow: 1 } },
   turn: turned({ hip: [TX + 4 * U, TY + 3 * U], feet: TS.feet, lean: -0.04, face: { eye: 'wide', mouth: 'flat', brow: 1 } }, 0.12, -0.18),   // the drawing she comes round on: her feet have not moved yet
-  reachPast: turned({ hip: [TX + 8 * U, TY - 2 * U], lean: -0.1, nod: -0.08, face: { eye: 'wide', mouth: 'flat', brow: 1 } }, 0.2, -0.235),
+  reachPast: turned({ hip: [TX + 8 * U, TY + 6], lean: -0.1, nod: -0.08, face: { eye: 'wide', mouth: 'flat', brow: 1 } }, 0.17, -0.225),
   catch: turned({ lean: -0.06, nod: -0.04, hand: ['grip', 'grip'], face: { mouth: 'flat', brow: 1 } }, 0.2, -0.2),
-  hold: turned({ lean: 0.02, nod: 0.02, hand: ['grip', 'grip'], face: { mouth: 'frown', brow: 1 } }, 0.21, -0.03),
-  say: turned({ lean: 0.03, nod: 0.03, hand: ['grip', 'grip'], face: { mouth: 'open', brow: 1 } }, 0.21, -0.03),
+  hold: turned({ lean: 0.02, nod: 0.02, hand: ['grip', 'grip'], face: { mouth: 'frown', brow: 1 } }, 0.25, -0.03),
+  say: turned({ lean: 0.03, nod: 0.03, hand: ['grip', 'grip'], face: { mouth: 'open', brow: 1 } }, 0.25, -0.03),
 };
 const T_ACT = [];
 for (let f = WRITE[0]; f <= WRITE[1]; f += 2) T_ACT.push([f, writing(written(f))]);
@@ -118,11 +118,12 @@ MG.scene({
     if (f >= 72 && f < 78) IB.shake(ctx, jb.headAt[0] + 4 * U, jb.headAt[1] - 6 * U, 26 * U, { a: -Math.PI / 2, n: 2, span: 0.55, gap: 13, seed: 80 + (f >> 1) * 3, w: 3.2 });
     // the plane, before the teacher so the hand that catches it closes over it; it points left, so it is mirrored
     const pl = s.plane;
-    if (pl && pl.caught) { const h = p.hands[0]; ctx.save(); ctx.translate(h[0] + 6 * U, h[1] - 4 * U); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: -0.25 }); ctx.restore(); }
+    if (pl && pl.caught) { const h = p.hands[0]; ctx.save(); ctx.translate(h[0] + GRIP[0], h[1] + GRIP[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: -0.12 }); ctx.restore(); }
     else if (pl) { ctx.save(); ctx.translate(pl.at[0], pl.at[1]); ctx.scale(-1, 1); IB.paperPlane(ctx, [0, 0], { s: 0.5 * U, rot: pl.rot }); ctx.restore(); }
     IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
     const look = { ...T, dir: p.dir, face: p.face }, j = IB.figure(ctx, p, look);
     if (p.tip) { const hd = j.hands[1]; IB.chalk(ctx, [(hd[0] + p.tip[0]) / 2, (hd[1] + p.tip[1]) / 2], { rot: Math.atan2(p.tip[1] - hd[1], p.tip[0] - hd[0]), len: 18 * U, wd: 6 * U }); }
+    else { const hd = j.hands[1]; IB.chalk(ctx, [hd[0] + 3 * U, hd[1] + 9 * U], { rot: 1.25, len: 18 * U, wd: 6 * U }); }   // turned round, the chalk stays in the hanging fist
     IB.bubble(ctx, ['압수!'], t, 3.42, { until: 5.0, tip: [j.headAt[0] + 0.09 * H, j.headAt[1] - 0.07 * H], x: j.headAt[0] + 0.36 * H, y: j.headAt[1] - 0.36 * H, seed: 500 });
   },
 });

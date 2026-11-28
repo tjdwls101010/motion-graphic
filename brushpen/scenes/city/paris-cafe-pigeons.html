@@ -12,10 +12,11 @@
 <script src="../../kit/props/handheld.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/camera.js"></script>
 <script src="../../kit/props/citylife.js"></script>
 <script>
 /* 파리 카페: 에펠탑이 보이는 노천 카페에 두 친구가 마주 앉아 잔을 들고 이야기하고, 발치에서는 비둘기들이 모이를 쫀다. 둘이 잔을 높이 들어 쨍 부딪치는 순간 비둘기들이 한꺼번에 날아올라 에펠탑 쪽으로 멀어지고, 둘은 고개를 젖혀 웃는다. 원본에 없는 창작 장면이다. 전달하는 생각: 작은 소리 하나가 풍경 전체를 움직인다.
-   Motion notes: one locked shot (IB.crop of a 1500 px window, 1.28x), 7.5 s. The friends (330 px, seated with IB.sit on bistro chairs) are on twos with pose.prev; the pigeons peck on threes (head down one drawing in three) while they are on the ground. 0-1.5 s one sips (cup to the mouth) while the other talks with a hand; 1.5 s both lean back and raise their cups (the anticipation), 1.83 s the cups meet over the table (a burst for 2 drawings) one drawing past where they hold, 2.0 s held. On the clink the pigeons take off a drawing apart, wings alternating each drawing, rising on a curve toward the tower and gone by 4.5 s. 2.17 s both throw their heads back laughing (nod -0.3) and settle at 2.67 s; from 4.5 s nothing moves. Colours: the tower's bronze (mustard), the two tops' yellow and lavender; the street a blue chalk smear. */
+   Motion notes: 7.5 s in four shots (IB.shot, on ones): 0-0.83 s a 680 px shot down at the pigeons' level (the lamppost, the pecking birds, her legs and the chair); 0.83 s the reference's pan (16 frames, on twos) up to an 820 px two-shot at the table; 1.83 s, on the clink, a cut to a 580 px close-up of the cups and both faces, held through the laugh while the pigeons burst up through the frame; 2.75 s a cut to a low 1300 px wide with the friends along the bottom, which from 3.0 s eases up (36 frames) after the pigeons to the tower and holds. The friends (330 px, seated with IB.sit on bistro chairs) are on twos with pose.prev; the pigeons peck on threes (head down one drawing in three) while they are on the ground. 0-1.5 s one sips (cup to the mouth) while the other talks with a hand; 1.5 s both lean back and raise their cups (the anticipation), 1.83 s the cups meet over the table (a burst for 2 drawings) one drawing past where they hold, 2.0 s held. On the clink the pigeons take off a drawing apart, wings alternating each drawing, rising on a curve toward the tower and gone by 4.5 s. 2.17 s both throw their heads back laughing (nod -0.3) and settle at 2.67 s; from 4.5 s nothing moves. Colours: the tower's bronze (mustard), the two tops' yellow and lavender; the street a blue chalk smear. */
 const F = IB.FIG, FLOOR = 900, PI = Math.PI, H = 330, TX = 960, TOP = FLOOR - 0.43 * H;
 const A = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 30 }, B = { ...IB.PEOPLE.passenger, top: IB.C.lavender, h: H, dir: -1, seed: 40 };
 const XA = TX - 0.42 * H, XB = TX + 0.42 * H;
@@ -45,6 +46,13 @@ const pigeonAt = (i, f) => {
 };
 const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
 const friendA = withPrev(AACT), friendB = withPrev(BACT);
+const SHOTS = [
+  [0, { at: [540, 890], w: 680 }],                                  // down at the pigeons' level: pecking round the lamppost and the chair legs
+  [20, { at: [900, 700], w: 820 }, 'pan'],                          // the reference's pan up to the two friends at the table
+  [44, { at: [960, 650], w: 580 }, 'cut'],                          // on the clink: the cups and both faces, held for the laugh, the pigeons bursting up through it
+  [66, { at: [1120, 640], w: 1300 }, 'cut'],                        // low, the friends at the bottom of the frame
+  [72, { at: [1180, 500], w: 1300 }, 'ease', 36],                   // and up after the pigeons to the tower
+];
 
 IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { a: friendA(f), b: friendB(f), pigeons: PIGEONS.map((_, i) => { const p = pigeonAt(i, f); return p.at[1] < -100 ? null : [Math.round(p.at[0]), Math.round(p.at[1]), p.perch ? (p.peck ? 'peck' : 'up') : p.wing]; }) }; };
 
@@ -55,19 +63,20 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt), a = friendA(f), b = friendB(f);
-    IB.crop(ctx, [210, 160, 1500]);
-    IB.eiffel(ctx, [1460, 760], { h: 560 });
-    IB.skyline(ctx, 760);
-    IB.lamppost(ctx, [380, FLOOR], { h: 420 });
-    IB.smear(ctx, 960, FLOOR - 6, 1600, { h: 14, seed: 9 });
-    IB.bistroChair(ctx, XA, FLOOR, H, 1); IB.bistroChair(ctx, XB, FLOOR, H, -1);
-    IB.figure(ctx, a, A, 'far'); IB.figure(ctx, b, B, 'far');
-    IB.cafeTable(ctx, [TX, FLOOR], { s: 1.35 });
-    IB.figure(ctx, a, A, 'near'); IB.figure(ctx, b, B, 'near');
-    IB.cup(ctx, cupHand(a, 1), {}); IB.cup(ctx, cupHand(b, 1), {});
-    const ck = IB.drawn(tt, CLINK / 24);
-    if (ck >= 0 && ck < 2) IB.burst(ctx, [TX, (a.hands[1][1] + b.hands[1][1]) / 2 - 30], { n: 5, a0: -2.8, da: 0.55, r0: 26 + ck * 8, r1: 50 + ck * 6, w: 3, seed: 70 + ck });
-    PIGEONS.forEach((_, i) => { const p = pigeonAt(i, f); if (p.at[1] > -100) IB.flapper(ctx, p.at, { perch: p.perch, peck: p.peck, wing: p.wing, dir: p.dir, s: 1.2, seed: 80 + i * 7 }); });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.eiffel(ctx, [1460, 760], { h: 560 });
+      IB.skyline(ctx, 760);
+      IB.lamppost(ctx, [380, FLOOR], { h: 420 });
+      IB.smear(ctx, 960, FLOOR - 6, 1600, { h: 14, seed: 9 });
+      IB.bistroChair(ctx, XA, FLOOR, H, 1); IB.bistroChair(ctx, XB, FLOOR, H, -1);
+      IB.figure(ctx, a, A, 'far'); IB.figure(ctx, b, B, 'far');
+      IB.cafeTable(ctx, [TX, FLOOR], { s: 1.35 });
+      IB.figure(ctx, a, A, 'near'); IB.figure(ctx, b, B, 'near');
+      IB.cup(ctx, cupHand(a, 1), {}); IB.cup(ctx, cupHand(b, 1), {});
+      const ck = IB.drawn(tt, CLINK / 24);
+      if (ck >= 0 && ck < 2) IB.burst(ctx, [TX, (a.hands[1][1] + b.hands[1][1]) / 2 - 30], { n: 5, a0: -2.8, da: 0.55, r0: 26 + ck * 8, r1: 50 + ck * 6, w: 3, seed: 70 + ck });
+      PIGEONS.forEach((_, i) => { const p = pigeonAt(i, f); if (p.at[1] > -100) IB.flapper(ctx, p.at, { perch: p.perch, peck: p.peck, wing: p.wing, dir: p.dir, s: 1.2, seed: 80 + i * 7 }); });
+    });
   },
 });
 </script>

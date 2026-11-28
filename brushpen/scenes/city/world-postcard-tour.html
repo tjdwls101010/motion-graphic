@@ -11,10 +11,11 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/props/vehicles.js"></script>
 <script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/camera.js"></script>
 <script src="../../kit/props/citylife.js"></script>
 <script>
 /* 세계 엽서: 종이비행기 하나가 뉴욕, 런던, 파리, 도쿄, 서울, 시드니, 로마, 기자의 랜드마크를 차례로 가로질러 날고, 도시와 도시 사이는 원본의 스피드라인 휩으로 넘어간다. 도시마다 하나씩 작은 움직임이 있다(여객선, 빅벤의 분침과 런던 아이, 에펠탑의 반짝임, 벚꽃잎, 광화문 위의 새, 오페라하우스 앞 배, 콜로세움의 비둘기, 피라미드 위의 새). 원본에 없는 창작 장면이다. 전달하는 생각: 한 줄기 비행이 세계를 한 장씩 넘긴다.
-   Motion notes: 12.5 s, eight cards: the first 2.0 s, the six after it 1.5 s, the last 1.5 s with its final 0.75 s still. Each card holds and is joined to the next by the reference's whip (insert/mesh-eyes-whip): the card slides out left in 2 drawings on ones (-1150, -1500 px), two frames of whip on a bare stage, and the next card slides in from the right over 4 frames (1500, 1100, 600, 180 px) under the whip's streaks, the whip tinted with the colours leaving and arriving. The paper plane crosses every card left to right on twos (1070 px a second, bobbing 40 px), so the eye follows one thing through the cuts. In each card one thing moves: on ones for machines (the ferries, Big Ben's minute hand), on twos for drawn things (waves, sparkle, petals, wings). The last card holds still from 11.75 s. Colours: each city's own (the ferry's yellow, the Eye's sky capsules, the tower's bronze, Fuji's blue, the hill's mint, the stone of Rome and the sand of Giza). */
+   Motion notes: 12.5 s, eight cards: the first 2.0 s, the six after it 1.5 s, the last 1.5 s with its final 0.75 s still. Each card holds and is joined to the next by the reference's whip (insert/mesh-eyes-whip): the cards stand 4000 px apart on one long stage and IB.shot whips the camera from one to the next (8 frames: out in 2, two bare, in over 4), tinted with the colours leaving and arriving. Each card has its own camera while it holds: New York a 900 px shot on the ferry easing open (24 frames) to the statue at 1300; London a 1100 px view that picks up the plane at Big Ben and follows it to the Eye; Paris a tilt up the tower (ease, 1000 px) from its feet to the plane; Tokyo the reference's pan (16 frames, on twos) from Tokyo Tower to Fuji; Seoul a 700 px close-up of the gate's roof pulling back (push, 20 frames) to 1700 to find Namsan; Sydney the harbour at 1600 easing in (20 frames) on the ferry at 1000; Rome the arena at 1500, then a cut to a 640 px close-up of the pigeons over its rim; Giza the whole desert pushing in (14 frames) low on the pyramids to 1500 and stopping as the card holds still. The paper plane crosses every card left to right on twos (1070 px a second, bobbing 40 px), so the eye follows one thing through the cuts. In each card one thing moves: on ones for machines (the ferries, Big Ben's minute hand), on twos for drawn things (waves, sparkle, petals, wings). The last card holds still from 11.75 s. Colours: each city's own (the ferry's yellow, the Eye's sky capsules, the tower's bronze, Fuji's blue, the hill's mint, the stone of Rome and the sand of Giza). */
 const SEG = 36, N = 8;
 const plane = (u) => [-200 + u * 1070, 320 + Math.sin(u * 3.2) * 40];
 const CARDS = [
@@ -28,18 +29,25 @@ const CARDS = [
   (ctx, u, d) => { IB.skyline(ctx, 880); IB.pyramids(ctx, [560, 880], { h: 340 }); if (u < 1.5) IB.flapper(ctx, [1100 + u * 400, 330 - u * 60], { wing: d % 2, s: 1.3, color: IB.C.ink, seed: 80 }); },
 ];
 const TINT = [[IB.C.yellow], [IB.C.sky], [IB.C.mustard], [IB.C.sky], [IB.C.mint], [IB.C.paper], ['#e6e2d6'], [IB.C.yellow]];
-const FIRST = 48, START = (i) => (i === 0 ? 0 : FIRST + (i - 1) * SEG), LEN = (i) => (i === 0 ? FIRST : SEG);   // the first card is 0.5 s longer, so the gallery's poster (0.72 of the length) falls on a held card
-const stateAt = (f) => {   // which card, its own frame, and its slide offset; whip frames
-  let i = 0; while (i < N - 1 && f >= START(i + 1)) i++;
-  const k = f - START(i), L = LEN(i);
-  if (i === N - 1) return { i, k, off: k < 4 ? [1500, 1100, 600, 180][k] : 0, whip: k < 4 };
-  if (i > 0 && k < 4) return { i, k, off: [1500, 1100, 600, 180][k], whip: true };
-  if (k < L - 4) return { i, k, off: 0, whip: false };
-  if (k < L - 2) return { i, k, off: [-1150, -1500][k - (L - 4)], whip: true };
-  return { i: -1, k, off: 0, whip: true };
-};
+const FIRST = 48, START = (i) => (i === 0 ? 0 : FIRST + (i - 1) * SEG), STILL = 282;   // the first card is 0.5 s longer, so the gallery's poster (0.72 of the length) falls on a held card; the last holds still from 11.75 s
+const cardAt = (f) => { let i = 0; while (i < N - 1 && f >= START(i + 1)) i++; return i; };
+// the cards stand side by side on one long stage, 4000 px apart, so the camera whips from one to the next; each card is filmed its own way while it holds
+const OX = (i) => i * 4000, at = (i, v) => (typeof v === 'function' ? (f) => at(i, v(f)) : { ...v, at: [OX(i) + v.at[0], v.at[1]] });
+const planeX = (k) => -200 + (k / 24) * 1070;   // where the plane is k frames into its card, on ones for a camera that follows it
+const CAMS = [   // per card: the view it arrives at, then [frames into the card, view, move, over]
+  [{ at: [420, 720], w: 900 }, [16, { at: [900, 560], w: 1300 }, 'ease', 24]],                               // New York: close on the ferry, opening up to the statue as it sails toward her
+  [(f) => ({ at: [MG.clamp(planeX(f - START(1)) + 80, 550, 1370), 520], w: 1100 })],                          // London: the camera picks up the plane at Big Ben and follows it to the Eye
+  [{ at: [960, 720], w: 1000 }, [4, { at: [960, 380], w: 1000 }, 'ease', 24]],                                // Paris: up the tower from its feet to where the plane passes
+  [{ at: [700, 560], w: 1200 }, [8, { at: [1220, 560], w: 1200 }, 'pan', 16]],                                // Tokyo: the reference's pan from Tokyo Tower to Fuji
+  [{ at: [780, 640], w: 700 }, [6, { at: [960, 560], w: 1700 }, 'push', 20]],                                 // Seoul: close on the gate's roof, pulling back to find Namsan behind
+  [{ at: [960, 600], w: 1600 }, [10, { at: [1200, 690], w: 1000 }, 'ease', 20]],                              // Sydney: the harbour, easing in on the ferry under the shells
+  [{ at: [960, 640], w: 1500 }, [16, { at: [1060, 420], w: 640 }, 'cut']],                                    // Rome: the arena, then a cut up to the pigeons over its rim
+  [{ at: [960, 540], w: 1920 }, [4, { at: [900, 640], w: 1500 }, 'push', 14]],                                // Giza: the desert, pushing in low on the pyramids until the hold
+];
+const SHOTS = CAMS.flatMap(([v, ...moves], i) => [[i ? START(i) - 4 : 0, at(i, v), ...(i ? ['whip', 8] : [])], ...moves.map(([k, mv, how, over]) => [START(i) + k, at(i, mv), how, over])]);
+const tintAt = (f) => { const i = cardAt(f + 4); return i > 0 && f < START(i) + 4 ? [...TINT[i - 1], ...TINT[i]] : TINT[i]; };   // the whip carries the colours leaving and arriving
 
-IB.actors = (t) => { const f = Math.floor(t * 24), s = stateAt(f), u = Math.max(0, s.k) / 24; return { card: s.i, slide: s.off, plane: s.i >= 0 && f < 282 ? plane(Math.floor(u * 12) / 12).map(Math.round) : null }; };
+IB.actors = (t) => { const f = Math.floor(t * 24), i = cardAt(f), k = f - START(i); return { card: i, plane: f < STILL && !IB.shot(SHOTS, f).bare ? plane(Math.floor((k / 24) * 12) / 12).map(Math.round) : null }; };
 
 MG.scene({
   title: 'city / world-postcard-tour',
@@ -47,15 +55,14 @@ MG.scene({
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const f = Math.floor(t * 24), s = stateAt(f);
-    if (s.i >= 0) {
-      const u = s.k / 24, still = f >= 282, uu = still ? 34 / 24 : u, d = Math.floor(uu * 12), ff = still ? 34 : s.k;
-      ctx.save(); ctx.translate(s.off, 0);
-      CARDS[s.i](ctx, uu, d, ff);
+    const f = Math.floor(t * 24);
+    IB.film(ctx, IB.shot(SHOTS, f), (ctx, cam) => {
+      const i = MG.clamp(Math.round((cam.at[0] - 960) / 4000), 0, N - 1), still = f >= STILL, k = (still ? STILL : f) - START(i), u = k / 24, d = Math.floor(u * 12);
+      ctx.save(); ctx.translate(OX(i), 0);
+      CARDS[i](ctx, u, d, k);
       if (!still) IB.paperPlane(ctx, plane(Math.floor(u * 12) / 12), { s: 1.1, rot: Math.cos(u * 3.2) * 0.12, seed: 400 });
       ctx.restore();
-    }
-    if (s.whip) IB.whip(ctx, f, { seed: 9 + s.i, tint: TINT[Math.max(0, s.i)] });
+    }, { tint: tintAt(f) });
   },
 });
 </script>

@@ -30,7 +30,7 @@
   const POD = loft([[0.55, 0.40, 0.78, -0.50, -0.14], [-0.6, 0.40, 0.74, -0.48, -0.12], [-1.5, 0.30, 0.46, -0.36, -0.14]]);
   const PODS = [...POD, ...POD.map(mirrorZ)];
 
-  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). Where it is: x (metres along the track from the view's origin: + is the way the track runs), z (metres across it), heading (rad: the car turned away from the way the track runs, a drift or a spin; + turns its nose toward -z). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), blur (wheels at speed: rings instead of spokes), drs (rear flap open), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lw, seed.
+  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). Where it is: x (metres along the track from the view's origin: + is the way the track runs), z (metres across it), heading (rad: the car turned away from the way the track runs, a drift or a spin; + turns its nose toward -z). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), frontSpin (the front wheels' turn when it differs from spin: hold it still for a locked front under braking), blur (wheels at speed: rings instead of spokes), drs (rear flap open: true, or 0..1 while it opens), glow (front brake discs glowing through the rims under heavy braking), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lw, seed.
      Returns { map, U, wheels: [stage points of the four contact patches], helmet: stage point } so a scene can put smoke at a tyre or a close-up on the helmet. */
   IB.racer = (ctx, o = {}) => {
     const U = 140 * (o.s || 1), color = o.color || C.navy, accent = o.accent || C.yellow, seed = o.seed || 1600, lw = o.lw || 2.6;
@@ -66,11 +66,12 @@
     add(flat(2.30, 2.52, -0.17, -0.95, 0.95), C.charcoal, { bias: -0.01 });
     [-0.99, 0.99].forEach((z) => add(quad(2.26, 2.84, -0.03, -0.30, z), accent));
     // rear wing: endplates, main plane, the DRS flap (open: lifted to near level), its pillar
-    const fy = o.drs ? -1.0 : -0.93;
+    const du = o.drs === true ? 1 : Math.max(0, Math.min(1, +o.drs || 0)), lerp = (a, b) => (du === 1 ? b : du === 0 ? a : a + (b - a) * du);
+    const fa = [lerp(-2.70, -2.64), lerp(-0.86, -1.0)], fb = [lerp(-2.86, -2.40), lerp(-1.02, -1.02)];   // the flap's leading and trailing edges, closed (steep) to open (level)
     [-0.53, 0.53].forEach((z) => add([[-2.86, -0.30, z], [-2.36, -0.30, z], [-2.36, -1.0, z], [-2.86, -1.04, z]], accent));
     add([[-2.45, -0.74, -0.52], [-2.78, -0.84, -0.52], [-2.78, -0.84, 0.52], [-2.45, -0.74, 0.52]], C.charcoal);   // main plane: leading edge low, trailing edge high (a steep wing shows as a band from behind)
     add([[-2.30, -0.36, -0.40], [-2.55, -0.44, -0.40], [-2.55, -0.44, 0.40], [-2.30, -0.36, 0.40]], C.charcoal, { bias: -0.005 });   // beam wing
-    add(o.drs ? [[-2.64, fy, -0.52], [-2.40, fy - 0.02, -0.52], [-2.40, fy - 0.02, 0.52], [-2.64, fy, 0.52]] : [[-2.70, -0.86, -0.52], [-2.86, -1.02, -0.52], [-2.86, -1.02, 0.52], [-2.70, -0.86, 0.52]], C.charcoal, { bias: -0.005 });
+    add([[fa[0], fa[1], -0.52], [fb[0], fb[1], -0.52], [fb[0], fb[1], 0.52], [fa[0], fa[1], 0.52]], C.charcoal, { bias: -0.005 });
     add(quad(-2.62, -2.52, -0.28, -0.78, 0), DARK);
     add([[-2.62, -0.38, -0.06], [-2.62, -0.38, 0.06], [-2.62, -0.47, 0.06], [-2.62, -0.47, -0.06]], o.lit ? C.red : DARK, { bias: -0.04 });   // rain light
     // mirrors on stalks
@@ -90,7 +91,7 @@
     // wheels: cylinders, with the tyre band, the sidewall stripe and the rim on the outer face
     const wheels = [];
     const R = 0.36;
-    [[1.75, 0.38, o.steer || 0], [-1.85, 0.42, 0]].forEach(([ax, ww, st]) => [-1, 1].forEach((sd) => {
+    [[1.75, 0.38, o.steer || 0, true], [-1.85, 0.42, 0, false]].forEach(([ax, ww, st, front]) => [-1, 1].forEach((sd) => {
       const cz = 0.80 * sd, turn = ([x, y, z]) => { const c = Math.cos(st), s = Math.sin(st), dx = x - ax, dz = z - cz; return [ax + dx * c - dz * s, y, cz + dx * s + dz * c]; };
       const ring = (zz, r) => Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * Math.PI * 2; return turn([ax + Math.cos(a) * r, -R + Math.sin(a) * r, zz]); });
       const zo = cz + (ww / 2) * sd, zi = cz - (ww / 2) * sd, outer = ring(zo, R), inner = ring(zi, R);
@@ -110,8 +111,9 @@
             const zz = zo + 0.002 * sd, band = ring(zz, R * 0.8).map(map), rim = ring(zz, R * 0.55).map(map);
             IB.ink(ctx, band, { closed: true, fill: null, w: lw * 1.3, color: o.tyre || C.yellow, seed: seed + 140 });
             IB.ink(ctx, rim, { closed: true, fill: '#6b6b6b', w: lw * 0.8, seed: seed + 141 });
+            if (front && o.glow) IB.ink(ctx, ring(zz, R * 0.4).map(map), { closed: true, fill: C.yellow, w: 0, seed: seed + 143 });   // the disc behind the rim, glowing
             if (o.blur) IB.ink(ctx, ring(zz, R * 0.35).map(map), { closed: true, fill: null, w: lw * 0.6, color: '#9a9a9a', seed: seed + 142 });
-            else for (let s5 = 0; s5 < 5; s5++) { const a = (o.spin || 0) + (s5 * Math.PI * 2) / 5, p0 = map(turn([ax, -R, zz])), p1 = map(turn([ax + Math.cos(a) * R * 0.52, -R + Math.sin(a) * R * 0.52, zz])); IB.seg(ctx, p0[0], p0[1], p1[0], p1[1], { w: lw * 0.7, wob: 0, seed: seed + 150 + s5 }); }
+            else for (let s5 = 0; s5 < 5; s5++) { const a = (front && o.frontSpin != null ? o.frontSpin : o.spin || 0) + (s5 * Math.PI * 2) / 5, p0 = map(turn([ax, -R, zz])), p1 = map(turn([ax + Math.cos(a) * R * 0.52, -R + Math.sin(a) * R * 0.52, zz])); IB.seg(ctx, p0[0], p0[1], p1[0], p1[1], { w: lw * 0.7, wob: 0, seed: seed + 150 + s5 }); }
           }
         });
       } });
@@ -125,17 +127,35 @@
     return { map: (p) => space([p[0] * U, p[1] * U, p[2] * U]), U, wheels, helmet: hc };   // map: the view's space without the car's place, for things on the track
   };
 
-  /* trackStrip(ctx, opts) — the circuit around a car, in the car's own space (pass the same view opts as IB.racer: at, yaw, pitch, look, f, s). x runs along the track (metres, + ahead of the car), from `from` to `to`; the track is `half` m either side of the car's line, with kerbs `kerb` m wide outside it in blocks 1.2 m long (yellow and white), a run-off, and walls `wall` m out with a catch fence above. `run` is how far the car has gone (metres): the kerbs and wall posts slide back by it, so a car held still in the frame races. Points behind the lens are dropped. */
+  // the centre line of a bent track over [a, b] (metres along it): (X) => [x, z, heading] from X = 0 (at the origin, heading 0), integrating the curvature bend(X) in 0.25 m steps (each step's turn the mean of 8 samples, so a corner that starts or ends inside a step costs no stray turn)
+  const centreLine = (bend, a, b) => {
+    const h = 0.25, lo = Math.floor(Math.min(0, a) / h) * h, n = Math.ceil((Math.max(0, b) - lo) / h) + 1, i0 = Math.round(-lo / h);
+    const X = new Float64Array(n), Z = new Float64Array(n), T = new Float64Array(n), k0 = bend || (() => 0);
+    const k = (x) => { let s = 0; for (let j = 0; j < 8; j++) s += k0(x - h / 2 + ((j + 0.5) * h) / 8); return s / 8; };   // mean curvature over the step centred on x
+    for (let i = i0; i < n - 1; i++) { const x = lo + i * h; T[i + 1] = T[i] + h * k(x + h / 2); const m = (T[i] + T[i + 1]) / 2; X[i + 1] = X[i] + h * Math.cos(m); Z[i + 1] = Z[i] + h * Math.sin(m); }
+    for (let i = i0; i > 0; i--) { const x = lo + i * h; T[i - 1] = T[i] - h * k(x - h / 2); const m = (T[i] + T[i - 1]) / 2; X[i - 1] = X[i] - h * Math.cos(m); Z[i - 1] = Z[i] - h * Math.sin(m); }
+    return (x) => { const u = Math.max(0, Math.min(n - 1.000001, (x - lo) / h)), i = Math.floor(u), r = u - i; return [X[i] + (X[i + 1] - X[i]) * r, Z[i] + (Z[i + 1] - Z[i]) * r, T[i] + (T[i + 1] - T[i]) * r]; };
+  };
+  // a point on a bent track (X along it, z off its centre line) in the view's own frame: the view at X = run, lane off the line, turned veer. Returns [x, z, heading of the track there]
+  const onTrack = (o, a, b) => {
+    const run = o.run || 0, lane = o.lane || 0, c = centreLine(o.bend, Math.min(a, run), Math.max(b, run)), [cx, cz, ct] = c(run);
+    const hv = ct + (o.veer || 0), px = cx - lane * Math.sin(ct), pz = cz + lane * Math.cos(ct), co = Math.cos(hv), si = Math.sin(hv);
+    return (X, z) => { const [x, zz, t] = c(X), wx = x - z * Math.sin(t) - px, wz = zz + z * Math.cos(t) - pz; return [wx * co + wz * si, -wx * si + wz * co, t - hv]; };
+  };
+
+  /* trackStrip(ctx, opts) — the circuit around a car, in the car's own space (pass the same view opts as IB.racer: at, yaw, pitch, look, f, s). x runs along the track (metres, + ahead of the car), from `from` to `to`; the track is `half` m either side of the car's line, with kerbs `kerb` m wide outside it in blocks 1.2 m long (yellow and white), a run-off, and walls `wall` m out with a catch fence above (walls: false for none, 1 or -1 for the +z or -z side only). `run` is how far the car has gone (metres): the kerbs and wall posts slide back by it, so a car held still in the frame races. Points behind the lens are dropped.
+     A track that curves: bend is its curvature (1/m) as a function of the distance along it, X (metres from the track's X = 0; + turns it toward +z, a 180° hairpin of radius R is 1 / R over PI R metres: IB.hairpin and IB.chicane in props/racing-corners.js build them), and the view then sits at X = run on the curve, lane metres off its centre line (+ toward +z), turned veer rad from its direction. Without bend, lane or veer the strip is straight, as before. Place cars on it with IB.trackPose. */
   IB.trackStrip = (ctx, o = {}) => {
     const U = 140 * (o.s || 1), f = o.f || 1500, seed = o.seed || 1700;
     const space = IB.space({ at: o.at || [960, 800], yaw: o.yaw || 0, pitch: o.pitch || 0, roll: o.roll || 0, f, look: o.look == null ? 0.18 : o.look });
-    const map = ([x, y, z]) => space([x * U, y * U, z * U]), ok = (p) => p[2] > -f * 0.8;
     const from = o.from == null ? -30 : o.from, to = o.to == null ? 80 : o.to, half = o.half || 6, kerb = o.kerb == null ? 1 : o.kerb, wall = o.wall || half + 6, run = o.run || 0, lw = o.lw || 2.4;
+    const bent = o.bend || o.lane || o.veer ? onTrack(o, from + run, to + run) : null;
+    const map = bent ? ([x, y, z]) => { const [bx, bz] = bent(x + run, z); return space([bx * U, y * U, bz * U]); } : ([x, y, z]) => space([x * U, y * U, z * U]), ok = (p) => p[2] > -f * 0.8;
     const line = (pts, opts) => { let seg = []; pts.map(map).forEach((p) => { if (ok(p)) seg.push(p); else { if (seg.length > 1) IB.ink(ctx, seg, { ...opts, taper: false }); seg = []; } }); if (seg.length > 1) IB.ink(ctx, seg, { ...opts, taper: false }); };
     const xs = (step) => { const out = []; for (let x = from; x <= to; x += step) out.push(x); return out; };
     [-1, 1].forEach((sd) => {
       // the wall and its fence
-      if (o.walls !== false) {
+      if (o.walls !== false && o.walls !== -sd) {   // walls: 1 or -1 keeps only the wall on that side of z (the outside of a hairpin)
         const L = 2.5, k0 = Math.floor((from + run) / L);
         for (let k = k0; k * L - run < to; k++) {
           const x0 = Math.max(from, k * L - run), x1 = Math.min(to, (k + 1) * L - run), q = quad(x0, x1, 0, -0.9, wall * sd).map(map);
@@ -158,6 +178,13 @@
     });
     // a start line or a marking across the track at x = o.mark (metres from the car, moving back with run)
     if (o.mark != null) { const xm = o.mark - run; line([[xm, 0, -half], [xm, 0, half]], { w: lw * 3, color: C.paper, seed: seed + 800 }); }
+  };
+
+  /* trackPose(opts, X, lane) — where a car X metres along a track (the same X as trackStrip's bend and run) and lane metres off its centre line stands in a trackStrip's view (pass the strip's opts: bend, run, lane, veer): { x, z, heading }, to spread into IB.racer (add a drift to heading). On a straight strip that is { x: X - run, z: lane, heading: 0 }. */
+  IB.trackPose = (o, X, lane = 0) => {
+    if (!(o.bend || o.lane || o.veer)) return { x: X - (o.run || 0), z: lane, heading: 0 };
+    const [x, z, heading] = onTrack(o, X, X)(X, lane);
+    return { x, z, heading };
   };
 
   /* drive(phases, t, from) — where a car is t seconds into a run of phases [{ dur, a }] (a constant acceleration each, px/s²; the last phase lasts for ever), starting from { x, v } (px, px/s). Returns { x, v }. A start is a launch at about 1.1 g (1500 px/s² at 140 px a metre) up to 300 km/h (11 700 px/s); braking for a hairpin about 5 g (6900 px/s²). */

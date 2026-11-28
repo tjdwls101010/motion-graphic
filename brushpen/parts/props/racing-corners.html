@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / racing-corners</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-corners.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 휘는 트랙(props/racing-corners.js). IB.hairpin과 IB.chicane이 만든 곡률을 IB.trackStrip의 bend에 주면 헤어핀과 시케인이 차와 같은 3D 공간에 그려지고, IB.trackPose로 그 위에 차를 놓는다. 위에서 본 헤어핀(드리프트를 역조향으로 잡는 차와 그 뒤에 남는 연기 IB.smokeTrail), 비스듬한 헬기 시점, 시케인을 지나는 온보드와 뒤 아래 추적, 그리고 제동하는 차: 앞바퀴가 잠기고(frontSpin) 브레이크 디스크가 달아오르고(glow) DRS 플랩이 열리는(drs 0..1) 모습.
+   Motion notes: 4 s loop on twos; the hairpin cars run 20 m/s round a 14 m radius, the onboard 50 m/s through a chicane of 0.014 /m over 30 m each way (an 8 m jog), the DRS flap opens over 3 drawings. */
+const C = IB.C, ctxRef = { c: null };
+const PIN = IB.hairpin({ at: 0, r: 14 }), CHI = IB.chicane({ at: 60, k: 0.014, len: 30 });
+const TOP = { at: [1100, 640], pitch: -Math.PI / 2, yaw: Math.PI / 2, look: 0, f: 3000, s: 0.36 };
+const car = (V, T, X, lane, extra) => IB.racer(ctxRef.c, { ...V, ...IB.trackPose(T, X, lane), ...extra, heading: IB.trackPose(T, X, lane).heading + ((extra && extra.drift) || 0) });
+const CELLS = [
+  ['IB.hairpin from above (pitch -PI/2), trackPose, IB.smokeTrail', (k) => { const T = { bend: PIN, run: 0 }, at = (kk) => -18 + (kk % 48) * 1.7, dr = (X) => 0.28 * Math.max(0, Math.sin(((X - 2) / 30) * Math.PI)) * (X > 2 && X < 32), X = at(k);
+    IB.trackStrip(ctxRef.c, { ...TOP, ...T, from: -40, to: 90, half: 6, wall: 15, walls: -1 });
+    const trail = []; for (let i = 0; i < 6 && k - i >= 0 && dr(at(k - i)) > 0.05; i++) { const p = IB.trackPose(T, at(k - i), 3); trail.push({ ...p, heading: p.heading + dr(at(k - i)) }); }
+    IB.smokeTrail(ctxRef.c, TOP, trail, { s: 0.8, seed: 2700 + k });
+    car(TOP, T, X, 3, { drift: dr(X), steer: 0.15 - dr(X) * 1.4, color: C.yellow, accent: C.navy, blur: true }); car(TOP, T, X - 9, -3, { blur: true, steer: 0.12 }); }],
+  ['the hairpin from a helicopter (pitch -0.9)', (k) => { const V = { at: [1150, 760], pitch: -0.9, yaw: 1.9, look: 0, f: 2200, s: 0.4 }, T = { bend: PIN, run: 0 }, X = -18 + (k % 48) * 1.7;
+    IB.trackStrip(ctxRef.c, { ...V, ...T, from: -40, to: 90, half: 6, wall: 15, walls: -1 });
+    car(V, T, X - 9, -3, { blur: true }); car(V, T, X, 3, { color: C.yellow, accent: C.navy, blur: true }); }],
+  ['IB.chicane, lane: onboard cutting it', (k) => { const X = 40 + k * 2.1, lane = -4 * Math.sin(((X - 60) / 60) * Math.PI) * (X > 60 && X < 120), T = { bend: CHI, run: X, lane };
+    IB.trackStrip(ctxRef.c, { at: [960, 600], yaw: Math.PI / 2, look: 0.06, f: 700, s: 1, ...T, from: 1, to: 160, half: 5 });
+    IB.cockpit(ctxRef.c, { color: C.mint, steer: -40 * CHI(X + 8), shake: 3, d: k }); }],
+  ['IB.chicane: low behind, the car ahead on its line', (k) => { const V = { at: [960, 900], yaw: Math.PI / 2, look: 0.06, f: 1400, s: 1.6 }, X = 30 + k * 2.1, T = { bend: CHI, run: X };
+    IB.trackStrip(ctxRef.c, { ...V, ...T, from: -2, to: 200, half: 5 });
+    car(V, T, X + 22, 0, { color: C.lavender, accent: C.navy, blur: true }); car(V, T, X + 3, 0, { color: C.mint, accent: C.navy, blur: true }); }],
+  ['racer: frontSpin held (locked), glow', (k) => { IB.trackStrip(ctxRef.c, { at: [1100, 900], yaw: -0.5, look: 0.01, f: 600, s: 1.6, from: -10, to: 20, half: 6, walls: false, run: k * 1.2 });
+    IB.racer(ctxRef.c, { at: [1100, 900], yaw: -0.5, look: 0.01, f: 600, s: 1.6, x: -1.75, z: 0.8, spin: k * 2, frontSpin: 0.4, glow: true, rake: 0.02, color: C.yellow, accent: C.navy }); }],
+  ['racer: drs 0..1 (the flap opening)', (k) => IB.racer(ctxRef.c, { at: [960, 820], yaw: Math.PI / 2, s: 0.9, look: 0.06, f: 800, drs: Math.min(1, Math.max(0, (k % 24) - 8) / 3), spin: k * 0.5, color: C.yellow, accent: C.navy })],
+];
+MG.scene({
+  title: 'props / racing-corners',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx); ctxRef.c = ctx;
+    SAMPLE.title(ctx, 'racing: corners (racing-corners.js, trackStrip bend, trackPose), the car braking (racing.js)');
+    const c = SAMPLE.grid(CELLS.length, 3), k = Math.round(IB.twos(t) * 12);
+    CELLS.forEach(([label, draw], i) => SAMPLE.cell(ctx, c[i], [0, 0, 1920, 1080], () => { ctx.save(); IB.clipRect(ctx, [0, 0, 1920, 1080]); draw(k); ctx.restore(); }, label));
+  },
+});
+</script>

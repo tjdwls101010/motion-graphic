@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / hairpin-late-brake-pass</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-corners.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 헤어핀 늦은 제동 추월: DRS를 연 노랑 16번이 직선에서 남색 7번을 쫓고, 7번보다 늦게 브레이크를 밟아 오른쪽 앞바퀴가 잠겨 연기를 뿜고, 헤어핀 안쪽에서 뒤가 미끄러지는 차를 역조향으로 잡아 나란히 돈 뒤 먼저 빠져나가는 추월을 중계 화면처럼 일곱 샷으로 잇는다. 원본에 없는 창작 장면이다. 전달하는 생각: 추월은 브레이크를 남보다 0.2초 늦게 밟는 데서 시작해, 그 대가로 미끄러지는 차를 잡아내는 데서 끝난다.
+   Motion notes: 10 s, seven shots joined by hard cuts, the broadcast graphics over all but the helmet (lap 23 / 58, the tower, the live bug). Both cars run 83 m/s (300 km/h) down the straight; #7 brakes at 3.55 s at 49 m/s² (5 g, IB.drive) to 17.3 m/s along the hairpin's centre line, holds it round, then pulls out at 10 m/s²; #16 is placed by its gap to #7 (keyed: 9 m behind, 3.5 m at the braking point, 1.5 m ahead when it brakes 0.2 s later, alongside at the turn-in at 5.8 s, 8 m ahead out of the hairpin, 16 m by the end). 0-1.33 s low behind #16 (yaw PI/2, look 0.05, f 2400, s 2.2, the lens 1.5 m to its right so #7 shows 13 m ahead), the DRS flap opening over 3 frames at 0.5 s; 1.33 s #16's driver head-on (IB.helmet, tense, eyes on #7, one blink); 2.08 s a long lens head-on down the straight (f 3000, s 1.8, pushing in), #16 pulling out of the slipstream to the inside, #7's nose dipping as it brakes (rake 0.035); 3.58 s an insert at the tarmac by #16's front-right tyre (look 0.01, f 600, s 1.6, framed 1.67x): it locks at 3.83 s (the frame jolts 22 px, the wheel stops, the disc glows, smoke on twos for 1 s); 4.58 s a long lens side on from the outside (yaw 0, look 0.2, f 3000, s 0.8) over the trackside, the two side by side on the brakes; 5.38 s the helicopter straight down on the hairpin (pitch -PI/2, s 0.3; IB.hairpin r 14 m, track 12 m wide), following the pair at 80 % with a slow push to 1.11x: #16's rear steps out at the turn-in (drift to 0.3 rad over 16 m, caught with 1.4x opposite lock, smoke left on the track), the two side by side round the apex on lines 6.5 m apart, #16 through at the exit, the tower rows sliding past each other at 7.58 s over 8 frames; 8.75 s low behind #7 on a long lens (f 3000, s 2) as #16 pulls away out of the hairpin, the banner at 8.92 s. Cars, wheels and camera on ones; smoke on twos. */
+const C = IB.C;
+const CAR7 = { color: C.navy, accent: C.yellow, seed: 1670 }, CAR16 = { color: C.yellow, accent: C.navy, seed: 1760 };
+const PIN = IB.hairpin({ at: 0, r: 14 });                                     // the hairpin starts at X = 0 and turns toward +z
+const V0 = 83, B = 49, VC = 17.3;                                             // m/s down the straight, braking m/s² (5 g), round the hairpin
+const BRAKE = 3.55;                                                           // #7 brakes; #16 0.2 s later
+const P7 = [{ dur: BRAKE, a: 0 }, { dur: (V0 - VC) / B, a: -B }, { dur: 1.9, a: 0 }, { a: 10 }];
+const X7 = (t) => IB.drive(P7, t, { x: -377.6, v: V0 }).x;                    // metres along the track's centre line: X = 0 (the turn-in) at 5.8 s
+const GAP = [[0, -9], [2.55, -6.5, 'linear'], [3.55, -3.5, 'linear'], [4.1, 1.5, 'outQuad'], [4.8, 0.5], [5.8, -1], [6.8, 3, 'inQuad'], [7.8, 8, 'linear'], [9.1, 13, 'linear'], [10, 16, 'linear']];
+const X16 = (t) => X7(t) + MG.kf(t, GAP);
+const LANE7 = [[0, -3.5], [8, -2.5], [36, -2.5], [56, -4.5]];                 // m off the centre line (+ the inside of the hairpin)
+const LANE16 = [[-172, -2.6], [-100, 3], [0, 3.5], [30, 3.5], [62, -1]];   // in #7's slipstream half a car to the inside, then out
+const lane7 = (t) => MG.kf(X7(t), LANE7), lane16 = (t) => MG.kf(X16(t), LANE16);
+const drift = (t) => { const u = X16(t); return u > 1 && u < 17 ? 0.3 * Math.sin(((u - 1) / 16) * Math.PI) : 0; };   // #16's rear stepping out at the turn-in
+const steer7 = (t) => (X7(t) > 0 && X7(t) < 40 ? 0.12 : 0), steer16 = (t) => (X16(t) > 0 && X16(t) < 38 ? 0.14 : 0) - 1.4 * drift(t);
+const DRS = 12, LOCK = 92, FREE = 116, SWAP = 182, HELI = 129, EXIT = 210, BANNER = 214;
+const SHOT = [[0, 'chase'], [32, 'helmet'], [50, 'nose'], [86, 'lock'], [110, 'side'], [HELI, 'heli'], [EXIT, 'exit']];
+const TOP = { at: [1548, 750], pitch: -Math.PI / 2, yaw: Math.PI / 2, look: 0, f: 3000, s: 0.3 };   // the helicopter: the hairpin's middle (x 5, z 14) at the frame's centre
+const onTop = (t) => { const T = { bend: PIN }, U = 140 * TOP.s, a = IB.trackPose(T, X7(t), lane7(t)), b = IB.trackPose(T, X16(t), lane16(t)); return [TOP.at[0] - ((a.z + b.z) / 2) * U, TOP.at[1] - ((a.x + b.x) / 2) * U]; };
+const follow = (f) => { const m = onTop(f / 24); return { at: [960 + (m[0] - 960) * 0.8, 540 + (m[1] - 540) * 0.8], w: 1920 * MG.lerp(1, 0.9, MG.clamp((f - HELI) / (EXIT - HELI))) }; };
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [32, { at: [960, 540], w: 1920 }, 'cut'],
+  [50, { at: [960, 540], w: 1920 }, 'cut'], [50, { at: [960, 560], w: 1750 }, 'push', 36],
+  [86, { at: [860, 700], w: 1150 }, 'cut'],
+  [110, { at: [960, 720], w: 1700 }, 'cut'],
+  [HELI, follow, 'cut'],
+  [EXIT, { at: [960, 540], w: 1920 }, 'cut'], [EXIT, { at: [960, 520], w: 1700 }, 'push', 56],
+];
+const braking7 = (t) => t >= BRAKE && t < BRAKE + (V0 - VC) / B, braking16 = (t) => t >= BRAKE + 0.2 && X16(t) < 0;
+const towerRows = (f) => {
+  const u = MG.clamp((f - SWAP) / 8), rows = [{ num: 7, color: C.navy, gap: '선두' }, { num: 16, color: C.yellow, gap: '+0.3', hi: true }, { num: 3, color: C.mint, gap: '+4.1' }, { num: 22, color: C.lavender, gap: '+6.8' }];
+  if (u >= 1) return [{ ...rows[1], gap: '선두' }, { ...rows[0], gap: '+0.4' }, rows[2], rows[3]];
+  if (u > 0) return [{ ...rows[0], y: u }, { ...rows[1], y: 1 - u }, rows[2], rows[3]];
+  return rows;
+};
+
+IB.actors = (t) => { const f = Math.floor(t * 24); return { shot: IB.held(SHOT, f), x7: Math.round(X7(t) * 10) / 10, x16: Math.round(X16(t) * 10) / 10, drift: Math.round(drift(t) * 100) / 100, locked: f >= LOCK && f < FREE }; };
+
+MG.scene({
+  title: 'racing / hairpin-late-brake-pass',
+  duration: 10, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), d = IB.frame(IB.twos(t)), shot = IB.held(SHOT, f), cam = IB.shot(SHOTS, f, { jolt: [[LOCK, 22]] });
+    const x7 = X7(t), x16 = X16(t), locked = f >= LOCK && f < FREE, lockSpin = X16(LOCK / 24) / 0.36;
+    const car16 = (V, T, extra = {}) => { const p = IB.trackPose(T, x16, lane16(t)); return IB.racer(ctx, { ...V, ...CAR16, ...p, heading: p.heading + drift(t), steer: steer16(t), spin: x16 / 0.36, frontSpin: locked ? lockSpin : undefined, drs: MG.clamp((f - DRS) / 3) * (x16 < -60), glow: braking16(t), rake: braking16(t) ? 0.035 : 0, blur: !locked, ...extra }); };
+    const car7 = (V, T, extra = {}) => { const p = IB.trackPose(T, x7, lane7(t)); return IB.racer(ctx, { ...V, ...CAR7, ...p, steer: steer7(t), spin: x7 / 0.36, glow: braking7(t), rake: braking7(t) ? 0.035 : 0, blur: true, ...extra }); };
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'chase') {
+        const V = { at: [960, 1000], yaw: Math.PI / 2, look: 0.05, f: 2400, s: 2.2 }, T = { run: x16 - 4, lane: lane16(t) - 1.5 };   // a little to the right of #16, so #7 shows past it
+        IB.trackStrip(ctx, { ...V, ...T, from: -2, to: 220, half: 6 });
+        car7(V, T); car16(V, T);
+      }
+      if (shot === 'helmet') IB.helmet(ctx, [960, 470], { s: 1.25, eyes: 'tense', look: 0.35, blink: d === 21, color: C.yellow, accent: C.navy });   // #16 fixed on #7's gearbox
+      if (shot === 'nose') {
+        const V = { at: [960, 860], yaw: -Math.PI / 2, look: 0.05, f: 3000, s: 1.8 }, T = { run: x7 + 9, lane: (lane7(t) + lane16(t)) / 2 };   // a long lens down the straight, holding #7
+        IB.trackStrip(ctx, { ...V, ...T, from: -140, to: 9, half: 6 });
+        car16(V, T); car7(V, T);
+      }
+      if (shot === 'lock') {
+        const V = { at: [1150, 900], yaw: -0.35, look: 0.01, f: 600, s: 1.6 }, T = { run: x16 + 2.2, lane: lane16(t) + 0.2 };   // the front-right tyre just past the lens
+        IB.trackStrip(ctx, { ...V, ...T, from: -10, to: 20, half: 6, walls: false });
+        const r = car16(V, T, { blur: false });
+        if (locked) IB.tyreSmoke(ctx, r.wheels[0], { k: Math.floor((f - LOCK) / 2), s: 0.8, dir: -1, seed: 2100 + d });
+      }
+      if (shot === 'side') {
+        const ref = (x7 + x16) / 2, V = { at: [960, 900], yaw: 0, look: 0.2, f: 3000, s: 0.8 }, T = { run: ref };   // from the outside, high enough to see #16 past #7
+        IB.trackside(ctx, [-400, 2400], 720, { run: ref, blur: 0.6 });
+        const b = car16(V, T); car7(V, T);
+        if (locked) IB.tyreSmoke(ctx, b.wheels[0], { k: Math.floor((f - LOCK) / 2), s: 0.6, dir: -1, seed: 2100 + d });
+      }
+      if (shot === 'heli') {
+        const T = { bend: PIN };
+        IB.trackStrip(ctx, { ...TOP, ...T, from: -60, to: 110, half: 6, wall: 16, walls: -1 });
+        const trail = [];   // where #16's rear tyres were while it slid, one pose a drawing (twos)
+        for (let i = 0; i < 6; i++) { const tt = IB.twos(t) - i / 12; if (drift(tt) < 0.04) break; const p = IB.trackPose(T, X16(tt), lane16(tt)); trail.push({ ...p, heading: p.heading + drift(tt) }); }
+        IB.smokeTrail(ctx, TOP, trail, { s: 0.9, seed: 2700 + d });
+        car7(TOP, T); car16(TOP, T);
+      }
+      if (shot === 'exit') {
+        const V = { at: [960, 980], yaw: Math.PI / 2, look: 0.05, f: 3000, s: 2 }, T = { bend: PIN, run: x7 - 6, lane: lane7(t) + 1.5 };   // low behind #7, a longer lens: #16 pulls away past it
+        IB.trackStrip(ctx, { ...V, ...T, from: -2, to: 220, half: 6 });
+        car16(V, T); car7(V, T);
+      }
+    });
+    if (shot !== 'helmet') IB.broadcast(ctx, { lap: [23, 58], rows: towerRows(f), banner: f >= BANNER ? '추월 · #16 선두' : '' });
+  },
+});
+</script>

@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / racing-weather</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-weather.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 비 오는 레이스와 직선 밖의 트랙. 어느 각도에서도 보이는 물보라 IB.wetSpray와 그 속에서 깜빡이는 비 신호등 IB.rainLight, 렌즈의 물방울 IB.lensDrops, 노면의 물웅덩이 IB.trackPuddles, 헬기에서 본 곡선 트랙 IB.trackPath·IB.circuit와 햇빛 그림자 IB.carShadow, 도넛의 타이어 자국 IB.tyreMarks와 연기 IB.smokeTrail, 타이어 높이에서 본 솟은 연석 IB.apexKerb, 팀이 매달려 환호하는 피트 월 IB.pitWall, 체커기를 흔드는 마셜 IB.flagStand. 트랙 위의 것은 모두 IB.trackSpace(차와 같은 view)로 그려 차에 붙어 있다.
+   Motion notes: 4 s loop on twos (machines on ones: the rain light blinks 3 frames on, 3 off); the heli cell's car runs the esses at 40 m/s, the donut turns once in 1.6 s with the nose 1.25 rad inside its path. */
+const C = IB.C, ctxRef = { c: null };
+const BEHIND = { at: [960, 900], yaw: Math.PI / 2, look: 0.05, f: 1400, s: 2.2 };
+const AHEAD = { at: [960, 900], yaw: -Math.PI / 2, look: 0.04, f: 3000, s: 1.6 };
+const TOP = { at: [960, 540], pitch: -Math.PI / 2, look: 0, f: 6000, s: 0.22 };
+const LOW = { at: [700, 900], yaw: -0.35, look: 0.01, f: 600, s: 1.6 };
+const ESSES = IB.trackPath([[-90, 0], [-50, 10], [-15, -12], [20, 12], [55, -8], [90, 0]]);
+const donut = (tt) => { const a = tt * Math.PI * 2 / 1.6, R = 3.6; return { x: Math.cos(a) * R, z: Math.sin(a) * R, heading: a + Math.PI / 2 + 1.25 }; };
+const rear = (tt, sd) => { const c = donut(tt), h = c.heading; return [c.x - 1.85 * Math.cos(h) - 0.8 * sd * Math.sin(h), c.z - 1.85 * Math.sin(h) + 0.8 * sd * Math.cos(h)]; };
+const crew = (x, deck, k, i) => { const look = { h: 250, dir: i % 2 ? -1 : 1, top: C.navy, topKind: 'long', bottom: C.ink, hair: ['short', 'cap', 'curly'][i % 3], hat: C.yellow, skin: C.skin[i % 5], seed: 60 + i * 10, face: { eye: 'closed', mouth: 'open' } }; const up = (k + i) % 2; return [IB.posed(look, { ...IB.stand(x, deck, look), lean: 0.15, hands: [{ a: up ? -1.7 : -1.2, l: 0.28 }, { a: up ? -1.3 : -1.9, l: 0.28 }], hand: ['open', 'open'] }), look]; };
+const CELLS = [
+  ['IB.wetSpray from behind + IB.rainLight', (k, f) => { const map = IB.trackSpace(BEHIND), car = { x: 4, z: 0 }; IB.trackStrip(ctxRef.c, { ...BEHIND, from: -2, to: 160, half: 6, run: f * 2.5 }); IB.trackPuddles(ctxRef.c, map, { from: -2, to: 120, run: f * 2.5 }); IB.racer(ctxRef.c, { ...BEHIND, ...car, lit: f % 6 < 3, color: C.yellow, accent: C.navy }); IB.wetSpray(ctxRef.c, map, car, { d: k }); IB.rainLight(ctxRef.c, IB.carAt(map, car, [-2.62, -0.42, 0]), { on: f % 6 < 3 }); }],
+  ['IB.wetSpray head-on: a chaser in it', (k, f) => { const map = IB.trackSpace(AHEAD), lead = { x: 0, z: -1 }, chase = { x: -14, z: -1 + Math.min(1, (k % 24) / 16) * 2.6 }; IB.trackStrip(ctxRef.c, { ...AHEAD, from: -120, to: 8, half: 6 }); IB.racer(ctxRef.c, { ...AHEAD, ...chase, color: C.navy, accent: C.yellow, seed: 1700 }); IB.wetSpray(ctxRef.c, map, lead, { d: k }); IB.racer(ctxRef.c, { ...AHEAD, ...lead, color: C.yellow, accent: C.navy }); }],
+  ['IB.lensDrops (on ones)', (k, f) => { IB.racer(ctxRef.c, { at: [960, 820], yaw: 0, s: 0.9, look: 0.08, color: C.mint, accent: C.navy }); IB.lensDrops(ctxRef.c, { f, n: 18, s: 1.4 }); }],
+  ['IB.trackPath + IB.circuit + IB.carShadow (heli)', (k, f) => { const map = IB.trackSpace(TOP), s = 20 + ((f / 24) * 40) % 140, car = ESSES.at(s); IB.circuit(ctxRef.c, map, ESSES, { kerbs: [[45, 70, -1], [80, 105, 1], [118, 140, -1]], line: 30 }); IB.carShadow(ctxRef.c, map, car); IB.racer(ctxRef.c, { ...TOP, ...car, color: C.navy, accent: C.yellow }); }],
+  ['IB.tyreMarks + IB.smokeTrail (donut, above)', (k, f) => { const map = IB.trackSpace({ ...TOP, s: 0.9 }), tt = k / 12, pts = []; for (let u = 0; u <= tt; u += 1 / 24) pts.push(rear(u, -1)); [-1, 1].forEach((sd) => IB.tyreMarks(ctxRef.c, map, pts.map((p, i) => rear(i / 24, sd)))); IB.racer(ctxRef.c, { ...TOP, s: 0.9, ...donut(tt), steer: -0.4 }); IB.smokeTrail(ctxRef.c, map, { at: [(u) => rear(u, -1), (u) => rear(u, 1)], now: tt, wind: [0.8, 0.4] }); }],
+  ['IB.apexKerb at tyre level', (k, f) => { const map = IB.trackSpace(LOW); IB.trackStrip(ctxRef.c, { ...LOW, from: -10, to: 40, half: 6, kerb: 0, walls: false }); IB.apexKerb(ctxRef.c, map, { from: -8, to: 40, z0: -2.2, z1: -3.4, h: 0.08, run: 0 }); IB.racer(ctxRef.c, { ...LOW, x: 2.6, z: -1.4, spin: f * 0.5, steer: 0.15 }); }],
+  ['IB.pitWall + crew (IB.figure) leaning on it', (k, f) => { const back = IB.pitWall(ctxRef.c, [0, 1920], 900, { layer: 'back' }); [300, 620, 960, 1300, 1620].forEach((x, i) => { const [p, look] = crew(x, back.deck, k, i); IB.figure(ctxRef.c, p, look); }); IB.pitWall(ctxRef.c, [0, 1920], 900, { layer: 'front' }); }],
+  ['IB.flagStand({ k })', (k, f) => IB.flagStand(ctxRef.c, [900, 980], { k, s: 1.6, dir: -1 })],
+];
+MG.scene({
+  title: 'props / racing-weather',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx); ctxRef.c = ctx;
+    SAMPLE.title(ctx, 'racing in the rain and off the straight: spray, lens, circuit, smoke, kerb, pit wall, flag (props/racing-weather.js)');
+    const c = SAMPLE.grid(CELLS.length, 4), k = Math.round(IB.twos(t) * 12), f = Math.floor(t * 24);
+    CELLS.forEach(([label, draw], i) => SAMPLE.cell(ctx, c[i], [0, 0, 1920, 1080], () => { ctx.save(); IB.clipRect(ctx, [0, 0, 1920, 1080]); draw(k, f); ctx.restore(); }, label));
+  },
+});
+</script>

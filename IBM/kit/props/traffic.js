@@ -76,12 +76,12 @@
 
   /* BUS — the bus's measurements in px: len (body length), ht (body height), r (wheel radius), door (from the front to the door's centre), doorW, and axle positions from the centre (rear, front). */
   IB.BUS = { len: 1100, ht: 440, r: 50, door: 104, doorW: 110, axles: [-330, 290] };
-  /* bus(ctx, at, state, opts) — a city bus in profile heading right: `at` = [its centre x, the road], the wheels on the road. One flat body colour (opts.fill, green) with a white window row, a windscreen, a blank charcoal destination strip (no words), a two-leaf door near the front and an exhaust pipe at the rear. state.door 0 closed .. 1 open (the leaves fold to the sides; a machine: move it on ones), state.spin turns the wheels (distance / r), state.pitch tips the body about the rear wheel (+ nose up: the squat as it pulls away). opts.s scales it about `at` (IB.BUS is at s 1) with the lines kept at their stage width (3.4 px), for a bus that fills a frame of larger figures. Returns { door: [x, y] (the door's sill), exhaust: [x, y] (the pipe's mouth), front, rear } in stage px, ignoring the pitch (street/bus-missed-chase). */
+  /* bus(ctx, at, state, opts) — a city bus in profile heading right: `at` = [its centre x, the road], the wheels on the road. One flat body colour (opts.fill, green) with a white window row, a windscreen, a blank charcoal destination strip (no words), a two-leaf door near the front and an exhaust pipe at the rear. state.door 0 closed .. 1 open (the leaves fold to the sides; a machine: move it on ones), state.spin turns the wheels (distance / r), state.pitch tips the body and its wheel arches about the rear wheel's contact with the road (+ nose up: the squat as it pulls away); the wheels stay on the road. opts.s scales it about `at` (IB.BUS is at s 1) with the lines kept at their stage width (3.4 px), for a bus that fills a frame of larger figures. Returns { door: [x, y] (the door's sill), exhaust: [x, y] (the pipe's mouth), front, rear } in stage px, ignoring the pitch (street/bus-missed-chase). */
   IB.bus = (ctx, [x, road], st = {}, o = {}) => {
     const { door = 0, spin = 0, pitch = 0 } = st, { fill = C.green, s: S = 1, seed = 980 } = o, lw = (o.lw || 3.4) / S, B = IB.BUS;   // lines keep their stage width whatever the scale
     const F = B.len / 2, Bk = -B.len / 2, yb = -B.r + 6, yt = yb - B.ht, DX = F - B.door, DW = B.doorW, [ra, fa] = B.axles;
     ctx.save(); ctx.translate(x, road); ctx.scale(S, S);
-    ctx.translate(ra, 0); ctx.rotate(-pitch); ctx.translate(-ra, 0);
+    ctx.save(); ctx.translate(ra, 0); ctx.rotate(-pitch); ctx.translate(-ra, 0);   // the body (with its wheel arches) tips; the wheels stay on the road
     IB.seg(ctx, Bk + 40, yb + 2, Bk - 8, yb + 8, { w: 9, color: C.charcoal, seed: seed + 1, taper: false });   // the exhaust pipe
     IB.ink(ctx, [[Bk, yb], [Bk, yt + 34], [Bk + 26, yt], [F - 70, yt], [F - 16, yt + 30], [F, yt + 160], [F, yb]], { closed: true, smooth: false, fill, w: lw, seed: seed + 2, wob: 0.5 });
     // the window row up to the door, then the windscreen
@@ -101,9 +101,9 @@
     IB.box(ctx, F - 8, yb - 36, 16, 36, { fill: C.charcoal, w: lw * 0.7, seed: seed + 40 });
     IB.box(ctx, Bk - 8, yb - 36, 16, 36, { fill: C.charcoal, w: lw * 0.7, seed: seed + 41 });
     IB.oval(ctx, F - 18, yb - 66, 11, 11, { fill: C.paper, w: lw * 0.7, seed: seed + 42, n: 10 });
-    // wheels in dark arches
+    for (const [ax, i] of [[ra, 0], [fa, 1]]) IB.ink(ctx, IB.ellipse(ax, -B.r, B.r + 12, B.r + 12, 12, PI, 2 * PI), { closed: true, smooth: false, fill: C.charcoal, w: lw * 0.7, seed: seed + 50 + i });   // the dark wheel arches
+    ctx.restore();
     for (const [ax, i] of [[ra, 0], [fa, 1]]) {
-      IB.ink(ctx, IB.ellipse(ax, -B.r, B.r + 12, B.r + 12, 12, PI, 2 * PI), { closed: true, smooth: false, fill: C.charcoal, w: lw * 0.7, seed: seed + 50 + i });
       IB.oval(ctx, ax, -B.r, B.r, B.r, { fill: C.charcoal, w: lw, seed: seed + 52 + i, n: 16, wob: 0.3 });
       IB.oval(ctx, ax, -B.r, B.r * 0.44, B.r * 0.44, { fill: C.paper, w: lw * 0.65, seed: seed + 54 + i, n: 10, wob: 0.2 });
       const c = Math.cos(spin) * B.r * 0.36, s = Math.sin(spin) * B.r * 0.36;

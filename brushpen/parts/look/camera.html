@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>look / camera</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script src="../../kit/camera.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 선·색·질감 견본: 무대를 한 번 세워 두고 샷 목록으로 찍는 카메라 IB.shot과 IB.film. 사람 둘과 가로등을 그대로 둔 채 카메라만 와이드 → 천천히 미는 push → 원본의 팬(pan) → 부딪힘에 펀치 인(snap)과 흔들림(jolt) → 기운 화면(tilt, ease) → 클로즈업으로 컷(cut) → 스피드라인 휩(whip)으로 다른 곳 → 다시 와이드로 컷 한다. 선은 줌과 함께 굵어진다(원본의 샷 크기 규칙). 화면 아래 글은 지금 쓰는 움직임이다.
+   Motion notes: 10 s loop on ones (the camera) over actors on twos. Keys: 0 wide 1920; 12 push to 1300 over 48; 72 pan 520 px right (16 frames on twos); 108 snap in to 900 with a jolt of 22 px at 108; 144 ease to a -0.07 rad tilt over 12; 180 cut to a 560 px close-up of the left face; 204 whip (8 frames) to the lamppost; 228 cut back to the wide. */
+const F = IB.FIG, FLOOR = 900;
+const A = { ...IB.PEOPLE.commuter, h: 330, dir: 1, seed: 30 }, B = { ...IB.PEOPLE.designer, h: 310, dir: -1, seed: 40 };
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [12, { at: [820, 640], w: 1300 }, 'push', 48],
+  [72, { at: [1340, 640], w: 1300 }, 'pan'],
+  [108, { at: [1200, 700], w: 900 }, 'snap'],
+  [144, { at: [1100, 680], w: 1000, tilt: -0.07 }, 'ease'],
+  [180, { at: [790, 650], w: 560 }, 'cut'],
+  [204, { at: [1650, 640], w: 900 }, 'whip'],
+  [228, { at: [960, 540], w: 1920 }, 'cut'],
+];
+const NAMES = [[0, 'wide'], [12, "push — the reference's slow push, on ones"], [72, "pan — the reference's measured pan, on twos"], [108, 'snap + jolt — a punch-in on an impact'], [144, 'ease — to a dutch tilt'], [180, 'cut — a close-up; lines thicken with the zoom'], [204, "whip — the reference's speed-line join"], [228, 'cut — back to the wide']];
+MG.scene({
+  title: 'look / camera',
+  duration: 10, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), d = IB.frame(IB.twos(t)), cam = IB.shot(SHOTS, f, { jolt: [[108, 22]] });
+    IB.film(ctx, cam, (ctx) => {
+      IB.skyline(ctx, 700);
+      IB.lamppost(ctx, [1650, FLOOR], { h: 420, lit: d % 24 < 12 });
+      IB.smear(ctx, 960, FLOOR - 6, 1300, { h: 14, seed: 9 });
+      IB.figure(ctx, { ...IB.stand(760, FLOOR, A), face: { eye: d % 48 < 4 ? 'closed' : 'dot', mouth: 'smile' } }, A);
+      IB.figure(ctx, { ...IB.stand(1200, FLOOR, B), face: { eye: f >= 108 && f < 144 ? 'wide' : 'dot', mouth: f >= 108 && f < 144 ? 'open' : 'flat' } }, B);
+    }, { tint: [IB.C.yellow] });
+    SAMPLE.caption(ctx, `IB.shot / IB.film: ${IB.held(NAMES, f)}  ·  w ${Math.round(cam.w)}  ×${cam.s.toFixed(2)}`);
+  },
+});
+</script>

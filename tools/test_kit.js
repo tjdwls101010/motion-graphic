@@ -19,7 +19,7 @@ let failed = 0;
 // names a scene defines on IB itself instead of a kit file: IB.actors(t), the actors' drawings for tools/drawings.py
 const SCENE_DEFINES = new Set(['actors']);
 // 5: kit names that no part sample has to use, each with the reason
-const NOT_SHOWN = { IBM: {} };
+const NOT_SHOWN = { brushpen: {} };
 const fail = (msg) => { failed++; console.log('FAIL ' + msg); };
 
 for (const ref of fs.readdirSync(ROOT).filter((d) => fs.existsSync(path.join(ROOT, d, 'kit')))) {

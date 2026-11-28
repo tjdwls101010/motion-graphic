@@ -3,11 +3,11 @@
 
 A scene exposes window.__mg = {duration, fps, ref, seek(t)} when opened with ?capture (see core/stage.js); this tool seeks to exact times and screenshots the 1920x1080 stage in headless Chrome.
 
-  capture.py IBM/scenes/spot/folder-meets-document.html --at 0.5,2,6 --out out/stills       PNG stills at those seconds
-  capture.py IBM/scenes/spot/folder-meets-document.html --sheet out/folder.jpg --n 12       n evenly spaced frames tiled into one image
-  capture.py IBM/scenes/spot/folder-meets-document.html --mp4 out/folder.mp4                the whole clip
-  capture.py IBM/scenes/spot/folder-meets-document.html --compare out/folder-cmp.jpg --n 6  reference frame above the render at the same moments
-  capture.py IBM/scenes/spot/folder-meets-document.html --compare out/kick.jpg --frames 16-36 --box 860,560,1500,1080 --ref-crop 356,60,1564,880
+  capture.py brushpen/scenes/spot/folder-meets-document.html --at 0.5,2,6 --out out/stills       PNG stills at those seconds
+  capture.py brushpen/scenes/spot/folder-meets-document.html --sheet out/folder.jpg --n 12       n evenly spaced frames tiled into one image
+  capture.py brushpen/scenes/spot/folder-meets-document.html --mp4 out/folder.mp4                the whole clip
+  capture.py brushpen/scenes/spot/folder-meets-document.html --compare out/folder-cmp.jpg --n 6  reference frame above the render at the same moments
+  capture.py brushpen/scenes/spot/folder-meets-document.html --compare out/kick.jpg --frames 16-36 --box 860,560,1500,1080 --ref-crop 356,60,1564,880
                                                                                  the drawings of one move, enlarged, each above its reference frame
   capture.py --all --sheet-dir out/sheets                                          one contact sheet per scene of every reference
 

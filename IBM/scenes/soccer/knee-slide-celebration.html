@@ -1,0 +1,78 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>soccer / knee-slide-celebration</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 골 세리머니: 골을 넣은 선수가 두 팔을 벌리고 코너 플래그 쪽으로 내달리다 무릎을 꿇으며 잔디 위를 미끄러지고, 고개를 젖혀 포효한다. 동료 둘이 양쪽에서 달려와 한 명은 뛰어올라 껴안고 한 명은 뒤에서 덮친다. 관중은 모두 일어나 환호한다. 원본에 없는 창작 장면이다. 전달하는 생각: 기쁨은 혼자 미끄러지다 함께 멈춘다.
+   Motion notes: seen from the touchline, 7 s; the camera (IB.camera, on twos) frames 1250 px of the stage (1.54x) and pans left with the scorer until 2.0 s. Players 252 px on the stage (1.8 m, 140 px a metre). The scorer runs (IB.run at IB.runLen / 8 a drawing) with his arms out like wings; at 1.25 s he drops to his knees in one drawing (anticipation: a lower, leaning-back drawing) and slides on them from 5 m/s to a stop over 2 m (uniform deceleration: the gaps between drawings shrink), spine leaning back, arms wide and up, head thrown back and roaring, leaving a green smear. Two teammates run in from either side (IB.run); the one from the left leaps on a gravity arc (0.3 m) and lands hugging him at 2.58 s, the other bends over him from behind on the next drawing; all three hold together from 2.83 s, the heads trailing a drawing (pose.prev). The corner flag flaps on twos while they move. The crowd stands throughout and cheers on twos until 4.5 s; from 4.5 s nothing moves. Colours: the scorer's team in yellow, the flag yellow, the crowd's navy; the pitch is a green chalk smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, PI = Math.PI;
+const SC = IB.athlete('soccer', 'away', 6, { h: H, dir: -1, seed: 30 });
+const T1 = IB.athlete('soccer', 'away', 0, { h: H, dir: 1, seed: 40 });
+const T2 = IB.athlete('soccer', 'away', 2, { h: H, dir: -1, seed: 50 });
+const HY = IB.stand(0, FLOOR, SC).hip[1], AY = FLOOR - F.ankle * H, RL = IB.runLen(SC) / 8;
+const FLAG = 120;
+
+/* ---------- the scorer ---------- */
+const X0 = 1560, FD = 30;                                    // the run starts at X0; drops at FD
+const runX = (f) => X0 - (f / 2) * RL;
+const V0 = 5 * M, SLIDE = 2 * M, DEC = (V0 * V0) / (2 * SLIDE), TS = V0 / DEC;
+const KX0 = runX(FD) - 0.2 * H, kneeX = (f) => { const t = MG.clamp((f - FD - 2) / 24, 0, TS); return KX0 - (V0 * t - (DEC * t * t) / 2); };
+const SEND = FD + 2 + Math.ceil((TS * 24) / 2) * 2, KS = kneeX(SEND);
+const sp = (hip, lean, feet, hands, more = {}) => IB.posed(SC, { hip, lean, feet, hands, ...more });
+const kneel = (x, lean, nod, arms, face) => sp([x, FLOOR - 0.3 * H], lean, [[x + 0.3 * H, FLOOR - 0.035 * H, 1.45], [x + 0.26 * H, FLOOR - 0.035 * H, 1.45]], arms, { hand: ['open', 'open'], nod, face });
+const SACT = [];
+for (let f = 0; f < FD; f += 2) { const p = IB.run(runX(f), FLOOR, SC, ((f / 2) / 8) % 1), j = IB.joints(p, SC); p.hands = [IB.polar(j.sh, PI + 0.25, 0.28 * H), IB.polar(j.sh, -0.25, 0.28 * H)]; p.hand = ['open', 'open']; p.face = { eye: 'closed', mouth: 'open' }; SACT.push([f, p]); }
+SACT.push([FD, sp([runX(FD) - 0.1 * H, HY + 0.14 * H], -0.15, [[runX(FD) - 0.05 * H, AY - IB.footLift(0.5, H), 0.5], { a: PI - 0.9, l: 0.45, pitch: 1.0 }], [{ a: PI - 0.3, l: 0.27 }, { a: 0.3, l: 0.27 }], { hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } })]);
+for (let f = FD + 2; f <= SEND; f += 2) SACT.push([f, kneel(kneeX(f), -0.3, -0.35, [{ a: -PI / 2 - 0.7, l: 0.285 }, { a: -PI / 2 + 0.7, l: 0.285 }], { eye: 'closed', mouth: 'open' })]);
+SACT.push([SEND + 4, kneel(KS, -0.38, -0.45, [{ a: -PI / 2 - 0.75, l: 0.285 }, { a: -PI / 2 + 0.75, l: 0.285 }], { eye: 'closed', mouth: 'open' })]);
+SACT.push([66, kneel(KS, -0.05, 0.1, [{ a: 0.6, l: 0.26 }, { a: PI - 0.6, l: 0.26 }], { eye: 'closed', mouth: 'smile' })]);   // hugging back
+
+/* ---------- the teammates ---------- */
+const HUG = 62, J1 = HUG - 6;   // teammate 1 lands hugging on HUG, after a leap from J1
+const t1Land = KS - 0.32 * H, t1RunEnd = t1Land - 0.25 * H, T1S = t1RunEnd - (J1 / 2) * IB.runLen(T1) / 8;
+const tp = (look, hip, lean, feet, hands, more = {}) => IB.posed(look, { hip, lean, feet, hands, ...more });
+const T1ACT = [];
+for (let f = 0; f < J1; f += 2) T1ACT.push([f, { ...IB.run(T1S + (f / 2) * IB.runLen(T1) / 8, FLOOR, T1, (f / 16) % 1), face: { eye: 'wide', mouth: 'open' } }]);
+const t1Hip = (f) => { const u = (f - J1) / (HUG - J1); return [MG.lerp(t1RunEnd, t1Land, u), HY + 0.02 * H - 0.3 * M * 4 * u * (1 - u)]; };
+for (let f = J1; f < HUG; f += 2) T1ACT.push([f, tp(T1, t1Hip(f), 0.3, [{ a: PI / 2 + 0.6, l: 0.42, pitch: 0.7 }, { a: PI / 2 + 0.2, l: 0.46, pitch: 0.5 }], [{ a: -0.4, l: 0.28 }, { a: -0.1, l: 0.28 }], { hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } })]);
+const hug1 = (lean, nod) => tp(T1, [t1Land, HY + 0.13 * H], lean, [[t1Land - 0.12 * H, AY, 0.3], [t1Land + 0.1 * H, AY, 0]], [{ a: 0.15, l: 0.285 }, { a: 0.35, l: 0.285 }], { hand: ['open', 'open'], nod, face: { eye: 'closed', mouth: 'open' } });
+T1ACT.push([HUG, hug1(0.75, 0.3)], [HUG + 4, hug1(0.68, 0.25)]);
+const t2Stop = KS + 0.42 * H, T2S = t2Stop + ((HUG + 2) / 2) * IB.runLen(T2) / 8;
+const T2ACT = [];
+for (let f = 0; f < HUG + 2; f += 2) T2ACT.push([f, { ...IB.run(T2S - (f / 2) * IB.runLen(T2) / 8, FLOOR, T2, (f / 16 + 0.4) % 1), face: { eye: 'wide', mouth: 'open' } }]);
+const hug2 = (lean, nod) => tp(T2, [t2Stop, HY + 0.1 * H], lean, [[t2Stop - 0.08 * H, AY, 0], [t2Stop + 0.14 * H, AY, 0.3]], [{ a: 0.35, l: 0.285 }, { a: 0.6, l: 0.28 }], { hand: ['open', 'open'], nod, face: { eye: 'closed', mouth: 'smile' } });
+T2ACT.push([HUG + 2, hug2(0.9, 0.3)], [HUG + 6, hug2(0.82, 0.25)]);
+
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const scorer = withPrev(SACT), mate1 = withPrev(T1ACT), mate2 = withPrev(T2ACT);
+const CAMS = [[0, [780, 330, 1250]], [48, [Math.round(KS - 520), 330, 1250]]];
+const cheerAt = (f) => (f < 108 ? 1 + (f / 2) % 2 : 'up');
+const waveAt = (f) => (f < HUG + 6 ? (f / 2) % 2 : 0);
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { scorer: scorer(f), mate1: mate1(f), mate2: mate2(f), crowd: cheerAt(f), flag: waveAt(f), camera: IB.camera(CAMS, f) }; };
+
+MG.scene({
+  title: 'soccer / knee-slide-celebration',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(IB.twos(t)), s = scorer(f);
+    IB.crop(ctx, IB.camera(CAMS, f));
+    IB.pitchside(ctx, [-200, 2100], FLOOR, { cheer: cheerAt(f) });
+    IB.cornerFlag(ctx, [FLAG, FLOOR + 4], { s: 0.7, wave: waveAt(f) });
+    if (f > FD) { const x1 = Math.max(KS, kneeX(f)); IB.smear(ctx, (KX0 + x1) / 2 + 0.28 * H, FLOOR - 4, KX0 - x1 + 0.2 * H, { h: 13, color: IB.C.green, seed: 21 }); }   // the knees' track
+    IB.figure(ctx, mate2(f), T2);
+    IB.figure(ctx, s, SC);
+    IB.figure(ctx, mate1(f), T1);
+  },
+});
+</script>

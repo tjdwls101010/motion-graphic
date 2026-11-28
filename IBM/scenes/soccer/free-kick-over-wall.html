@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>soccer / free-kick-over-wall</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 프리킥: 수비 세 명이 벽을 세우고, 키커가 세 걸음 달려 감아 찬다. 벽이 함께 뛰어오르지만 공은 그 머리 위를 넘어 떨어지며 골대 윗구석으로 들어가고, 뒤늦게 솟은 골키퍼의 손끝 위로 그물이 불룩해진다. 원본에 없는 창작 장면이다. 전달하는 생각: 벽을 넘는 공은 떨어지는 힘으로 들어간다.
+   Motion notes: seen from the touchline, 8 s. On the stage the players are 252 px (1.8 m, 140 px a metre); the camera (IB.camera, on twos) frames 1250 px of it (1.54x) on the kicker and the wall, pans with the ball to the goal in 7 drawings from 1.67 s, and at the end pulls back to 1700 px to hold the kicker's celebration and the goal. The ball has topspin, so it falls under 1.3 g (the Magnus force pulling it down: 1785 px/s²): it leaves at 10 m/s and 1185 px/s up, passes 2.5 m up over the wall 0.4 s after the kick (peaking near 2.9 m), and dips under the bar into the top corner 1.0 s after it, spinning forward on twos. The wall (three defenders, standing with their hands crossed low) jumps together on the drawing after the kick, the outer two a drawing later (0.35 m on a gravity arc, eyes shut), lands and turns to look. The keeper reads it late: a step, and a leap back towards the corner from 2.17 s, peaking just under the ball, which goes in over his fingertips (the back net bulges round it for 6 drawings); he falls on his back. The kicker runs 3 drawings, strikes like the penalty (cock, swing, contact with a burst, one drawing past), watches, and leaps with both fists up at the goal. The crowd stands and cheers on twos; from 6.17 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M, PI = Math.PI;
+const GX = 1800, GS = 0.7;
+const KICK = IB.athlete('soccer', 'away', 3, { h: H, dir: 1, seed: 30 });
+const WALL = [0, 4, 7].map((i, n) => IB.athlete('soccer', 'home', i, { h: H, dir: -1, seed: 60 + n * 9 }));
+const GK = IB.athlete('soccer', 'keeper', 5, { h: H, dir: -1, seed: 50 });
+const HY = IB.stand(0, FLOOR, KICK).hip[1], AY = FLOOR - F.ankle * H;
+
+/* ---------- the ball: topspin, so 1.3 g ---------- */
+const KF = 36, G2 = 1.3 * G, BALL0 = [420, FLOOR - R], CORNER = [GX + 0.25 * M, FLOOR - 2.2 * M], T1 = 1.0;
+const SHOT = { p: BALL0, v: IB.aim(BALL0, CORNER, T1, G2), g: G2 };
+const netX = (y) => { const up = FLOOR - y, top = 0.82 * 2.44 * M; return GX + (2.0 - 0.9 * MG.clamp(up / top, 0, 1)) * M; };
+let HIT = KF + 2; while (IB.flight(SHOT, (HIT - KF) / 24).p[0] < netX(IB.flight(SHOT, (HIT - KF) / 24).p[1])) HIT += 2;
+const HITP = IB.flight(SHOT, (HIT - KF) / 24).p, DROP = { p: [HITP[0] - 8, HITP[1]], v: [-100, 0], g: G, floor: FLOOR - R, e: 0.35, mu: 0.6, roll: 300 };
+function ballAt(f) {
+  if (f < KF) return { p: BALL0, v: [0, 0], rot: 0 };
+  if (f < HIT) { const q = IB.flight(SHOT, (f - KF) / 24); return { p: q.p, v: q.v, rot: ((f - KF) / 24) * 22 }; }
+  const q = IB.flight(DROP, (f - HIT) / 24), push = [0, 14, 17, 11, 5, 2][f - HIT] || 0;
+  return { p: [q.p[0] + push, q.p[1]], v: q.v, rot: ((HIT - KF) / 24) * 22 };
+}
+const bulgeAt = (f) => { const k = f - HIT; return k >= 0 && k < 6 ? { at: HITP, k: [1, 1.2, 0.8, 0.4, 0.15, 0][k] } : null; };
+
+/* ---------- the kicker ---------- */
+const RL = IB.runLen(KICK) / 8, PLANT = BALL0[0] - 0.08 * H, X2 = PLANT - 0.22 * H, XS = X2 - 2 * RL;
+const kp = (hip, lean, feet, hands, more = {}) => IB.posed(KICK, { hip, lean, feet, hands, ...more });
+const pf = [PLANT, AY, 0];
+const KACT = [[0, IB.stand(XS - 0.05 * H, FLOOR, KICK)], [20, kp([XS - 0.07 * H, HY + 6], 0.18, IB.stand(XS - 0.05 * H, FLOOR, KICK).feet, [{ a: 0.8, l: 0.25 }, { a: PI - 0.8, l: 0.25 }], { nod: 0.08 })]];
+for (let k = 0; k < 3; k++) KACT.push([24 + k * 2, IB.run(XS + k * RL, FLOOR, KICK, (0.25 + k / 8) % 1)]);
+KACT.push(
+  [30, kp([PLANT - 0.02 * H, HY + 0.06 * H], 0.06, [pf, { a: PI - 0.75, l: 0.47, pitch: 0.9 }], [{ a: -0.25, l: 0.27 }, { a: PI - 0.5, l: 0.26 }])],
+  [32, kp([PLANT - 0.04 * H, HY + 0.06 * H], 0.08, [pf, { a: PI - 0.55, l: 0.47, pitch: 0.95 }], [{ a: -0.3, l: 0.27 }, { a: PI - 0.45, l: 0.26 }])],
+  [34, kp([PLANT + 0.01 * H, HY + 0.055 * H], 0.0, [pf, { a: PI / 2 + 0.3, l: 0.47, pitch: 0.6 }], [{ a: -0.2, l: 0.27 }, { a: PI - 0.35, l: 0.26 }])],
+  [KF, kp([PLANT + 0.03 * H, HY + 0.045 * H], -0.12, [pf, [BALL0[0] - 0.06 * H, FLOOR - 0.07 * H, 0.75]], [{ a: -0.1, l: 0.27 }, { a: PI - 0.2, l: 0.27 }], { face: { eye: 'dot', mouth: 'flat' } })],
+  [KF + 2, kp([PLANT + 0.06 * H, HY + 0.02 * H], -0.22, [[PLANT, AY - IB.footLift(0.35, H), 0.35], { a: -0.5, l: 0.48, pitch: -0.3 }], [{ a: 0.1, l: 0.27 }, { a: PI + 0.1, l: 0.27 }])],
+  [KF + 4, kp([PLANT + 0.07 * H, HY + 0.02 * H], -0.28, [[PLANT, AY - IB.footLift(0.35, H), 0.35], { a: -0.7, l: 0.48, pitch: -0.35 }], [{ a: 0.15, l: 0.27 }, { a: PI + 0.15, l: 0.27 }])],
+  [KF + 8, kp([PLANT + 0.2 * H, HY + 0.01 * H], 0.05, [[PLANT, AY - IB.footLift(0.4, H), 0.4], [PLANT + 0.34 * H, AY, 0]], [{ a: 0.9, l: 0.25 }, { a: PI - 1.0, l: 0.25 }])],
+  [KF + 12, kp([PLANT + 0.2 * H, HY], 0.02, [[PLANT + 0.1 * H, AY, 0], [PLANT + 0.3 * H, AY, 0]], [{ a: 1.25, l: 0.26 }, { a: 1.85, l: 0.26 }], { face: { eye: 'wide', mouth: 'flat' } })],
+);
+// the goal: a crouch, then the leap with both fists up, and the landing held
+const CX = PLANT + 0.2 * H, CY = (f) => HY - 0.3 * H * Math.sin(MG.clamp((f - HIT - 6) / 10, 0, 1) * PI);
+KACT.push([HIT + 2, kp([CX, HY + 0.09 * H], 0.25, [[CX - 0.1 * H, AY, 0], [CX + 0.1 * H, AY, 0]], [{ a: 0.6, l: 0.24 }, { a: PI - 0.6, l: 0.24 }], { hand: ['grip', 'grip'], face: { eye: 'wide', mouth: 'open' } })]);
+for (let f = HIT + 6; f < HIT + 16; f += 2) KACT.push([f, kp([CX + (f - HIT - 6) * 3, CY(f)], -0.15, [{ a: PI / 2 + 0.35, l: 0.45, pitch: 0.6 }, { a: PI / 2 - 0.1, l: 0.46, pitch: 0.5 }], [{ a: -1.25, l: 0.28 }, { a: -1.9, l: 0.28 }], { hand: ['grip', 'grip'], nod: -0.25, face: { eye: 'closed', mouth: 'open' } })]);
+const LX = CX + 30;
+KACT.push([HIT + 16, kp([LX, HY + 0.08 * H], 0.15, [[LX - 0.1 * H, AY, 0], [LX + 0.1 * H, AY, 0]], [{ a: -1.0, l: 0.27 }, { a: -2.1, l: 0.27 }], { hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'open' } })]);
+KACT.push([HIT + 20, kp([LX, HY + 0.01 * H], -0.05, [[LX - 0.08 * H, AY, 0], [LX + 0.08 * H, AY, 0]], [{ a: -1.2, l: 0.28 }, { a: -1.95, l: 0.28 }], { hand: ['grip', 'grip'], nod: -0.2, face: { eye: 'closed', mouth: 'open' } })]);
+
+/* ---------- the wall ---------- */
+const WX = [990, 1012, 1034], WD = [0, 2, 2];   // the outer two jump a drawing later
+const wallAct = (n) => {
+  const look = WALL[n], x = WX[n], up = (f) => { const k = (f - KF - 2 - WD[n]) / 24; return k < 0 ? 0 : Math.max(0, 0.35 * M * (1 - ((k - 0.267) / 0.267) ** 2)); };
+  const stand = (lean, nod, eye) => IB.posed(look, { hip: [x, HY + 0.02 * H], lean, nod, feet: [[x - 0.06 * H, AY, 0], [x + 0.06 * H, AY, 0]], hands: [{ a: PI / 2 - 0.35, l: 0.2 }, { a: PI / 2 - 0.15, l: 0.21 }], elbow: [-1, -1], face: { eye, mouth: 'flat' } });
+  const A = [[0, stand(0.05, 0.05, 'dot')], [KF, stand(0.1, 0.08, 'wide')]];
+  for (let f = KF + 2 + WD[n]; f <= KF + 18 + WD[n]; f += 2) {
+    const u = up(f);
+    if (u <= 0 && f > KF + 4 + WD[n]) { A.push([f, stand(0.12, 0.1, 'dot')]); break; }
+    A.push([f, IB.posed(look, { hip: [x, HY - u], lean: 0.0, nod: 0.12, feet: [{ a: PI / 2 + 0.05, l: 0.5, pitch: 0.5 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.5 }], hands: [{ a: PI / 2 - 0.35, l: 0.2 }, { a: PI / 2 - 0.15, l: 0.21 }], elbow: [-1, -1], face: { eye: 'closed', mouth: 'flat' } })]);
+  }
+  A.push([HIT + 4 + n * 2, { ...IB.posed({ ...look, dir: 1 }, { hip: [x, HY + 0.01 * H], lean: -0.05, nod: -0.1, feet: [[x - 0.06 * H, AY, 0], [x + 0.06 * H, AY, 0]], hands: [{ a: PI / 2 + 0.2, l: 0.2 }, { a: PI / 2 - 0.2, l: 0.2 }], face: { eye: 'wide', mouth: 'open' } }), dir: 1 }]);
+  return A;
+};
+const WACT = [0, 1, 2].map(wallAct);
+
+/* ---------- the keeper ---------- */
+const KX = 1730, gp = (hip, lean, feet, hands, more = {}) => IB.posed(GK, { hip, lean, feet, hands, hand: ['open', 'open'], ...more });
+const LEAP = KF + 16, APEX = HIT - 2;   // takes off late; peaks a drawing before the ball reaches the net
+const gHip = (f) => { const dt = (f - APEX) / 24, rise = (G / 2) * ((APEX - LEAP) / 24) ** 2; return [MG.lerp(KX, KX + 0.35 * H, MG.clamp((f - LEAP) / (APEX - LEAP + 6), 0, 1)), HY + 0.06 * H - rise + (G / 2) * dt * dt]; };
+const GACT = [
+  [0, gp([KX, HY + 0.07 * H], 0.22, [[KX - 0.11 * H, AY, 0], [KX + 0.11 * H, AY, 0]], [{ a: 0.6, l: 0.24 }, { a: 0.4, l: 0.24 }], { face: { eye: 'dot', mouth: 'flat', brow: 1 } })],
+  [KF + 8, gp([KX + 0.04 * H, HY + 0.08 * H], 0.15, [[KX - 0.05 * H, AY, 0], [KX + 0.13 * H, AY, 0]], [{ a: 0.4, l: 0.24 }, { a: 0.1, l: 0.24 }], { face: { eye: 'wide', mouth: 'flat' } })],
+  [KF + 12, gp([KX + 0.08 * H, HY + 0.12 * H], 0.0, [[KX + 0.02 * H, AY, 0], [KX + 0.16 * H, AY, 0]], [{ a: -0.6, l: 0.26 }, { a: -0.9, l: 0.26 }], { face: { eye: 'wide', mouth: 'open' } })],
+];
+let GL = LEAP;
+for (let f = LEAP; f < LEAP + 30; f += 2) {
+  const hip = gHip(f); if (f > APEX && hip[1] > HY + 0.04 * H) { GL = f; break; }
+  GACT.push([f, gp(hip, -0.45, [{ a: PI / 2 + 0.2, l: 0.48, pitch: 0.6 }, { a: PI / 2 - 0.3, l: 0.45, pitch: 0.5 }], [{ a: -PI / 2 - 0.55, l: 0.285 }, { a: -PI / 2 - 0.35, l: 0.285 }], { nod: -0.3, face: { eye: 'wide', mouth: 'open' } })]);
+}
+const FX = gHip(GL)[0];
+GACT.push([GL, gp([FX, FLOOR - 0.13 * H], -0.9, [{ a: 0.3, l: 0.5, pitch: -0.3 }, { a: 0.15, l: 0.5, pitch: -0.3 }], [{ a: PI / 2 + 0.6, l: 0.27 }, { a: PI / 2 + 0.9, l: 0.27 }], { nod: 0.2, face: { eye: 'closed', mouth: 'open' } })]);
+GACT.push([GL + 4, gp([FX, FLOOR - 0.12 * H], -1.1, [{ a: 0.25, l: 0.5, pitch: -0.4 }, { a: 0.1, l: 0.5, pitch: -0.4 }], [{ a: PI / 2 + 0.5, l: 0.27 }, { a: -PI / 2 - 0.2, l: 0.24 }], { nod: 0.3, face: { eye: 'closed', mouth: 'frown' } })]);
+
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const kicker = withPrev(KACT), keeper = withPrev(GACT), wall = WACT.map(withPrev);
+const CAMS = [[0, [60, 330, 1250]], [KF + 4, [60, 330, 1250]], [KF + 18, [700, 330, 1250]], [HIT + 22, [700, 330, 1250]], [HIT + 36, [260, 250, 1700]]];
+const cheerAt = (f) => (f < HIT ? 0 : f < 148 ? 1 + (f / 2) % 2 : 'up');
+const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kicker(f), keeper: keeper(f), wall0: wall[0](f), wall1: wall[1](f), wall2: wall[2](f), ball: ballAt(f).p, net: bulgeAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+
+MG.scene({
+  title: 'soccer / free-kick-over-wall',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), k = keeper(f);
+    IB.crop(ctx, IB.camera(CAMS, f));
+    IB.pitchside(ctx, [-20, 2200], FLOOR, { cheer: cheerAt(f) });
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
+    if (f < KF) IB.oval(ctx, BALL0[0], FLOOR + 2, 9, 3, { fill: IB.C.paper, w: 1.5, n: 8, seed: 3 });
+    [2, 1, 0].forEach((n) => { const p = wall[n](f); IB.figure(ctx, p, lookOf(p, WALL[n])); });
+    IB.figure(ctx, kicker(f), KICK);
+    IB.figure(ctx, k, GK, 'far');
+    if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+    IB.figure(ctx, k, GK, 'near');
+    const hit = IB.drawn(tt, KF / 24), gl = IB.drawn(tt, GL / 24);
+    if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
+    if (gl >= 0 && gl < 2) IB.thud(ctx, [FX, FLOOR], { half: 0.3 * H, k: gl });
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+  },
+});
+</script>

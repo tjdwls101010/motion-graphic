@@ -1,0 +1,134 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>soccer / penalty-save-over-bar</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 페널티킥: 키커가 공 뒤에서 숨을 고르다 달려 들어와 골대 윗구석으로 세게 차고, 골라인 앞에서 몸을 낮추고 있던 골키퍼가 솟구쳐 손끝으로 공을 크로스바 위로 쳐 낸다. 원본에 없는 창작 장면이다. 공의 궤적은 중력으로 계산했고(IB.aim, IB.flight), 골대·관중·광고판·선수는 kit 부품이다. 전달하는 생각: 선방은 차는 순간의 웅크림에서 이미 시작된다.
+   Motion notes: seen from the touchline, 7.5 s. On the stage the players are 252 px tall (1.8 m, so 140 px a metre: gravity 1373 px/s²) and the ball r 15 px; the camera (IB.crop, on twos with a smoothstep) frames 1100 px of it, so on screen they are 440 px: it holds on the kicker, pans with the ball to the keeper in 4 drawings from 1.75 s (the ball crosses the frame as it moves), and from 4.17 s to 4.67 s pulls back to a 1540 px frame that holds both players. The penalty spot is 9.3 m from the goal line (compressed from 11 m to keep both in one wide shot). 0-1 s the kicker stands behind the ball, the keeper bounces on twos (two drawings, no prev). 0.92 s the kicker leans in (anticipation), then runs 6 drawings (IB.run at IB.runLen / 8 a drawing) so his far foot lands beside the ball. 1.5 s: plant with the kicking leg cocked behind, 1.58 s the leg swings through, 1.67 s contact (a burst on the ball for 2 drawings) and the follow-through, the leg one drawing higher past it (overshoot), down at 2.0 s. The ball leaves at 24 m/s aimed under the bar (arriving 0.38 s later), drawn on twos with speed lines. On the contact drawing the keeper sinks 0.11 h (the read), takes off on the next and flies a gravity arc that peaks on the save: 0.33 s after the kick his hands meet the ball 2.1 m up, a burst and the ball goes up over the bar at a sixth of its speed. He lands at 2.25 s (a thud, 2 drawings), comes up and pumps both fists at 3.08 s. 3.5 s the kicker's hands go to his head, a drawing late in his head (pose.prev). The crowd stands from the save and cheers on twos until 5.5 s, then holds standing; from 5.5 s nothing moves. Colours: the two kits' navy and yellow and the keeper's mint; the pitch is a green chalk smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M;
+const GX = 1800;                                   // the goal line
+const BALL0 = [520, FLOOR - R];                    // the ball on the spot
+const KICK = IB.athlete('soccer', 'away', 1, { h: H, dir: 1, seed: 30 });
+const KEEP = IB.athlete('soccer', 'keeper', 2, { h: H, dir: -1, seed: 50 });
+const deep = (p) => JSON.parse(JSON.stringify(p));
+
+/* ---------- the ball ---------- */
+const KF = 40;                                     // contact
+const T1 = 0.38, AIM = [GX, FLOOR - 2.25 * M];     // aimed under the bar
+const SHOT = { p: BALL0, v: IB.aim(BALL0, AIM, T1, G), g: G };
+const TD = 8;                                      // frames from contact to the save
+const SAVE = IB.flight(SHOT, TD / 24).p;
+const OVER = { p: SAVE, v: [SHOT.v[0] / 8, -820], g: G };
+function ballAt(f) {   // f on the twos grid
+  if (f < KF) return { p: BALL0, v: [0, 0], rot: 0 };
+  if (f < KF + TD) { const q = IB.flight(SHOT, (f - KF) / 24); return { p: q.p, v: q.v, rot: (q.p[0] - BALL0[0]) / R }; }
+  const q = IB.flight(OVER, (f - KF - TD) / 24);
+  return { p: q.p, v: q.v, rot: (SAVE[0] - BALL0[0]) / R - (q.p[1] - SAVE[1]) / R };
+}
+
+/* ---------- the kicker ---------- */
+const RL = IB.runLen(KICK) / 8, PLANT = BALL0[0] - 0.08 * H, X5 = PLANT - 0.22 * H, XS = X5 - 5 * RL;   // six run drawings, the last landing the far foot at PLANT
+const stand0 = IB.stand(XS, FLOOR, KICK);
+const KP = (() => {
+  const hy = stand0.hip[1], ay = FLOOR - F.ankle * H;
+  const make = (hip, lean, feet, arms, more = {}) => { const p = { hip, lean, nod: 0, feet, hands: [[0, 0], [0, 0]], ...more }; const j = IB.joints(p, KICK); p.hands = arms.map(([a, l]) => IB.polar(j.sh, a, l * H)); return p; };
+  const plantFoot = [PLANT, ay, 0];
+  const footAt = (p, a, l, pitch) => { const j = IB.joints(p, KICK); const q = IB.polar(j.roots[1], a, l * H); return [q[0], q[1], pitch]; };
+  const lean = make([XS - 0.02 * H, hy + 4], 0.16, deep(stand0.feet), [[0.7, 0.25], [Math.PI - 0.7, 0.25]], { nod: 0.05 });
+  const cock = make([PLANT - 0.02 * H, hy + 0.06 * H], 0.06, [plantFoot, [0, 0, 0]], [[-0.25, 0.27], [Math.PI - 0.5, 0.26]]);
+  cock.feet[1] = footAt(cock, Math.PI - 0.7, 0.46, 0.9);
+  const swing = make([PLANT + 0.01 * H, hy + 0.055 * H], 0.0, [plantFoot, [0, 0, 0]], [[-0.2, 0.27], [Math.PI - 0.35, 0.26]]);
+  swing.feet[1] = footAt(swing, Math.PI / 2 + 0.25, 0.47, 0.6);
+  const strike = make([PLANT + 0.03 * H, hy + 0.045 * H], -0.08, [plantFoot, [BALL0[0] - 0.06 * H, FLOOR - 0.07 * H, 0.75]], [[-0.12, 0.27], [Math.PI - 0.2, 0.27]], { face: { eye: 'dot', mouth: 'flat' } });
+  const follow = make([PLANT + 0.06 * H, hy + 0.02 * H], -0.2, [[PLANT, ay - IB.footLift(0.35, H), 0.35], [0, 0, 0]], [[0.1, 0.27], [Math.PI + 0.1, 0.27]]);
+  follow.feet[1] = footAt(follow, -0.45, 0.48, -0.3);
+  const past = make([PLANT + 0.07 * H, hy + 0.02 * H], -0.25, deep(follow.feet), [[0.15, 0.27], [Math.PI + 0.15, 0.27]]);
+  past.feet[1] = footAt(past, -0.62, 0.48, -0.35);
+  const land = make([PLANT + 0.2 * H, hy + 0.01 * H], 0.05, [[PLANT, ay - IB.footLift(0.4, H), 0.4], [PLANT + 0.34 * H, ay, 0]], [[0.9, 0.25], [Math.PI - 1.0, 0.25]]);
+  const watch = make([PLANT + 0.2 * H, hy], 0.02, [[PLANT + 0.1 * H, ay, 0], [PLANT + 0.3 * H, ay, 0]], [[1.25, 0.26], [1.85, 0.26]], { face: { eye: 'wide', mouth: 'open' } });
+  const head = make([PLANT + 0.2 * H, hy], -0.04, deep(watch.feet), [[-1.25, 0.2], [-1.85, 0.2]], { hand: ['open', 'open'], nod: 0.12, elbow: [-1, -1], face: { eye: 'closed', mouth: 'frown' } });
+  return { lean, cock, swing, strike, follow, past, land, watch, head };
+})();
+const KACT = [[0, stand0], [22, KP.lean]];
+for (let k = 0; k < 6; k++) KACT.push([24 + k * 2, { ...IB.run(XS + k * RL, FLOOR, KICK, (0.875 + k / 8) % 1) }]);
+KACT.push([36, KP.cock], [38, KP.swing], [40, KP.strike], [42, KP.follow], [44, KP.past], [48, KP.land], [54, KP.watch], [84, KP.head]);
+
+/* ---------- the keeper ---------- */
+const KX = 1700, KH = { ...KEEP };
+const KEEPER = (() => {
+  const base = IB.stand(KX, FLOOR, KEEP), hy = base.hip[1], ay = FLOOR - F.ankle * H;
+  const feet = [[KX - 0.11 * H, ay, 0], [KX + 0.11 * H, ay, 0]];
+  const make = (hip, lean, ft, arms, more = {}) => { const p = { hip, lean, nod: 0, feet: ft, hands: [[0, 0], [0, 0]], hand: ['open', 'open'], ...more }; const j = IB.joints(p, KEEP); p.hands = arms.map(([a, l]) => IB.polar(j.sh, a, l * H)); return p; };
+  const ready = make([KX, hy + 0.07 * H], 0.22, feet, [[Math.PI - 0.55, 0.24], [Math.PI - 0.35, 0.24]], { face: { eye: 'dot', mouth: 'flat', brow: 1 } });
+  const bounce = make([KX, hy + 0.055 * H], 0.2, feet, [[Math.PI - 0.6, 0.24], [Math.PI - 0.4, 0.24]], { face: ready.face });
+  const set = make([KX - 0.01 * H, hy + 0.11 * H], 0.3, feet, [[Math.PI - 0.8, 0.25], [Math.PI - 0.5, 0.25]], { face: { eye: 'wide', mouth: 'flat', brow: 1 } });
+  // the save: the shoulder 0.26 h from the ball, the arms along the line to it
+  const reach = Math.atan2(-0.8, -0.6), shSave = IB.polar(SAVE, reach + Math.PI, 0.26 * H);
+  const leanAir = 0.12, offs = IB.joints({ hip: [0, 0], lean: leanAir, feet: feet }, KEEP).sh, hipSave = [shSave[0] - offs[0], shSave[1] - offs[1]];
+  const airAt = (f) => {   // a gravity arc with its top on the save drawing
+    const dt = (f - (KF + TD)) / 24, x = MG.lerp(KX, hipSave[0], MG.clamp((f - KF) / TD, 0, 1)), y = hipSave[1] + (G / 2) * dt * dt;
+    const hip = [x + (f > KF + TD ? (f - KF - TD) * 1.5 : 0), y];
+    const p = { hip, lean: leanAir, nod: -0.1, feet: [[0, 0, 0.5], [0, 0, 0.3]], hands: [[0, 0], [0, 0]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } };
+    const j = IB.joints(p, KEEP), toBall = f <= KF + TD ? Math.atan2(SAVE[1] - j.sh[1], SAVE[0] - j.sh[0]) : -Math.PI / 2 + 0.2;
+    p.hands = [IB.polar(j.sh, toBall - 0.08, 0.27 * H), IB.polar(j.sh, toBall + 0.06, 0.27 * H)];
+    p.feet = [[...IB.polar(j.roots[0], Math.PI / 2 - 0.35, 0.47 * H), 0.6], [...IB.polar(j.roots[1], Math.PI / 2 + 0.25, 0.42 * H), 0.4]];
+    if (f === KF + TD) p.hands = [IB.polar(j.sh, toBall - 0.04, 0.28 * H), IB.polar(j.sh, toBall + 0.03, 0.28 * H)];   // the tip: fingers at full stretch
+    return p;
+  };
+  // lands where the arc meets standing height
+  let LAND = KF + TD + 2; while (airAt(LAND).hip[1] < hy - 0.02 * H) LAND += 2;
+  const lx = airAt(LAND).hip[0];
+  const landed = make([lx, hy + 0.13 * H], 0.35, [[lx - 0.12 * H, ay, 0], [lx + 0.1 * H, ay, 0]], [[Math.PI - 0.2, 0.24], [Math.PI + 0.1, 0.24]], { face: { eye: 'closed', mouth: 'flat' } });
+  const up = make([lx, hy + 0.02 * H], 0.05, [[lx - 0.08 * H, ay, 0], [lx + 0.08 * H, ay, 0]], [[-1.2, 0.27], [-1.9, 0.27]], { hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'open' } });
+  const pump = make([lx, hy + 0.04 * H], 0.1, deep(up.feet), [[-1.0, 0.25], [-2.1, 0.25]], { hand: ['grip', 'grip'], nod: -0.15, face: { eye: 'closed', mouth: 'open' } });
+  const stand = make([lx, hy + 0.01 * H], 0.0, deep(up.feet), [[-1.35, 0.27], [-1.8, 0.27]], { hand: ['grip', 'grip'], face: { eye: 'dot', mouth: 'smile' } });
+  return { ready, bounce, set, airAt, LAND, landed, up, pump, stand };
+})();
+const KEACT = [[0, KEEPER.ready]];
+for (let f = 8; f < 34; f += 4) KEACT.push([f, KEEPER.bounce], [f + 2, KEEPER.ready]);
+KEACT.push([38, KEEPER.ready], [KF, KEEPER.set]);
+for (let f = KF + 2; f < KEEPER.LAND; f += 2) KEACT.push([f, KEEPER.airAt(f)]);
+KEACT.push([KEEPER.LAND, KEEPER.landed], [KEEPER.LAND + 6, KEEPER.up], [74, KEEPER.pump], [78, KEEPER.up], [82, KEEPER.pump], [86, KEEPER.stand]);
+const BOUNCE = [8, 34];   // frames where the keeper alternates two drawings: no prev
+
+function kickerAt(f) { const p = IB.held(KACT, f); return { ...p, prev: f > 22 ? IB.held(KACT, f - 2) : undefined }; }
+function keeperAt(f) { const p = IB.held(KEACT, f); const alt = f >= BOUNCE[0] && f < BOUNCE[1]; return { ...p, prev: f > 0 && !alt ? IB.held(KEACT, f - 2) : undefined }; }
+// the camera: close on the kicker, panning with the ball to the keeper on twos (smoothstep), and at the end back out to hold both
+const CAM = [[0, [40, 400, 1100]], [KF + 2, [40, 400, 1100]], [KF + 10, [820, 400, 1100]], [100, [820, 400, 1100]], [112, [380, 222, 1540]]];
+const camAt = (f) => IB.camera(CAM, f);
+const cheerAt = (f) => (f < KF + TD + 2 ? 0 : f < 132 ? (IB.alternate(f, 2) ? 1 : 2) : 'up');
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { kicker: kickerAt(f), keeper: keeperAt(f), ball: ballAt(f).p, crowd: cheerAt(f), camera: camAt(f) }; };
+
+MG.scene({
+  title: 'soccer / penalty-save-over-bar',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(IB.twos(t)), b = ballAt(f), kp = kickerAt(f), gk = keeperAt(f);
+    IB.crop(ctx, camAt(f));
+    IB.pitchside(ctx, [-20, 2100], FLOOR, { cheer: cheerAt(f) });
+    IB.oval(ctx, BALL0[0], FLOOR + 2, 9, 3, { fill: IB.C.paper, w: 1.5, n: 8, seed: 3 });   // the penalty spot
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'back' });
+    IB.figure(ctx, kp, KICK);
+    IB.figure(ctx, gk, KEEP, 'far');
+    if (f >= KF) IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+    IB.figure(ctx, gk, KEEP, 'near');
+    const hit = IB.drawn(IB.twos(t), KF / 24), save = IB.drawn(IB.twos(t), (KF + TD) / 24), land = IB.drawn(IB.twos(t), KEEPER.LAND / 24);
+    if (hit >= 0 && hit < 2) IB.burst(ctx, BALL0, { n: 4, a0: -2.6, da: 0.5, r0: 22 + hit * 8, r1: 44 + hit * 6, w: 3, seed: 70 + hit });
+    if (save >= 0 && save < 2) IB.burst(ctx, SAVE, { n: 5, a0: -3.0, da: 0.55, r0: 24 + save * 8, r1: 52 + save * 6, w: 3, seed: 80 + save });
+    if (land >= 0 && land < 2) IB.thud(ctx, [gk.hip[0], FLOOR], { half: 0.2 * H, k: land });
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'front' });
+  },
+});
+</script>

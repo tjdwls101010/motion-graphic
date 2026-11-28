@@ -1,0 +1,121 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>soccer / header-bounce-goal</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 헤딩 골: 크로스가 골대 너머에서 높이 넘어오고, 공격수가 수비수와 함께 뛰어올라 머리를 뒤로 젖혔다가 내리찍는다. 공은 골키퍼 앞 땅에 한 번 튀어 몸을 날린 골키퍼 위로 넘어가 그물에 꽂힌다. 원본에 없는 창작 장면이고, 공은 중력과 바운드로 계산했다(IB.aim, IB.flight). 전달하는 생각: 땅으로 내리찍은 공은 튀어서 골키퍼의 손을 넘는다.
+   Motion notes: seen from the touchline, 7.5 s, one camera framing (IB.crop of a 1240 px window: 1.55x). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²). The cross is lofted from beyond the far post 1.0 s before the header and drops in on a gravity arc. The striker runs in on IB.run (IB.runLen / 8 a drawing), plants on 0.92 s and jumps on a gravity arc (0.54 m up, peaking on the header at 1.25 s): on the drawing before it he arches back with his head cocked (anticipation), on the header he snaps forward (lean 0.25, nod 0.35, a burst at the brow for 2 drawings), and the next drawing goes past (lean 0.4). The defender jumps a drawing later and peaks 0.2 m lower. The headed ball is aimed at the ground 1.6 m in front of the keeper in 0.18 s, bounces (e 0.45) and rises 1.4 m over the keeper, who reads it on the header (crouch) but goes a drawing late: he steps and dives forward along the ground in 3 drawings and lands under the ball's arc as it rises over him (a thud). It hits the back net, which bulges round it for 6 drawings, and drops inside. The striker lands, turns and runs off with an arm up, stopping arms wide; the keeper rolls to his knees and punches the turf; the crowd stands and cheers on twos, and from 5.5 s nothing moves. Colours: navy and yellow kits and the keeper's mint; the pitch is a green chalk smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.11 * M;
+const GX = 1760, GS = 0.7, CAM = [760, 320, 1240];
+const STR = IB.athlete('soccer', 'away', 6, { h: H, dir: 1, seed: 30 });
+const DEF = IB.athlete('soccer', 'home', 0, { h: H, dir: 1, seed: 40 });
+const GK = IB.athlete('soccer', 'keeper', 4, { h: H, dir: -1, seed: 50 });
+const HY = IB.stand(0, FLOOR, STR).hip[1], AY = FLOOR - F.ankle * H, PI = Math.PI;
+
+/* ---------- the ball ---------- */
+const FC = 6, FH = 30;                                   // the cross is struck (off screen) and headed
+const HP = [1330, FLOOR - 2.06 * M];                     // where the head meets it
+const CROSS = { p: [2150, 430], v: IB.aim([2150, 430], HP, (FH - FC) / 24, G), g: G };
+const B1 = [1470, FLOOR - R];                            // headed down to bounce here
+const HEAD = { p: HP, v: IB.aim(HP, B1, 0.18, G), g: G, floor: FLOOR - R, e: 0.45, mu: 0.9 };
+const netX = (y) => { const up = FLOOR - y, top = 0.82 * 2.44 * M; return GX + (2.0 - 0.9 * MG.clamp(up / top, 0, 1)) * M; };   // the back net: 2 m behind the line on the ground, 1.1 m at the roof
+let HIT = FH + 2; while (IB.flight(HEAD, (HIT - FH) / 24).p[0] < netX(IB.flight(HEAD, (HIT - FH) / 24).p[1])) HIT += 2;
+const HITP = IB.flight(HEAD, (HIT - FH) / 24).p;
+const DROP = { p: [HITP[0] - 10, HITP[1]], v: [-120, 0], g: G, floor: FLOOR - R, e: 0.35, mu: 0.6, roll: 300 };
+function ballAt(f) {
+  if (f < FH) { const q = IB.flight(CROSS, (f - FC) / 24); return { p: q.p, v: q.v, rot: -(q.p[0] - 2150) / R / 3 }; }
+  if (f < HIT) { const q = IB.flight(HEAD, (f - FH) / 24); return { p: q.p, v: q.v, rot: (q.p[0] - HP[0]) / R }; }
+  const q = IB.flight(DROP, (f - HIT) / 24), k = f - HIT, push = [0, 14, 17, 11, 5, 2][k] || 0;
+  return { p: [q.p[0] + push, q.p[1]], v: q.v, rot: (HITP[0] - HP[0]) / R };
+}
+const bulgeAt = (f) => { const k = f - HIT; return k >= 0 && k < 6 ? { at: HITP, k: [1, 1.2, 0.8, 0.4, 0.15, 0][k] } : null; };
+
+/* ---------- the striker ---------- */
+const headOf = (hip, lean, nod) => [hip[0] + Math.sin(lean) * (F.torso + F.neck) * H + Math.cos(lean) * (0.016 + nod * 0.03) * H, hip[1] - Math.cos(lean) * (F.torso + F.neck) * H + Math.sin(lean) * (0.016 + nod * 0.03) * H];
+const HL = 0.25, HN = 0.35, hc = [HP[0] - 0.07 * H - 0.8 * R, HP[1] + 0.01 * H], h0 = headOf([0, 0], HL, HN), HA = [hc[0] - h0[0], hc[1] - h0[1]];   // the hip on the header
+const VX = 300, FT = 22;                                 // drift in the air; take-off
+const airHip = (f) => [HA[0] + (VX * (f - FH)) / 24, HA[1] + (G / 2) * ((f - FH) / 24) ** 2];
+let FL = FH + 2; while (airHip(FL)[1] < HY + 0.03 * H) FL += 2;
+const RL = IB.runLen(STR) / 8, TX = airHip(FT)[0] - 0.05 * H, XS = TX - 11 * RL;
+const air = (f, lean, nod, more = {}) => IB.posed(STR, { hip: airHip(f), lean, nod, feet: [{ a: PI / 2 + 0.55, l: 0.44, pitch: 0.7 }, { a: PI / 2 + 0.15, l: 0.48, pitch: 0.4 }], hands: [{ a: -0.9, l: 0.26 }, { a: -2.3, l: 0.26 }], face: { eye: 'wide', mouth: 'flat' }, ...more });
+const SACT = [];
+for (let k = 0; k < 11; k++) SACT.push([k * 2, IB.run(XS + k * RL, FLOOR, STR, (0.3 + k / 8) % 1)]);
+SACT.push([FT, IB.posed(STR, { hip: [TX, HY + 0.05 * H], lean: 0.05, feet: [[TX + 0.04 * H, AY, 0.1], { a: 0.6, l: 0.32, pitch: 0.3 }], hands: [{ a: -1.2, l: 0.26 }, { a: 2.4, l: 0.25 }], face: { eye: 'wide', mouth: 'open' } })]);
+SACT.push([FT + 2, air(FT + 2, -0.05, -0.1)], [FT + 4, air(FT + 4, -0.15, -0.2)], [FH - 2, air(FH - 2, -0.25, -0.35, { face: { eye: 'dot', mouth: 'flat', brow: 1 } })]);
+SACT.push([FH, air(FH, HL, HN, { face: { eye: 'closed', mouth: 'flat' } })], [FH + 2, air(FH + 2, 0.4, 0.45, { face: { eye: 'closed', mouth: 'open' } })]);
+for (let f = FH + 4; f < FL; f += 2) SACT.push([f, air(f, 0.25, 0.2, { face: { eye: 'wide', mouth: 'open' } })]);
+const LX = airHip(FL)[0];
+SACT.push([FL, IB.posed(STR, { hip: [LX, HY + 0.09 * H], lean: 0.2, feet: [[LX - 0.1 * H, AY, 0], [LX + 0.12 * H, AY, 0]], hands: [{ a: 0.4, l: 0.25 }, { a: PI - 0.5, l: 0.25 }], face: { eye: 'wide', mouth: 'open' } })]);
+// turns (dir -1) and runs back out with a fist up, then stops arms wide
+const BACK = { ...STR, dir: -1 }, RB = IB.runLen(BACK) / 8, FR = FL + 6;
+for (let k = 0; k < 8; k++) { const p = IB.run(LX - 0.1 * H - k * RB, FLOOR, BACK, (0.15 + k / 8) % 1), j = IB.joints(p, BACK); p.hands[0] = IB.polar(j.sh, -PI / 2 - 0.25, 0.28 * H); p.hand = ['grip', 'grip']; p.face = { eye: 'closed', mouth: 'open' }; SACT.push([FR + k * 2, { ...p, dir: -1 }]); }
+const SX = LX - 0.1 * H - 8 * RB;
+SACT.push([FR + 16, { ...IB.posed(BACK, { hip: [SX, HY + 0.02 * H], lean: -0.1, nod: -0.2, feet: [[SX - 0.12 * H, AY, 0], [SX + 0.12 * H, AY, 0]], hands: [{ a: -0.35, l: 0.28 }, { a: PI + 0.35, l: 0.28 }], hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } }), dir: -1 }]);
+SACT.push([FR + 20, { ...IB.posed(BACK, { hip: [SX, HY + 0.01 * H], lean: -0.05, nod: -0.15, feet: [[SX - 0.12 * H, AY, 0], [SX + 0.12 * H, AY, 0]], hands: [{ a: -0.25, l: 0.28 }, { a: PI + 0.25, l: 0.28 }], hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } }), dir: -1 }]);
+
+/* ---------- the defender: a drawing behind, 0.2 m lower ---------- */
+const DA = [HA[0] - 0.32 * H, HA[1] + 0.2 * M], dHip = (f) => [DA[0] + (VX * 0.8 * (f - FH - 2)) / 24, DA[1] + (G / 2) * ((f - FH - 2) / 24) ** 2];
+let DL = FH + 4; while (dHip(DL)[1] < HY + 0.03 * H) DL += 2;
+const dRun = (f) => IB.run(XS - 0.4 * H + (f / 2) * RL, FLOOR, DEF, (0.6 + f / 16) % 1);
+const DACT = [];
+for (let f = 0; f < FT + 2; f += 2) DACT.push([f, dRun(f)]);
+const DT = dRun(FT).hip[0];
+DACT.push([FT + 2, IB.posed(DEF, { hip: [DT + 0.05 * H, HY + 0.05 * H], lean: 0.05, feet: [[DT + 0.08 * H, AY, 0.1], { a: 0.6, l: 0.32, pitch: 0.3 }], hands: [{ a: -1.3, l: 0.26 }, { a: 2.3, l: 0.25 }] })]);
+for (let f = FT + 4; f < DL; f += 2) DACT.push([f, IB.posed(DEF, { hip: dHip(f), lean: -0.05, nod: -0.25, feet: [{ a: PI / 2 + 0.4, l: 0.45, pitch: 0.6 }, { a: PI / 2 + 0.1, l: 0.48, pitch: 0.3 }], hands: [{ a: -1.1, l: 0.27 }, { a: -2.0, l: 0.25 }], face: { eye: 'wide', mouth: 'flat' } })]);
+const DX = dHip(DL)[0];
+DACT.push([DL, IB.posed(DEF, { hip: [DX, HY + 0.08 * H], lean: 0.15, feet: [[DX - 0.1 * H, AY, 0], [DX + 0.1 * H, AY, 0]], hands: [{ a: 0.5, l: 0.25 }, { a: PI - 0.6, l: 0.25 }] })]);
+DACT.push([DL + 14, IB.posed(DEF, { hip: [DX, HY + 0.01 * H], lean: -0.05, nod: 0.15, feet: [[DX - 0.08 * H, AY, 0], [DX + 0.08 * H, AY, 0]], hands: [{ a: PI / 2 + 0.25, l: 0.2 }, { a: PI / 2 - 0.1, l: 0.2 }], elbow: [-1, -1], face: { eye: 'closed', mouth: 'frown' } })]);   // hands on hips
+
+/* ---------- the keeper ---------- */
+const KX = 1690;
+const kp = (hip, lean, feet, hands, more = {}) => IB.posed(GK, { hip, lean, feet, hands, hand: ['open', 'open'], ...more });
+const KACT = [
+  [0, kp([KX, HY + 0.07 * H], 0.22, [[KX - 0.11 * H, AY, 0], [KX + 0.11 * H, AY, 0]], [{ a: 0.6, l: 0.24 }, { a: 0.4, l: 0.24 }], { face: { eye: 'dot', mouth: 'flat', brow: 1 } })],
+  [FH, kp([KX, HY + 0.12 * H], 0.32, [[KX - 0.12 * H, AY, 0], [KX + 0.12 * H, AY, 0]], [{ a: 0.8, l: 0.25 }, { a: 0.5, l: 0.25 }], { face: { eye: 'wide', mouth: 'flat' } })],
+  [FH + 4, kp([KX - 0.08 * H, HY + 0.16 * H], 0.7, [[KX - 0.2 * H, AY, 0.2], { a: PI - 0.7, l: 0.5, pitch: 0.8 }], [{ a: 0.35, l: 0.28 }, { a: 0.55, l: 0.28 }], { face: { eye: 'wide', mouth: 'open' } })],
+  [FH + 6, kp([KX - 0.2 * H, FLOOR - 0.36 * H], 1.15, [{ a: PI - 0.25, l: 0.5, pitch: 0.9 }, { a: PI - 0.05, l: 0.5, pitch: 0.9 }], [{ a: 0.25, l: 0.28 }, { a: 0.45, l: 0.28 }], { nod: -0.2, face: { eye: 'wide', mouth: 'open' } })],
+  [FH + 8, kp([KX - 0.29 * H, FLOOR - 0.2 * H], 1.4, [{ a: PI - 0.05, l: 0.5, pitch: 1.0 }, { a: PI + 0.08, l: 0.5, pitch: 1.0 }], [{ a: 0.1, l: 0.28 }, { a: 0.25, l: 0.28 }], { nod: -0.3, face: { eye: 'wide', mouth: 'open' } })],
+  [FH + 10, kp([KX - 0.32 * H, FLOOR - 0.13 * H], 1.5, [{ a: PI + 0.02, l: 0.5, pitch: 1.1 }, { a: PI + 0.1, l: 0.5, pitch: 1.1 }], [{ a: 0.0, l: 0.28 }, { a: 0.12, l: 0.28 }], { nod: -0.25, face: { eye: 'closed', mouth: 'flat' } })],
+];
+const KN = KX - 0.3 * H;
+const kneel = (lean, fist, nod) => kp([KN, FLOOR - 0.3 * H], lean, [[KN + 0.3 * H, FLOOR - 0.035 * H, 1.45], [KN + 0.26 * H, FLOOR - 0.035 * H, 1.45]], [{ a: 0.9, l: 0.26 }, { a: fist, l: 0.285 }], { hand: ['grip', 'grip'], nod, face: { eye: 'closed', mouth: 'frown' } });
+KACT.push([FH + 40, kneel(0.3, 1.0, 0.2)], [FH + 44, kneel(0.55, 1.4, 0.3)], [FH + 46, kneel(0.5, 1.3, 0.3)]);   // up on his knees, a fist into the turf, held
+
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const striker = withPrev(SACT), defender = withPrev(DACT), keeper = withPrev(KACT);
+const cheerAt = (f) => (f < HIT ? 0 : f < 132 ? 1 + (f / 2) % 2 : 'up');
+const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { striker: striker(f), defender: defender(f), keeper: keeper(f), ball: ballAt(f).p, net: bulgeAt(f), crowd: cheerAt(f) }; };
+
+MG.scene({
+  title: 'soccer / header-bounce-goal',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), s = striker(f), d = defender(f), k = keeper(f);
+    IB.crop(ctx, CAM);
+    IB.pitchside(ctx, [600, 2100], FLOOR, { cheer: cheerAt(f) });
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'back', bulge: bulgeAt(f) });
+    IB.figure(ctx, d, DEF);
+    IB.figure(ctx, k, GK, 'far');
+    IB.figure(ctx, s, lookOf(s, STR));
+    IB.ballTrail(ctx, b.p, b.v, { r: R, seed: 90 + f });
+    IB.soccerBall(ctx, b.p, { r: R, rot: b.rot, lw: 2.6, seed: 91 });
+    IB.figure(ctx, k, GK, 'near');
+    const hd = IB.drawn(tt, FH / 24), kd = IB.drawn(tt, (FH + 10) / 24);
+    if (hd >= 0 && hd < 2) IB.burst(ctx, HP, { n: 4, a0: -2.4, da: 0.55, r0: 22 + hd * 8, r1: 44 + hd * 6, w: 3, seed: 70 + hd });
+    if (kd >= 0 && kd < 2) IB.thud(ctx, [KX - 0.32 * H, FLOOR], { half: 0.35 * H, k: kd });
+    IB.soccerGoal(ctx, [GX, FLOOR], { s: GS, layer: 'front' });
+  },
+});
+</script>

@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>soccer / nutmeg-past-defender</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 알까기: 공을 몰고 달려오던 공격수가 버티고 선 수비수 앞에서 멈칫해 어깨를 흔들고, 수비수가 발을 뻗으며 다리를 벌리는 순간 공을 그 다리 사이로 찔러 넣고 옆으로 빠져나가 다시 공을 잡는다. 수비수는 다리 사이를 내려다본 뒤 돌아서 두 손을 벌린다. 원본에 없는 창작 장면이다. 전달하는 생각: 속임수는 상대가 먼저 움직이게 만드는 한 장이다.
+   Motion notes: seen from the touchline, 7.5 s, the camera (IB.crop of a 1250 px window, 1.54x) follows the attacker on twos until 2.5 s and eases on (to 3.5 s) to a frame that holds both. On the stage the players are 252 px (1.8 m, 140 px a metre). The attacker jogs with the ball (IB.run with step 0.17: 3 m/s, IB.runLen / 8 a drawing), the ball rolling just ahead and pushed on at each stride's touch; the defender waits in a jockeying crouch, shuffling on twos (two drawings, no prev). 1.67 s the attacker brakes, 1.75 s drops his shoulder and sways back (the feint, a drawing); 1.83 s the defender bites, lunging his near foot out and opening his stance (0.4 m between his feet); the same drawing the attacker toes the ball between them (5 m/s, rolling to a stop under 2.9 m/s²) and runs on at full speed (IB.runLen / 8), passing the defender in front of him and taking the ball on where it has rolled to; he jogs it on and stops at 3.75 s with his sole on it and a fist up. The defender looks down between his legs (2.08 s), turns (2.33 s, a drawing with no prev) and spreads his hands (2.67 s). The crowd cheers on twos from the nutmeg to 4.5 s and stands; from 4.5 s nothing moves. Colours: the two kits' navy and yellow; the pitch is a green chalk smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, R = 0.11 * M, PI = Math.PI;
+const ATT = IB.athlete('soccer', 'away', 7, { h: H, dir: 1, seed: 30 });
+const DEF = IB.athlete('soccer', 'home', 4, { h: H, dir: -1, seed: 40 });
+const HY = IB.stand(0, FLOOR, ATT).hip[1], AY = FLOOR - F.ankle * H;
+const JOG = { step: 0.17 }, JL = IB.runLen(ATT, 0.17) / 8, RL = IB.runLen(ATT) / 8;
+
+/* ---------- the attacker and the ball ---------- */
+const X0 = 160, FB = 40, FP = 44;   // brake, poke
+const jogX = (f) => X0 + (f / 2) * JL;
+const ap = (hip, lean, feet, hands, more = {}) => IB.posed(ATT, { hip, lean, feet, hands, ...more });
+const BX = jogX(FB) + 0.32 * H;      // where the ball sits under control at the brake
+const POKE = { p: [BX, FLOOR - R], v: [5 * M, 0], g: 0, floor: FLOOR - R, roll: 2.9 * M };
+const XR = jogX(FB) - 0.02 * H;      // the run past starts here
+let CATCH = FP + 2; while (XR + ((CATCH - FP) / 2) * RL + 0.3 * H < IB.flight(POKE, (CATCH - FP) / 24).p[0]) CATCH += 2;
+const AACT = [];
+for (let f = 0; f < FB; f += 2) AACT.push([f, IB.run(jogX(f), FLOOR, ATT, ((f / 2) / 8) % 1, JOG)]);
+const XB = jogX(FB);
+AACT.push([FB, ap([XB, HY + 0.05 * H], -0.08, [[XB - 0.1 * H, AY, 0], [XB + 0.14 * H, AY, 0]], [{ a: 0.9, l: 0.25 }, { a: PI - 0.9, l: 0.25 }], { face: { eye: 'dot', mouth: 'flat' } })]);
+AACT.push([FB + 2, ap([XB - 0.04 * H, HY + 0.07 * H], -0.2, [[XB - 0.1 * H, AY, 0], [XB + 0.14 * H, AY - IB.footLift(0.4, H), 0.4]], [{ a: 0.1, l: 0.27 }, { a: PI + 0.2, l: 0.26 }], { nod: 0.15, face: { eye: 'dot', mouth: 'flat' } })]);   // the feint: sway back, shoulder dropped
+AACT.push([FP, ap([XB + 0.04 * H, HY + 0.05 * H], 0.12, [[XB - 0.06 * H, AY - IB.footLift(0.3, H), 0.3], [BX - R - 0.06 * H, FLOOR - 0.06 * H, 0.5]], [{ a: 0.5, l: 0.26 }, { a: PI - 0.4, l: 0.26 }], { face: { eye: 'dot', mouth: 'flat' } })]);   // the toe-poke
+for (let f = FP + 2; f < CATCH; f += 2) AACT.push([f, IB.run(XR + ((f - FP) / 2) * RL, FLOOR, ATT, (0.15 + (f - FP) / 16) % 1)]);
+const XC = XR + ((CATCH - FP) / 2) * RL, STOP = CATCH + 24;
+for (let f = CATCH; f < STOP; f += 2) AACT.push([f, IB.run(XC + ((f - CATCH) / 2) * JL, FLOOR, ATT, (0.15 + (f - CATCH) / 16) % 1, JOG)]);
+const XE = XC + ((STOP - CATCH) / 2) * JL;
+AACT.push([STOP, ap([XE, HY + 0.02 * H], 0.0, [[XE - 0.06 * H, AY, 0], [XE + 0.2 * H, FLOOR - R * 2 - 0.02 * H, -0.3]], [{ a: -1.3, l: 0.28 }, { a: PI - 0.7, l: 0.25 }], { hand: ['grip', 'relax'], nod: -0.1, face: { eye: 'closed', mouth: 'open' } })]);   // sole on the ball, a fist up
+function ballAt(f) {
+  if (f < FB) { const ph = ((f / 2) / 8) % 1, x = jogX(f) + 0.3 * H + 0.1 * H * (1 - ph); return { p: [x, FLOOR - R], x }; }
+  if (f < FP) return { p: [BX, FLOOR - R], x: BX };
+  if (f < CATCH) { const q = IB.flight(POKE, (f - FP) / 24); return { p: q.p, x: q.p[0] }; }
+  const a = IB.held(AACT, f), x = f < STOP ? a.hip[0] + 0.3 * H + 0.08 * H * (1 - (((f - CATCH) / 16) % 1)) : XE + 0.2 * H + 0.02 * H;
+  return { p: [x, FLOOR - R], x };
+}
+
+/* ---------- the defender ---------- */
+const DX = BX + 0.95 * H;
+const dp = (hip, lean, feet, hands, more = {}) => IB.posed(DEF, { hip, lean, feet, hands, ...more });
+const crouch = (dx, up) => dp([DX + dx, HY + 0.1 * H - up], 0.25, [[DX - 0.1 * H, AY, 0], [DX + 0.1 * H, AY, 0]], [{ a: 0.7, l: 0.25 }, { a: 1.0, l: 0.24 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } });
+const DACT = [[0, crouch(0, 0)]];
+for (let f = 8; f < FB; f += 4) DACT.push([f, crouch(-4, 5)], [f + 2, crouch(0, 0)]);
+const DFAR = [DX + 0.18 * H, AY, 0];
+DACT.push([FP, dp([DX - 0.06 * H, HY + 0.12 * H], 0.38, [DFAR, [DX - 0.2 * H, AY - IB.footLift(-0.3, H), -0.3]], [{ a: 0.5, l: 0.26 }, { a: 1.3, l: 0.24 }], { hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } })]);   // bites: the near foot out, the legs open
+DACT.push([FP + 6, dp([DX - 0.04 * H, HY + 0.1 * H], 0.55, [DFAR, [DX - 0.2 * H, AY, 0]], [{ a: 1.2, l: 0.24 }, { a: 1.5, l: 0.24 }], { nod: 0.5, face: { eye: 'wide', mouth: 'open' } })]);   // looks down between his legs
+const TURN = FP + 12, DT = { ...DEF, dir: 1 };
+DACT.push([TURN, { ...IB.posed(DT, { hip: [DX, HY + 0.04 * H], lean: 0.1, feet: [[DX - 0.12 * H, AY, 0], [DX + 0.1 * H, AY, 0]], hands: [{ a: 1.2, l: 0.25 }, { a: 1.9, l: 0.25 }], face: { eye: 'wide', mouth: 'open' } }), dir: 1 }]);
+DACT.push([TURN + 8, { ...IB.posed(DT, { hip: [DX, HY + 0.01 * H], lean: -0.05, nod: -0.05, feet: [[DX - 0.1 * H, AY, 0], [DX + 0.1 * H, AY, 0]], hands: [{ a: 0.35, l: 0.27 }, { a: PI - 0.35, l: 0.27 }], hand: ['open', 'open'], face: { eye: 'dot', mouth: 'frown', brow: -1 } }), dir: 1 }]);   // spreads his hands
+const SHUFFLE = [8, FB];
+
+const atk = (f) => ({ ...IB.held(AACT, f), prev: f > 0 ? IB.held(AACT, f - 2) : undefined });
+const dfd = (f) => { const p = IB.held(DACT, f), q = IB.held(DACT, f - 2), alt = f >= SHUFFLE[0] && f < SHUFFLE[1]; return { ...p, prev: f > 0 && !alt && (p.dir || -1) === (q.dir || -1) ? q : undefined }; };
+const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+const follow = (f) => [MG.clamp(IB.held(AACT, f).hip[0] - 430, 0, 2000), 330, 1250];
+const CAMK = [[60, follow(60)], [84, [Math.round(DX - 350), 330, 1250]]];
+const camAt = (f) => (f < 60 ? follow(f) : IB.camera(CAMK, f));
+const cheerAt = (f) => (f < FP + 2 ? 0 : f < 108 ? 1 + (f / 2) % 2 : 'up');
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { attacker: atk(f), defender: dfd(f), ball: ballAt(f).p, crowd: cheerAt(f), camera: camAt(f) }; };
+
+MG.scene({
+  title: 'soccer / nutmeg-past-defender',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), b = ballAt(f), d = dfd(f);
+    IB.crop(ctx, camAt(f));
+    IB.pitchside(ctx, [-20, 2700], FLOOR, { cheer: cheerAt(f) });
+    IB.figure(ctx, d, lookOf(d, DEF));
+    IB.soccerBall(ctx, b.p, { r: R, rot: (b.x - X0) / R, lw: 2.6, seed: 91 });
+    IB.figure(ctx, atk(f), ATT);
+    const pk = IB.drawn(tt, FP / 24);
+    if (pk >= 0 && pk < 2) IB.burst(ctx, [BX + R, FLOOR - R], { n: 3, a0: -2.2, da: 0.5, r0: 18 + pk * 6, r1: 34 + pk * 5, w: 2.6, seed: 70 + pk });
+  },
+});
+</script>

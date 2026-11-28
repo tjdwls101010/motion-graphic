@@ -1,9 +1,11 @@
 # 모션그래픽 레퍼런스 장면
 
-유튜브 영상에 나오는 모션그래픽을 코드로 다시 만든 디자인 레퍼런스 모음이다. 앞으로 클로드로 모션그래픽을 만들 때 "이런 룩, 이런 움직임"을 말로 설명하는 대신 장면 파일을 가리키고 그 코드를 가져다 쓰려는 용도다.
+영상 속 모션그래픽의 룩과 움직임을 코드로 옮긴 장면과 부품의 모음이다. 클로드로 모션그래픽을 만들 때 "이런 룩, 이런 움직임"을 말로 설명하는 대신 장면 파일을 가리키고, 그 장면의 수치와 부품을 그대로 가져다 새 장면을 조립하려는 용도다.
 
-- 영상 하나가 레퍼런스 폴더 하나다. 지금은 [brushpen](brushpen/README.md)(장면 59개, 15개 계열: 재현 6개와 같은 스타일의 창작 53개, 그리고 kit 부품 견본 74장)이 있다.
-- 장면은 전부 빌드 없이 브라우저에서 바로 열리는 HTML이다. 각 장면은 원본의 어느 구간을 재현했는지(`ref`)와 거기서 읽어 낸 모션 규칙(`Motion notes:`)을 파일 안에 적어 둔다.
+- 룩 하나가 레퍼런스 폴더 하나다. 지금은 [brushpen](brushpen/README.md) 하나가 있다: IBM의 손그림 광고 스팟에서 잰 붓펜 선화 룩(회색 빈 무대, 검은 붓펜 선, 흰 채움, 샷마다 한두 가지 색, 2프레임에 한 장의 연기)이다.
+- brushpen에는 장면 59개(15개 계열)와 kit 부품 견본 74장이 있다. 원본을 재현한 장면은 6개(spot, establish, insert, endcard)이고, 나머지 53개는 같은 룩으로 원본에 없는 상황을 새로 그린 창작 장면이다: 설명 영상용 은유, 인물 동작, 일상 개그, 설정 샷 변주, 주식, 직장·학교·거리의 일상, 축구, 농구, 세계 도시와 랜드마크.
+- 장면은 그림을 직접 그리지 않고 `brushpen/kit/`의 부품을 조립한다. 부품은 선과 박자 도구, 관절 인물 리그와 출연진, 소품, 배경 세트, 효과 표시로 나뉘고, 어떤 부품이 어디 있는지는 [brushpen/README.md](brushpen/README.md)의 부품 지도, 룩과 움직임의 수치는 [brushpen/STYLE.md](brushpen/STYLE.md)에 있다.
+- 장면은 전부 빌드 없이 브라우저에서 바로 열리는 HTML이다. 각 장면은 원본의 어느 구간을 재현했는지(`ref`, 창작이면 `null`)와 그 장면이 쓴 모션 규칙과 수치(`Motion notes:`)를 파일 안에 적어 둔다.
 
 ## 보는 법
 
@@ -30,8 +32,8 @@ tools/
   check_pure.py   모든 장면과 견본의 render(t)가 시간의 순수 함수인지 검사
   drawings.py     장면의 IB.actors(t)로 배우마다 그림 수를 센다: 그림이 바뀌는 프레임, 움직이는 동안의 초당 그림 수, 가장 긴 정지, 스텝보다 오래 남은 그림. 연기 업그레이드의 수치 근거
   same_frames.py  장면이 다른 트리(예: 고치기 전 커밋)와 모든 프레임에서 픽셀 하나 다르지 않게 그려지는지 검사. 동작을 바꾸지 않는 구조 변경의 증거
-  test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs), 장면과 견본의 불러오기, 캐릭터 MOVE의 모양, kit의 모든 부품이 어느 견본에 그려지는지를 브라우저 없이 확인한다
-<ref>/      레퍼런스 영상 하나 (예: brushpen/)
+  test_*.py, test_*.js  도구와 부품의 계약 테스트. test_kit.js는 <ref>/kit/ 파일의 의존(Needs), 장면과 견본의 불러오기, 캐릭터 MOVE의 모양, kit의 모든 부품이 어느 견본에 그려지는지를 브라우저 없이 확인한다. test_time.js와 test_sports.js는 박자 도구와 공의 물리(중력, 바운드, 구르기)를 손으로 푼 값으로 확인한다
+<ref>/      레퍼런스(룩) 하나 (지금은 brushpen/)
   README.md      출처, 원본과 다른 점
   STYLE.md       계열별 룩과 모션 규칙
   CATALOG.md     원본의 샷 전체 목록과 구현 여부
@@ -45,6 +47,13 @@ references/<ref>/<ref>.mp4   원본 영상. 로컬에만 두고 저장소에 넣
 out/                         렌더 결과 작업 공간(.gitignore)
 ```
 
+## 새 장면 만들기
+
+1. `parts.html`에서 쓸 부품을 고르고, `index.html`에서 가장 가까운 장면을 찾아 그 `Motion notes:`의 수치(박자, 정지 길이, 크기)를 가져온다. 계열의 룩과 모션 규칙은 `brushpen/STYLE.md`에 있다.
+2. 장면을 `brushpen/scenes/<계열>/<장면>.html`에 만든다. 장면에는 포즈·박자·배치의 표와 부품 조립만 두고, 모자란 그림은 장면에서 그리지 않고 `brushpen/kit/`에 부품으로 더한 뒤 `brushpen/parts/<묶음>/`의 견본에 보인다(`node tools/test_kit.js`가 모든 부품이 어느 견본에 그려지는지 확인한다).
+3. 인물의 연기는 2프레임에 한 장인 `[프레임, 포즈]` 표로 쓰고, 손발은 `IB.posed`로 어깨·골반에서의 각도와 길이로 놓는다. 장면이 `IB.actors(t)`를 내보내면 `python3 tools/drawings.py`가 배우마다 그림 수와 정지를 센다.
+4. 렌더해서 직접 본다: `capture.py --sheet`로 전체 구도를, `--frames 16-36 --box ...`로 사건 구간을 확대해서. 그다음 `python3 tools/check_pure.py <장면>`과 `python3 tools/build_index.py --thumbs`.
+
 ## 렌더
 
 ```bash
@@ -57,7 +66,9 @@ python3 tools/capture.py brushpen/scenes/spot/folder-meets-document.html --compa
 
 두 번째 명령은 원본 프레임(위)과 렌더(아래)를 같은 시각끼리 나란히 붙인다. 고르게 뽑은 시점은 구도를 보여 줄 뿐 그림 한 장 한 장은 놓치므로, 연기를 볼 때는 `--frames 16-36`으로 프레임을 짚고 `--box x0,y0,x1,y1`로 배우만 확대한다(원본의 일부만 잘라 보여 주는 장면은 `--ref-crop`에 그 영역을 준다). 키의 시각이나 위치를 재려고 원본 프레임을 직접 뽑을 때는 시각(`-ss`)이 아니라 프레임 번호로 뽑는다: `ffmpeg -i references/<ref>/<ref>.mp4 -vf "select=between(n\,157\,211)" -fps_mode passthrough -start_number 0 out/ref/%03d.png`(157은 장면의 `ref` 시작초 x 24). `-ss`는 요청한 시각과 같거나 그 뒤의 첫 프레임부터 주기 때문에 시작초의 반올림에 따라 전체가 한 프레임 밀리고, 2프레임마다 한 장인 그림에서는 그 한 프레임이 키를 전부 홀짝이 바뀐 자리에 놓게 만든다. 원본 영상은 장면이 속한 레퍼런스의 `references/<ref>/<ref>.mp4`를 쓰며, 영상은 저장소에 들어 있지 않다. `pip install playwright pillow`, Google Chrome, ffmpeg가 필요하다. 전체 옵션은 `python3 tools/capture.py --help`.
 
-## 레퍼런스 추가
+## 레퍼런스(새 룩) 추가
+
+다른 영상의 룩을 옮길 때의 순서다.
 
 1. 원본 영상을 `references/<ref>/<ref>.mp4`에 둔다.
 2. `<ref>/families.json`에 계열을 적고, 장면을 `<ref>/scenes/<계열>/<장면>.html`에 만든다. 엔진은 `../../../core/`에서, 이 영상 스타일의 부품은 `../../kit/`에서 불러온다. 여러 장면에 다시 쓸 그림(캐릭터, 소품, 배경)은 장면이 아니라 `kit/`에 부품으로 두고, 장면에는 포즈·박자·배치의 표와 조립만 남긴다(brushpen이 그 예다: `brushpen/README.md`의 부품 지도).

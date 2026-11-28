@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>school / late-gate-run</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/sets/schoolhall.js"></script>
+<script>
+/* 교문이 천천히 닫히기 시작하고, 책가방을 멘 아이가 화면 밖에서 뛰어 들어와 거의 닫힌 틈에서 두 팔을 들고 몸을 세워 게걸음으로 간신히 빠져나간 뒤, 무릎을 짚고 숨을 몰아쉰다. 등 뒤에서 문이 철컥 닫힌다. 원본에 없는 창작 장면으로, 교문(IB.schoolGate, IB.gateLane)과 책가방(IB.backpack), 인물 리그의 뛰기(IB.run)·아이 체형(IB.PEOPLE.pupil3), 숨 표시(IB.breath)를 썼다. 전달하는 생각: 아슬아슬함은 남은 틈의 너비로 보인다.
+   Motion notes: one locked shot, 6.5 s, framed on a 1350 px wide region of the stage enlarged 1.42 times (IB.crop): the child (280 px on the stage, headK 1.3) stands 398 px on screen with 4 px lines. The gate is in an oblique view (depth z lands at (0.8 z, -0.3 z) from the near post; opening 320 deep, posts 440 px, the grille 350 px). The gate is a machine and moves on ones: from 0.5 s its leading edge closes at a constant 3.1 px of depth a frame (333 to 0, shut at 5.0 s). The child runs in from off the left edge from 1.67 s on twos, IB.runLen / 8 = 51.3 px a drawing, behind the near post along the lane 110 deep; the backpack thumps on every stride, dropping 1.4 times what the hips rose since the drawing before (up to 0.06 h = 17 px). 2.58 s the run lands on the near foot at the gap; the squeeze is five drawings (2.67-3.0 s) of a small sidestep walk (stride 0.1 h, a quarter cycle a drawing, 28 px a drawing so the planted foot holds), the body upright and arched back 0.12 rad, both open hands up by the head, the hips 6 px up on the toes; the grille's edge is 49 px of depth behind the child's lane as the body crosses it, and shake arcs flick off the backpack on that middle drawing where it scrapes. 3.08 s out at a run again, its first landing on the squeeze's last planted foot, four drawings to the far foot's landing past the gate's end; 3.5 s one braking drawing (lean 0.3, open hands thrown forward, the other foot coming down), then bent over with both hands on the knees at 3.58 s, the head settling a drawing later, and held dead still from 3.67 s to the end. Breath: two puffs of three lines from the mouth, each three drawings travelling forward (IB.breath k 0-2), at 4.0 s and 4.5 s. 5.0 s the gate shuts behind: a three-line burst at the post for two drawings and shake arcs for four. Still from 5.33 s. Colours: the yellow grille, the child's mint top, the sky-blue backpack. */
+const F = IB.FIG, C = IB.C, FLOOR = 1000, H = 280;
+const KID = { ...IB.PEOPLE.pupil3, h: H, dir: 1, seed: 80 }, BAG = { fill: C.sky };
+const FRAME = [430, 330, 1350];   // the shot: this 1350 px wide region of the stage, enlarged 1.42 times (IB.crop)
+const G = [880, FLOOR], GATE = { span: 320, postH: 440, panelH: 350 }, Z = 110, LANE = IB.gateLane(G, Z), Y = LANE[1];
+const SHUT_FROM = 12, SPEED = 3.1, FULL = 1.04 * GATE.span;   // the leading edge's depth: FULL at frame SHUT_FROM, closing SPEED px a frame
+const edgeAt = (f) => Math.max(0, FULL - Math.max(0, f - SHUT_FROM) * SPEED), SHUT = SHUT_FROM + Math.ceil(FULL / SPEED);
+
+/* ---------- the child ---------- */
+const PACE = IB.runLen(KID) / 8, RUN_AT = 40, NR = 11, P0 = 5 / 8;   // lands on phase 0 (near foot) after 11 drawings
+const XR = LANE[0] - 96, X0 = XR - NR * PACE, AY = Y - F.ankle * H;
+const land = IB.run(XR, Y, KID, 0), STRIDE = 0.1, SQ = IB.walkLen(KID, STRIDE) / 4, XW = land.feet[1][0] - STRIDE * H;   // the sidestep's body: its first near foot where the run landed
+const squeeze = (j) => {
+  const p = IB.walk(XW + j * SQ, Y, KID, (j / 4) % 1, { stride: STRIDE }), sh = p.hip[1] - 6 - (F.torso - 0.012) * H;
+  return { ...p, hip: [p.hip[0], p.hip[1] - 6], lean: -0.12, nod: -0.05, hands: [[p.hip[0] + 0.05 * H, sh - 0.22 * H], [p.hip[0] - 0.02 * H, sh - 0.21 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'flat' } };
+};
+const SQ_AT = RUN_AT + NR * 2 + 2, OUT = SQ_AT + 10;   // five squeeze drawings, then out at a run
+const LAST = squeeze(4), XO = LAST.feet[1][0] - 0.22 * H, NO = 4, OUT_END = OUT + NO * 2;   // the run out: its first landing is the squeeze's last planted foot; four drawings to the far foot's landing
+const PLANT = IB.run(XO + NO * PACE, Y, KID, NO / 8).feet[0][0];
+const bent = (() => {
+  const hip = [PLANT + 0.05 * H, Y - (F.ankle + F.shin + F.thigh) * H + 0.09 * H];
+  return { hip, lean: 0.72, nod: 0.12, feet: [[PLANT, AY, 0], [PLANT + 0.12 * H, AY, 0]], hands: [[hip[0] + 0.22 * H, hip[1] + 0.08 * H], [hip[0] + 0.2 * H, hip[1] + 0.1 * H]], hand: ['relax', 'relax'], face: { eye: 'closed', mouth: 'open' } };
+})();
+const ACT = [
+  [OUT_END + 2, { ...bent, hip: [PLANT + 0.1 * H, bent.hip[1] - 0.05 * H], lean: 0.3, feet: [[PLANT, AY, 0], [PLANT + 0.07 * H, AY - 0.05 * H, 0.3]], hands: [[PLANT + 0.3 * H, bent.hip[1] - 0.2 * H], [PLANT + 0.26 * H, bent.hip[1] - 0.14 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } }],
+  [OUT_END + 4, bent],
+];
+function kidOn(f) {
+  if (f < RUN_AT) return null;
+  if (f < SQ_AT) { const n = (f - RUN_AT) >> 1; return { ...IB.run(X0 + n * PACE, Y, KID, (P0 + n / 8) % 1), face: { mouth: 'open' } }; }
+  if (f < OUT) return squeeze((f - SQ_AT) >> 1);
+  if (f <= OUT_END) { const n = (f - OUT) >> 1; return { ...IB.run(XO + n * PACE, Y, KID, n / 8), face: { eye: 'wide', mouth: 'open' } }; }
+  return IB.held(ACT, f);
+}
+const kidAt = (t) => { const f = IB.frame(IB.twos(t)), p = kidOn(f); if (!p) return null; return { ...p, prev: kidOn(f - 2) || p }; };
+const PUFFS = [96, 108], SCRAPE = SQ_AT + 4;
+
+IB.actors = (t) => ({ gate: edgeAt(IB.frame(t)), kid: kidAt(t) });
+
+MG.scene({
+  title: 'school / late-gate-run',
+  duration: 6.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    ctx.save(); IB.crop(ctx, FRAME);
+    const tt = IB.twos(t), f = IB.frame(tt), open = edgeAt(IB.frame(t)) / FULL, p = kidAt(t);
+    IB.smear(ctx, 820, Y - 9, 1500, { h: 14, seed: 9 });
+    IB.schoolGate(ctx, G, { ...GATE, open, layer: 'back' });
+    if (p) {
+      IB.backpack(ctx, p, KID, { ...BAG, part: 'bag' });
+      IB.figure(ctx, p, { ...KID, face: p.face, tuck: p.lean > 0.3 }, 'far');
+      IB.backpack(ctx, p, KID, { ...BAG, part: 'strap' });
+      const j = IB.figure(ctx, p, { ...KID, face: p.face, tuck: p.lean > 0.3 }, 'near');
+      if (f >= SCRAPE && f < SCRAPE + 2) IB.shake(ctx, p.hip[0] - 0.2 * H, p.hip[1] - 0.2 * H, 26, { a: Math.PI + 0.3, n: 3, w: 2.6, seed: 660 });
+      PUFFS.forEach((at, i) => { const k = (f - at) >> 1; if (f >= at && k < 3) IB.breath(ctx, j.headAt, { k, big: 0.8, seed: 300 + i * 20 }); });
+    }
+    IB.schoolGate(ctx, G, { ...GATE, open, layer: 'front' });
+    const b = IB.drawn(tt, SHUT / 24), post = IB.gateLane(G, 0);
+    if (b >= 0 && b < 2) IB.burst(ctx, [post[0] + 30, post[1] - GATE.panelH * 0.6], { n: 3, a0: -0.5, da: 0.5, r0: 34 + b * 10, r1: 70 + b * 8, w: 3, seed: 310 + b * 5 });
+    if (b >= 0 && b < 4) IB.shake(ctx, post[0] + 10, post[1] - GATE.panelH * 0.35, 40, { a: 0, n: 2, w: 2.6, seed: 680 + b * 7 });
+    ctx.restore();
+  },
+});
+</script>

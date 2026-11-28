@@ -12,7 +12,7 @@
 <script src="../../kit/props/citylife.js"></script>
 <script>
 /* 서울 남산: 한옥 지붕들 너머로 남산과 N서울타워가 서 있고, 두 대의 케이블카가 한 줄에 매달려 하나는 오르고 하나는 내려온다. 출발할 때 덜컹 흔들린 차가 산 중턱에서 서로 엇갈리고, 까치 두 마리가 지붕 위를 가로질러 날아간다. 원본에 없는 창작 장면이다. 전달하는 생각: 오르는 것과 내려가는 것은 가운데에서 한 번 스친다.
-   Motion notes: one locked wide shot, 8 s. The hill rises 300 px from the line behind the houses and the tower stands 420 px on it. The two cars are machines on ones: they leave their stations at 0.5 s, ease in over 0.5 s (a smoothstep start) and travel the cable's length in 6 s, passing at its middle at 3.5 s; on leaving each swings on its grip, 0.08 rad decaying over 5 drawings (a damped sine, IB.bob's shape). The magpies cross on twos, wings alternating each drawing. The roofs in front are still. Colours: the hill's mint, the cars' yellow, the tower's paper white; the roofs charcoal. */
+   Motion notes: one locked shot (IB.crop of a 1560 px window, 1.23x), 8 s. The hill rises 300 px from the line behind the houses and the tower stands 420 px on it. The two cars are machines on ones: they leave their stations at 0.5 s, ease in over 0.5 s (a smoothstep start) and travel the cable's length in 6 s, passing at its middle at 3.5 s; on leaving each swings on its grip, 0.08 rad decaying over 5 drawings (a damped sine, IB.bob's shape). The magpies cross on twos, wings alternating each drawing. The roofs in front are still. Colours: the hill's mint, the cars' yellow, the tower's paper white; the roofs charcoal. */
 const LOW = [260, 640], HIGH = [1330, 455], GAP = 22, START = 0.5, RUN = 6;
 const along = (u) => { const k = MG.clamp(u, 0, 1), e = k < 0.083 ? (k / 0.083) ** 2 * 0.0415 : k > 0.917 ? 1 - ((1 - k) / 0.083) ** 2 * 0.0415 : k; return e; };   // ease in and out of the stations
 const carAt = (t, up) => { const u = along((t - START) / RUN), w = up ? u : 1 - u, off = up ? 0 : GAP; return [MG.lerp(LOW[0], HIGH[0], w), MG.lerp(LOW[1], HIGH[1], w) + off]; };
@@ -28,8 +28,9 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const ff = Math.floor(t * 24) / 24, tt = IB.twos(t), d = Math.round(tt * 12);
-    IB.cloud(ctx, [200, 620, 210, 58], { seed: 3 });
-    IB.cloud(ctx, [1500, 1840, 160, 52], { seed: 4 });
+    IB.crop(ctx, [140, 170, 1560]);
+    IB.cloud(ctx, [280, 700, 260, 58], { seed: 3 });
+    IB.cloud(ctx, [1180, 1520, 230, 52], { seed: 4 });
     IB.namsanTower(ctx, [1450, 880], { h: 420, hill: 300 });
     IB.skyline(ctx, 880);
     // the stations and the two cables

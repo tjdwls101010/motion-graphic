@@ -1,0 +1,61 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>city / seoul-banpo-fountain</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/props/traffic.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/sets/city.js"></script>
+<script src="../../kit/sets/landmarks.js"></script>
+<script src="../../kit/props/citylife.js"></script>
+<script>
+/* 서울 한강: 남산타워와 롯데타워가 보이는 강변길로 자전거 두 대가 달리는데, 반포대교 난간에서 분수가 한꺼번에 쏟아지기 시작한다. 앞서던 사람은 그대로 지나가고, 뒤따르던 사람은 속도를 줄여 멈춰 서서 한 발을 땅에 딛고 분수를 가리킨다. 원본에 없는 창작 장면이다. 전달하는 생각: 같은 길에서도 멈추는 사람만 그 풍경을 본다.
+   Motion notes: one locked wide shot, 8 s. The far bank's skyline rises over the bridge: Namsan and its tower far left, the Lotte World Tower far right; the bridge's deck runs low over the river across the whole frame. The fountain jets come on from 1.5 s over 4 drawings (each falls further, IB.fountainBridge k) and are a new drawing every 2 frames after, the river's waves too. The cyclists ride on twos (IB.bicycle with IB.ride, the cranks one turn in twelve drawings): the first passes at 64 px a drawing and is gone by 4.0 s; the second rides at 48 px a drawing, slows from 2.0 s by 6 px a drawing to a stop at 2.67 s, puts her near foot down (2.75 s), and points at the fountain with her arm straight (2.92 s), her ponytail trailing a drawing (pose.prev); from 3.0 s she and the bridge's deck are still while the water keeps falling (water, like the reference's rain, is the exception to the still ending). Colours: the jets' and the river's blues, the hill's mint, the tower's sky blue, one cyclist's mint top. */
+const PATH = 980, RIVER = 560, DECK = 620, PI = Math.PI;
+const R1 = { ...IB.PEOPLE.commuter, h: 330, dir: 1, seed: 30 }, R2 = { ...IB.PEOPLE.jogger, h: 330, dir: 1, seed: 40 }, BS = 1.25;
+const ON = 36;
+const b1At = (f) => { const k = f >> 1, x = -500 + k * 64; return x > 2300 ? null : { x, crank: (k / 12) * PI * 2, alt: k % 2 }; };
+// the second: 48 px a drawing, then 6 px less each drawing from frame 48 until she stops
+const B2 = (() => { const xs = [], v0 = 48; let x = -260, v = v0; for (let k = 0; k <= 96; k++) { xs.push(x); const f = k * 2; if (f >= 48) v = Math.max(0, v - 6); x += v; } return xs; })();
+const STOPF = (() => { let k = 0; while (k < B2.length - 1 && B2[k + 1] !== B2[k]) k++; return k * 2; })();
+const b2At = (f) => { const k = Math.min(f >> 1, B2.length - 1), moving = f < STOPF; return { x: B2[k], crank: moving ? (k / 12) * PI * 2 : (STOPF / 24) * PI * 2 * 0 + ((STOPF >> 1) / 12) * PI * 2, alt: moving ? k % 2 : 0, stopped: !moving }; };
+const rider2 = (f) => {
+  const b = b2At(f), fit = IB.bikeFit([b.x, PATH], b.crank, { s: BS }), p = IB.ride(fit, R2, { lean: b.stopped ? 0.3 : 0.5 });
+  if (f >= STOPF + 2) { p.feet[1] = [fit.hip[0] + 0.05 * R2.h, PATH - IB.FIG.ankle * R2.h, 0]; p.hip = [fit.hip[0] + 6, fit.hip[1] + 4]; }   // the near foot down
+  if (f >= STOPF + 6) { const j = IB.joints(p, R2); p.hands[1] = IB.polar(j.sh, -0.75, 0.285 * R2.h); p.hand = ['grip', 'point']; p.nod = -0.2; p.face = { eye: 'wide', mouth: 'open' }; }
+  return { pose: p, bike: b };
+};
+const r2With = (f) => { const cur = rider2(f); return { ...cur, pose: { ...cur.pose, prev: f > 0 ? rider2(f - 2).pose : undefined } }; };
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)), b1 = b1At(f); return { rider1: b1 && b1.x, rider2: r2With(f).pose, fountain: f < ON ? 0 : Math.min(1, (f - ON + 2) / 8), water: Math.round(IB.twos(t) * 12) }; };
+
+MG.scene({
+  title: 'city / seoul-banpo-fountain',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), d = Math.round(tt * 12);
+    IB.namsanTower(ctx, [300, RIVER - 6], { h: 260, hill: 140, lw: 2.6 });
+    IB.lotteTower(ctx, [1650, RIVER - 6], { h: 520, lw: 2.6 });
+    [[640, 770, 400], [800, 920, 440], [1120, 1250, 420], [1340, 1460, 450]].forEach(([x0, x1, top], i) => IB.tower(ctx, [x0, x1, top, i % 2 ? 'v' : 'dots'], { base: RIVER - 6, seed: 300 + i * 20 }));
+    IB.skyline(ctx, RIVER - 6);
+    IB.river(ctx, [0, 1920], RIVER, { d, h: PATH - RIVER - 40 });
+    IB.fountainBridge(ctx, [-40, 1960, DECK], { k: f < ON ? 0 : Math.min(1, (f - ON + 2) / 8), d });
+    IB.smear(ctx, 960, PATH - 6, 2000, { h: 16, seed: 9 });
+    const b1 = b1At(f);
+    if (b1) { const fit = IB.bicycle(ctx, [b1.x, PATH], b1, { s: BS }); IB.figure(ctx, IB.ride(fit, R1, { lean: 0.5 }), { ...R1, face: { mouth: 'smile' } }); }
+    const r2 = r2With(f);
+    IB.bicycle(ctx, [r2.bike.x, PATH], r2.bike, { s: BS });
+    IB.figure(ctx, r2.pose, { ...R2, face: r2.pose.face || { mouth: 'smile' } });
+  },
+});
+</script>

@@ -41,8 +41,8 @@ MG.scene({
     SAMPLE.cell(ctx, Q, [0, ROAD + 40 - Q[3], Q[2], Q[3]], () => {
       const u = (((t - POSTER + 1.04) % 2.5) + 2.5) % 2.5;
       IB.seg(ctx, -20, ROAD + 6, 720, ROAD + 6, { w: 3.4, seed: 661 });
-      IB.cab(ctx, [-200 + 520 * u, ROAD], { spin: (520 * u) / 34 });
-    }, 'IB.cab(at, { spin }) — 520 px/s on ones');
+      IB.cab(ctx, [-200 + 520 * u, ROAD], { spin: (520 * u) / 34, lit: u % 2 < 1 });
+    }, 'IB.cab(at, { spin, lit }) — 520 px/s on ones');
   },
 });
 </script>

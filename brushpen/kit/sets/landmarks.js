@@ -108,7 +108,7 @@
     const W = (v) => (v < 0.06 ? 0.21 : v < 0.3 ? lerp(0.19, 0.08, (v - 0.06) / 0.24) : v < 0.6 ? lerp(0.075, 0.035, (v - 0.3) / 0.3) : lerp(0.032, 0.008, (v - 0.6) / 0.35));
     const side = (sd) => [0, 0.06, 0.12, 0.2, 0.3, 0.42, 0.6, 0.8, 0.95].map((v) => k(sd * W(v), v));
     poly(ctx, [...side(-1), ...side(1).reverse()], C.mustard, lw, s, true);
-    poly(ctx, [k(-0.17, 0), k(-0.1, 0.12), k(0, 0.16), k(0.1, 0.12), k(0.17, 0)], C.bg, lw, s + 1, true);           // the great arch, cut out
+    poly(ctx, Array.from({ length: 13 }, (_, i) => { const a = Math.PI * (i / 12); return k(-0.17 * Math.cos(a), 0.16 * Math.sin(a)); }), C.bg, lw, s + 1, false);   // the great arch, cut out (a half ellipse on a flat base)
     for (const [v, w] of [[0.12, 0.155], [0.3, 0.09], [0.6, 0.042]]) poly(ctx, [k(-w, v), k(-w, v + 0.02), k(w, v + 0.02), k(w, v)], C.paper, lw, s + 2 + v * 10);   // the platforms
     for (let v = 0.16; v < 0.92; v += 0.045) { const a = W(v), b = W(v + 0.045); line(ctx, [k(-a, v), k(b, v + 0.045)], lw * 0.4, s + 10 + v * 100); line(ctx, [k(a, v), k(-b, v + 0.045)], lw * 0.4, s + 11 + v * 100); }
     poly(ctx, [k(-0.01, 0.95), k(-0.01, 0.98), k(0.01, 0.98), k(0.01, 0.95)], C.paper, lw, s + 30);

@@ -12,15 +12,15 @@
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/home.js"></script>
 <script src="../../kit/sets/schoolhall.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 식판을 든 아이가 급식실에 걸어 들어와 멈춰 앞을 살피고 뒤를 돌아보며 두리번거리다, 탁자의 친구가 손을 흔들자 환해져 걸어가 몸을 숙여 식판을 내려놓고 긴 의자에 앉는다. 원본에 없는 창작 장면으로, 학교 식당 세트(IB.lunchTray, IB.trayGrips, IB.lunchTable)와 인물 리그의 걷기·앉기(IB.walk, IB.sit), 아이 체형(IB.PEOPLE.pupil, pupil2)을 썼다. 전달하는 생각: 낯선 곳에서 아는 얼굴 하나가 자리를 만든다.
-   Motion notes: one locked shot, 7 s, framed on a 1200 px wide region of the stage enlarged 1.6 times (IB.crop), so the children (290 px on the stage, headK 1.3) stand 464 px on screen with lines thickened with them (4.5 px, as the reference's enlarged drawings do); the table is end-on (top 0.43 h, benches at IB.sit's seat) under one white pendant lamp. The child carries the tray close in both hands (IB.trayGrips: tray centre 0.25 h ahead of and 0.05 h above the hip, so it rides the walk's bob). Walk in from off the left edge, 18 drawings on twos at IB.walkLen / 12 = 20.3 px a drawing (from phase 5/6, so the stop lands on 1/3: one foot planted, the other put down where it is), stop at 1.5 s with one drawing thrown forward (lean 0.1) and the stand. Looking round: 1.75 s the head tips up to look ahead (nod -0.12), 2.08 s the whole figure turns to look back over the way it came (mirrored about the hips, tray and all; the hips stay put and the spine does not tip, so the curls do not trail), 2.42 s turns front again. 2.5 s the friend at the table waves: one drawing with the hand dropped (anticipation), one with the open hand up past the wave, then 12 drawings swapping side, middle, other side, middle on twos from 2.67 s with no pose.prev (a trail would average the two sides away), the hand down through one drawing at 3.67 s. The child sees it on the wave's third drawing: 2.83 s a dip (hips 6 px down, nod 0.12, eyes shut), 2.92 s springs up past the stand onto its toes (heels up 0.4 rad lifting the ankles 13 px, so the hips go 8 px up with the toes still on the floor; spine back 0.12, eyes wide, mouth open), 3.0 s settles smiling. Walk to the table, 23 walk drawings from 3.17 s and then the stop drawing, stopping on 1/3 again beside the bench at 5.08 s (thrown, then stand). Puts the tray down in a bow: 5.33 s half way (lean 0.4, knees giving 0.04 h), 5.42 s down past (lean 0.85, hips 0.085 h lower), 5.5 s the tray on the table (lean 0.8); hands off and up through one drawing to the stand at 5.67 s. Sits in two drawings that step the feet from where they stood to under the table (5.83 s, 5.92 s: each drawing one foot planted, the other lifted 0.05 h), lands 4 px past the seat at 6.0 s and settles at 6.08 s with both hands on the tray. Every drawing passes the one before as pose.prev except the friend's wave. Still from 6.17 s, when the head's one-drawing trail has settled. Colours: the child's yellow, the friend's lavender, the mint greens on the trays. */
+   Motion notes: 7 s in five shots (IB.shot, on ones): 0-1.75 s the hall with its lamp as she walks in, pushing from 1500 to 1200; 1.75 s a cut to her face looking round (640); 2.42 s a cut to what she finds, the friend about to wave (640); 2.83 s a cut back to her face lighting up (640); 3.17 s a cut to both with the table between them (1150), easing with her walk to 1000 over 48 frames, and from 5.42 s a slow push to 760 on the two of them sitting together. The children are 290 px on the stage (headK 1.3) with lines thickened with the zoom, as the reference's enlarged drawings do; the table is end-on (top 0.43 h, benches at IB.sit's seat) under one white pendant lamp. The child carries the tray close in both hands (IB.trayGrips: tray centre 0.25 h ahead of and 0.05 h above the hip, so it rides the walk's bob). Walk in from off the left edge, 18 drawings on twos at IB.walkLen / 12 = 20.3 px a drawing (from phase 5/6, so the stop lands on 1/3: one foot planted, the other put down where it is), stop at 1.5 s with one drawing thrown forward (lean 0.1) and the stand. Looking round: 1.75 s the head tips up to look ahead (nod -0.12), 2.08 s the whole figure turns to look back over the way it came (mirrored about the hips, tray and all; the hips stay put and the spine does not tip, so the curls do not trail), 2.42 s turns front again. 2.5 s the friend at the table waves: one drawing with the hand dropped (anticipation), one with the open hand up past the wave, then 12 drawings swapping side, middle, other side, middle on twos from 2.67 s with no pose.prev (a trail would average the two sides away), the hand down through one drawing at 3.67 s. The child sees it on the wave's third drawing: 2.83 s a dip (hips 6 px down, nod 0.12, eyes shut), 2.92 s springs up past the stand onto its toes (heels up 0.4 rad lifting the ankles 13 px, so the hips go 8 px up with the toes still on the floor; spine back 0.12, eyes wide, mouth open), 3.0 s settles smiling. Walk to the table, 23 walk drawings from 3.17 s and then the stop drawing, stopping on 1/3 again beside the bench at 5.08 s (thrown, then stand). Puts the tray down in a bow: 5.33 s half way (lean 0.4, knees giving 0.04 h), 5.42 s down past (lean 0.85, hips 0.085 h lower), 5.5 s the tray on the table (lean 0.8); hands off and up through one drawing to the stand at 5.67 s. Sits in two drawings that step the feet from where they stood to under the table (5.83 s, 5.92 s: each drawing one foot planted, the other lifted 0.05 h), lands 4 px past the seat at 6.0 s and settles at 6.08 s with both hands on the tray. Every drawing passes the one before as pose.prev except the friend's wave. Still from 6.17 s, when the head's one-drawing trail has settled. Colours: the child's yellow, the friend's lavender, the mint greens on the trays. */
 const F = IB.FIG, C = IB.C, FLOOR = 960, H = 290;
 const KID = { ...IB.PEOPLE.pupil, h: H, dir: 1, seed: 40 }, FRIEND = { ...IB.PEOPLE.pupil2, h: H, dir: -1, seed: 60 };
 const PACE = IB.walkLen(KID) / 12, AY = FLOOR - F.ankle * H;
 const N1 = 18, P0 = 5 / 6, XS1 = 505, X0 = XS1 - N1 * PACE, N2 = 24, XS2 = XS1 + N2 * PACE, PH = (P0 + N1 / 12) % 1;   // both stops land on phase 1/3
 const SEAT = 1000, TABLE = [1167, FLOOR], TOP = FLOOR - 0.43 * H, EDGE = TABLE[0] - 0.95 * H / 2;
-const FRAME = [300, 380, 1200];   // the shot: this 1200 px wide region of the stage, enlarged 1.6 times (IB.crop)
 const SPOT = [EDGE + 66, TOP - 8], FRIEND_SEAT = TABLE[0] + 0.95 * H / 2 + 0.1 * H, FRIEND_TRAY = [TABLE[0] + 62, TOP - 8];
 
 /* ---------- the child ---------- */
@@ -74,6 +74,16 @@ const WAVE = [64, 88];
 const friendAt = (t) => { const f = IB.frame(IB.twos(t)), p = IB.held(FRIEND_ACT, f); return { ...p, prev: f >= WAVE[0] && f < WAVE[1] ? undefined : IB.held(FRIEND_ACT, Math.max(0, f - 2)) }; };
 
 IB.actors = (t) => ({ kid: kidAt(t), friend: friendAt(t) });
+const SHOTS = [
+  [0, { at: [900, 640], w: 1500 }],
+  [0, { at: [800, 720], w: 1200 }, 'push', 40],   // the hall, as she walks in
+  [42, { at: [540, 735], w: 640 }, 'cut'],   // her face, looking round
+  [58, { at: [1320, 770], w: 640 }, 'cut'],   // what she finds: the friend, about to wave
+  [68, { at: [530, 735], w: 640 }, 'cut'],   // her face lighting up
+  [W2 + 2, { at: [880, 740], w: 1150 }, 'cut'],   // both, with the table between them
+  [W2 + 6, { at: [1100, 745], w: 1000 }, 'ease', 48],   // along with her to the table
+  [B + 8, { at: [1160, 812], w: 760 }, 'push', 40],   // in on the two of them sitting together
+];
 
 MG.scene({
   title: 'school / lunch-tray-seat',
@@ -82,26 +92,26 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const k = kidAt(t), fr = friendAt(t), kl = { ...KID, face: k.face, tuck: (k.lean || 0) > 0.3 }, fl = { ...FRIEND, face: fr.face };
-    ctx.save(); IB.crop(ctx, FRAME);
-    IB.hangingLamp(ctx, [TABLE[0], 560], { fill: C.paper });
-    IB.smear(ctx, 900, FLOOR - 7, 1300, { h: 13, seed: 9 });
-    const onTable = IB.frame(IB.twos(t)) >= B + 8, kid = (only) => {
-      ctx.save();
-      if (k.back) { ctx.translate(2 * k.hip[0], 0); ctx.scale(-1, 1); }
-      if (only !== 'near') IB.figure(ctx, k, kl, 'far');
-      if (only !== 'near' && k.tray && !onTable) IB.lunchTray(ctx, k.tray);
-      if (only !== 'far') IB.figure(ctx, k, kl, 'near');
-      ctx.restore();
-    };
-    IB.lunchTable(ctx, TABLE, { h: H, layer: 'bench' });
-    IB.figure(ctx, fr, fl, 'far');
-    if (k.seated) kid('far');
-    IB.lunchTable(ctx, TABLE, { h: H, layer: 'table' });
-    IB.lunchTray(ctx, FRIEND_TRAY, { seed: 1020 });
-    if (onTable) IB.lunchTray(ctx, SPOT);
-    if (k.seated) kid('near'); else kid();
-    IB.figure(ctx, fr, fl, 'near');
-    ctx.restore();
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.hangingLamp(ctx, [TABLE[0], 560], { fill: C.paper });
+      IB.smear(ctx, 900, FLOOR - 7, 1300, { h: 13, seed: 9 });
+      const onTable = IB.frame(IB.twos(t)) >= B + 8, kid = (only) => {
+        ctx.save();
+        if (k.back) { ctx.translate(2 * k.hip[0], 0); ctx.scale(-1, 1); }
+        if (only !== 'near') IB.figure(ctx, k, kl, 'far');
+        if (only !== 'near' && k.tray && !onTable) IB.lunchTray(ctx, k.tray);
+        if (only !== 'far') IB.figure(ctx, k, kl, 'near');
+        ctx.restore();
+      };
+      IB.lunchTable(ctx, TABLE, { h: H, layer: 'bench' });
+      IB.figure(ctx, fr, fl, 'far');
+      if (k.seated) kid('far');
+      IB.lunchTable(ctx, TABLE, { h: H, layer: 'table' });
+      IB.lunchTray(ctx, FRIEND_TRAY, { seed: 1020 });
+      if (onTable) IB.lunchTray(ctx, SPOT);
+      if (k.seated) kid('near'); else kid();
+      IB.figure(ctx, fr, fl, 'near');
+    });
   },
 });
 </script>

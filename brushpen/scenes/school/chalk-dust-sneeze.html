@@ -11,9 +11,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/classroom.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 선생님이 칠판을 지우개로 크게 박박 지우자 분필 가루 구름이 피어올라 얼굴을 감싸고, 코를 찡그리며 머리가 점점 뒤로 젖혀지는 세 장 끝에 "에취!" 앞으로 확 숙이는 재채기에 가루 구름이 흩어진다. 원본에 없는 창작 장면으로, 칠판·지우개·분필 가루 구름·아이 책상과 의자(kit/props/classroom.js), 터짐선 IB.burst, 일상 인물 teacher·pupil2를 썼다. 전달하는 생각: 재채기는 터지기 전의 젖힘이 길수록 크다.
-   Motion notes: one locked shot, 6.5 s, framed close on the teacher's face: teacher 580 px (line 3.9 px) facing a board that runs off the left edge, child 394 px at her desk. All on twos; every drawing passes the one before as pose.prev for its first two frames, except through the rub (two drawings swapping). 0.5 s: an anticipation drawing with the eraser cocked over her head, then the rub: two drawings swapping on twos for 36 frames (18 drawings), rubbing in rows across the board below her chin: each pair a far stroke at arm's length (0.28 h from the shoulder) and a near one 0.13 h ahead of it at the same height, from 0.06 h below the shoulder down 0.0125 h (7 px) a pair; the spine 0.3 / 0 rad, the hips 5 px back and 4 px down / 10 px forward. The eraser sits on the hand the rig draws (IB.ik), and the board is wiped along its 18 positions in a 90 px band (the eraser's length): the writing there is simply gone, with one faint grey streak (a step lighter than the charcoal, half transparent) along each sideways stroke and none on the step between rows (IB.chalkboard state.wipe). A wider, brighter haze along a climbing diagonal read as a grey box behind her head on the poster. 1.33 s: the chalk dust cloud starts beside the eraser and grows over 6 drawings to r 133 px (35, 60, 78, 90, 97, 100%), rising 8.5 px a drawing for 8 drawings, then holds still in front of her face. 2.08 s: the eraser comes down to her waist (an in-between and the hold). The three drawings before the sneeze, each held, the last longest: 2.42 s nod -0.1 with the eyes shut and the brow down (0.33 s), 2.75 s nod -0.2, lean -0.1, mouth open (0.33 s), 3.08 s nod -0.32, lean -0.19, hips 8.5 px back (0.5 s). 3.58 s the sneeze in one drawing: lean 0.42, nod 0.3, hips 10 px forward and 7 px down, a four-line burst at the mouth for 2 drawings, and the cloud blown left into seven puffs that fly further and shrink over 4 drawings, wind lines on the first 2; a rebound drawing and the bent hold. The child leans in at 3.08 s and flinches back on the sneeze (eyes shut), then stares (wide eyes, open mouth). Bubble 3.75-5.0 s in the hold; at 5.17 s she straightens with a frown in an in-between and the hold; still from 5.33 s. Colours: navy trousers, the yellow eraser, the lavender tee; the board is charcoal, the dust white with a grey (not ink) outline. */
+   Motion notes: 6.5 s in five shots (IB.shot, on ones): 0.25-2.33 s a slow push from the whole stage (1920) to 1500 on her through the rub; 2.42 s, on the first of the three drawings before the sneeze, a cut to a close-up of her face and the cloud (640) that keeps pushing in to 540 and tipping to 0.07 rad until the sneeze; 3.58 s the sneeze snaps the frame back out to a medium shot (1150, the tilt gone) with a 22 px jolt, the blown puffs and the bubble inside it; 4.08 s a cut to the child's stare (600); 4.58 s a cut to both of them (1700) as she straightens. Teacher 580 px (line 3.9 px) facing a board that runs off the left edge, child 394 px at her desk. All on twos; every drawing passes the one before as pose.prev for its first two frames, except through the rub (two drawings swapping). 0.5 s: an anticipation drawing with the eraser cocked over her head, then the rub: two drawings swapping on twos for 36 frames (18 drawings), rubbing in rows across the board below her chin: each pair a far stroke at arm's length (0.28 h from the shoulder) and a near one 0.13 h ahead of it at the same height, from 0.06 h below the shoulder down 0.0125 h (7 px) a pair; the spine 0.3 / 0 rad, the hips 5 px back and 4 px down / 10 px forward. The eraser sits on the hand the rig draws (IB.ik), and the board is wiped along its 18 positions in a 90 px band (the eraser's length): the writing there is simply gone, with one faint grey streak (a step lighter than the charcoal, half transparent) along each sideways stroke and none on the step between rows (IB.chalkboard state.wipe). A wider, brighter haze along a climbing diagonal read as a grey box behind her head on the poster. 1.33 s: the chalk dust cloud starts beside the eraser and grows over 6 drawings to r 133 px (35, 60, 78, 90, 97, 100%), rising 8.5 px a drawing for 8 drawings, then holds still in front of her face. 2.08 s: the eraser comes down to her waist (an in-between and the hold). The three drawings before the sneeze, each held, the last longest: 2.42 s nod -0.1 with the eyes shut and the brow down (0.33 s), 2.75 s nod -0.2, lean -0.1, mouth open (0.33 s), 3.08 s nod -0.32, lean -0.19, hips 8.5 px back (0.5 s). 3.58 s the sneeze in one drawing: lean 0.42, nod 0.3, hips 10 px forward and 7 px down, a four-line burst at the mouth for 2 drawings, and the cloud blown left into seven puffs that fly further and shrink over 4 drawings, wind lines on the first 2; a rebound drawing and the bent hold. The child leans in at 3.08 s and flinches back on the sneeze (eyes shut), then stares (wide eyes, open mouth). Bubble 3.75-5.0 s in the hold; at 5.17 s she straightens with a frown in an in-between and the hold; still from 5.33 s. Colours: navy trousers, the yellow eraser, the lavender tee; the board is charcoal, the dust white with a grey (not ink) outline. */
 const F = IB.FIG, FLOOR = 1020, H = 580, KH = Math.round(H * 0.68);
 const TX = 950, PX = 1620, U = H / 340;   // U: px offsets below were first set on a 340 px teacher
 const T = { ...IB.PEOPLE.teacher, h: H, dir: -1, seed: 12 }, P = { ...IB.PEOPLE.pupil2, h: KH, dir: -1, seed: 34 };
@@ -77,6 +78,16 @@ function state(t) {
   return { teacher, pupil, wipe, dust: d < 0 || blow > 3 ? null : { k: Math.min(8, d), blow } };
 }
 IB.actors = (t) => { const s = state(t); return { teacher: s.teacher, pupil: s.pupil, dust: s.dust, wiped: s.wipe.length }; };
+const SNEEZE = 86;
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [6, { at: [900, 600], w: 1500 }, 'push', 50],   // in on her through the rub
+  [58, { at: [915, 560], w: 640 }, 'cut'],   // her face as the first of the three drawings shuts her eyes
+  [58, { at: [930, 550], w: 540, tilt: 0.07 }, 'push', SNEEZE - 58],   // creeping in and tipping over through the three
+  [SNEEZE, { at: [770, 610], w: 1150 }, 'snap'],   // the sneeze throws the frame back out
+  [98, { at: [1590, 740], w: 600 }, 'cut'],   // the child, staring
+  [110, { at: [1020, 600], w: 1700 }, 'cut'],   // both of them as she straightens
+];
 
 const BOARD_TEXT = [...IB.chalkScript([-120, 270], 1000, { seed: 21, size: 38 }), ...IB.chalkScript([-120, 370], 560, { seed: 22, size: 38 }), ...IB.chalkShape('circle', [580, 350], 44), ...IB.chalkShape('arrow', [700, 350], 44), ...IB.chalkScript([-120, 640], 300, { seed: 24, size: 38 }), ...IB.chalkScript([490, 520], 460, { seed: 23, size: 38 }), ...IB.chalkShape('triangle', [720, 610], 46), ...IB.chalkScript([790, 630], 200, { seed: 25, size: 38 })];
 
@@ -87,24 +98,26 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t), s = state(t), p = s.teacher;
-    IB.chalkboard(ctx, [450, 460], { strokes: BOARD_TEXT, wipe: s.wipe.length ? s.wipe : null, smudges: [[60, 430, 300, 46]] }, { w: 1440, h: 600, lw: 4.2, frame: 22, wipeW: 0.155 * H });
-    // the child at her desk
-    IB.schoolChair(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), seed: 900 });
-    IB.schoolDesk(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'legs', seed: 920 });
-    IB.smear(ctx, PX - 0.2 * KH, FLOOR - 8, 0.95 * KH, { h: 15, seed: 3 });
-    IB.figure(ctx, s.pupil, { ...P, face: s.pupil.face }, 'far');
-    IB.schoolDesk(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'top', seed: 920 });
-    IB.figure(ctx, s.pupil, { ...P, face: s.pupil.face }, 'near');
-    // the teacher, the eraser between her arms
-    IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
-    const look = { ...T, face: p.face }, j = IB.figure(ctx, p, look, 'far');
-    const e = ERASER(p, j.hands[1]), rubbing = f >= RUB[0] && f < RUB[1];
-    IB.boardEraser(ctx, e, { rot: rubbing ? Math.PI / 2 : 0.15, w: 0.155 * H, hgt: 0.06 * H, fill: IB.C.yellow });
-    IB.figure(ctx, p, look, 'near');
-    if (s.dust) IB.chalkDust(ctx, DUST.from, s.dust, { r: 0.23 * H, dir: -1, rise: 5 * U });
-    const b = IB.drawn(IB.twos(t), 86 / 24);
-    if (b >= 0 && b < 2) IB.burst(ctx, [j.headAt[0] - 0.09 * H, j.headAt[1] + 0.02 * H], { n: 4, a0: Math.PI - 0.75, da: 0.5, r0: (14 + b * 14) * U, r1: (44 + b * 12) * U, w: 3.6, seed: 300 + b * 5 });
-    IB.bubble(ctx, ['에취!'], t, 3.75, { until: 5.0, tip: [j.headAt[0] - 0.1 * H, j.headAt[1] - 0.06 * H], x: j.headAt[0] - 0.55 * H, y: j.headAt[1] - 0.3 * H, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24), { jolt: [[SNEEZE, 22]] }), (ctx) => {
+      IB.chalkboard(ctx, [450, 460], { strokes: BOARD_TEXT, wipe: s.wipe.length ? s.wipe : null, smudges: [[60, 430, 300, 46]] }, { w: 1440, h: 600, lw: 4.2, frame: 22, wipeW: 0.155 * H });
+      // the child at her desk
+      IB.schoolChair(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), seed: 900 });
+      IB.schoolDesk(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'legs', seed: 920 });
+      IB.smear(ctx, PX - 0.2 * KH, FLOOR - 8, 0.95 * KH, { h: 15, seed: 3 });
+      IB.figure(ctx, s.pupil, { ...P, face: s.pupil.face }, 'far');
+      IB.schoolDesk(ctx, [PX, FLOOR], { h: KH, dir: -1, lw: IB.figLine(KH), only: 'top', seed: 920 });
+      IB.figure(ctx, s.pupil, { ...P, face: s.pupil.face }, 'near');
+      // the teacher, the eraser between her arms
+      IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 15, seed: 7 });
+      const look = { ...T, face: p.face }, j = IB.figure(ctx, p, look, 'far');
+      const e = ERASER(p, j.hands[1]), rubbing = f >= RUB[0] && f < RUB[1];
+      IB.boardEraser(ctx, e, { rot: rubbing ? Math.PI / 2 : 0.15, w: 0.155 * H, hgt: 0.06 * H, fill: IB.C.yellow });
+      IB.figure(ctx, p, look, 'near');
+      if (s.dust) IB.chalkDust(ctx, DUST.from, s.dust, { r: 0.23 * H, dir: -1, rise: 5 * U });
+      const b = IB.drawn(IB.twos(t), 86 / 24);
+      if (b >= 0 && b < 2) IB.burst(ctx, [j.headAt[0] - 0.09 * H, j.headAt[1] + 0.02 * H], { n: 4, a0: Math.PI - 0.75, da: 0.5, r0: (14 + b * 14) * U, r1: (44 + b * 12) * U, w: 3.6, seed: 300 + b * 5 });
+      IB.bubble(ctx, ['에취!'], t, 3.75, { until: 5.0, tip: [j.headAt[0] - 0.1 * H, j.headAt[1] - 0.06 * H], x: j.headAt[0] - 0.55 * H, y: j.headAt[1] - 0.3 * H, seed: 500 });
+    });
   },
 });
 </script>

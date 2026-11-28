@@ -10,9 +10,10 @@
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
 <script src="../../kit/props/classroom.js"></script>
+<script src="../../kit/camera.js"></script>
 <script>
 /* 선생님이 손바닥을 내밀며 "누가 풀어 볼까?" 묻자 뒷자리 아이가 몸을 웅크렸다가 엉덩이가 들릴 만큼 손을 번쩍 들고 흔들지만, 선생님이 정말 그 아이를 가리키는 순간 얼어붙고 든 손이 천천히 내려온다. 원본에 없는 창작 장면으로, 칠판·교탁·아이 책상과 의자(kit/props/classroom.js), 앉은 포즈 IB.sit, 일상 인물 teacher·pupil·pupil3, 흔들림선 IB.shake를 썼다. 전달하는 생각: 자신 있게 든 손과 정말 불렸을 때의 몸은 다르다.
-   Motion notes: one locked shot, 7 s, framed close so the seated children read: teacher 580 px (line 3.9 px), children 394 px (0.68 of her, headK 1.3, line 3.2 px) seated by IB.sit at school desks and chairs sized from their height (desk top 0.43 h off the floor, where IB.sit's hands rest); the board and the lectern run off the left edge. All acting on twos as [frame, drawing] tables read with IB.held; every drawing passes the drawing before it as pose.prev for its first two frames (a drawing on threes for all three), so heads and hair trail one drawing and every hold is dead still; the wave gets no prev. 0.5 s: the question, an anticipation (fist in at the chest), the open hand out one drawing past its mark, then held palm up; bubble 0.75-1.75 s, everything still under it. The front child shrinks over the desk on the question (two drawings, head bowed 0.22 rad toward the desk). 1.83 s: the back child sinks over the desk in two drawings (hips 7 px down, lean 0.3, fists, eyes shut), then throws the far arm up with the hips 24 px off the seat (one drawing), settles 9 px up, and waves: two drawings swapping on twos for 34 frames (17 drawings, the hand 61 px side to side, hips bouncing 9 px). The far arm is the one that goes up, behind the head, so it never covers the face (STYLE.md market: 앉은 인물); with the near arm the tee sleeve covered the whole head. The front child flinches for one drawing as the hand shoots up. 3.33 s: the teacher points: fist pulled back, one drawing past, then held at the back child. One drawing after the point lands the child jolts (shake marks over the hand for 3 drawings), then freezes with wide eyes for 0.5 s; the hand comes down slowly on threes, forward behind the head, in 5 drawings and rests on the desk at 4.79 s. The front child sits back relieved (eyes shut, smile) in an in-between, an overshoot and the hold. Still from 4.88 s. Three colours: navy trousers, the yellow and mint tees; the board is charcoal with white chalk scribbles (no real text). */
+   Motion notes: 7 s in five shots (IB.shot, on ones): 0-1.83 s the whole class pushing in from 1920 to 1700 under the question; 1.83 s a cut to the two children (1100) as the back one sinks, and a snap in to the back child (780) on the hand shooting up, held through the wave; 3.17 s a cut to the teacher (1000) as she pulls back and points; 3.58 s a cut to the one she pointed at (620), pushing in to 500 over 28 frames while the hand comes down; 4.83 s a cut to all three (1660). No tilt or jolt: the freeze is the hit. Teacher 580 px (line 3.9 px), children 394 px (0.68 of her, headK 1.3, line 3.2 px) seated by IB.sit at school desks and chairs sized from their height (desk top 0.43 h off the floor, where IB.sit's hands rest); the board and the lectern run off the left edge. All acting on twos as [frame, drawing] tables read with IB.held; every drawing passes the drawing before it as pose.prev for its first two frames (a drawing on threes for all three), so heads and hair trail one drawing and every hold is dead still; the wave gets no prev. 0.5 s: the question, an anticipation (fist in at the chest), the open hand out one drawing past its mark, then held palm up; bubble 0.75-1.75 s, everything still under it. The front child shrinks over the desk on the question (two drawings, head bowed 0.22 rad toward the desk). 1.83 s: the back child sinks over the desk in two drawings (hips 7 px down, lean 0.3, fists, eyes shut), then throws the far arm up with the hips 24 px off the seat (one drawing), settles 9 px up, and waves: two drawings swapping on twos for 34 frames (17 drawings, the hand 61 px side to side, hips bouncing 9 px). The far arm is the one that goes up, behind the head, so it never covers the face (STYLE.md market: 앉은 인물); with the near arm the tee sleeve covered the whole head. The front child flinches for one drawing as the hand shoots up. 3.33 s: the teacher points: fist pulled back, one drawing past, then held at the back child. One drawing after the point lands the child jolts (shake marks over the hand for 3 drawings), then freezes with wide eyes for 0.5 s; the hand comes down slowly on threes, forward behind the head, in 5 drawings and rests on the desk at 4.79 s. The front child sits back relieved (eyes shut, smile) in an in-between, an overshoot and the hold. Still from 4.88 s. Three colours: navy trousers, the yellow and mint tees; the board is charcoal with white chalk scribbles (no real text). */
 const F = IB.FIG, FLOOR = 1020, H = 580, KH = Math.round(H * 0.68);
 const TX = 470, AX = 1040, BX = 1620;
 const T = { ...IB.PEOPLE.teacher, h: H, dir: 1, seed: 10 }, A = { ...IB.PEOPLE.pupil, h: KH, dir: -1, seed: 30 }, B = { ...IB.PEOPLE.pupil3, h: KH, dir: -1, seed: 50 };
@@ -82,6 +83,16 @@ function drawing(act, f, still) {
 }
 const poses = (t) => { const f = IB.frame(t); return { teacher: drawing(T_ACT, f), front: drawing(A_ACT, f), back: drawing(B_ACT, f, (g) => g >= WAVE[0] && g < WAVE[1]) }; };
 IB.actors = poses;
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [4, { at: [1000, 600], w: 1700 }, 'push', 40],   // the question, the whole class
+  [44, { at: [1330, 760], w: 1100 }, 'cut'],   // the two children as the back one winds up
+  [48, { at: [1560, 680], w: 780 }, 'snap'],   // in on the hand shooting up
+  [76, { at: [620, 630], w: 1000 }, 'cut'],   // the teacher pulls back and points
+  [86, { at: [1600, 690], w: 620 }, 'cut'],   // the one she pointed at, frozen
+  [88, { at: [1610, 725], w: 500 }, 'push', 28],   // creeping in while the hand comes down
+  [116, { at: [1060, 640], w: 1660 }, 'cut'],   // all three: the point, the relief, the hand on the desk
+];
 
 const BOARD_TEXT = [...IB.chalkScript([-210, 310], 520, { seed: 11, size: 32 }), ...IB.chalkScript([-210, 400], 330, { seed: 12, size: 32 }), ...IB.chalkShape('box', [200, 384], 44), ...IB.chalkScript([-210, 580], 230, { seed: 13, size: 32 }), ...IB.chalkShape('triangle', [250, 570], 52)];
 
@@ -102,15 +113,17 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const f = IB.frame(t), P = poses(t);
-    IB.chalkboard(ctx, [40, 430], { strokes: BOARD_TEXT, smudges: [[-40, 500, 200, 40]] }, { w: 640, h: 460, lw: 4, frame: 20 });
-    IB.lectern(ctx, [TX - 0.46 * H, FLOOR], { h: H, dir: 1, lw: 3.8 });
-    IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 14, seed: 7 });
-    IB.figure(ctx, P.teacher, { ...T, face: P.teacher.face });
-    seat(ctx, AX, P.front, A, 860);
-    const jb = seat(ctx, BX, P.back, B, 900);
-    if (f >= 86 && f < 92) IB.shake(ctx, jb.hands[0][0], jb.hands[0][1] - 8, 32, { a: -Math.PI / 2, n: 2, span: 0.5, gap: 12, seed: 70 + (f >> 1) * 3, w: 3.2 });
-    const sh = shoulder(TP.ask, T);
-    IB.bubble(ctx, ['누가 풀어 볼까?'], t, 0.75, { until: 1.75, tip: [sh[0] + 0.09 * H, sh[1] - 0.12 * H], x: sh[0] + 0.5 * H, y: sh[1] - 0.36 * H, seed: 500 });
+    IB.film(ctx, IB.shot(SHOTS, Math.floor(t * 24)), (ctx) => {
+      IB.chalkboard(ctx, [40, 430], { strokes: BOARD_TEXT, smudges: [[-40, 500, 200, 40]] }, { w: 640, h: 460, lw: 4, frame: 20 });
+      IB.lectern(ctx, [TX - 0.46 * H, FLOOR], { h: H, dir: 1, lw: 3.8 });
+      IB.smear(ctx, TX, FLOOR - 10, 0.5 * H, { h: 14, seed: 7 });
+      IB.figure(ctx, P.teacher, { ...T, face: P.teacher.face });
+      seat(ctx, AX, P.front, A, 860);
+      const jb = seat(ctx, BX, P.back, B, 900);
+      if (f >= 86 && f < 92) IB.shake(ctx, jb.hands[0][0], jb.hands[0][1] - 8, 32, { a: -Math.PI / 2, n: 2, span: 0.5, gap: 12, seed: 70 + (f >> 1) * 3, w: 3.2 });
+      const sh = shoulder(TP.ask, T);
+      IB.bubble(ctx, ['누가 풀어 볼까?'], t, 0.75, { until: 1.75, tip: [sh[0] + 0.09 * H, sh[1] - 0.12 * H], x: sh[0] + 0.5 * H, y: sh[1] - 0.36 * H, seed: 500 });
+    });
   },
 });
 </script>

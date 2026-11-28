@@ -30,14 +30,16 @@
   const POD = loft([[0.55, 0.40, 0.78, -0.50, -0.14], [-0.6, 0.40, 0.74, -0.48, -0.12], [-1.5, 0.30, 0.46, -0.36, -0.14]]);
   const PODS = [...POD, ...POD.map(mirrorZ)];
 
-  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), blur (wheels at speed: rings instead of spokes), drs (rear flap open), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lw, seed.
+  /* racer(ctx, opts) — an open-wheel racing car. The view is IB.space's: at (stage point on the ground under the middle of the car), yaw (0: side on, nose right; -PI/2: head-on; PI/2: from behind), pitch (-PI/2: from straight above), roll, look (camera height: 0.02 is down on the tarmac, 0.3 a grandstand), f (lens: 1500 long, 600 wide). Where it is: x (metres along the track from the view's origin: + is the way the track runs), z (metres across it), heading (rad: the car turned away from the way the track runs, a drift or a spin; + turns its nose toward -z). The car itself: s (scale: 784 px long at 1), color (body), accent (stripes, wings' endplates, helmet), helmet, num (shown as a colour block on the nose's flank), steer (front wheels, rad, + turns the nose toward -z), spin (wheels' turn, rad: distance / radius), blur (wheels at speed: rings instead of spokes), drs (rear flap open), lit (rain light on), tyre (the sidewall band's colour), rake (nose-down pitch of the body, rad), bodyRoll (lean in a corner, rad), lw, seed.
      Returns { map, U, wheels: [stage points of the four contact patches], helmet: stage point } so a scene can put smoke at a tyre or a close-up on the helmet. */
   IB.racer = (ctx, o = {}) => {
     const U = 140 * (o.s || 1), color = o.color || C.navy, accent = o.accent || C.yellow, seed = o.seed || 1600, lw = o.lw || 2.6;
     const space = IB.space({ at: o.at || [960, 800], yaw: o.yaw || 0, pitch: o.pitch || 0, roll: o.roll || 0, f: o.f || 1500, look: o.look == null ? 0.18 : o.look });
     const rake = o.rake || 0, br = o.bodyRoll || 0, cr = Math.cos(rake), sr = Math.sin(rake), cb = Math.cos(br), sb = Math.sin(br);
     const body = ([x, y, z]) => { const y1 = y * cb - z * sb, z1 = y * sb + z * cb; return [x * cr - y1 * sr, x * sr + y1 * cr, z1]; };   // the sprung body pitches and rolls; wheels do not
-    const map = (p) => space([p[0] * U, p[1] * U, p[2] * U]);
+    const hd = o.heading || 0, ch = Math.cos(hd), shd = Math.sin(hd), px = o.x || 0, pz = o.z || 0;
+    const place = ([x, y, z]) => [x * ch - z * shd + px, y, x * shd + z * ch + pz];   // the car's own heading, then where it is on the track
+    const map = (p) => { const q = place(p); return space([q[0] * U, q[1] * U, q[2] * U]); };
     const near = (q) => q.every((p) => p[2] > -(o.f || 1500) * 0.85);
     const faces = [];   // { pts (stage), z, fill, w, kind }
     const add = (pts3, fill, opts = {}) => { const q = pts3.map(opts.unsprung ? (p) => p : body).map(map); if (!near(q)) return; faces.push({ pts: q, z: q.reduce((a, p) => a + p[2], 0) / q.length + (opts.bias || 0) * U, fill, w: opts.w == null ? lw : opts.w, line: opts.line, stroke: opts.stroke, closed: opts.closed !== false }); };
@@ -64,10 +66,11 @@
     add(flat(2.30, 2.52, -0.17, -0.95, 0.95), C.charcoal, { bias: -0.01 });
     [-0.99, 0.99].forEach((z) => add(quad(2.26, 2.84, -0.03, -0.30, z), accent));
     // rear wing: endplates, main plane, the DRS flap (open: lifted to near level), its pillar
-    const fy = o.drs ? -1.02 : -0.93;
+    const fy = o.drs ? -1.0 : -0.93;
     [-0.53, 0.53].forEach((z) => add([[-2.86, -0.30, z], [-2.36, -0.30, z], [-2.36, -1.0, z], [-2.86, -1.04, z]], accent));
-    add([[-2.80, -0.76, -0.52], [-2.45, -0.82, -0.52], [-2.45, -0.82, 0.52], [-2.80, -0.76, 0.52]], C.charcoal);
-    add(o.drs ? [[-2.64, fy, -0.52], [-2.40, fy - 0.02, -0.52], [-2.40, fy - 0.02, 0.52], [-2.64, fy, 0.52]] : [[-2.62, -0.86, -0.52], [-2.42, -0.98, -0.52], [-2.42, -0.98, 0.52], [-2.62, -0.86, 0.52]], C.charcoal, { bias: -0.005 });
+    add([[-2.45, -0.74, -0.52], [-2.78, -0.84, -0.52], [-2.78, -0.84, 0.52], [-2.45, -0.74, 0.52]], C.charcoal);   // main plane: leading edge low, trailing edge high (a steep wing shows as a band from behind)
+    add([[-2.30, -0.36, -0.40], [-2.55, -0.44, -0.40], [-2.55, -0.44, 0.40], [-2.30, -0.36, 0.40]], C.charcoal, { bias: -0.005 });   // beam wing
+    add(o.drs ? [[-2.64, fy, -0.52], [-2.40, fy - 0.02, -0.52], [-2.40, fy - 0.02, 0.52], [-2.64, fy, 0.52]] : [[-2.70, -0.86, -0.52], [-2.86, -1.02, -0.52], [-2.86, -1.02, 0.52], [-2.70, -0.86, 0.52]], C.charcoal, { bias: -0.005 });
     add(quad(-2.62, -2.52, -0.28, -0.78, 0), DARK);
     add([[-2.62, -0.38, -0.06], [-2.62, -0.38, 0.06], [-2.62, -0.47, 0.06], [-2.62, -0.47, -0.06]], o.lit ? C.red : DARK, { bias: -0.04 });   // rain light
     // mirrors on stalks
@@ -119,7 +122,7 @@
       if (fc.stroke || !fc.fill) return IB.ink(ctx, fc.pts, { closed: false, smooth: fc.pts.length > 2, w: fc.w, color: fc.line || C.ink, seed: seed + 200 + i, taper: false });
       IB.ink(ctx, fc.pts, { closed: true, smooth: false, fill: fc.fill, w: fc.w, seed: seed + 200 + i });
     });
-    return { map: (p) => space([p[0] * U, p[1] * U, p[2] * U]), U, wheels, helmet: hc };
+    return { map: (p) => space([p[0] * U, p[1] * U, p[2] * U]), U, wheels, helmet: hc };   // map: the view's space without the car's place, for things on the track
   };
 
   /* trackStrip(ctx, opts) — the circuit around a car, in the car's own space (pass the same view opts as IB.racer: at, yaw, pitch, look, f, s). x runs along the track (metres, + ahead of the car), from `from` to `to`; the track is `half` m either side of the car's line, with kerbs `kerb` m wide outside it in blocks 1.2 m long (yellow and white), a run-off, and walls `wall` m out with a catch fence above. `run` is how far the car has gone (metres): the kerbs and wall posts slide back by it, so a car held still in the frame races. Points behind the lens are dropped. */
@@ -195,7 +198,7 @@
       const cx = x + sd * 92 * s, cy = y + 4 * s;
       if (o.blink || mood === 'shut') IB.ink(ctx, [[cx - 34 * s, cy], [cx + 34 * s, cy]], { w: lw, seed: seed + 10 + sd });
       else {
-        const open = mood === 'tense' ? 13 : mood === 'wide' ? 30 : 22;
+        const open = mood === 'tense' ? 17 : mood === 'wide' ? 30 : 22;
         IB.ink(ctx, IB.ellipse(cx, cy, 38 * s, open * s, 14), { closed: true, fill: C.paper, w: lw * 0.8, seed: seed + 12 + sd });
         IB.oval(ctx, cx + ex * s, cy + 2 * s, 11 * s, Math.min(11, open - 2) * s, { fill: C.ink, w: 0, n: 8, seed: seed + 14 + sd });
       }

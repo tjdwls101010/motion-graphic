@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / lights-out-start</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 소등 출발: 그리드의 네 대, 폴 포지션 드라이버의 긴장한 눈, 신호등이 하나씩 켜지는 사이 떨리는 뒷타이어, 다섯 불이 꺼지는 순간 연기를 내며 튀어 나가는 차들을 중계 화면처럼 여덟 샷으로 잇는다. 원본에 없는 창작 장면이다. 전달하는 생각: 가장 긴 0.9초는 불이 다 켜진 뒤 꺼지기까지다.
+   Motion notes: 10 s, eight shots joined by hard cuts (the reference's join), the broadcast graphics over every shot (IB.broadcast: lap 1 / 58, the grid order, the live bug). 0-1.25 s the grid from a 3/4 front grandstand view (yaw -0.75, look 0.22), pushing in on ones; 1.25 s the pole driver head-on (IB.helmet, tense, a sweat drop running 2 drawings, one blink); 2.25 s the start lights (the first three pods at 2.33, 2.83, 3.33 s, 0.5 s apart); 3.5 s an insert at the tarmac by the front tyre (look 0.01, f 600), the car trembling 1-2 px on ones with the revs; 4.17 s back on the lights as the fifth comes on, held 0.92 s with nothing moving; 5.08 s lights out: the frame snaps in and jolts 20 px on the dark pods for 5 frames; 5.29 s a long lens (f 3000) low and head-on down the grid, the rows stacked up: the cars launch at 1.1 g (IB.drive, 1500 px/s²), the rear tyres smoking for 12 drawings; 6.67 s a long lens from the side tracking the leader, the trackside streaking past (IB.trackside blur) and the second car closing 4 m; 8.33 s a camera low on the tarmac behind the leader, running with it for 1.1 s at 75 m/s (the kerbs and fence rush back), then stopping so he pulls away up the straight; a slow push, held. Cars and wheels move on ones (machines), drivers and smoke on twos. */
+const C = IB.C, M = 140;
+const GRID = [{ num: 7, color: C.navy, accent: C.yellow, x: 0, z: -1.5 }, { num: 16, color: C.yellow, accent: C.navy, x: -8, z: 1.5 }, { num: 3, color: C.mint, accent: C.navy, x: -16, z: -1.5 }, { num: 22, color: C.lavender, accent: C.navy, x: -24, z: 1.5 }];
+const OUT = 122, LIGHTS = [56, 68, 80, 92, 100];   // frames each pod lights; out at OUT
+const LAUNCH = [{ dur: 2.5, a: 1500 }, { a: 0 }];
+const SHOT = [[0, 'grid'], [30, 'helmet'], [54, 'gantry'], [84, 'tyre'], [100, 'gantry'], [OUT + 5, 'launch'], [160, 'side'], [200, 'away']];   // the dark lights hold 5 frames before the cut
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }], [0, { at: [960, 560], w: 1700 }, 'push', 30],
+  [30, { at: [960, 540], w: 1920 }, 'cut'],
+  [54, { at: [960, 540], w: 1920 }, 'cut'], [54, { at: [960, 520], w: 1760 }, 'push', 30],
+  [84, { at: [960, 540], w: 1920 }, 'cut'],
+  [100, { at: [960, 520], w: 1700 }, 'cut'], [OUT, { at: [960, 500], w: 1400 }, 'snap'],
+  [OUT + 5, { at: [960, 540], w: 1920 }, 'cut'],
+  [160, { at: [960, 790], w: 1250 }, 'cut'],
+  [200, { at: [960, 540], w: 1920 }, 'cut'], [200, { at: [960, 520], w: 1600 }, 'push', 40],
+];
+const go = (t) => Math.max(0, t - OUT / 24);                       // seconds since the lights went out
+const runOf = (car, t) => IB.drive(LAUNCH, go(t)).x / M - (car.x < -10 ? 0.04 * go(t) * go(t) : 0);   // metres each car has gone (the back row a touch slower off the line)
+const lit = (f) => (f >= OUT ? 0 : LIGHTS.filter((l) => f >= l).length);
+const towerRows = () => GRID.map((g) => ({ num: g.num, color: g.color, gap: '' }));
+
+IB.actors = (t) => { const f = Math.floor(t * 24); return { shot: IB.held(SHOT, f), lights: lit(f), lead: Math.round(runOf(GRID[0], t) * 10) / 10 }; };
+
+MG.scene({
+  title: 'racing / lights-out-start',
+  duration: 10, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), d = IB.frame(IB.twos(t)), shot = IB.held(SHOT, f), cam = IB.shot(SHOTS, f, { jolt: [[OUT, 20]] });
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'grid') {
+        const V = { at: [1300, 780], yaw: -0.75, look: 0.22, f: 1500, s: 0.8 };
+        IB.trackStrip(ctx, { ...V, from: -40, to: 30, half: 6, mark: 5 });
+        [...GRID].reverse().forEach((g) => IB.racer(ctx, { ...V, ...g, seed: 1600 + g.num * 10 }));
+        IB.gantry(ctx, [960, 90], { s: 0.6, on: lit(f) });
+      }
+      if (shot === 'helmet') IB.helmet(ctx, [960, 470], { s: 1.25, eyes: 'tense', look: -0.1, blink: d === 40, sweat: Math.min(3, Math.floor((f - 34) / 4)), color: C.navy, accent: C.yellow });
+      if (shot === 'gantry') IB.gantry(ctx, [960, 330], { s: 1.9, on: lit(f), out: f >= OUT });
+      if (shot === 'tyre') {
+        const sh = (f % 2 ? 1 : -1) * (1 + (f % 3 === 0));   // the revs: the car trembles on ones
+        IB.trackStrip(ctx, { at: [700, 900], yaw: -0.5, look: 0.01, f: 600, s: 1.6, from: -10, to: 20, half: 6, walls: false });
+        IB.racer(ctx, { at: [700 + sh, 900], yaw: -0.5, look: 0.01, f: 600, s: 1.6, x: 2.6, z: -0.2, color: C.navy, accent: C.yellow, seed: 1670 });
+      }
+      if (shot === 'launch') {
+        const V = { at: [960, 900], yaw: -Math.PI / 2, look: 0.04, f: 3000, s: 2 };   // a long lens down the grid: the rows stack up
+        IB.trackStrip(ctx, { ...V, from: -120, to: 9, half: 6, mark: -1 });
+        [...GRID].reverse().forEach((g) => {
+          const x = g.x - 6 + runOf(g, t), dd = IB.drive(LAUNCH, go(t)).x / 0.36 / M;
+          const r = IB.racer(ctx, { ...V, ...g, x, spin: dd, blur: go(t) > 0.6, seed: 1600 + g.num * 10 });
+          const k = IB.frame(IB.twos(go(t)));
+          if (k < 12) [r.wheels[2], r.wheels[3]].forEach((w, i) => IB.tyreSmoke(ctx, w, { k, s: Math.max(0.3, 1.4 + 0.05 * x), dir: i ? 1 : -1, seed: 2100 + g.num + i * 50 + d }));
+        });
+      }
+      if (shot === 'side') {
+        const lead = runOf(GRID[0], t), V = { at: [960, 900], yaw: 0, look: 0.04, f: 3000, s: 0.7 };
+        IB.trackside(ctx, [-400, 2400], 900, { run: lead, blur: 1 });
+        const close = 4 * Math.min(1, (f - 160) / 36);
+        IB.racer(ctx, { ...V, ...GRID[1], x: GRID[1].x + 8 - 6 + close - 1, z: 2.2, spin: lead / 0.36, blur: true, seed: 1760 });
+        IB.racer(ctx, { ...V, ...GRID[0], x: 0, z: -1.2, spin: lead / 0.36, blur: true, seed: 1670 });
+      }
+      if (shot === 'away') {
+        // a camera low behind, running with the leader for 1.1 s (the track rushes back), then stopping: he pulls away up the straight
+        const V = { at: [960, 960], yaw: Math.PI / 2, look: 0.05, f: 1400, s: 2.2 }, k = (f - 200) / 24, ride = Math.min(k, 1.1), free = Math.max(0, k - 1.1);
+        IB.trackStrip(ctx, { ...V, from: -2, to: 220, half: 6, run: ride * 75 });
+        IB.racer(ctx, { ...V, ...GRID[0], x: 3.0 + free * 75, z: -0.9, spin: k * 200, blur: true, seed: 1670 });
+      }
+    });
+    if (shot !== 'helmet') IB.broadcast(ctx, { lap: [1, 58], rows: towerRows(), banner: f >= 212 ? '1랩 · 선두 #7' : '' });
+  },
+});
+</script>

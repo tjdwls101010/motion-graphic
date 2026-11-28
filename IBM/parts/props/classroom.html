@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / classroom</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/classroom.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 교실 — 칠판 IB.chalkboard(charcoal 판에 흰 분필, 종이색 틀과 분필 받침), 자리 표시 글씨 IB.chalkScript와 그림 IB.chalkShape(한 획씩 2프레임마다 써지고, 지우개가 지나간 길 state.wipe는 지워져 흰 자국만 남는다), 분필 IB.chalk, 칠판지우개 IB.boardEraser, 분필 가루 구름 IB.chalkDust(여섯 장에 피어올라 멈추고, 재채기에 일곱 덩이로 흩어져 넉 장에 사라진다), 아이 책상 IB.schoolDesk와 의자 IB.schoolChair(아이 키 h에서 크기를 정하고, IB.sit의 앉은 아이 손이 책상 위에 놓인다), 교탁 IB.lectern. 칠판은 원본 팔레트에 초록 칠판색이 없어 charcoal 면에 흰 분필로 그렸다. 책상은 두 번에 나눠 그린다: 다리(only: 'legs')는 아이보다 먼저, 상판(only: 'top')은 아이의 먼 쪽과 가까운 쪽 사이. 글씨는 진짜 글자가 아니라 고리 낙서다. */
+const FLOOR = 900, TEACH = { ...IB.PEOPLE.teacher, h: 340, dir: 1, seed: 10 }, KH = Math.round(340 * 0.68);
+const KID = { ...IB.PEOPLE.pupil, h: KH, dir: -1, seed: 20 }, KID2 = { ...IB.PEOPLE.pupil2, h: KH, dir: -1, seed: 30 };
+const BOARD = [700, 440];
+const TEXT = [...IB.chalkScript([400, 340], 420, { seed: 3 }), ...IB.chalkScript([400, 400], 300, { seed: 5 }), ...IB.chalkShape('box', [770, 386], 34), ...IB.chalkShape('triangle', [960, 380], 50), ...IB.chalkShape('circle', [960, 384], 22), ...IB.chalkShape('underline', [400, 420], 140)];
+const WIPE = [];   // the eraser's zigzag over the lower right of the board, one point a drawing
+for (let i = 0; i < 16; i++) WIPE.push([i % 2 ? 1000 : 860, 330 + i * 6]);
+function seated(ctx, x, look, up) {   // a child at its desk: chair, desk legs, the child's far side, the desk top, the near arm
+  const p = IB.sit(x, FLOOR, look);
+  if (up) { const sh = p.hip[1] - 0.223 * look.h; p.hands = [[x - 0.03 * look.h, sh - 0.27 * look.h], p.hands[1]]; p.hand = ['open', 'relax']; p.lean = -0.02; }   // the far arm goes up, behind the head: the near one's sleeve would cover the face
+  IB.schoolChair(ctx, [x, FLOOR], { h: look.h, dir: look.dir, seed: 840 + x });
+  IB.schoolDesk(ctx, [x, FLOOR], { h: look.h, dir: look.dir, only: 'legs', seed: 820 + x });
+  IB.smear(ctx, x - 0.12 * look.h, FLOOR - 6, 0.7 * look.h, { h: 10, seed: x });
+  IB.figure(ctx, p, { ...look, face: { mouth: up ? 'open' : 'smile', eye: up ? 'wide' : 'dot' } }, 'far');
+  IB.schoolDesk(ctx, [x, FLOOR], { h: look.h, dir: look.dir, only: 'top', seed: 820 + x });
+  IB.figure(ctx, p, { ...look, face: { mouth: up ? 'open' : 'smile', eye: up ? 'wide' : 'dot' } }, 'near');
+}
+MG.scene({
+  title: 'props / classroom',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'props/classroom.js — board, chalk, eraser, dust, desk, chair, lectern');
+    const f = IB.frame(IB.twos(t)), d = f >> 1, c = SAMPLE.grid(6, 3), wide = SAMPLE.span(c, 0, 1);
+    // the board: written a stroke every two drawings, then wiped along a zigzag, then a fresh start
+    SAMPLE.cell(ctx, wide, SAMPLE.window([BOARD[0], 660], wide[2], wide[3], 20), () => {
+      const write = Math.min(TEXT.length, d / 2), wiping = Math.max(0, d - TEXT.length * 2 - 2);
+      IB.chalkboard(ctx, BOARD, { strokes: TEXT, drawn: write, wipe: wiping ? WIPE.slice(0, Math.min(WIPE.length, wiping)) : null, smudges: [[440, 470, 200, 24]] }, { w: 760, h: 340 });
+      if (wiping) { const e = WIPE[Math.min(WIPE.length, wiping) - 1]; IB.boardEraser(ctx, e, { rot: Math.PI / 2 }); }
+    }, 'IB.chalkboard({ strokes, drawn, wipe, smudges }) + IB.chalkScript / IB.chalkShape');
+    // chalk and eraser, as a hand holds them
+    SAMPLE.cell(ctx, c[2], SAMPLE.window([1600, 600], c[2][2], c[2][3], 0), () => {
+      IB.chalk(ctx, [1480, 500], { rot: -0.4 });
+      IB.chalk(ctx, [1520, 500], { rot: 0.2, seed: 663 });
+      IB.boardEraser(ctx, [1660, 500]);
+      IB.boardEraser(ctx, [1740, 500], { rot: Math.PI / 2, fill: IB.C.yellow, seed: 680 });
+      IB.chalk(ctx, [1480, 555], { rot: -0.4, len: 31, wd: 10 });   // the school scenes' close framing (teacher 580 px)
+      IB.boardEraser(ctx, [1640, 555], { w: 90, hgt: 35, fill: IB.C.yellow, seed: 690 });
+    }, 'IB.chalk, IB.boardEraser — teacher 340 / 580 px');
+    // the dust: six drawings to grow, a hold, then blown apart to the left in four
+    SAMPLE.cell(ctx, c[3], SAMPLE.window([300, 700], c[3][2], c[3][3], 0), () => {
+      const k = d % 24, blow = k >= 14 ? k - 14 : -1;
+      IB.box(ctx, 120, 360, 360, 360, { fill: IB.C.charcoal, w: 2.7, seed: 5 });
+      IB.chalkDust(ctx, [330, 600], { k: Math.min(k, 8), blow }, { r: 80, dir: -1 });
+    }, 'IB.chalkDust({ k, blow }, { dir: -1 })');
+    // two children at their desks, facing left as they face the teacher: one hand up
+    SAMPLE.cell(ctx, c[4], SAMPLE.fit(c[4], [880, FLOOR], 24), () => {
+      seated(ctx, 820, KID2, false);
+      seated(ctx, 1080, KID, d % 12 >= 6);
+    }, `IB.schoolDesk + IB.schoolChair + IB.sit (h ${KH})`);
+    // the lectern with the teacher beside it
+    SAMPLE.cell(ctx, c[5], SAMPLE.fit(c[5], [1400, FLOOR], 24), () => {
+      IB.lectern(ctx, [1330, FLOOR], { h: 340, dir: 1 });
+      const p = IB.stand(1480, FLOOR, TEACH);
+      IB.smear(ctx, 1480, FLOOR - 8, 150, { h: 10, seed: 3 });
+      IB.figure(ctx, p, { ...TEACH, face: { mouth: 'smile' } });
+    }, 'IB.lectern({ h: 340 })');
+  },
+});
+</script>

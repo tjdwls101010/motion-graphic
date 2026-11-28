@@ -2,7 +2,7 @@
 
 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)에 나오는 모션그래픽을 코드로 다시 만든 레퍼런스다.
 
-- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 17개(5개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 23개(6개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -59,6 +59,7 @@ sets/      배경 세트. 조각은 props를 쓰고 배치는 세트의 데이�
   facade.js   건물 정면의 두 창과 방(IB.apartmentFacade, IB.windowFrame, IB.sashAndSill)
   party.js    파티 구석(IB.partyCorner)
   trading.js  시세판(IB.tickerBoard)
+  officefloor.js 사무실 층의 큰 가구: 두 문짝이 열리는 엘리베이터(IB.elevator, 'car'/'front' 두 겹), 뒤에 앉는 회의 탁자(IB.meetingTable), 이젤·벽걸이 화이트보드(IB.whiteboard), 구르는 의자의 바퀴 줄(IB.chairRoll)
 ```
 
 부품을 쓰는 규칙은 다음과 같다.
@@ -80,7 +81,7 @@ grep -rnE "IB\.(ink|box|oval|seg|tube|ellipse|limb|peg|hose|boot|mitt|clasp|crea
 
 ## 창작 장면
 
-`metaphor`, `acting`, `vignette`, `variation`, `market` 다섯 계열은 원본의 샷이 아니다. 원본의 룩과 모션 원칙을 지키면서 다른 상황을 새로 그렸고, 장면은 `ref: null`이라 시트에 "창작"으로 나오며 `tools/capture.py --compare`를 쓸 수 없다. 인물의 그림체는 `references/IBM/`에 둔 제작 스틸 7장(로컬에만 있다)도 참고했다. 원본에 없던 글자가 두 가지 있다. 일부 장면의 말풍선(한국어 한마디, 규칙은 STYLE.md의 "말풍선")과 `variation/hose-wipe-endcard`의 엔드카드 한 줄(원본 태그라인이 아닌 자리 표시 문구)이다.
+`metaphor`, `acting`, `vignette`, `variation`, `market`, `work` 여섯 계열은 원본의 샷이 아니다. 원본의 룩과 모션 원칙을 지키면서 다른 상황을 새로 그렸고, 장면은 `ref: null`이라 시트에 "창작"으로 나오며 `tools/capture.py --compare`를 쓸 수 없다. 인물의 그림체는 `references/IBM/`에 둔 제작 스틸 7장(로컬에만 있다)도 참고했다. 원본에 없던 글자가 두 가지 있다. 일부 장면의 말풍선(한국어 한마디, 규칙은 STYLE.md의 "말풍선")과 `variation/hose-wipe-endcard`의 엔드카드 한 줄(원본 태그라인이 아닌 자리 표시 문구)이다.
 
 ## 원본과 다른 점
 

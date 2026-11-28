@@ -10,31 +10,30 @@
 <script src="../../kit/figure.js"></script>
 <script src="../../kit/cast/people.js"></script>
 <script src="../../kit/props/office.js"></script>
-<script src="../../kit/props/home.js"></script>
 <script src="../../kit/sets/officefloor.js"></script>
 <script>
-/* 회의 탁자에 셋이 앉아 화이트보드 앞 사장의 발표를 듣는데, 가운데 사람의 고개가 꾸벅, 또 꾸벅 하다 세 번째에 툭 떨어지고, 번쩍 깨어 꼿꼿이 앉자 옆 사람이 의자를 돌려 쳐다본다. 원본에 없는 창작 장면으로, 회의 탁자(IB.meetingTable)와 화이트보드(IB.whiteboard), 펜던트 등(IB.hangingLamp), 앉은 포즈와 의자(IB.sit, IB.chair), 일상 인물(IB.PEOPLE.clerk, designer, typist, boss), 흔들림선(IB.shake)으로 지었다. 전달하는 생각: 졸음은 두 번 봐주고 세 번째에 들킨다.
-   Motion notes: one locked shot, 7 s, sitters 350 px tall (line 3 px) behind a table whose far edge is 144 px up (0.41 h, their elbow height), the presenter 360 px; all on twos as lists of drawings, every drawing passing the one before as pose.prev, so the nodder's head (and her bun) trails her body by one drawing on every dip and every snap. The presenter gestures through three drawings (an open hand at the board, both hands out explaining, a pointing finger at a note), each reached through one in-between and held 12-16 frames, his near hand within 0.29 h of the shoulder. The nodder: eyes shut at 1.0 s, nod 1 at 1.17 s (spine 0.08, head 0.3 over two drawings, held 0.42 s, back up through one drawing 0.04 past upright); nod 2 at 2.42 s a little deeper (0.12 / 0.4, held 0.42 s); nod 3 at 3.67 s sinks over two drawings (0.16 / 0.45) and at 3.92 s drops in one drawing to spine 0.42, head 0.7, one drawing past (0.46 / 0.78), and holds dead still to 4.33 s. 4.33 s the snap: one drawing bolt upright past the mark (hips 8 px up, spine -0.14, head -0.18, eyes wide, both hands off the table) with shake arcs by her head for two drawings, then stiff upright (spine -0.06) and held. The presenter stops mid-gesture on that drawing; the sitter behind her goes wide-eyed one drawing later. 4.5 s the neighbour in front leans back (the anticipation), 4.67 s swivels his chair round to face her (the chair and figure flip, dir -1, there is no front view) and one drawing later settles with his head tipped toward her. 5.17 s the nodder's sheepish smile. From 5.25 s nothing moves. Colours: the clerk's sky, the nodder's yellow (and the board's yellow notes), the board's blue bar; the presenter and the neighbour are in charcoal and white. */
-const F = IB.FIG, FLOOR = 930, H = 350, TABLE = [650, FLOOR], TOP = 144;
-const A = { ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 20 }, B = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 40, tuck: true }, C = { ...IB.PEOPLE.lounger, h: H, dir: 1, seed: 60 };
-const BOSS = { ...IB.PEOPLE.boss, h: 360, dir: -1, seed: 80 };
-const XA = 330, XB = 625, XC = 920, XP = 1545, BOARD = [1300, FLOOR];
-const HAND_Y = FLOOR - TOP + 9;   // a hand resting on the table top
+/* 회의 탁자에 앉아 화이트보드 앞 사장의 발표를 듣던 사람의 고개가 꾸벅, 또 꾸벅 하다 세 번째에 툭 떨어지고, 번쩍 깨어 꼿꼿이 앉자 앞자리 사람이 의자를 돌려 쳐다본다. 원본에 없는 창작 장면으로, 회의 탁자(IB.meetingTable, 화면 왼쪽 밖으로 잘림)와 화이트보드(IB.whiteboard, s 1.5), 앉은 포즈와 의자(IB.sit, IB.chair), 일상 인물(IB.PEOPLE.clerk, designer, boss), 흔들림선(IB.shake)으로 지었다. 전달하는 생각: 졸음은 두 번 봐주고 세 번째에 들킨다.
+   Motion notes: one locked shot framed close on the two sitters and the presenter (the table runs off the left edge, the action spans x 390-1820, 75% of the width), 7 s, sitters 500 px tall (line 3.6 px) behind a table whose far edge is 205 px up (0.41 h, their elbow height, slab 24 px, top face 32 px deep), the presenter 520 px (3.7 px) beside a board 450 x 330 whose lines grow with it (s 1.5); all on twos as lists of drawings, every drawing passing the one before as pose.prev, so the nodder's head (and her bun) trails her body by one drawing on every dip and every snap. The presenter gestures through three drawings (an open hand at the board, both hands out explaining, a pointing finger at a note), each reached through one in-between and held 12-16 frames, his near hand within 0.29 h of the shoulder. The nodder: eyes shut at 1.0 s, nod 1 at 1.17 s (spine 0.08, head 0.3 over two drawings, held 0.42 s, back up through one drawing 0.04 past upright); nod 2 at 2.42 s a little deeper (0.12 / 0.4, held 0.42 s); nod 3 at 3.67 s sinks over two drawings (0.16 / 0.45) and at 3.92 s drops in one drawing to spine 0.42, head 0.7, one drawing past (0.46 / 0.78), and holds dead still to 4.33 s. 4.33 s the snap: one drawing bolt upright past the mark (hips 12 px up, spine -0.14, head -0.18, eyes wide, both hands off the table) with three shake arcs (50 px out, 13 px apart) by her head for two drawings, then stiff upright (spine -0.06, hips 6 px up) and held. The presenter stops mid-gesture on that drawing and goes wide-eyed two drawings later. 4.5 s the neighbour in front leans back (the anticipation), 4.67 s swivels his chair round to face her (the chair and figure flip, dir -1, there is no front view) and one drawing later settles with his head tipped toward her. 5.17 s the nodder's sheepish smile. From 5.25 s nothing moves. Colours: the nodder's yellow (and the board's yellow notes), the neighbour's sky, the board's blue bar; the presenter is in charcoal. */
+const F = IB.FIG, FLOOR = 990, H = 500, TABLE = [480, FLOOR], TOP = Math.round(0.41 * H), DEPTH = 32;
+const B = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 40, tuck: true }, C = { ...IB.PEOPLE.clerk, h: H, dir: 1, seed: 60 };
+const BOSS = { ...IB.PEOPLE.boss, h: 520, dir: -1, seed: 80 };
+const XB = 470, XC = 940, XP = 1780, BOARD = [1460, FLOOR];
+const HAND_Y = FLOOR - TOP + 13;   // a hand resting on the table top
 
 /* a sitter at the table: the near hand on the top, the far hand in the lap (under the slab) */
 const seated = (x, look, more = {}) => { const p = IB.sit(x, FLOOR, look), d = look.dir, hy = p.hip[1]; return { ...p, hands: [[x + 0.12 * H * d, hy + 0.02 * H], [x + 0.2 * H * d, HAND_Y]], ...more }; };
 
 /* ---------- the nodder (B) ---------- */
 const PB = seated(XB, B), BY = PB.hip[1];
-const dip = (lean, nod, eye = 'closed') => ({ ...PB, lean, nod, hands: [PB.hands[0], [XB + 0.2 * H + lean * 40, HAND_Y]], face: { eye, mouth: 'flat' } });
+const dip = (lean, nod, eye = 'closed') => ({ ...PB, lean, nod, hands: [PB.hands[0], [XB + 0.2 * H + lean * 60, HAND_Y]], face: { eye, mouth: 'flat' } });
 const NB = {
   awake: { ...PB, face: { eye: 'dot', mouth: 'flat' } },
   shut: { ...PB, face: { eye: 'closed', mouth: 'flat' } },
   upPast: { ...PB, lean: 0, nod: -0.04, face: { eye: 'dot', mouth: 'flat' } },
   drop: dip(0.42, 0.7), dropPast: dip(0.46, 0.78),
-  snap: { ...PB, hip: [XB, BY - 8], lean: -0.14, nod: -0.18, hands: [[XB + 0.1 * H, BY - 0.12 * H], [XB + 0.16 * H, BY - 0.16 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },
-  stiff: { ...PB, hip: [XB, BY - 4], lean: -0.06, nod: -0.05, face: { eye: 'wide', mouth: 'flat' } },
-  sheepish: { ...PB, hip: [XB, BY - 4], lean: -0.03, nod: 0.06, face: { eye: 'dot', mouth: 'smile', brow: -1 } },
+  snap: { ...PB, hip: [XB, BY - 12], lean: -0.14, nod: -0.18, hands: [[XB + 0.1 * H, BY - 0.12 * H], [XB + 0.16 * H, BY - 0.16 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },
+  stiff: { ...PB, hip: [XB, BY - 6], lean: -0.06, nod: -0.05, face: { eye: 'wide', mouth: 'flat' } },
+  sheepish: { ...PB, hip: [XB, BY - 6], lean: -0.03, nod: 0.06, face: { eye: 'dot', mouth: 'smile', brow: -1 } },
 };
 const NODDER = [[0, NB.awake], [24, NB.shut],
   [28, dip(0.04, 0.14)], [30, dip(0.08, 0.3)], [40, NB.upPast], [42, NB.awake],
@@ -42,9 +41,7 @@ const NODDER = [[0, NB.awake], [24, NB.shut],
   [84, NB.shut], [88, dip(0.1, 0.3)], [90, dip(0.16, 0.45)], [94, NB.drop], [96, NB.dropPast],
   [104, NB.snap], [106, NB.stiff], [124, NB.sheepish]];
 
-/* ---------- the other two sitters ---------- */
-const PA = seated(XA, A, { face: { eye: 'dot', mouth: 'flat' } });
-const BEHIND = [[0, PA], [106, { ...PA, lean: 0, nod: -0.06, face: { eye: 'wide', mouth: 'flat' } }]];
+/* ---------- the neighbour in front ---------- */
 const C2 = { ...C, dir: -1 }, PC = seated(XC, C, { face: { eye: 'dot', mouth: 'flat' } }), PC2 = seated(XC, C2, { lean: 0.1, nod: 0.12, face: { eye: 'dot', mouth: 'flat', brow: -1 } });
 const NEIGHBOUR = [[0, PC], [108, { ...PC, lean: -0.08, nod: -0.06, face: { eye: 'wide', mouth: 'flat' } }],
   [112, { ...PC2, lean: 0.16, nod: 0.16, swung: true }], [114, { ...PC2, swung: true }]];
@@ -63,9 +60,9 @@ const PRESENTER = [[0, G.explain], [12, mid(G.explain, G.board)], [14, G.board],
   [104, { ...G.point, face: { mouth: 'flat' } }], [108, { ...G.point, nod: 0.02, face: { eye: 'wide', mouth: 'flat' } }]];
 
 const at = (table) => (t) => { const f = IB.frame(IB.twos(t)); return { ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined }; };
-const nodderAt = at(NODDER), behindAt = at(BEHIND), presenterAt = at(PRESENTER);
+const nodderAt = at(NODDER), presenterAt = at(PRESENTER);
 const neighbourAt = (t) => { const c = at(NEIGHBOUR)(t); return c.prev && !c.prev.swung !== !c.swung ? { ...c, prev: undefined } : c; };   // no trail across the swivel: the figure flips
-IB.actors = (t) => ({ nodder: nodderAt(t), behind: behindAt(t), neighbour: neighbourAt(t), presenter: presenterAt(t) });
+IB.actors = (t) => ({ nodder: nodderAt(t), neighbour: neighbourAt(t), presenter: presenterAt(t) });
 
 MG.scene({
   title: 'work / meeting-nod-off',
@@ -74,18 +71,17 @@ MG.scene({
   render(t, ctx) {
     IB.bg(ctx);
     const tt = IB.twos(t), f = IB.frame(tt);
-    const c = neighbourAt(t), sitters = [[behindAt(t), A, XA], [nodderAt(t), B, XB], [c, c.swung ? C2 : C, XC]];
-    IB.hangingLamp(ctx, [TABLE[0], 500]);
-    IB.smear(ctx, TABLE[0] + 20, FLOOR - 6, 1000, { h: 13, seed: 9 });
-    IB.smear(ctx, XP - 60, FLOOR - 8, 420, { h: 12, seed: 10 });
+    const c = neighbourAt(t), sitters = [[nodderAt(t), B, XB], [c, c.swung ? C2 : C, XC]];
+    IB.smear(ctx, TABLE[0] + 160, FLOOR - 8, 1300, { h: 16, seed: 9 });
+    IB.smear(ctx, XP - 120, FLOOR - 10, 560, { h: 15, seed: 10 });
     sitters.forEach(([p, look, x], i) => IB.chair(ctx, x, FLOOR, H, look.dir, { seed: 700 + i * 10 }));
     sitters.forEach(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'far'));
-    IB.meetingTable(ctx, TABLE, { w: 900, top: TOP, sheets: [-300, 30, 300] });
+    IB.meetingTable(ctx, TABLE, { w: 1460, top: TOP, depth: DEPTH, thick: 24, lw: IB.figLine(H), sheets: [-420, 260] });
     const heads = sitters.map(([p, look]) => IB.figure(ctx, p, { ...look, face: p.face }, 'near'));
     // shake arcs behind the nodder's head on the snap
     const k = IB.drawn(tt, 104 / 24);
-    if (k >= 0 && k < 2) IB.shake(ctx, heads[1].headAt[0] - 10, heads[1].headAt[1] - 6, 34, { a: Math.PI * 1.15, n: 3, seed: 600 + k * 9 });
-    IB.whiteboard(ctx, BOARD, { w: 320, h: 230, lift: 220, notes: 3 });
+    if (k >= 0 && k < 2) IB.shake(ctx, heads[0].headAt[0] - 14, heads[0].headAt[1] - 8, 50, { a: Math.PI * 1.15, n: 3, gap: 13, w: 3.4, seed: 600 + k * 9 });
+    IB.whiteboard(ctx, BOARD, { s: 1.5, lw: IB.figLine(BOSS.h) / 1.5, notes: 3 });
     const p = presenterAt(t);
     IB.figure(ctx, p, { ...BOSS, face: p.face });
   },

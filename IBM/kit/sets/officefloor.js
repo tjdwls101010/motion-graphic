@@ -45,26 +45,26 @@
     return { opening: [x0, y0, w, h], gap: [x - half, x + half] };
   };
 
-  /* meetingTable(ctx, at, opts) — a long meeting table seen from the side, deep enough that a row of sitters can sit behind it: `at` = [its centre x, the floor line], `w` long, the far edge of its top face (where the sitters sit) `top` px above the floor (135 = 0.41 of a 330 px sitter: elbow height on IB.chair) and the top face `depth` px deep as seen from a little above, so its near edge is that much lower and the slab under it covers the sitters' laps while their near hands rest on the top. A slab with a front face, two legs at each end (the far pair shorter and set back), graphite under the slab. `sheets` lays loose papers on the top (x offsets from the centre). Draw the chairs and the sitters' far side first, then the table, then their near arms (IB.figure's 'far' / 'near'), so the slab covers their laps and their hands rest on top. Returns the top face [x, y, w, h] (work/meeting-nod-off). */
+  /* meetingTable(ctx, at, opts) — a long meeting table seen from the side, deep enough that a row of sitters can sit behind it: `at` = [its centre x, the floor line], `w` long, the far edge of its top face (where the sitters sit) `top` px above the floor (135 = 0.41 of a 330 px sitter: elbow height on IB.chair) and the top face `depth` px deep as seen from a little above, so its near edge is that much lower and the slab under it covers the sitters' laps while their near hands rest on the top. A slab with a front face, two legs at each end (the far pair shorter and set back), graphite under the slab. `sheets` lays loose papers on the top (x offsets from the centre). The legs, the graphite and the papers are sized for `thick` 16 (sitters 330 px) and grow with it: give a closer shot a thicker slab (24 for sitters 500 px). Draw the chairs and the sitters' far side first, then the table, then their near arms (IB.figure's 'far' / 'near'), so the slab covers their laps and their hands rest on top. Returns the top face [x, y, w, h] (work/meeting-nod-off). */
   IB.meetingTable = (ctx, [cx, floor], o = {}) => {
     const { w = 900, top: TOP = 135, depth = 22, thick = 16, lw = 3.2, sheets = [], seed = 940 } = o;
-    const x0 = cx - w / 2, back = floor - TOP, ty = back + depth;
+    const x0 = cx - w / 2, back = floor - TOP, ty = back + depth, u = thick / 16;   // legs and papers grow with the slab's thickness
     ctx.save();
-    for (const [x, s] of [[x0 + 60, 0], [x0 + w - 44, 1]]) IB.box(ctx, x - 6, back + thick, 12, floor - 14 - back - thick, { fill: C.bg, w: lw * 0.8, seed: seed + s });   // far legs
-    for (const [x, s] of [[x0 + 30, 2], [x0 + w - 30, 3]]) IB.box(ctx, x - 8, ty + thick, 16, floor - ty - thick, { fill: C.paper, w: lw * 0.9, seed: seed + s });   // near legs
-    IB.shade(ctx, x0 + 14, ty + thick + 2, w - 28, 26, { from: 'top', seed: seed + 4, alpha: 0.45 });
+    for (const [x, s] of [[x0 + 60 * u, 0], [x0 + w - 44 * u, 1]]) IB.box(ctx, x - 6 * u, back + thick, 12 * u, floor - 14 * u - back - thick, { fill: C.bg, w: lw * 0.8, seed: seed + s });   // far legs
+    for (const [x, s] of [[x0 + 30 * u, 2], [x0 + w - 30 * u, 3]]) IB.box(ctx, x - 8 * u, ty + thick, 16 * u, floor - ty - thick, { fill: C.paper, w: lw * 0.9, seed: seed + s });   // near legs
+    IB.shade(ctx, x0 + 14, ty + thick + 2, w - 28, 26 * u, { from: 'top', seed: seed + 4, alpha: 0.45 });
     IB.ink(ctx, [[x0 + 16, back], [x0 + w + 16, back], [x0 + w, ty], [x0, ty]], { closed: true, smooth: false, fill: C.paper, w: lw, seed: seed + 5 });   // the top face
     IB.box(ctx, x0, ty, w, thick, { fill: C.bg, w: lw, seed: seed + 6 });   // the front face
-    sheets.forEach((dx, i) => IB.ink(ctx, [[cx + dx, back + 5], [cx + dx + 74, back + 4], [cx + dx + 68, ty - 4], [cx + dx - 6, ty - 3]], { closed: true, smooth: false, fill: C.paper, w: 2, seed: seed + 10 + i }));
+    sheets.forEach((dx, i) => IB.ink(ctx, [[cx + dx, back + 5 * u], [cx + dx + 74 * u, back + 4 * u], [cx + dx + 68 * u, ty - 4 * u], [cx + dx - 6 * u, ty - 3 * u]], { closed: true, smooth: false, fill: C.paper, w: 2 * Math.sqrt(u), seed: seed + 10 + i }));
     ctx.restore();
     return [x0, back, w, depth];
   };
 
-  /* whiteboard(ctx, at, opts) — a whiteboard w x h (300 x 220) whose content is placeholder shapes, never words: a bar chart of `bars` heights (0..1, the last one in `accent`), a rising arrow, two scribbled lines of "text" and `notes` sticky notes in yellow. `at` = [its centre x, the floor line]; the board's bottom edge is `lift` px above the floor (210: its middle at a 330 px figure's head). On an easel by default (two front legs splayed to the floor, a back leg, a marker tray); wall: true hangs it with no legs. Returns the board [x, y, w, h], to point a hand at (work/meeting-nod-off). */
+  /* whiteboard(ctx, at, opts) — a whiteboard w x h (300 x 220) whose content is placeholder shapes, never words: a bar chart of `bars` heights (0..1, the last one in `accent`), a rising arrow, two scribbled lines of "text" and `notes` sticky notes in yellow. `at` = [its centre x, the floor line]; the board's bottom edge is `lift` px above the floor (210: its middle at a 330 px figure's head). On an easel by default (two front legs splayed to the floor, a back leg, a marker tray); wall: true hangs it with no legs. `s` enlarges the whole board and its contents about `at` for a closer shot (1.5 beside a 520 px figure, work/meeting-nod-off); every line grows with it, so give `lw` as the wanted outline over s. Returns the board [x, y, w, h] in stage px, to point a hand at. */
   IB.whiteboard = (ctx, [cx, floor], o = {}) => {
-    const { w = 300, h = 220, lift = 210, wall = false, bars = [0.35, 0.55, 0.85], accent = C.blue, notes = 2, lw = 3.2, seed = 970 } = o;
+    const { w = 300, h = 220, lift = 210, wall = false, bars = [0.35, 0.55, 0.85], accent = C.blue, notes = 2, lw = 3.2, s: S = 1, seed = 970 } = o;
     const x0 = cx - w / 2, y1 = floor - lift, y0 = y1 - h;
-    ctx.save();
+    ctx.save(); ctx.translate(cx, floor); ctx.scale(S, S); ctx.translate(-cx, -floor);
     if (!wall) {
       IB.seg(ctx, cx + 10, y0 + 10, cx + 26, floor - 12, { w: lw * 1.6, seed: seed });   // back leg, behind the board
       IB.seg(ctx, x0 + 30, y1 - 10, x0 - 10, floor, { w: lw * 2, seed: seed + 1 });
@@ -89,7 +89,7 @@
       IB.ink(ctx, [p(0, 0), p(36, 0), p(36, 36), p(0, 36)], { closed: true, smooth: false, fill: C.yellow, w: 2, seed: seed + 20 + i });
     }
     ctx.restore();
-    return [x0, y0, w, h];
+    return [cx + (x0 - cx) * S, floor + (y0 - floor) * S, w * S, h * S];
   };
 
   /* chairRoll(ctx, x, floor, h, dir, state) — what an office chair (IB.chair with the same x, floor, h, dir) leaves behind while it rolls: two or three short streaks trailing each caster along the floor and a puff of dust off the back one. state.k is the drawing number while it rolls (re-rolls the streaks each drawing), state.v how far it moved on that drawing in px (the streaks are as long as about 1.6 of it, and none are drawn below 2 px); state.way -1 / 1 is the way it rolls (default backward, -dir). Draw it before the chair. Rolling things get streaks and dust instead of the smear's stillness; the chair itself never turns its casters at this size (work/friday-stretch-roll). */

@@ -170,8 +170,8 @@
      pose  { hip: [x, y], lean, nod, feet: [[x, y, pitch], [x, y, pitch]], hands: [[x, y], [x, y]], knee: [1, 1], elbow: [1, 1], hand: ['relax', 'relax'], grip: [false, false], prev }
            prev is the pose of the drawing shown just before this one (a plain pose, without a prev of its own). With it the head and the hair behind it trail the move by one drawing: the head keeps the whole tilt the spine's lean gave it in the drawing before and half of the nod it just left, and a ponytail, bun or curls swing against the way the hips moved and the way the spine tipped. The drawing after a move has stopped has prev equal to itself, so the trail settles there and the hold that follows is dead still. Without prev nothing trails. Pass it from the scene's own drawing grid: prev = the pose of the drawing before, e.g. the pose at IB.twos(t) - 1e-4 when the pose function floors raw time to its drawing (it must floor: a function that rounds would give the same drawing back). Do not pass it through a tremble that flips between two poses each drawing (a strain, a shiver): a one-drawing lag averages the two and the tremble dies.
            hip is the pelvis joint; feet are ankles and hands are wrists, far side first, all in stage px. lean tips the spine forward (rad), nod tips the head further. knee / elbow flip a joint's fold (-1) for the rare pose that needs it. hand picks each hand's drawing: 'relax' | 'grip' | 'open' | 'point' (see hand() above); grip: true is the older way to say 'grip'; hand wins over grip. Start from IB.stand() and move what the pose changes.
-     look  { h, dir, skin, top, topKind: 'tee' | 'long', bottom, bottomKind: 'pants' | 'shorts', shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, headK, face, seed }
-           h is the standing height in px, dir 1 faces right and -1 left. headK scales the head (default 1): a child is a shorter figure (h 0.6-0.75 of an adult's) whose head is a larger part of its height, headK 1.25-1.35, and the head rides up its neck to make room. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
+     look  { h, dir, skin, top, topKind: 'tee' | 'long' | 'tank', bottom, bottomKind: 'pants' | 'shorts', shortsLen, socks, sockHi, gloves, shoe, hair: 'short' | 'curly' | 'bun' | 'pony' | 'cap' | 'bald', hairColor, hat, brim: 'back', tail, phones, tuck, headK, face, seed }
+           h is the standing height in px, dir 1 faces right and -1 left. topKind 'tank' is a sleeveless vest (a basketball jersey); shortsLen is how far down the thigh shorts reach, 0.62 by default and about 0.9 (to the knee) for basketball shorts. gloves (a colour) draws the hands in it. socks (a colour) pulls a sock up a bare shin under shorts, to sockHi of the way from ankle to knee (default 0.85, a football sock; 0.3 for a basketball one). headK scales the head (default 1): a child is a shorter figure (h 0.6-0.75 of an adult's) whose head is a larger part of its height, headK 1.25-1.35, and the head rides up its neck to make room. tuck ends the top at the waist instead of letting its hem hang below the hip: use it for a figure that bends far forward, where a hanging hem sticks out behind like a cape. Colours are flat fills from IB.C; a white garment is IB.C.bg, as in the reference.
      Returns the solved joints { hip, sh, headAt, knees, elbows, feet, hands } so the scene can hang props on them (a bag strap on the shoulder, a tool in the hands), and drag: [dx, dy], half of how far the hips moved since prev and the other way, for a hanging thing (a bag, a cord) to trail by. Pass `only: 'far' | 'near'` to draw the figure in two passes with a prop between its arms. */
   IB.figure = (ctx, pose, look, only) => {
     const h = look.h, d = look.dir || 1, lw = look.lw || IB.figLine(h), seed = look.seed || 1, skin = look.skin || C.skin[2];
@@ -191,15 +191,17 @@
     const drawLeg = (i) => {
       const L = legs[i], sd = seed + 100 + i * 20;
       if (shorts) {
-        const cut = [lerp(L.root[0], L.k[0], 0.62), lerp(L.root[1], L.k[1], 0.62)];
+        const cut = [lerp(L.root[0], L.k[0], look.shortsLen || 0.62), lerp(L.root[1], L.k[1], look.shortsLen || 0.62)];
         limb(ctx, [cut, L.k, L.e], [F.calfW * h * 1.35, F.calfW * h * 1.15, F.calfW * h], { fill: skin, lw, seed: sd, shade: h * 0.05 });
+        if (look.socks) { const top = [lerp(L.e[0], L.k[0], look.sockHi || 0.85), lerp(L.e[1], L.k[1], look.sockHi || 0.85)]; limb(ctx, [top, L.e], [F.calfW * h * 1.28, F.calfW * h * 1.08], { fill: look.socks, lw, seed: sd + 4, cap: 'none' }); const ux = L.k[0] - L.e[0], uy = L.k[1] - L.e[1], n = Math.hypot(ux, uy) || 1, hw = F.calfW * h * 0.64; IB.ink(ctx, [[top[0] - (uy / n) * hw, top[1] + (ux / n) * hw], [top[0] + (uy / n) * hw, top[1] - (ux / n) * hw]], { w: lw, smooth: false, seed: sd + 5, taper: false }); }   // a sock pulled up the shin from the shoe, its top edge inked across
         limb(ctx, [L.root, cut], [F.thighW * h * 1.05, F.thighW * h * 1.1], { fill: bottom, lw, seed: sd + 8, cap: 'end' });
       } else limb(ctx, [L.root, L.k, L.e], [F.thighW * h, F.kneeW * h, F.cuffW * h], { fill: bottom, lw, seed: sd, cap: 'end' });
       shoe(ctx, L.e, L.pitch, d, h, look.shoe || C.paper, lw, sd + 12);
     };
     const drawArm = (i) => {
       const A = arms[i], sd = seed + 200 + i * 20, ang = Math.atan2(A.e[1] - A.el[1], A.e[0] - A.el[0]);
-      if (tee) {
+      if (look.topKind === 'tank') limb(ctx, [sh, A.el, A.e], [F.armW * h * 1.3, F.armW * h, F.wristW * h], { fill: skin, lw, seed: sd });   // a sleeveless vest: the whole arm is bare
+      else if (tee) {
         const cut = [lerp(sh[0], A.el[0], 0.58), lerp(sh[1], A.el[1], 0.58)];
         limb(ctx, [cut, A.el, A.e], [F.armW * h * 1.15, F.armW * h, F.wristW * h], { fill: skin, lw, seed: sd, shade: h * 0.04 });
         limb(ctx, [sh, cut], [F.sleeveW * h * 0.92, F.sleeveW * h], { fill: top, lw, seed: sd + 8, cap: 'end' });
@@ -210,7 +212,7 @@
           IB.ink(ctx, [[c[0] - uy * hw, c[1] + ux * hw], [c[0] + uy * hw, c[1] - ux * hw]], { w: lw * 0.75, smooth: false, seed: sd + 9, taper: false });
         }
       }
-      hand(ctx, A.e, ang, h, skin, lw * 0.9, sd + 12, kinds[i], d);
+      hand(ctx, A.e, ang, h, look.gloves || skin, lw * 0.9, sd + 12, kinds[i], d);   // gloves: a goalkeeper's hands in their colour
     };
 
     if (only !== 'near') {

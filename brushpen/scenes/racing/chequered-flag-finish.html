@@ -1,0 +1,117 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / chequered-flag-finish</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-weather.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 체커기 피니시: 헬기에서 본 마지막 코너, 망원으로 정면에서 잡은 결승선과 흔들리는 체커기, 펜스에 매달려 환호하는 피트 월의 팀, 헬멧 속 눈, 그리고 우승자의 도넛(위에서, 타이어 높이에서, 연기 속 와이드)을 중계 화면처럼 일곱 샷으로 잇는다. 원본에 없는 창작 장면이다. 전달하는 생각: 우승은 선을 넘는 한 프레임이 아니라 그 뒤에 남는 연기다.
+   Motion notes: 9 s, seven shots joined by hard cuts, the broadcast over every shot but the helmet (lap 58 / 58; "마지막 랩", then "우승 #7" from the line). 0-1.83 s a helicopter over the last corner, a right-hander onto the straight (IB.trackPath, IB.circuit; oblique pitch -1.15, f 4000, s 0.28) following the pair, the leader 30 m/s at the apex (108 km/h) and 0.8 g out of it, #16 20 m behind, both with sun shadows; 1.83 s head-on down the straight on a very long lens (f 15000, s 1.07: the camera 100 m from the line, look 0.004) with the marshal on the pit wall swinging the chequered flag through four drawings on twos (IB.flagStand), the leader at 75 m/s crossing the line at 3.17 s (a 14 px jolt), #16 37 m (0.5 s) behind, stacked beside it by the lens; 3.5 s across the track to the pit wall (IB.pitWall), six crew in the team's navy hanging on the fence and throwing their arms up, two drawings each on twos, each one a drawing off its neighbour, the winner easing off at 60 m/s flashing past in the foreground in 6 frames and #16 at 4.17 s; 5.17 s the winner's helmet head-on, eyes wide then shut; 5.83 s from straight above: the donut, a 3.6 m circle once every 1.6 s with the nose 1.25 rad inside the way it travels (opposite lock), rubber circles building (IB.tyreMarks) and tyre smoke born on twos at both rear tyres, growing 0.9 m/s for 1.5 s and drifting downwind (IB.smokeCloud), pushing in; 7.33 s a rig on the car's flank at tyre level (f 900): the car holds still in the frame while the rubber and the smoke wheel round it; 8.17 s a high wide in the smoke, held. Cars and cameras on ones, people, flag and smoke on twos. */
+const C = IB.C;
+const WIN = { num: 7, color: C.navy, accent: C.yellow }, SECOND = { num: 16, color: C.yellow, accent: C.navy };
+const LINE = 76, DONUT = 128;   // the frame the winner crosses the line; the frame the donuts start
+const SHOT = [[0, 'heli'], [44, 'flag'], [84, 'pitwall'], [124, 'helmet'], [140, 'top'], [176, 'low'], [196, 'wide']];
+const SHOTS = [
+  [0, { at: [960, 560], w: 1920 }], [0, { at: [960, 560], w: 1700 }, 'push', 44],
+  [44, { at: [1250, 580], w: 1700 }, 'cut'],
+  [84, { at: [960, 660], w: 1500 }, 'cut'], [84, { at: [960, 650], w: 1380 }, 'push', 40],
+  [124, { at: [960, 540], w: 1920 }, 'cut'],
+  [140, { at: [960, 540], w: 1920 }, 'cut'], [140, { at: [960, 540], w: 1500 }, 'push', 36],
+  [176, { at: [1000, 770], w: 1300 }, 'cut'],
+  [196, { at: [960, 560], w: 1920 }, 'cut'],
+];
+// the last corner and the leader through it
+const CORNER = IB.trackPath([[-40, -160], [-40, -60], [-37, -27], [-27, -9], [-10, -1], [20, 0], [200, 0]]);   // a right-hander onto the straight
+const lead = (t) => 110 + 30 * t + 4 * t * t;   // 30 m/s (108 km/h) at the apex, then 0.8 g out of it
+// the straight: x = 0 is the line; the winner at 75 m/s crosses it on frame LINE, #16 37 m behind
+const STRAIGHT = IB.trackPath([[-400, 0], [40, 0]]);   // s = x + 400: the line is at s 400
+const runIn = (f, gap = 0) => 75 * ((f - LINE) / 24) - gap;
+// the donut: centre at the origin, R 3.6 m, a turn every 1.6 s, the nose 1.25 rad inside the way it travels
+const R = 3.6, TURN = 1.6, BETA = 1.25;
+const donut = (tt) => { const a = Math.max(0, tt - DONUT / 24) * (Math.PI * 2) / TURN; return { x: R * Math.cos(a), z: R * Math.sin(a), heading: a + Math.PI / 2 + BETA }; };
+const rearAt = (tt, sd) => { const c = donut(tt), h = c.heading; return [c.x - 1.85 * Math.cos(h) - 0.8 * sd * Math.sin(h), c.z - 1.85 * Math.sin(h) + 0.8 * sd * Math.cos(h)]; };
+const rubber = (tt, sd) => { const pts = []; for (let u = DONUT / 24; u <= tt; u += 1 / 24) pts.push(rearAt(u, sd)); return pts; };
+const smoke = (ctx, map, tt, o = {}) => IB.smokeCloud(ctx, map, { at: [(u) => rearAt(u, -1), (u) => rearAt(u, 1)], now: tt, start: DONUT / 24, wind: [1.4, -0.8], life: 1.5, grow: 0.9, r0: 0.7, rise: 0.3, ...o });
+// the crew on the pit wall: six of the winner's team, two drawings each (arms flung up / hanging on the fence), every one a drawing off its neighbour
+const CREW = [300, 520, 760, 1010, 1240, 1480].map((x, i) => ({ x, look: { h: 340, dir: i % 3 === 1 ? -1 : 1, top: C.navy, topKind: 'long', bottom: C.ink, hair: ['cap', 'short', 'curly', 'cap', 'bun', 'cap'][i], hat: C.yellow, skin: C.skin[(i * 2) % 5], seed: 60 + i * 10, face: { eye: i % 2 ? 'closed' : 'wide', mouth: 'open' } } }));
+const crewPose = (c, i, d, deck, fenceTop) => {
+  const up = (d + i) % 2 === 0, base = IB.stand(c.x, deck - (up ? 18 : 0), c.look);
+  if (up) return IB.posed(c.look, { ...base, lean: 0.08, hands: [{ a: -1.75, l: 0.285 }, { a: -1.25, l: 0.285 }], hand: ['open', 'open'] });
+  const j = IB.joints({ ...base, lean: 0.25 }, c.look);
+  return IB.posed(c.look, { ...base, lean: 0.25, hands: [[j.sh[0] + 40 * c.look.dir, Math.max(fenceTop + 20, j.sh[1] - 100)], { a: -1.5, l: 0.28 }], hand: ['grip', 'open'] });
+};
+const tower = (f) => [{ num: 7, color: C.navy, gap: f >= LINE ? '우승' : '선두', hi: f >= LINE }, { num: 16, color: C.yellow, gap: '+0.512' }, { num: 3, color: C.mint, gap: '+8.940' }, { num: 22, color: C.lavender, gap: '+15.31' }];
+
+IB.actors = (t) => { const f = Math.floor(t * 24), c = donut(t); return { shot: IB.held(SHOT, f), win: Math.round(runIn(f) * 10) / 10, donut: [Math.round(c.x * 100) / 100, Math.round(c.z * 100) / 100, Math.round(c.heading * 100) / 100], flag: IB.frame(IB.twos(t)) % 4 }; };
+
+MG.scene({
+  title: 'racing / chequered-flag-finish',
+  duration: 9, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), tt = IB.twos(t), d = IB.frame(tt), shot = IB.held(SHOT, f), cam = IB.shot(SHOTS, f, { jolt: [[LINE, 14]] });
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'heli') {
+        const H = { at: [960, 560], pitch: -1.15, look: 0, f: 4000, s: 0.28 }, map = IB.trackSpace(H), s1 = lead(t), p = CORNER.at(s1 - 10), off = [p.x, p.z];   // the helicopter follows the pair
+        IB.circuit(ctx, map, CORNER, { off, kerbs: [[128, 172, -1], [165, 205, 1]], half: 7 });
+        [[s1 - 20, SECOND, 1760], [s1, WIN, 1670]].forEach(([s, team, seed]) => { const c = CORNER.at(s), car = { x: c.x - off[0], z: c.z - off[1], heading: c.heading }; IB.carShadow(ctx, map, car); IB.racer(ctx, { ...H, ...team, ...car, steer: 0, spin: s / 0.36, blur: true, seed }); });
+      }
+      if (shot === 'flag') {
+        const A = { at: [960, 780], yaw: -Math.PI / 2, look: 0.004, f: 15000, s: 1.07 }, map = IB.trackSpace(A), stand = map([0, 0, 6.8]), metre = stand[1] - map([0, -1, 6.8])[1];   // the marshal's post on the pit wall at the line
+        IB.circuit(ctx, map, STRAIGHT, { line: 400, kerbs: [[240, 440, 1], [240, 440, -1]], half: 6, from: 200, to: 440, grass: false });
+        const cars = [[runIn(f, 37), SECOND, 1760, 1.6], [runIn(f), WIN, 1670, -1.3]];
+        const drawCar = ([x, team, seed, z]) => IB.racer(ctx, { ...A, ...team, x, z, spin: x / 0.36, blur: true, seed });
+        cars.filter(([x]) => x < 0).forEach(drawCar);   // still short of the line: behind the marshal's post
+        IB.flagStand(ctx, [stand[0], stand[1]], { k: d % 4, s: (1.75 * metre) / 250, dir: -1 });   // a marshal 1.75 m tall
+        cars.filter(([x]) => x >= 0).forEach(drawCar);
+      }
+      if (shot === 'pitwall') {
+        const floor = 860, wall = IB.pitWall(ctx, [-200, 2120], floor, { layer: 'back', s: 1.6, color: C.navy });
+        CREW.forEach((c, i) => IB.figure(ctx, crewPose(c, i, d, wall.deck, wall.fenceTop), c.look));
+        IB.pitWall(ctx, [-200, 2120], floor, { layer: 'front', s: 1.6 });
+        const V = { at: [960, 975], yaw: 0, look: 0.03, f: 3000, s: 0.75 }, past = (f0) => 60 * ((f - f0) / 24) - 12;   // easing off after the line: 60 m/s past the wall
+        IB.trackStrip(ctx, { ...V, from: -20, to: 20, half: 5, kerb: 0, walls: false });
+        [[past(100), SECOND, 1760, 1.5], [past(84), WIN, 1670, -1.0]].forEach(([x, team, seed, z]) => { if (x > -14 && x < 14) IB.racer(ctx, { ...V, ...team, x, z, spin: x / 0.36, blur: true, seed }); });
+      }
+      if (shot === 'helmet') IB.helmet(ctx, [960, 470], { s: 1.25, eyes: f < 131 ? 'wide' : 'shut', look: f < 131 ? 0.3 : 0, color: C.navy, accent: C.yellow });
+      if (shot === 'top') {
+        const T = { at: [960, 540], pitch: -Math.PI / 2, look: 0, f: 8000, s: 0.5 }, map = IB.trackSpace(T);
+        [-1, 1].forEach((sd) => IB.tyreMarks(ctx, map, rubber(t, sd), { seed: 3760 + sd }));
+        const car = donut(t);
+        IB.carShadow(ctx, map, car, { sun: [0.9, -0.7] });
+        IB.racer(ctx, { ...T, ...WIN, ...car, steer: -0.4, spin: t * 60, blur: true, seed: 1670 });
+        smoke(ctx, map, tt);
+      }
+      if (shot === 'low') {
+        // a camera on a rig at the car's flank, at tyre level: the car holds still in the frame and the ground, its rubber and the smoke wheel round it
+        const L = { at: [1060, 900], yaw: 0.6, look: 0.03, f: 900, s: 1.3 }, map = IB.trackSpace(L), car = donut(t), c = Math.cos(car.heading), sn = Math.sin(car.heading);
+        const ride = ([x, y, z]) => { const dx = x - car.x, dz = z - car.z; return map([dx * c + dz * sn, y, -dx * sn + dz * c]); };   // the track in the car's own frame
+        ride.f = map.f;
+        [-1, 1].forEach((sd) => IB.tyreMarks(ctx, ride, rubber(t, sd), { seed: 3760 + sd }));
+        smoke(ctx, ride, tt, { lw: 3, split: map([0, 0, 0])[2], pass: 'far' });   // the rig is on the side the car slides toward: its smoke streams away behind it
+        IB.racer(ctx, { ...L, ...WIN, steer: -0.4, spin: t * 60, blur: true, seed: 1670 });
+      }
+      if (shot === 'wide') {
+        const G = { at: [960, 700], yaw: -0.6, look: 0.35, f: 1500, s: 0.55 }, map = IB.trackSpace(G);
+        IB.trackStrip(ctx, { ...G, from: -40, to: 40, half: 9, mark: -14, walls: true, wall: 16 });
+        [-1, 1].forEach((sd) => IB.tyreMarks(ctx, map, rubber(t, sd), { seed: 3760 + sd }));
+        const car = donut(t), split = map([car.x, 0, car.z])[2];
+        smoke(ctx, map, tt, { split, pass: 'far' });
+        IB.racer(ctx, { ...G, ...WIN, ...car, steer: -0.4, spin: t * 60, blur: true, seed: 1670 });
+        smoke(ctx, map, tt, { split, pass: 'near' });
+      }
+    });
+    if (shot !== 'helmet') IB.broadcast(ctx, { lap: [58, 58], rows: tower(f), banner: f < LINE ? (f >= 44 ? '마지막 랩' : '') : '우승 #7 · 58랩 완주' });
+  },
+});
+</script>

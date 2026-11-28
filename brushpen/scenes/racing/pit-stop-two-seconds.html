@@ -1,0 +1,169 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / pit-stop-two-seconds</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/pitlane.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 2.3초 피트 스톱: 제한 속도로 피트 레인을 내려온 차가 자기 박스의 표시에 정확히 서고, 열네 명의 크루가 잭을 넣어 차를 들고 휠건으로 네 바퀴를 갈아 끼운 뒤 신호등이 초록으로 바뀌자 휠스핀을 일으키며 빠져나간다. 원본에 없는 창작 장면이다. 전달하는 생각: 열네 사람이 2.3초를 한 사람처럼 쓴다.
+   Motion notes: 9 s, seven shots joined by hard cuts, the broadcast graphics over every shot (IB.broadcast: lap 31 / 58, the order with #7's row marked '피트', the live bug, a banner: '#7 피트 인 · 제한 속도 80 km/h' on the way in, then a stopwatch counting in tenths on ones from the stop and holding '피트 스톱 2.3초' from the release). 0-1.25 s a long lens (f 3000, s 2) low and head-on down the pit lane, the car coming at the limiter, 80 km/h = 22.2 m/s; 1.25 s a long lens from the side (yaw 0, f 3000) tracking it past the garages, the lane sliding back at 22.2 m/s; 2.33 s the high wide of the box (yaw 0, look 0.42, f 1500, s 1.15), the crew poised, the car braking in at 1.3 g (12.75 m/s², nose down 0.025 rad) from 2.63 s and stopping on the mark at 4.33 s (frame 104); 4.58 s a tyre-level insert at the near front wheel (f 900, s 3.1, look 0.03): the gun on the nut spinning on ones, pulled away, the wheel swung off toward the lens and the bare hub; 5.17 s the driver head-on in the car, eyes on the release light, one blink; 5.92 s back on the high wide: new tyres on, guns tightening and raised, the jacks dropped at stop + 1.92 / 2.04 s, the front jack man pulling his jack out of the way, the light green and the car released at stop + 2.29 s with wheelspin (14 m/s², rear tyres smoking 8 drawings) out of the right of the frame; 7.75 s a camera low behind at the box exit as it pulls away to the limiter. The stop: the car lifted 0.07 m from stop + 2 frames over 4 frames; guns on at + 2, spinning + 2-8, off + 10; old tyres pulled + 10-16 and rolled behind + 16-20; new tyres carried in + 14-20 and on at + 22; guns on again + 24-33, raised from + 38. Crew move on twos; the car, the lift, the light, the guns' spin and the camera on ones. */
+const C = IB.C, PI = Math.PI;
+const LIM = 80 / 3.6, BRK = 12.75, LAUNCH = 14;                 // m/s, m/s², m/s²
+const STOP = 104, REL = STOP + 55, F = 24;                        // frames: the car stops on its mark; the light goes green and it leaves 2.29 s later
+const TB = LIM / BRK, DB = (LIM * LIM) / (2 * BRK), TS = STOP / F, TBK = TS - TB, TR = REL / F;
+const RUN = [{ dur: TBK, a: 0 }, { dur: TB, a: -BRK }, { dur: TR - TS, a: 0 }, { dur: LIM / LAUNCH, a: LAUNCH }, { a: 0 }];
+const carX = (t) => (t >= TS && t < TR ? 0 : IB.drive(RUN, t, { x: -DB - LIM * TBK, v: LIM }).x);   // metres from the box's mark (+ down the lane)
+const SHOT = [[0, 'lane'], [30, 'track'], [56, 'wide'], [110, 'insert'], [124, 'helmet'], [142, 'wide'], [186, 'away']];
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [30, { at: [960, 540], w: 1920 }, 'cut'],
+  [56, { at: [960, 540], w: 1920 }, 'cut'], [80, { at: [960, 560], w: 1780 }, 'push', 30],
+  [110, { at: [960, 540], w: 1920 }, 'cut'],
+  [124, { at: [960, 540], w: 1920 }, 'cut'],
+  [142, { at: [960, 560], w: 1780 }, 'cut'], [REL + 2, { at: [1100, 540], w: 1920 }, 'ease', 18],
+  [186, { at: [960, 540], w: 1920 }, 'cut'],
+];
+
+/* ---------- the box, seen high and wide ---------- */
+const HW = { at: [960, 700], yaw: 0, look: 0.42, f: 1500, s: 1.15 }, U = 140 * HW.s, SP = IB.space({ ...HW, look: HW.look });
+const W = (x, y, z) => SP([x * U, y * U, z * U]);
+const spot = (x, z) => { const p = W(x, 0, z); return { x: p[0], floor: p[1], h: 1.8 * U * (HW.f / (HW.f + p[2])) }; };   // a person standing at [x, z] on the lane: floor point and height in px
+const lift = (r) => (r < 2 || r >= 50 ? 0 : r >= 46 ? 0.07 * (1 - (r - 46) / 4) : 0.07 * Math.min(1, (r - 2) / 4));   // metres, on ones
+const lerp3 = (a, b, u) => a.map((v, i) => v + (b[i] - v) * u);
+const path = (keys, r) => { if (r <= keys[0][0]) return keys[0][1]; for (let i = 1; i < keys.length; i++) if (r < keys[i][0]) return lerp3(keys[i - 1][1], keys[i][1], (r - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0])); return keys[keys.length - 1][1]; };
+const CORNERS = [{ ax: 1.75, sd: -1, wi: 0, ww: 0.38 }, { ax: 1.75, sd: 1, wi: 1, ww: 0.38 }, { ax: -1.85, sd: -1, wi: 2, ww: 0.42 }, { ax: -1.85, sd: 1, wi: 3, ww: 0.42 }];
+const oldTyre = (c, r) => path([[10, [c.ax, -0.36, c.sd * 0.8]], [12, [c.ax - 0.08, -0.4, c.sd * 1.05]], [14, [c.ax - 0.22, -0.44, c.sd * 1.35]], [16, [c.ax - 0.45, -0.44, c.sd * 1.7]], [18, [c.ax - 0.85, -0.4, c.sd * 2.05]], [20, [c.ax - 1.2, -0.36, c.sd * 2.3]]], r);
+const newTyre = (c, r) => path([[12, [c.ax + 0.5, -0.62, c.sd * 2.45]], [14, [c.ax + 0.42, -0.6, c.sd * 2.2]], [16, [c.ax + 0.3, -0.55, c.sd * 1.85]], [18, [c.ax + 0.15, -0.48, c.sd * 1.4]], [20, [c.ax + 0.05, -0.42, c.sd * 1.0]], [22, [c.ax, -0.36 - 0.07, c.sd * 0.8]]], r);
+const onCar = (r) => r < 10 || r >= 22;                            // the old wheel is on until + 10, the new one from + 22
+
+// each crewman: where he kneels or stands, which way he faces, and his pose, gun and tyre at stop-relative drawing r
+const gunner = (c, i) => ({ c, look: (s) => IB.crewLook(7, i, { h: s.h, dir: -1, seed: 3000 + i * 40 }), at: () => [c.ax + 0.72, c.sd * 1.45], act(r, f) {
+  const s = spot(...this.at()), lk = this.look(s), hub = (dx, dy = 0, dz = 0) => W(c.ax + dx, -0.36 - lift(r) + dy, c.sd * (1.0 + dz));
+  const on = (r >= 2 && r < 10) || (r >= 24 && r < 34), ang = PI + c.sd * 0.1;
+  let gun, pose;
+  if (r >= 60) { gun = { tip: W(c.ax + 0.62, -1.9, c.sd * 1.35), ang: -PI / 2 - 0.3 }; pose = IB.stand(s.x, s.floor, lk); }   // up on his feet once the car has gone
+  else if (r >= 38) { gun = { tip: W(c.ax + 0.55, -1.05, c.sd * 1.3), ang: -PI / 2 - 0.45 }; pose = IB.kneelPose(s.x, s.floor, lk, { lean: 0.05 }); }   // done: the gun up
+  else {
+    gun = { tip: on ? hub(0) : r >= 0 && r < 2 ? hub(0.12) : hub(0.34, -0.04, 0.05), ang, spin: on ? f : null };
+    pose = IB.kneelPose(s.x, s.floor, lk, { lean: on ? 0.55 : 0.42, dx: on ? -0.02 * s.h : 0 });
+  }
+  gun.s = 0.45; gun.band = C.yellow;
+  return { s, lk, pose, gun, z: this.at()[1] };
+} });
+const offman = (c, i) => ({ c, look: (s) => IB.crewLook(7, i, { h: s.h, dir: 1, seed: 3000 + i * 40 }), at: () => [c.ax - 0.8, c.sd * 1.5], act(r) {
+  const s = spot(...this.at()), lk = this.look(s);
+  const pulling = r >= 10 && r < 20, tyre = r >= 10 ? oldTyre(c, r) : null;
+  const pose = IB.kneelPose(s.x, s.floor, lk, { lean: pulling ? 0.12 : 0.38, dx: pulling ? -0.03 * s.h : 0, hand: ['open', 'open'] });
+  if (r >= 62) { const st = IB.stand(s.x, s.floor, lk), j = IB.joints(st, lk); return { s, lk, pose: { ...st, hands: [st.hands[0], IB.polar(j.sh, -PI / 2 + 0.25, 0.28 * s.h)], hand: ['relax', 'grip'] }, tyre, held: false, z: this.at()[1] }; }   // up, a fist in the air
+  if (r < 10) { const a = W(c.ax - 0.3, -0.62 - lift(r), c.sd * 1.05), b = W(c.ax - 0.33, -0.16 - lift(r), c.sd * 1.05); pose.hands = r >= 6 ? [a, b] : [[a[0] - 0.05 * s.h, a[1] + 0.02 * s.h], [b[0] - 0.06 * s.h, b[1]]]; }
+  return { s, lk, pose, tyre, held: pulling, z: this.at()[1] };
+} });
+const onman = (c, i) => ({ c, onman: true, look: (s) => IB.crewLook(7, i, { h: s.h, dir: -1, seed: 3000 + i * 40 }), at(r) { return path([[12, [c.ax + 1.05, c.sd * 2.75]], [20, [c.ax + 0.55, c.sd * 1.85]], [26, [c.ax + 0.55, c.sd * 1.85]], [30, [c.ax + 0.95, c.sd * 2.5]]], r); }, act(r) {
+  const s = spot(...this.at(r)), lk = this.look(s);
+  const carrying = r < 22, crouch = r >= 14 && r < 26;
+  const pose = IB.posed(lk, { hip: [s.x, s.floor - (crouch ? 0.43 : 0.52) * s.h], lean: crouch ? 0.45 : 0.12, feet: [{ a: PI / 2 - 0.28, l: crouch ? 0.46 : 0.5 }, { a: PI / 2 + 0.22, l: crouch ? 0.44 : 0.5 }], hands: [{ a: 0.6, l: 0.27 }, { a: 0.9, l: 0.26 }], hand: ['grip', 'grip'] });
+  return { s, lk, pose, tyre: carrying ? newTyre(c, r) : null, held: carrying || r < 24, z: this.at(r)[1], mountedAt: r >= 22 && r < 24 ? W(c.ax, -0.36 - lift(r), c.sd * 1.0) : null };
+} });
+const CREW = [];
+CORNERS.forEach((c, k) => CREW.push(gunner(c, k * 3), offman(c, k * 3 + 1), onman(c, k * 3 + 2)));
+// the jack men: front (in front of the nose, facing back) and rear (behind the tail, facing forward); r 0 the front jack slides in, the lever goes down as the car rises, back up at the drop, then the front jack is pulled clear to the near side
+const JACKS = [
+  { x0: 3.95, base: 2.55, dir: -1, drop: 49, i: 12, clear: true },
+  { x0: -4.0, base: -2.75, dir: 1, drop: 46, i: 13, clear: false },
+];
+const jackAct = (J, r) => {
+  const out = J.clear && r >= J.drop + 2 ? Math.min(1, (r - J.drop - 1) / 6) : 0, z = -2.3 * out, x = J.x0 - J.dir * 0.5 * out;
+  const s = spot(x, z), lk = IB.crewLook(7, J.i, { h: s.h, dir: J.dir, seed: 3000 + J.i * 40 });
+  const bx = (J.clear && r < 0 ? J.base + 0.5 : J.base) + 0.35 * out, b = W(bx, 0, z * 0.9), down = r >= 2 && r < J.drop;
+  const gh = down ? 0.3 : 0.62, grip = [s.x + J.dir * 0.22 * s.h, s.floor - gh * s.h];
+  const pose = IB.posed(lk, { hip: [s.x - J.dir * 0.03 * s.h, s.floor - (down ? 0.44 : 0.52) * s.h], lean: down ? 0.75 : 0.4, feet: [{ a: PI / 2 - 0.35, l: down ? 0.46 : 0.5 }, { a: PI / 2 + 0.3, l: down ? 0.47 : 0.5 }], hands: [grip, [grip[0] + J.dir * 6, grip[1] + 4]], hand: ['grip', 'grip'] });
+  return { s, lk, pose, base: b, grip, h: (0.16 + lift(r) + (down ? 0.06 : 0)) * U * (HW.f / (HW.f + b[2])), z };
+};
+
+const towerRows = (f) => [{ num: 7, color: C.navy, gap: f >= REL + 30 ? '+1.2' : '피트', hi: true }, { num: 16, color: C.yellow, gap: '+3.4' }, { num: 3, color: C.mint, gap: '+7.9' }, { num: 22, color: C.lavender, gap: '+12.1' }];
+const banner = (f) => (f < STOP ? '#7 피트 인 · 제한 속도 80 km/h' : `피트 스톱 ${(Math.min(f, REL) - STOP) / F < 10 ? ((Math.min(f, REL) - STOP) / F).toFixed(1) : ''}초`);
+const rel = (fd) => fd - STOP;
+
+IB.actors = (t) => { const fd = IB.frame(IB.twos(t)), f = Math.floor(t * F), r = rel(fd); return { shot: IB.held(SHOT, f), car: Math.round(carX(t) * 100) / 100, lift: lift(f - STOP), crew: CREW.map((m) => m.act(r, f).pose.hip.map(Math.round).join(',')).join(' '), jacks: JACKS.map((J) => jackAct(J, r).grip.map(Math.round).join(',')).join(' ') }; };
+
+MG.scene({
+  title: 'racing / pit-stop-two-seconds',
+  duration: 9, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * F), fd = IB.frame(IB.twos(t)), r = rel(fd), rf = f - STOP, shot = IB.held(SHOT, f), x = carX(t);
+    const braking = t > TBK && t < TS, going = t >= TR, wheelspin = going && t < TR + 0.7;
+    const spin = (x + (going ? 2.5 * Math.min(0.7, t - TR) : 0)) / 0.36, band = rf >= 22 ? C.paper : C.yellow;
+    const car = { color: C.navy, accent: C.yellow, num: 7, seed: 1670, tyre: band, spin, rake: braking ? 0.025 : wheelspin ? -0.012 : 0 };
+    IB.film(ctx, IB.shot(SHOTS, f), (ctx) => {
+      if (shot === 'lane') {
+        // head-on down the pit lane: the camera stands 46 m short of the box
+        const V = { at: [960, 880], yaw: -PI / 2, look: 0.05, f: 3000, s: 2.2 }, CAM = -49;
+        IB.pitLane(ctx, V, { from: -100, to: 3, box: -CAM, teams: [7, 22, 16, 3] });
+        IB.racer(ctx, { ...V, ...car, x: x - CAM, blur: true });
+      }
+      if (shot === 'track') {
+        const V = { at: [960, 820], yaw: 0, look: 0.06, f: 3000, s: 1.15 };
+        IB.pitLane(ctx, V, { from: -30, to: 30, run: x, wall: false, teams: [7, 22, 16, 3] });
+        IB.racer(ctx, { ...V, ...car, x: 0, blur: true });
+      }
+      if (shot === 'wide') {
+        IB.pitLane(ctx, HW, { from: -12, to: 14, wall: false, teams: [7, 22, 16, 3] });
+        const acts = CREW.map((m) => ({ m, a: m.act(r, f) })), jacks = JACKS.map((J) => jackAct(J, r));
+        const draw = ({ m, a }) => {
+          const tyre = a.tyre ? () => IB.tyre(ctx, HW, a.tyre, { side: m.c.sd, width: m.c.ww, band: m.onman ? C.paper : C.yellow, seed: 3200 + m.c.wi * 10 }) : null;
+          if (a.gun) return IB.crewman(ctx, a.pose, a.lk, { gun: a.gun });
+          if (a.tyre && !a.held) { tyre(); return IB.crewman(ctx, a.pose, a.lk); }
+          return IB.crewman(ctx, withHands(a, m), a.lk, { held: a.tyre ? () => tyre() : null });
+        };
+        const withHands = (a) => {
+          if (!a.tyre && !a.mountedAt) return a.pose;
+          const cpt = a.tyre ? W(...a.tyre) : a.mountedAt, rr = 0.36 * U * (HW.f / (HW.f + cpt[2])), p = { ...a.pose }, d = a.lk.dir;
+          p.hands = [[cpt[0] - d * rr * 0.35, cpt[1] - rr * 0.85], [cpt[0] - d * rr * 0.85, cpt[1] + rr * 0.25]];
+          return p;
+        };
+        const far = acts.filter(({ m }) => m.c.sd > 0).sort((a, b) => b.a.z - a.a.z), near = acts.filter(({ m }) => m.c.sd < 0).sort((a, b) => b.a.z - a.a.z);
+        far.forEach(draw);
+        jacks.forEach((j) => { if (j.z > -1) IB.pitJack(ctx, j.base, j.grip, { h: j.h, s: 0.9, color: C.yellow }); });
+        const off = CORNERS.filter(() => !onCar(rf)).map((c) => c.wi);
+        if (x > -14 && x < 14) IB.racer(ctx, { ...HW, ...car, x, lift: lift(rf), off });
+        jacks.forEach((j) => { if (j.z <= -1) IB.pitJack(ctx, j.base, j.grip, { h: j.h, s: 0.9, color: C.yellow }); IB.crewman(ctx, j.pose, j.lk); });
+        near.forEach(draw);
+        if (going && rf < 55 + 16) { const wh = [W(x - 1.85, 0, -0.8), W(x - 1.85, 0, 0.8)], k = Math.floor((rf - 55) / 2); wh.forEach((w, i) => IB.tyreSmoke(ctx, w, { k, s: 1.1, dir: -1, seed: 2100 + i * 50 + fd })); }
+        IB.releaseLight(ctx, W(2.9, -3.4, 0.6), { state: f >= REL ? 'go' : 'hold', s: 0.8 });
+      }
+      if (shot === 'insert') {
+        // tyre level at the near front wheel, the gunner's hands coming in from the right
+        const V = { at: [1080, 1060], yaw: -0.18, look: 0.03, f: 1400, s: 4 };
+        const rc = IB.racer(ctx, { ...V, ...car, x: -1.75, z: 0, lift: lift(rf), off: onCar(rf) ? [] : [0], nuts: true });
+        const c = CORNERS[0];
+        if (!onCar(rf) && r < 22) IB.tyre(ctx, V, [oldTyre(c, r)[0] - 1.75, oldTyre(c, r)[1], oldTyre(c, r)[2]], { side: -1, width: 0.38, band: C.yellow, lw: 6 });
+        if (r >= 16 && r < 22) IB.tyre(ctx, V, [newTyre(c, r)[0] - 1.75, newTyre(c, r)[1], newTyre(c, r)[2]], { side: -1, width: 0.38, band: C.paper, lw: 6 });
+        const on = r < 10, hub = rc.hubs[0], tip = on ? hub : [hub[0] + 260, hub[1] + 120];
+        IB.wheelGun(ctx, [tip[0] + 18, tip[1]], PI + 0.1, { s: 1.7, spin: on ? f : null, band: C.yellow, hands: C.charcoal, sleeve: C.navy, from: [tip[0] + 640, 1240] });
+      }
+      if (shot === 'helmet') {
+        const k = f - 124, look = k < 6 ? 0.75 : k < 10 ? 0.2 : 0.75;
+        IB.helmet(ctx, [960, 470], { s: 1.25, eyes: 'tense', look, blink: fd === 134, color: C.navy, accent: C.yellow });
+      }
+      if (shot === 'away') {
+        // low behind at the box exit, running with him for 0.8 s, then stopping: he pulls away to the limiter down the lane
+        const V = { at: [960, 960], yaw: PI / 2, look: 0.05, f: 1400, s: 2.2 }, CAM = carX(Math.min(t, 206 / F)) - 3.4;
+        IB.pitLane(ctx, V, { from: -1, to: 120, box: -CAM, teams: [7, 22, 16, 3] });
+        IB.racer(ctx, { ...V, ...car, x: x - CAM, blur: true });
+      }
+    });
+    IB.broadcast(ctx, { lap: [31, 58], rows: shot === 'helmet' ? [] : towerRows(f), banner: banner(f) });
+  },
+});
+</script>

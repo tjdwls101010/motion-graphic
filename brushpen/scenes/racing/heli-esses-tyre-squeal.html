@@ -1,0 +1,104 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / heli-esses-tyre-squeal</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-weather.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 빠른 S자 코너: 헬기에서 내려다본 네 대의 무리가 그림자를 끌고 S자를 꿰는 동안, 선두의 온보드와 정점 연석의 바닥 카메라로 내려가 느린 화면으로 화면을 채운 앞타이어가 연석을 타고 넘으며 끼익 비벼지는 순간을 보고, 다시 헬기로 올라가 무리가 빠져나가는 것을 중계 화면처럼 여섯 샷으로 잇는다. 원본에 없는 창작 장면이다. 전달하는 생각: 위에서는 매끄러운 선이 바닥에서는 타이어 하나의 비명이다.
+   Motion notes: 8 s, six shots joined by hard cuts, the broadcast over every shot (lap 31 / 58; in the replay the live bug gives way to "느린 화면 · 다시 보기"). 0-2.25 s a helicopter straight down (pitch -PI/2, f 6000, s 0.15: 91 m of ground across the frame) over the esses (IB.trackPath: half-waves of 50 m swinging 9 m, about a 28 m radius, 5.2 g at 38 m/s = 137 km/h), following the middle of the pack of four 12 m (0.32 s) apart, each with its sun shadow (IB.carShadow); 2.25 s the leader's onboard (IB.cockpit, the lens 1 m up: look 0.235 at f 900) with the circuit drawn in the car's own frame, so the track ahead bends as the wheel turns 0.6 x the heading change of the next 14 m; 3.17 s a lens 0.3 m up beside the apex kerb looking back up the track (look 0.072, f 700), the leader coming at it live and hopping the raised kerb (IB.apexKerb) at 3.71 s with a 10 px jolt; 3.83 s the replay at 1/16 speed (2.4 m/s on screen): a tight frame (w 760) 0.16 m off the tarmac that pans after the near front tyre at 60 % of its pace, the tyre rolling in huge, climbing the kerb at 5.0 s (a snap in, a 12 px jolt, the car up 0.06 m and chattering 4 px on ones for 10 drawings), scrubbing across it with tyre smoke (IB.tyreSmoke on twos) and three shake arcs over its shoulder (IB.shake) and rolling on out; 6.25 s live again at the kerb as the other three come at it, two hopping it before the cut (a jolt each); 7.08 s back up in the helicopter on the straight out of the esses as #3 draws past #16 out to its left in 0.9 s (the tower rows swap over 8 frames, "#3 추월 · 2위"). Cars, wheels and cameras on ones; smoke and shake arcs on twos. */
+const C = IB.C, V = 38;   // m/s through the esses (137 km/h)
+const TEAMS = [{ num: 7, color: C.navy, accent: C.yellow }, { num: 16, color: C.yellow, accent: C.navy }, { num: 3, color: C.mint, accent: C.navy }, { num: 22, color: C.lavender, accent: C.navy }];
+const ESSES = IB.trackPath([[-220, 0], [-100, 0], [-50, 9], [0, -9], [50, 9], [100, 0], [320, 0]]);   // half-waves of 50 m swinging 9 m: about a 28 m radius
+const KERBS = [[154, 182, -1], [210, 238, 1], [266, 294, -1]];   // a kerb on the inside of each apex (s 168, 224, 280)
+const HIT = 120, SLOW = 1 / 16;   // the frame the replayed tyre climbs the kerb; the replay's speed
+const SHOT = [[0, 'heli'], [54, 'onboard'], [76, 'apex'], [92, 'replay'], [150, 'apexLive'], [170, 'heli']];
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }],
+  [54, { at: [960, 540], w: 1920 }, 'cut'],
+  [76, { at: [1000, 580], w: 1500 }, 'cut'],
+  [92, (f) => ({ at: [960 + 0.6 * (tyreX(f) - 960), 700], w: 760 }), 'cut'], [HIT, (f) => ({ at: [960 + 0.6 * (tyreX(f) - 960), 700], w: 690 }), 'snap'],   // the replay's camera pans after the tyre at 60 % of its pace, so it crosses the frame in the shot
+  [150, { at: [1000, 580], w: 1500 }, 'cut'],
+  [170, { at: [960, 540], w: 1920 }, 'cut'],
+];
+// where each car is along the esses (m): the leader from 60 m at 45 m/s, the others 12 m apart; #3 draws past #16 from 7.0 s, out to their left
+const pass = (t) => { const k = Math.max(0, Math.min(1, (t - 7.0) / 0.9)); return k * k * (3 - 2 * k); };
+const along = (i, t) => 140 + V * t - 12 * i + (i === 2 ? 14 * pass(t) : 0);
+const onPath = (i, t) => { const s = along(i, t), p = ESSES.at(s), d = i === 2 ? 2.6 * Math.sin(Math.PI * pass(t)) : 0, [x, z] = ESSES.side(s, d); return { x, z, heading: p.heading }; };
+// the apex camera's world: a straight bit of track at the kerb, the cars coming toward the lens; x = 0 is where the kerb starts
+const APEX = { at: [960, 640], yaw: -1.22, look: 0.072, f: 700, s: 1.2 }, KERB_STRAIGHT = IB.trackPath([[-160, 6.4], [40, 6.4]]);   // looking back up the track from beside the kerb (the lens at about x 3.9, z -1.4, 0.3 m up); the track's centre 6.4 m to its left
+// the replay: a camera on the tarmac beside the kerb, side on, 0.16 m up (f sin(look) / 280 px a metre); the near front tyre's stage x on frame f
+const REPLAY = { at: [960, 820], yaw: 0.25, look: 0.05, f: 900, s: 2 }, replayX = (f) => -1.75 + (V * SLOW) * ((f - HIT) / 24);
+const tyreX = (f) => IB.carAt(IB.trackSpace(REPLAY), { x: replayX(f), z: 0.55 }, [1.75, 0, -0.8])[0];
+const APEX_IN = { apex: [76, -22], apexLive: [150, -10] };   // each apex shot's first frame and where its first car is then (m)
+const apexCar = (k, f, [f0, x0]) => ({ x: x0 + V * ((f - f0) / 24) - 12 * k, z: 1.1 });
+const hop = (k, [f0, x0]) => f0 + Math.ceil(((-x0 - 1.75 + 12 * k) / V) * 24);   // the frame the k-th car's front wheel reaches the kerb
+const tower = (f) => { const k = Math.max(0, Math.min(1, (f - 172) / 8)); return [{ num: 7, color: C.navy, gap: '선두' }, { num: 16, color: C.yellow, gap: k < 0.5 ? '+0.27' : '+0.31', y: 1 + k }, { num: 3, color: C.mint, gap: k < 0.5 ? '+0.54' : '+0.24', y: 2 - k, hi: k > 0 }, { num: 22, color: C.lavender, gap: '+0.81' }]; };
+
+IB.actors = (t) => { const f = Math.floor(t * 24); return { shot: IB.held(SHOT, f), lead: Math.round(along(0, t) * 10) / 10, pass: Math.round(pass(t) * 100) / 100 }; };
+
+MG.scene({
+  title: 'racing / heli-esses-tyre-squeal',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), tt = IB.twos(t), d = IB.frame(tt), shot = IB.held(SHOT, f);
+    const cam = IB.shot(SHOTS, f, { jolt: [[hop(0, APEX_IN.apex), 10], [HIT, 12], [hop(0, APEX_IN.apexLive), 10], [hop(1, APEX_IN.apexLive), 10]] });
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'heli') {
+        const H = { at: [960, 540], pitch: -Math.PI / 2, look: 0, f: 6000, s: 0.15 }, map = IB.trackSpace(H), mid = ESSES.at(along(1.5, t)), off = [mid.x, mid.z];   // the helicopter follows the middle of the pack
+        IB.circuit(ctx, map, ESSES, { off, kerbs: KERBS, half: 6 });
+        const cars = TEAMS.map((team, i) => { const p = onPath(i, t); return { team, i, car: { x: p.x - off[0], z: p.z - off[1], heading: p.heading } }; });
+        cars.forEach(({ car }) => IB.carShadow(ctx, map, car));
+        cars.forEach(({ team, i, car }) => IB.racer(ctx, { ...H, ...team, ...car, spin: along(i, t) / 0.36, blur: true, seed: 1600 + team.num * 10 }));
+      }
+      if (shot === 'onboard') {
+        // the circuit in the leader's own frame, seen from over its driver's head: the bends come at the lens as the wheel turns into them
+        const O = { at: [960, 640], yaw: Math.PI / 2, look: 0.235, f: 900, s: 1.5 }, map = IB.trackSpace(O), s0 = along(0, t), me = ESSES.at(s0), c = Math.cos(me.heading), sn = Math.sin(me.heading);   // look 0.235 at f 900: a lens 1 m up (f sin(look) / 210 px a metre), the horizon at y 430
+        const ride = ([x, y, z]) => { const dx = x - me.x, dz = z - me.z; return map([dx * c + dz * sn - 4, y, -dx * sn + dz * c]); };   // the lens 4.3 m behind the origin: over the driver's head
+        ride.f = map.f;
+        IB.circuit(ctx, ride, ESSES, { from: s0 + 2, to: s0 + 200, kerbs: KERBS, half: 6, grass: false });
+        const ahead = ESSES.at(s0 + 14).heading - me.heading;
+        IB.cockpit(ctx, { color: C.navy, steer: -0.6 * ahead, shake: 3, d: f });
+      }
+      if (shot === 'apex' || shot === 'apexLive') {
+        const map = IB.trackSpace(APEX), n = shot === 'apex' ? [0] : [1, 2, 3];
+        IB.circuit(ctx, map, KERB_STRAIGHT, { from: 40, to: 162, half: 6, grass: false, kerbs: [[40, 160, -1]] });   // flat kerb up the track; the raised apex kerb from x 0
+        IB.apexKerb(ctx, map, { from: 0, to: 3, z0: 0.4, z1: -1.0, h: 0.06 });
+        n.map((i) => ({ i, car: apexCar(shot === 'apex' ? 0 : i - 1, f, APEX_IN[shot]) })).sort((a, b) => a.car.x - b.car.x).forEach(({ i, car }) => {
+          const on = car.x + 1.75 > 0 && car.x + 1.75 < 3, lift = on ? 6 + (f % 2) * 3 : 0;   // the front wheel on the kerb: the car rides up and chatters
+          if (car.x > 1.5) return;   // gone past the lens
+          const r = IB.racer(ctx, { ...APEX, at: [APEX.at[0], APEX.at[1] - lift], ...TEAMS[i], ...car, spin: car.x / 0.36, blur: true, steer: -0.08, seed: 1600 + TEAMS[i].num * 10 });
+          if (on) IB.tyreSmoke(ctx, r.wheels[0], { k: Math.min(3, Math.floor((car.x + 1.75) / 2)), s: 0.6, dir: -1, seed: 2100 + i + d });
+        });
+      }
+      if (shot === 'replay') {
+        // the replay: a camera on the tarmac beside the kerb, side on; the near front tyre rolls in at 1/16 speed, climbs the kerb at HIT and scrubs across it
+        const R = REPLAY, map = IB.trackSpace(R), x = replayX(f), car = { x, z: 0.55 };
+        const wheel = x + 1.75, on = wheel > 0, k = IB.drawn(tt, HIT / 24);
+        IB.trackStrip(ctx, { ...R, from: -6, to: 30, half: 6, kerb: 0, walls: false });
+        IB.apexKerb(ctx, map, { from: 0, to: 30, z0: 0.3, z1: -1.1, h: 0.06, lw: 3 });
+        const lift = on ? Math.round(0.06 * 280) + (k >= 0 && k < 10 ? (k % 2) * 4 : 0) : 0;
+        const r = IB.racer(ctx, { ...R, at: [R.at[0], R.at[1] - lift], ...TEAMS[0], ...car, spin: x / 0.36, steer: -0.1, rake: on ? -0.01 : 0, lw: 3.2, seed: 1670 });
+        if (k >= 0 && k < 22) {
+          const w = r.wheels[0];
+          IB.tyreSmoke(ctx, [w[0] - 30, w[1]], { k: Math.min(5, k), s: 1.0, dir: -1, seed: 2150 + k });
+          if (k < 12) IB.shake(ctx, w[0], w[1] - 100, 150, { a: -Math.PI / 2 - 0.5, n: 3, w: 5, gap: 24, span: 0.45, seed: 400 + k });   // the scrub: arcs over the tyre's shoulder
+        }
+      }
+    });
+    const replay = shot === 'replay';
+    IB.broadcast(ctx, { lap: [31, 58], rows: tower(f), live: !replay, banner: replay ? '느린 화면 · 다시 보기' : f >= 172 ? '#3 추월 · 2위' : '' });
+  },
+});
+</script>

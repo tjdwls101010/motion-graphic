@@ -2,7 +2,7 @@
 
 붓펜 선화 룩의 레퍼런스다. 출처는 IBM의 손그림 애니메이션 광고 스팟 6편(30초 3편, 15초 3편)이고, 그 모션그래픽을 코드로 다시 만든 뒤 같은 룩으로 새 장면과 부품을 넓혀 왔다. 폴더 이름은 처음에 출처를 따 `IBM`이었는데, 재현보다 이 룩의 부품과 창작 장면이 중심이 되어 룩의 이름으로 바꿨다(2026-11-28).
 
-- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 57개(11개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
+- 원본을 재현한 장면 6개(4개 계열)와, 같은 스타일로 원본에 없는 상황을 새로 그린 창작 장면 65개(12개 계열)가 있다. 원본에는 약 50개 샷이 있다. 원본 샷의 전체 목록과 구현 여부는 [CATALOG.md](CATALOG.md), 계열별 룩과 원본 프레임에서 잰 수치, 창작 계열의 규칙은 [STYLE.md](STYLE.md)에 있다.
 - 계열 이름과 시트에서의 순서는 [families.json](families.json)에 있다.
 
 ## 원본 영상
@@ -56,6 +56,10 @@ props/     소품
               IB.dashLine, IB.candleSmear, IB.priceTag), 커서와 팝업(IB.cursor, IB.popupTag), 화살표(IB.arrow), 벽시계(IB.wallClock), 전화 받침(IB.phoneCradle), 날리는 종이(IB.flyingSheet)
   metaphor.js 막대(IB.bar), 깃발(IB.flag), 도미노(IB.domino, IB.dominoRest), 낭떠러지와 널빤지(IB.ledge, IB.plank)
   sports.js   공의 비행·바운드·구르기(IB.flight, 도착 지점과 시간에서 발사 속도 IB.aim), 축구공과 농구공(IB.soccerBall, IB.basketball), 빠른 공의 속도선(IB.ballTrail), 옆에서 본 축구 골대와 불룩해지는 그물(IB.soccerGoal), 농구 골대와 스위시 그물(IB.hoop), 관중석(IB.stands), 점수판과 7획 숫자(IB.scoreboard, IB.segDigits), 빈 광고판(IB.adBoards), 관중·광고판·잔디를 한 번에(IB.pitchside), 실내 경기장 배경(IB.courtside: 옅은 관중, 코트 옆 벽, 마루), 코너 플래그(IB.cornerFlag)
+  racing.js   레이싱카(IB.racer: 미터 단위 3D 모델을 IB.space로 투영해 어느 각도로도, x·z·heading으로 트랙 위 위치와 드리프트, drs·lit·lift·off·nuts·glow), 같은 공간의 트랙(IB.trackStrip: 연석·벽·펜스, bend로 곡선, IB.trackPose), 등가속 주행(IB.drive), 출발 신호(IB.gantry), 정면 헬멧(IB.helmet), 온보드(IB.cockpit), 연기·불꽃·물보라(IB.tyreSmoke, IB.sparks, IB.spray), 체커기(IB.chequer), 옆에서 본 트랙(IB.trackside), 중계 그래픽(IB.broadcast)
+  racing-corners.js  헤어핀과 시케인(IB.hairpin, IB.chicane), 미끄러진 타이어가 남기는 연기(IB.smokeTrail)
+  racing-weather.js  빗속과 위에서 본 서킷: 트랙 공간과 차 놓기(IB.trackSpace, IB.carAt, IB.trackPath, IB.circuit), 물보라·비 신호등·렌즈 물방울·웅덩이(IB.wetSpray, IB.rainLight, IB.lensDrops, IB.trackPuddles), 그림자·타이어 자국·연기 구름(IB.carShadow, IB.tyreMarks, IB.smokeCloud), 정점 연석(IB.apexKerb), 피트 월과 깃발 단(IB.pitWall, IB.flagStand)
+  pitlane.js  피트 스톱(IB.crewman, IB.wheelGun, IB.tyre, IB.pitJack, IB.releaseLight, IB.pitLane)과 시상대(IB.podium, IB.trophy, IB.bottle, IB.cork, IB.champagne, IB.tickerTape)
   citylife.js 도시의 움직이는 것: 2층 버스(IB.doubleDecker), 전화 부스(IB.phoneBox), 여객선과 범선(IB.ferry, IB.tallShip), 강물(IB.river), 신칸센(IB.shinkansen), 케이블카(IB.cableCar), 벚나무와 꽃잎(IB.sakura, IB.petals), 가로등과 카페 탁자(IB.lamppost, IB.cafeTable), 반포대교 분수(IB.fountainBridge), 카페 의자(IB.bistroChair), 나는 새와 땅의 비둘기(IB.flapper: perch, peck)
   copyroom.js 복사실과 탕비실(모두 opts.s로 크기): 프린터(IB.printer: 출력·종이 걸림·표시등·덜컹), 쏟아지는 종이와 낱장(IB.paperSpray, IB.looseSheet), 조리대(IB.counter), 커피머신(IB.coffeeMachine: 잔 자리·물줄기·한 방울·물통·물 없음 등), 정수기(IB.waterCooler), 안고 다니는 서류 더미(IB.paperStack: lean, wave)
   classroom.js 칠판(IB.chalkboard: 써지는 획, 지우개 길로 지워짐), 자리 표시 글씨와 그림(IB.chalkScript, IB.chalkShape), 분필(IB.chalk), 칠판지우개(IB.boardEraser), 분필 가루 구름(IB.chalkDust), 아이 책상과 의자(IB.schoolDesk, IB.schoolChair), 교탁(IB.lectern)

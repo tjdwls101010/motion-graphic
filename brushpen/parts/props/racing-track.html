@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / racing-track</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 레이싱 장면의 나머지 부품. 차와 같은 3D 공간에 그리는 트랙 IB.trackStrip(뒤 아래에서 따라가는 샷: 연석과 벽이 run만큼 뒤로 흘러 서 있는 차가 달린다), 출발 신호 IB.gantry(하나씩 켜지고 꺼지면 출발), 정면 헬멧 클로즈업 IB.helmet(긴장한 눈, 땀), 온보드 IB.cockpit, 타이어 연기 IB.tyreSmoke, 불꽃 IB.sparks, 물보라 IB.spray, 체커기 IB.chequer, 옆에서 본 트랙 IB.trackside, 중계 그래픽 IB.broadcast.
+   Motion notes: 4 s loop on twos; the chase cell launches with IB.drive (1500 px/s² for 2 s), the onboard cell runs 60 m a second (216 km/h). */
+const C = IB.C, ctxRef = { c: null };
+const CHASE = { at: [960, 860], yaw: Math.PI / 2, look: 0.07, f: 800, s: 1.2 };
+const CELLS = [
+  ['IB.trackStrip + IB.racer (low behind), run from IB.drive', (k) => { IB.trackStrip(ctxRef.c, { ...CHASE, run: IB.drive([{ dur: 2, a: 1500 }, { a: 0 }], k / 12).x / 140, from: -3, to: 120, half: 5 }); IB.racer(ctxRef.c, { ...CHASE, drs: true, blur: k > 12 }); }],
+  ['IB.gantry({ on, out })', (k) => IB.gantry(ctxRef.c, [960, 560], { on: Math.min(5, Math.floor(k / 6)), out: k >= 40 })],
+  ['IB.helmet({ eyes: tense, sweat })', (k) => IB.helmet(ctxRef.c, [960, 640], { s: 0.9, eyes: k % 24 < 2 ? 'shut' : 'tense', look: k % 48 < 24 ? 0 : 0.6, sweat: (k % 16) / 4 })],
+  ['IB.trackStrip + IB.cockpit', (k) => { IB.trackStrip(ctxRef.c, { at: [960, 600], yaw: Math.PI / 2, look: 0.06, f: 700, s: 1, run: k * 5, from: 1, to: 140, half: 5 }); IB.cockpit(ctxRef.c, { steer: Math.sin(k / 6) * 0.3, shake: 4, d: k }); }],
+  ['IB.tyreSmoke + IB.sparks', (k) => { IB.racer(ctxRef.c, { at: [960, 860], yaw: 0, s: 0.9, look: 0.08, steer: 0.1 }); IB.tyreSmoke(ctxRef.c, [960 + 1.75 * 126, 860], { k: k % 10, seed: 2100 + k }); IB.sparks(ctxRef.c, [880, 858], { d: k }); }],
+  ['IB.spray (wet), rain light', (k) => { IB.spray(ctxRef.c, [960 - 1.85 * 126, 850], { d: k, len: 900 }); IB.racer(ctxRef.c, { at: [960, 860], yaw: 0, s: 0.9, look: 0.08, lit: k % 4 < 2, color: C.yellow, accent: C.navy }); }],
+  ['IB.chequer({ wave })', (k) => IB.chequer(ctxRef.c, [800, 420], { s: 1.4, wave: k % 2 })],
+  ['IB.trackside({ run, blur })', (k) => IB.trackside(ctxRef.c, [200, 1720], 900, { run: k * 2, blur: 1 })],
+];
+MG.scene({
+  title: 'props / racing-track',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx); ctxRef.c = ctx;
+    SAMPLE.title(ctx, 'racing: the track, start lights, helmet, onboard, smoke and spray, flag, broadcast (props/racing.js)');
+    const c = SAMPLE.grid(CELLS.length, 4), k = Math.round(IB.twos(t) * 12);
+    CELLS.forEach(([label, draw], i) => SAMPLE.cell(ctx, c[i], [0, 0, 1920, 1080], () => { ctx.save(); IB.clipRect(ctx, [0, 0, 1920, 1080]); draw(k); ctx.restore(); }, label));
+    IB.broadcast(ctx, { lap: [12, 58], rows: [{ num: 7, color: C.navy, gap: '선두' }, { num: 16, color: C.yellow, gap: '+0.412', hi: true }, { num: 3, color: C.mint, gap: '+2.087' }], banner: k % 48 < 24 ? '피트 스톱 2.3초' : '' });
+  },
+});
+</script>

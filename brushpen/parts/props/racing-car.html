@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / racing-car</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 한 대의 레이싱카 IB.racer를 여러 시점에서 본다. 차는 미터 단위의 작은 3D 모델을 IB.space로 투영해 면마다 붓펜으로 먼 것부터 그린 것이라, 같은 차가 옆, 정면, 뒤 아래, 타이어 높이, 위, 드리프트로 보인다. 첫 칸은 한 바퀴 도는 차다. 
+   Motion notes: 4 s loop; the turntable turns 2PI in 4 s on twos; wheels spin with it. */
+const C = IB.C, ctxRef = { c: null };
+const CELLS = [
+  ['turntable', (k) => IB.racer(ctxRef.c, { at: [960, 820], yaw: (k / 48) * Math.PI * 2, s: 0.95, spin: k * 0.4, look: 0.22 })],
+  ['side on (yaw 0)', (k) => IB.racer(ctxRef.c, { at: [960, 820], yaw: 0, s: 1, spin: k * 0.5, look: 0.05, color: C.yellow, accent: C.navy })],
+  ['head-on, low (yaw -PI/2)', (k) => IB.racer(ctxRef.c, { at: [960, 860], yaw: -Math.PI / 2, s: 1.2, look: 0.04, f: 900, spin: k * 0.5 })],
+  ['low behind, DRS open (yaw PI/2)', (k) => IB.racer(ctxRef.c, { at: [960, 860], yaw: Math.PI / 2, s: 1.2, look: 0.06, f: 800, drs: true, lit: k % 4 < 2, spin: k * 0.5 })],
+  ['at the tyre (look 0.01, f 600)', (k) => IB.racer(ctxRef.c, { at: [700, 860], yaw: -0.5, s: 1.6, look: 0.01, f: 600, spin: k * 0.5, steer: 0.2 })],
+  ['from above (pitch -PI/2)', (k) => IB.racer(ctxRef.c, { at: [960, 600], pitch: -Math.PI / 2, yaw: 0, s: 1, look: 0, spin: k * 0.5 })],
+  ['drift (yaw 0.45, steer -0.3)', (k) => IB.racer(ctxRef.c, { at: [960, 820], yaw: 0.45, s: 1, look: 0.2, steer: -0.3, bodyRoll: 0.05, color: C.mint, accent: C.navy, spin: k * 0.5 })],
+  ['3/4 front (yaw -0.7)', (k) => IB.racer(ctxRef.c, { at: [960, 820], yaw: -0.7, s: 1, look: 0.25, color: C.lavender, accent: C.navy, spin: k * 0.5 })],
+];
+MG.scene({
+  title: 'props / racing-car',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx); ctxRef.c = ctx;
+    SAMPLE.title(ctx, 'racing car: one 3-D model, any angle (props/racing.js)');
+    const c = SAMPLE.grid(CELLS.length, 4), k = Math.round(IB.twos(t) * 12);
+    CELLS.forEach(([label, draw], i) => SAMPLE.cell(ctx, c[i], SAMPLE.window([960, 700], (c[i][2] * 1000) / c[i][3], 1000, 260), () => draw(k), label));
+  },
+});
+</script>

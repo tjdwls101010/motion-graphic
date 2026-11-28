@@ -20,7 +20,7 @@ const C = IB.C, ctxRef = { c: null };
 const BEHIND = { at: [960, 900], yaw: Math.PI / 2, look: 0.05, f: 1400, s: 2.2 };
 const AHEAD = { at: [960, 900], yaw: -Math.PI / 2, look: 0.04, f: 3000, s: 1.6 };
 const TOP = { at: [960, 540], pitch: -Math.PI / 2, look: 0, f: 6000, s: 0.22 };
-const LOW = { at: [700, 900], yaw: -0.35, look: 0.01, f: 600, s: 1.6 };
+const LOW = { at: [960, 640], yaw: -1.22, look: 0.072, f: 700, s: 1.2 }, KERB_RUN = IB.trackPath([[-160, 6.4], [40, 6.4]]);   // a lens 0.3 m up beside the kerb, looking back up the track
 const ESSES = IB.trackPath([[-90, 0], [-50, 10], [-15, -12], [20, 12], [55, -8], [90, 0]]);
 const donut = (tt) => { const a = tt * Math.PI * 2 / 1.6, R = 3.6; return { x: Math.cos(a) * R, z: Math.sin(a) * R, heading: a + Math.PI / 2 + 1.25 }; };
 const rear = (tt, sd) => { const c = donut(tt), h = c.heading; return [c.x - 1.85 * Math.cos(h) - 0.8 * sd * Math.sin(h), c.z - 1.85 * Math.sin(h) + 0.8 * sd * Math.cos(h)]; };
@@ -31,7 +31,7 @@ const CELLS = [
   ['IB.lensDrops (on ones)', (k, f) => { IB.racer(ctxRef.c, { at: [960, 820], yaw: 0, s: 0.9, look: 0.08, color: C.mint, accent: C.navy }); IB.lensDrops(ctxRef.c, { f, n: 18, s: 1.4 }); }],
   ['IB.trackPath + IB.circuit + IB.carShadow (heli)', (k, f) => { const map = IB.trackSpace(TOP), s = 20 + ((f / 24) * 40) % 140, car = ESSES.at(s); IB.circuit(ctxRef.c, map, ESSES, { kerbs: [[45, 70, -1], [80, 105, 1], [118, 140, -1]], line: 30 }); IB.carShadow(ctxRef.c, map, car); IB.racer(ctxRef.c, { ...TOP, ...car, color: C.navy, accent: C.yellow }); }],
   ['IB.tyreMarks + IB.smokeTrail (donut, above)', (k, f) => { const map = IB.trackSpace({ ...TOP, s: 0.9 }), tt = k / 12, pts = []; for (let u = 0; u <= tt; u += 1 / 24) pts.push(rear(u, -1)); [-1, 1].forEach((sd) => IB.tyreMarks(ctxRef.c, map, pts.map((p, i) => rear(i / 24, sd)))); IB.racer(ctxRef.c, { ...TOP, s: 0.9, ...donut(tt), steer: -0.4 }); IB.smokeTrail(ctxRef.c, map, { at: [(u) => rear(u, -1), (u) => rear(u, 1)], now: tt, wind: [0.8, 0.4] }); }],
-  ['IB.apexKerb at tyre level', (k, f) => { const map = IB.trackSpace(LOW); IB.trackStrip(ctxRef.c, { ...LOW, from: -10, to: 40, half: 6, kerb: 0, walls: false }); IB.apexKerb(ctxRef.c, map, { from: -8, to: 40, z0: -2.2, z1: -3.4, h: 0.08, run: 0 }); IB.racer(ctxRef.c, { ...LOW, x: 2.6, z: -1.4, spin: f * 0.5, steer: 0.15 }); }],
+  ['IB.apexKerb at tyre level', (k, f) => { const map = IB.trackSpace(LOW); IB.circuit(ctxRef.c, map, KERB_RUN, { from: 40, to: 162, half: 6, grass: false, kerbs: [[40, 160, -1]] }); IB.apexKerb(ctxRef.c, map, { from: 0, to: 3, z0: 0.4, z1: -1.0, h: 0.06 }); IB.racer(ctxRef.c, { ...LOW, x: -14 + (k % 24) * 0.5, z: 1.1, spin: f * 0.5, blur: true }); }],
   ['IB.pitWall + crew (IB.figure) leaning on it', (k, f) => { const back = IB.pitWall(ctxRef.c, [0, 1920], 900, { layer: 'back' }); [300, 620, 960, 1300, 1620].forEach((x, i) => { const [p, look] = crew(x, back.deck, k, i); IB.figure(ctxRef.c, p, look); }); IB.pitWall(ctxRef.c, [0, 1920], 900, { layer: 'front' }); }],
   ['IB.flagStand({ k })', (k, f) => IB.flagStand(ctxRef.c, [900, 980], { k, s: 1.6, dir: -1 })],
 ];

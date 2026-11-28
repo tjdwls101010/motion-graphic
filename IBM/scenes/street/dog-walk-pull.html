@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>street / dog-walk-pull</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/cast/dog.js"></script>
+<script src="../../kit/cast/cat.js"></script>
+<script src="../../kit/props/home.js"></script>
+<script>
+/* 개를 산책시키던 사람 앞에서 개가 상자 위에 잠든 고양이를 보고 한 발을 든 채 얼어붙었다가 확 당기고, 사람은 뒤꿈치로 버티다 바닥에 자국을 남기며 끌려가는데, 고양이가 눈을 번쩍 뜨자 개가 귀를 젖히고 얌전히 앉는다. 원본에 없는 창작 장면으로, 새 부품 개와 목줄(cast/dog.js: IB.dog, IB.dogWalk, IB.dogMix, IB.leash)에 출연진 commuter, 의자 고양이(IB.chairCat, vignette/balloons-lift-chair)와 나무 상자(IB.woodCrate, metaphor/flashlight-finds-file), 미끄러지는 발의 먼지(IB.wheelDust)와 늘어나는 스미어를 조립했다. 전달하는 생각: 큰 힘은 얼어붙은 한 박자 뒤에 오고, 더 큰 힘 앞에서는 한순간에 꺾인다.
+   Motion notes: one locked shot, 7 s, figure 360 px (line 3.1 px), dog at s 0.93 (shoulder 89 px, line 3 px), a crate 210 x 300 with the cat at 0.9x on it, all acting on twos. Walk-in 0-2.33 s: the person comes in from off the left edge, 28 drawings at IB.walkLen / 12 = 25.2 px a drawing, and stops on phase 1/3; the dog trots 290 px ahead at the same 25.2 px a drawing, 6 drawings a cycle (trot, stride 40.6: IB.dogWalkLen = 151.2 px), tail wagging on twos. The dog freezes first, at 2.0 s on a drawing with all four paws down (one drawing thrown 12% past, then the point: head up, ears up, tail stiff, near front paw lifted), so the person takes four more drawings and the leash goes slack; the person stops thrown forward one drawing (lean 0.12). Dead hold 2.42-3.0 s. The lunge: 3.0 s the dog's weight goes back in an in-between and is held 4 frames (crouch), 3.25 s one drawing 10% past the pull with its front paws off the floor while the leash snaps straight (shake marks for 3 drawings), 3.33 s the pull, paws braced. The person answers a drawing later: 3.33 s jerked forward (lean 0.2, arm out, eyes wide), 3.42 s a front foot in the air, 3.5 s braced (lean -0.3, both hands on the leash, front heel dug in with the toe up 0.5 rad). The drag, 3.42-5.5 s: the dog scrabbles in the pull pose (trot, 4 drawings a cycle, stride 16.1) and moves 15 px a drawing, its planted paws fixed; the person slides with it 15 px a drawing from 3.58 s, alternating two straining drawings (no prev through them), the floor smear stretching behind into a 360 px skid with dust off the front heel every drawing. The dog stops at 5.5 s with all four paws down; the person, pulled no longer, is thrown back one drawing (lean -0.38) and comes up over two. 5.67 s the cat's eyes open; 5.75 s the dog recoils with its ears flat, sits in three drawings (paws lifted on the middle one, 6% past) and the leash goes slack. Still from 6.0 s. Every drawing of the person passes the one before as pose.prev except through the strain. Two colours: the navy jacket and the collar's blue (with the floor smear). */
+const { lerp, clamp } = MG;
+const F = IB.FIG, FLOOR = 930, H = 360, WHO = { ...IB.PEOPLE.commuter, h: H, dir: 1, seed: 50 };
+const PACE = IB.walkLen(WHO) / 12, X0 = -150, IN = 28, XS = X0 + IN * PACE, PH = (IN / 12) % 1;   // 28 drawings in, stopping on phase 1/3
+const DS = 0.93, TROT = { gait: 'trot', stride: (PACE * 6 * 0.5) / 2 / DS }, DX0 = X0 + 290, DF = 24;   // the dog trots 6 drawings a cycle at the person's pace; it freezes after 24 drawings
+const V = 15, SCRAB = { gait: 'trot', stride: V / DS, lift: 12 }, DRAG = 80, N = 26;   // the drag: 14 px a drawing, 4 drawings a cycle, from frame 80 for 26 drawings
+const CRATE = [1520, FLOOR], CAT = [1520, FLOOR - 300], CAT_S = 0.9, CAT_EYES = 136;
+
+/* ---------- the person ---------- */
+const leashHand = (p) => ({ ...p, hands: [p.hands[0], [p.hip[0] + 0.13 * H, p.hip[1] - 0.03 * H]], hand: ['relax', 'grip'] });   // the near hand holds the leash out in front
+const S = leashHand({ ...IB.stand(XS, FLOOR, WHO), feet: IB.walk(XS, FLOOR, WHO, PH).feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]) });
+const HY = S.hip[1], BACK = Math.min(S.feet[0][0], S.feet[1][0]), FRONT = XS + 0.26 * H, backIs = S.feet[0][0] < S.feet[1][0] ? 0 : 1;
+const heel = (x) => [x, FLOOR - F.ankle * H - IB.footLift(-0.5, H), -0.5];   // a heel dug in, toe up
+const feetAs = (back, front) => (backIs === 0 ? [back, front] : [front, back]);
+const twoHands = (hx, hy) => [[hx - 0.04 * H, hy + 0.012 * H], [hx, hy]];
+const BRACE = (() => { const hip = [BACK + 0.12 * H, HY + 0.06 * H]; return { hip, lean: -0.3, nod: 0.06, feet: feetAs([BACK, FLOOR - F.ankle * H, 0], heel(FRONT)), hands: twoHands(hip[0] + 0.17 * H, hip[1] - 0.07 * H), hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'frown', brow: 1 } }; })();
+const STRAIN = { ...BRACE, lean: -0.27, hip: [BRACE.hip[0] + 2, BRACE.hip[1] - 2], hands: BRACE.hands.map(([x, y]) => [x + 4, y - 2]) };
+const shift = (p, dx) => ({ ...p, hip: [p.hip[0] + dx, p.hip[1]], feet: p.feet.map((f) => [f[0] + dx, f[1], f[2]]), hands: p.hands.map((q) => [q[0] + dx, q[1]]) });
+const SLID = V * (N - 2);   // how far the person slides: from frame 84 to the dog's stop
+const DRAWN = {
+  thrown: { ...S, lean: 0.12, hip: [XS + 6, HY + 2], hands: [S.hands[0], [S.hands[1][0] + 6, S.hands[1][1] + 2]] },
+  jerk: { ...S, hip: [XS + 10, HY + 4], lean: 0.2, nod: 0.05, hands: [S.hands[0], [XS + 0.27 * H, HY - 0.02 * H]], hand: ['relax', 'grip'], face: { eye: 'wide', mouth: 'open' } },
+  step: { ...IB.poseMix(S, BRACE, 0.5), feet: feetAs([BACK, FLOOR - F.ankle * H, 0], [lerp(S.feet[1 - backIs][0], FRONT, 0.6), FLOOR - F.ankle * H - 0.07 * H, -0.3]), hand: ['grip', 'grip'], face: { eye: 'wide', mouth: 'open' } },
+  thrownBack: { ...shift(BRACE, SLID), lean: -0.38, nod: -0.08, hip: [BRACE.hip[0] + SLID - 6, BRACE.hip[1] + 4], face: { eye: 'wide', mouth: 'open' } },
+};
+const END = (() => { const b = shift(BRACE, SLID), hip = [lerp(b.feet[0][0], b.feet[1][0], 0.5), HY + 0.01 * H]; return { ...b, hip, lean: 0, nod: 0.1, feet: b.feet.map((f) => [f[0], FLOOR - F.ankle * H, 0]), hands: [[hip[0] + 0.02 * H, hip[1] + 0.06 * H], [hip[0] + 0.12 * H, hip[1] + 0.01 * H]], hand: ['relax', 'grip'], face: { eye: 'dot', mouth: 'flat' } }; })();
+const W0 = IN * 2;
+const ACT = [
+  [W0, DRAWN.thrown], [W0 + 2, S],
+  [80, DRAWN.jerk], [82, DRAWN.step], [84, BRACE],
+  [134, DRAWN.thrownBack], [136, IB.poseMix(DRAWN.thrownBack, END, 0.6)], [138, END],
+];
+const STRAINING = [86, 134];   // the slide: two drawings alternating, no prev
+function personOn(f) {
+  if (f < W0) { const k = f >> 1; return leashHand(IB.walk(X0 + k * PACE, FLOOR, WHO, (k / 12) % 1)); }
+  if (f >= STRAINING[0] && f < STRAINING[1]) return shift((f >> 1) % 2 ? STRAIN : BRACE, V * ((f - 84) >> 1));
+  return IB.held(ACT, f);
+}
+const personAt = (t) => { const f = IB.frame(IB.twos(t)), p = personOn(f), strain = f >= STRAINING[0] && f < STRAINING[1]; return { ...p, prev: f > 0 && !strain ? personOn(f - 2) : undefined }; };
+
+/* ---------- the dog: [x of `at`, pose] ---------- */
+const DP = IB.dog.POSE;
+const FROZE = IB.dogWalk(0, TROT), DXF = DX0 + DF * PACE;   // the trot's drawing 0 has all four paws down
+const POINT = { ...DP.point, feet: FROZE.feet.map((q, i) => (i === 2 ? [q[0] + 14, -30] : q)) };   // the near front paw lifts where it stood
+const CROUCH = { ...DP.crouch, feet: FROZE.feet };
+const PULL0 = IB.dogWalk(0, { ...SCRAB, base: DP.pull }), A0 = DXF + 30;
+const LEAP = { ...IB.dogMix(CROUCH, PULL0, 1.1), feet: PULL0.feet.map(([x, y], i) => (i % 2 ? [x, y] : [x - 8, -14])) };   // front paws off the floor
+const SITTING = { ...DP.sit, ear: -1, tail: -0.5, eye: 'wide' };
+const DOG = [
+  [48, [DXF, IB.dogMix(FROZE, POINT, 1.12)]], [50, [DXF, POINT]],
+  [72, [DXF, IB.dogMix(POINT, CROUCH, 0.6)]], [74, [DXF, CROUCH]], [78, [A0 - 10, LEAP]],
+  [132, [A0 + V * N, { ...IB.dogWalk(N / 4, { ...SCRAB, base: DP.pull }), mouth: 0.8 }]],
+  [138, [A0 + V * N, { ...IB.dogMix(PULL0, DP.crouch, 0.8), feet: IB.dogWalk(N / 4, { ...SCRAB, base: DP.pull }).feet, ear: -1, mouth: 0, tail: -0.3 }]],
+  [140, [A0 + V * N, { ...IB.dogMix(DP.crouch, SITTING, 0.5), ear: -1, feet: IB.dogMix(PULL0, SITTING, 0.5).feet.map(([x, y]) => [x, y - 12]) }]],
+  [142, [A0 + V * N, IB.dogMix(DP.stand, SITTING, 1.06)]], [144, [A0 + V * N, SITTING]],
+];
+function dogOn(f) {
+  if (f < 48) { const k = f >> 1; return [DX0 + k * PACE, { ...IB.dogWalk((k / 6) % 1, TROT), wag: k % 2, mouth: 0.35 }]; }
+  if (f >= DRAG && f < 132) { const k = (f - DRAG) >> 1; return [A0 + V * k, { ...IB.dogWalk((k / 4) % 1, { ...SCRAB, base: DP.pull }), mouth: k % 2 ? 0.8 : 0.5 }]; }
+  return IB.held(DOG, f);
+}
+// the leash: straight from the lunge until the dog recoils; otherwise as slack as the gap allows
+const tautOn = (f, hand, collar) => (f >= 78 && f < 138 ? 1 : clamp((Math.hypot(collar[0] - hand[0], collar[1] - hand[1]) - 150) / 110, 0, 0.9));
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { person: personAt(t), dog: dogOn(f), cat: f >= CAT_EYES ? 'wide' : 'shut' }; };
+
+MG.scene({
+  title: 'street / dog-walk-pull',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), p = personAt(t), [dx, dp] = dogOn(f);
+    // the crate and the cat asleep on it, until its eyes open
+    IB.woodCrate(ctx, CRATE, { w: 210, h: 300 });
+    ctx.save(); IB.place(ctx, CAT, { s: CAT_S }); IB.chairCat(ctx, CAT, { eyes: f >= CAT_EYES ? 'wide' : 'shut' }); ctx.restore();
+    // the person's smear stretches into a skid behind the front heel once the slide starts
+    const fx = Math.max(p.feet[0][0], p.feet[1][0]), bx = Math.min(p.feet[0][0], p.feet[1][0]);
+    if (f >= 84) { const x0 = BACK - 40, x1 = fx + 60; IB.smear(ctx, (x0 + x1) / 2, FLOOR - 9, x1 - x0, { h: 14, seed: 9 }); }
+    else IB.smear(ctx, (fx + bx) / 2, FLOOR - 9, fx - bx + 200, { h: 14, seed: 9 });
+    IB.smear(ctx, dx + 4, FLOOR - 8, 210, { h: 12, seed: 12 });
+    if (f >= 86 && f < 134) IB.wheelDust(ctx, [fx + 44, FLOOR - 36], { d: (f - 86) >> 1 });
+    const dog = IB.dog(ctx, [dx, FLOOR], dp, { s: DS, seed: 600 });
+    const j = IB.figure(ctx, p, { ...WHO, face: p.face });
+    const mid = IB.leash(ctx, j.hands[1], dog.collar, { taut: tautOn(f, j.hands[1], dog.collar) });
+    // the leash snaps straight: shake marks above it for three drawings
+    const k = IB.drawn(tt, 78 / 24);
+    if (k >= 0 && k < 3) { IB.shake(ctx, mid[0], mid[1] - 6, 18, { a: -Math.PI / 2, n: 2, seed: 660 + k }); IB.shake(ctx, mid[0], mid[1] + 6, 18, { a: Math.PI / 2, n: 2, seed: 670 + k }); }
+  },
+});
+</script>

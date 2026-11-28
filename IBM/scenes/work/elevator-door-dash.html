@@ -26,7 +26,7 @@ const XL = LIFT[0] - 111, XR = XL - 14 * RUN, XS = XR - 0.035 * H, X0 = XS - 8 *
 const stopped = (x, ph, look) => { const p = IB.stand(x, FLOOR, look); p.feet = IB.walk(x, FLOOR, look, ph).feet.map((f) => [f[0], FLOOR - F.ankle * look.h, 0]); return p; };
 const S = stopped(XS, 5 / 6, WHO), HY = S.hip[1];
 const lastRun = IB.run(XR + 13 * RUN, FLOOR, WHO, (1 / 8 + 13 / 8) % 1), BACK = lastRun.feet[0][0];   // its planted (far) foot stays for the lunge
-const LUNGE_HIP = [XL, HY + 22];
+const LUNGE_HIP = [XL, HY + 30];   // low enough that the planted back foot stays within the leg's reach (0.52 h)
 const GAP_HAND = [LIFT[0] - 2, LUNGE_HIP[1] - 0.2 * H];   // the open hand in the doors' gap, within reach of the leaning shoulder
 const LUNGE = { hip: LUNGE_HIP, lean: 0.3, nod: 0.06, feet: [[BACK, AY - IB.footLift(0.35, H), 0.35], [XL + 0.22 * H, AY, 0]], hands: [[XL - 0.13 * H, LUNGE_HIP[1] - 0.02 * H], GAP_HAND], hand: ['grip', 'open'], face: { eye: 'closed', mouth: 'flat' } };
 const S2 = (() => { const p = IB.stand(BACK - 0.04 * H, FLOOR, WHO); return { ...p, face: { mouth: 'smile' } }; })();   // stepped back to a stand on the far foot
@@ -36,8 +36,8 @@ const DRAW = {
   lungePast: { ...LUNGE, hip: [XL + 6, LUNGE_HIP[1] + 3], lean: 0.36, nod: 0.1 },
   lunge: LUNGE,
   relief: { ...LUNGE, face: { eye: 'dot', mouth: 'smile' } },
-  shift: { ...LUNGE, hip: [XL - 40, LUNGE_HIP[1] - 4], lean: 0.08, nod: 0, hands: [[XL - 40 + 0.02 * H, LUNGE_HIP[1] + 0.05 * H], [XL - 40 + 0.13 * H, LUNGE_HIP[1] - 0.12 * H]], hand: ['relax', 'relax'], face: { mouth: 'smile' } },   // weight back onto the far foot, the hand out of the gap
-  stepBack: { ...S2, hip: [(XL - 40 + S2.hip[0]) / 2, S2.hip[1] + 6], lean: 0.02, feet: [S2.feet[0], [(LUNGE.feet[1][0] + S2.feet[1][0]) / 2, AY - 0.07 * H, 0.2]], face: { mouth: 'smile' } },   // the front foot lifted on its way back
+  shift: { ...LUNGE, hip: [XL - 20, LUNGE_HIP[1] + 4], lean: 0.08, nod: 0, hands: [[XL - 20 + 0.02 * H, LUNGE_HIP[1] + 0.05 * H], [XL - 20 + 0.13 * H, LUNGE_HIP[1] - 0.12 * H]], hand: ['relax', 'relax'], face: { mouth: 'smile' } },   // weight back onto the far foot, the hand out of the gap
+  stepBack: { ...S2, hip: [(XL - 20 + S2.hip[0]) / 2, S2.hip[1] + 6], lean: 0.02, hands: S2.hands.map(([x, y]) => [x + (XL - 20 - S2.hip[0]) / 2, y + 6]), feet: [S2.feet[0], [(LUNGE.feet[1][0] + S2.feet[1][0]) / 2, AY - 0.07 * H, 0.2]], face: { mouth: 'smile' } },   // the front foot lifted on its way back
   standPast: { ...S2, hip: [S2.hip[0] - 6, S2.hip[1]], lean: -0.04, face: { mouth: 'smile' } },
   stand: S2,
   takeBoss: { ...S2, hip: [S2.hip[0] - 10, S2.hip[1] + 4], lean: -0.15, nod: -0.12, hands: [[S2.hip[0] + 0.06 * H, S2.hip[1] - 0.06 * H], [S2.hip[0] + 0.03 * H, S2.hip[1] - 0.03 * H]], hand: ['open', 'open'], face: { eye: 'wide', mouth: 'open' } },

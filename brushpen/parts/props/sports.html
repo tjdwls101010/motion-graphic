@@ -9,7 +9,7 @@
 <script src="../../kit/props/sports.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 소품 견본: 공 경기의 부품 IB.soccerBall, IB.basketball, IB.ballTrail, IB.flight, IB.aim, IB.soccerGoal, IB.hoop, IB.stands, IB.adBoards, IB.scoreboard, IB.segDigits. 공은 중력으로 난다: IB.aim이 도착 지점과 시간에서 발사 속도를 내고, IB.flight가 그 뒤의 포물선, 바운드(세로 속도 e배, 가로 속도 mu배), 구르다 멈추기를 시각 t 하나로 계산한다(키 1.8 m 선수가 360 px인 와이드에서 1 m = 200 px, 중력 1962 px/s²). 공은 그린 물건이라 2프레임 단위로 놓고, 빠를 때만 뒤에 속도선 세 줄이 붙는다. 골대는 터치라인에서 본 옆모습에 깊이를 조금 주어 가까운 기둥이 바닥선 아래, 먼 기둥이 위에 서고, 공이 그물에 박히면 뒷그물이 그 점을 중심으로 불룩해졌다 돌아온다. 농구 골대는 백보드를 거의 옆에서 보고 림을 아래에서 본 납작한 타원으로 그려, 'back' 층과 'front' 층 사이에 공을 넣으면 림을 통과한다. 그물은 공이 빠지면 여섯 장에 늘어났다 채찍처럼 돌아온다. 관중은 두 그림(1, 2)을 2프레임마다 바꾸면 환호하고 'up'이면 모두 일어선다. 점수판 숫자는 활자가 아니라 붓펜으로 그은 7획 숫자다. */
+/* 소품 견본: 공 경기의 부품 IB.soccerBall, IB.basketball, IB.ballTrail, IB.flight, IB.aim, IB.soccerGoal, IB.hoop, IB.stands, IB.adBoards, IB.scoreboard, IB.segDigits. 공은 중력으로 난다: IB.aim이 도착 지점과 시간에서 발사 속도를 내고, IB.flight가 그 뒤의 포물선, 바운드(세로 속도 e배, 가로 속도 mu배), 구르다 멈추기를 시각 t 하나로 계산한다(키 1.8 m 선수가 360 px인 와이드에서 1 m = 200 px, 중력 1962 px/s²). 공은 그린 물건이라 2프레임 단위로 놓고, 빠를 때만 뒤에 속도선 세 줄이 붙는다. 골대는 터치라인에서 본 옆모습에 깊이를 조금 주어 가까운 기둥이 바닥선 아래, 먼 기둥이 위에 서고, 공이 그물에 박히면 뒷그물이 그 점을 중심으로 불룩해졌다 돌아온다. 농구 골대는 백보드를 거의 옆에서 보고 림을 아래에서 본 납작한 타원으로 그려, 'back' 층과 'front' 층 사이에 공을 넣으면 림을 통과한다. 그물은 공이 빠지면 여섯 장에 늘어났다 채찍처럼 돌아온다. 관중은 두 그림(1, 2)을 2프레임마다 바꾸면 환호하고 'up'이면 모두 일어선다. 점수판 숫자는 활자가 아니라 붓펜으로 그은 7획 숫자다(백보드 위 경기 시계 IB.gameClock도). 페널티 마크는 IB.penaltySpot이다. */
 const C = IB.C, G = 1962;
 MG.scene({
   title: 'props / sports',
@@ -68,7 +68,9 @@ MG.scene({
       const left = Math.max(0, 5 - t * 1.6), clock = '0:0' + Math.floor(left) + '.' + Math.floor((left % 1) * 10);
       IB.scoreboard(ctx, [960, 520], { home: 98, away: left > 0 ? 99 : 101, clock }, { colors: [C.yellow, C.lavender] });
       IB.segDigits(ctx, [820, 700], '24', { size: 30, seed: 70 });
-    }, 'IB.scoreboard({ home, away, clock }), IB.segDigits');
+      IB.gameClock(ctx, [1120, 720], '0' + Math.floor(left) + '.' + Math.floor((left % 1) * 10), { out: left <= 0 });
+      IB.penaltySpot(ctx, [1000, 760]);
+    }, 'IB.scoreboard, IB.segDigits, IB.gameClock, IB.penaltySpot');
   },
 });
 </script>

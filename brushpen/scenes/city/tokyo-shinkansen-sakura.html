@@ -41,13 +41,11 @@ MG.scene({
     const tt = IB.twos(t), f = IB.frame(tt), t1 = Math.floor(t * 24) / 24, d = Math.round(tt * 12);
     IB.crop(ctx, [180, 190, 1560]);
     IB.fuji(ctx, [960, 760], { w: 1700, h: 470 });
-    IB.ink(ctx, [[0, 760], [1920, 760]], { w: 3, seed: 2, taper: false });
-    IB.ink(ctx, [[0, RAIL + 10], [1920, RAIL + 10]], { w: 4, seed: 3, taper: false });                    // the embankment's top
-    for (let x = 10; x < 1920; x += 60) IB.seg(ctx, x, RAIL + 10, x - 14, RAIL + 28, { w: 2, color: '#9a9a9a', seed: 4 + x });   // its slope
+    IB.skyline(ctx, 760);
+    IB.embankment(ctx, RAIL + 10, { x0: 0, x1: 1920 });
     const nose = noseAt(t1);
     if (t1 >= PASS && nose - LEN < 1960) {
-      IB.shinkansen(ctx, [nose, RAIL], { s: 0.85, len: LEN });
-      for (let i = 0; i < 3; i++) IB.seg(ctx, nose - LEN - 30 - i * 40, RAIL - 40 - i * 22, nose - LEN - 260 - i * 90, RAIL - 40 - i * 22, { w: 2.6, seed: 30 + i + Math.floor(t * 24) });
+      IB.shinkansen(ctx, [nose, RAIL], { s: 0.85, len: LEN, wake: Math.floor(t * 24) });
     }
     const shake = f >= 60 && f < 68 ? (f % 4 ? 6 : -6) : 0;
     ctx.save(); ctx.translate(shake, 0); IB.sakura(ctx, [240, GROUND], { h: 520, seed: 70 }); ctx.restore();

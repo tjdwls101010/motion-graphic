@@ -1,4 +1,4 @@
-/* sets/landmarks.js — famous buildings and monuments of the world's cities as line drawings in the reference's ink: flat fills, a 3 px outline, details as single strokes, no lettering or logos (the reference's rule for real marks). Each stands on its ground point [x, ground] and is sized by its height h in px; a part with something that moves takes it as a state (a bridge's lift, a wheel's turn, a clock's time, a sparkle's drawing). New York: IB.liberty, IB.empireState. London: IB.bigBen, IB.towerBridge, IB.londonEye. Paris: IB.eiffel, IB.arcTriomphe. Tokyo: IB.tokyoTower, IB.torii, IB.fuji. Seoul: IB.namsanTower, IB.gwanghwamun, IB.hanok, IB.lotteTower. Elsewhere: IB.operaHouse (Sydney), IB.colosseum (Rome), IB.pyramids (Giza). Red (C.red) is used here only where it is the landmark's own colour (Tokyo Tower, a torii). Needs ink.js. */
+/* sets/landmarks.js — famous buildings and monuments of the world's cities as line drawings in the reference's ink: flat fills, a 3 px outline, details as single strokes, no lettering or logos (the reference's rule for real marks). Each stands on its ground point [x, ground] and is sized by its height h in px; a part with something that moves takes it as a state (a bridge's lift, a wheel's turn, a clock's time, a sparkle's drawing). New York: IB.liberty, IB.empireState. London: IB.bigBen, IB.towerBridge, IB.londonEye. Paris: IB.eiffel, IB.arcTriomphe. Tokyo: IB.tokyoTower, IB.torii, IB.fuji. Seoul: IB.namsanTower, IB.gwanghwamun, IB.hanok, IB.lotteTower. Elsewhere: IB.operaHouse (Sydney), IB.colosseum (Rome), IB.pyramids (Giza). Under them: the skyline's ground line (IB.skyline), a rail embankment (IB.embankment) and a cableway (IB.cableway). Red (C.red) is used here only where it is the landmark's own colour (Tokyo Tower, a torii). Needs ink.js. */
 (function (g) {
   const IB = g.IB, C = IB.C, MG = g.MG, TAU = Math.PI * 2, { lerp } = MG;
   const STONE = '#e6e2d6', STEEL = '#bdbdbd';   // pale stone and grey steel: drawn things in the stage's greys, so the shot's colours stay for what matters
@@ -247,5 +247,25 @@
       poly(ctx, [[c - W / 2, ground], apex, [c + W / 2, ground]], C.yellow, lw, s + i * 5);
       poly(ctx, [apex, [c + W / 2, ground], [c + W * 0.12, ground]], C.mustard, lw, s + i * 5 + 1);
     });
+  };
+
+  /* ---------- the ground under them ---------- */
+
+  /* skyline(ctx, y, { x0, x1, w }) — the line a city stands on: one ink stroke across the frame at y (the far bank, the horizon behind a street). */
+  IB.skyline = (ctx, y, o = {}) => line(ctx, [[o.x0 == null ? -100 : o.x0, y], [o.x1 == null ? 2100 : o.x1, y]], o.w || 3, o.seed || 1300);
+
+  /* embankment(ctx, y, { x0, x1 }) — a raised rail bed seen from the side: its top line at y and the slope below it as short grey hatches. */
+  IB.embankment = (ctx, y, o = {}) => {
+    const x0 = o.x0 == null ? -40 : o.x0, x1 = o.x1 == null ? 1960 : o.x1, s = o.seed || 1310;
+    line(ctx, [[x0, y], [x1, y]], 4, s);
+    for (let x = x0 + 50; x < x1; x += 60) IB.seg(ctx, x, y, x - 14, y + 18, { w: 2, color: '#9a9a9a', seed: s + 1 + x });
+  };
+
+  /* cableway(ctx, low, high, { gap, lw }) — an aerial cableway between two stations: the two station houses (white boxes) and the two cables, the second `gap` px under the first. Hang IB.cableCar from points along the cables. */
+  IB.cableway = (ctx, low, high, o = {}) => {
+    const gap = o.gap || 22, lw = o.lw || 3, s = o.seed || 1320;
+    [[low[0] - 70, low[1] - 10, 120], [high[0] - 30, high[1] - 20, 110]].forEach(([x, y, w], i) => poly(ctx, [[x, y], [x + w, y], [x + w, y + 80], [x, y + 80]], C.paper, lw, s + i));
+    line(ctx, [low, high], lw, s + 2);
+    line(ctx, [[low[0], low[1] + gap], [high[0], high[1] + gap]], lw, s + 3);
   };
 })(window);

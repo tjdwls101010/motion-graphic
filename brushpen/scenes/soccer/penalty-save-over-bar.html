@@ -117,7 +117,7 @@ MG.scene({
     const f = IB.frame(IB.twos(t)), b = ballAt(f), kp = kickerAt(f), gk = keeperAt(f);
     IB.crop(ctx, camAt(f));
     IB.pitchside(ctx, [-20, 2100], FLOOR, { cheer: cheerAt(f) });
-    IB.oval(ctx, BALL0[0], FLOOR + 2, 9, 3, { fill: IB.C.paper, w: 1.5, n: 8, seed: 3 });   // the penalty spot
+    IB.penaltySpot(ctx, [BALL0[0], FLOOR]);   // the penalty spot
     IB.soccerGoal(ctx, [GX, FLOOR], { s: 0.7, layer: 'back' });
     IB.figure(ctx, kp, KICK);
     IB.figure(ctx, gk, KEEP, 'far');

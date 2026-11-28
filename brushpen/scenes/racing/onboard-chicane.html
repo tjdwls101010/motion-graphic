@@ -1,0 +1,82 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>racing / onboard-chicane</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/solid.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script src="../../kit/props/racing.js"></script>
+<script src="../../kit/props/racing-corners.js"></script>
+<script src="../../kit/camera.js"></script>
+<script>
+/* 온보드 시케인: 민트 3번의 운전석 카메라로 빠른 시케인을 지난다. 핸들이 왼쪽, 오른쪽으로 꺾이고, 연석을 밟을 때마다 화면이 튀고, 앞서가던 라벤더 22번의 기어박스와 후미등이 점점 다가오다가, 같은 순간을 헬기 시점으로 빠져나와 본다. 원본에 없는 창작 장면이다. 전달하는 생각: 온보드의 속도감은 차가 아니라 화면 가장자리의 연석과 핸들, 흔들림에서 온다.
+   Motion notes: 8 s, five shots joined by hard cuts, the broadcast graphics over all of them (lap 41 / 58, the tower, the live bug). #3 runs 52 m/s (187 km/h) through a fast chicane (IB.chicane: 0.016 /m over 30 m each way, a 9.1 m jog) on a line that cuts it: 3.5 m right on the way in, over the left kerb at the first apex (4.2 m off the centre line, X 118, 3.42 s) and the right kerb at the second (X 142, 3.88 s), 3.5 m left on the way out; #22 runs the same line 25 m ahead, the gap closing to 6 m out of the chicane while #3 edges 1.4 m left out of its wake (4.6-5.6 s). 0-1.25 s low behind #3 (yaw PI/2, look 0.05, f 2400, s 2.2), the chicane bending away far ahead; 1.25 s the onboard (IB.cockpit over IB.trackStrip with bend, lane and veer: a 90° lens, f 960, 1 m up, look 0.146, the horizon at y 520, the view's origin 6.9 m ahead so the lens sits on the car), the wheel turned by the line's curvature 2-12 m ahead (x18, held within 0.9 rad), the cockpit buzzing 2 px on ones and the frame jolting 18 px at the first kerb; 3.58 s an insert at the tarmac by the right front tyre as it climbs the second kerb (look 0.01, f 600, s 1.6), the car hopping 14 px for 2 frames, sparks off the plank, the frame jolting 20 px; 4.33 s the onboard again, #22's gearbox, rear wing and dark rain light growing past the halo's pillar as the gap closes; 5.83 s cut out to the helicopter (pitch -0.75, f 2200), following the pair nose to tail with the chicane behind them, the banner at 6.25 s. Cars, wheels and camera on ones; sparks on twos. */
+const C = IB.C;
+const CAR3 = { color: C.mint, accent: C.navy, seed: 1630 }, CAR22 = { color: C.lavender, accent: C.navy, seed: 1820 };
+const CHI = IB.chicane({ at: 100, k: 0.016, len: 30 }), W = { bend: CHI };         // the chicane: left from X 100, right from X 130, out at X 160
+const V3 = 52, X3 = (t) => V3 * t - 60;                                              // metres along the track
+const GAP = [[0, 25], [2.9, 22, 'linear'], [4.6, 12], [5.8, 6], [8, 5]];
+const off3 = (t) => 1.4 * MG.prog(t, 4.6, 1.0, 'inOutQuad');                         // #3 edges 1.4 m left out of #22's wake, to look past it
+const X22 = (t) => X3(t) + MG.kf(t, GAP);
+const LINE = [[60, -3.5], [118, 4.2], [142, -4.2], [175, 3.5], [240, 0]];            // the line: m off the centre line (+ is +z, the chicane's first way)
+const lane = (X) => MG.kf(X, LINE);
+const veer = (X) => Math.atan(lane(X + 0.5) - lane(X - 0.5));                       // the car's turn from the track's direction
+const curv = (X) => CHI(X) + (lane(X + 1) - 2 * lane(X) + lane(X - 1));             // the curvature the car itself follows
+const wheel = (X) => { let s = 0; for (let i = 0; i < 6; i++) s += curv(X + 2 + i * 2); return MG.clamp(-18 * (s / 6), -0.9, 0.9); };   // the driver's hands: the line's curvature 2-12 m ahead, smoothed
+const KERB = [82, 93], HOP = 93, FM = 960 / 140;   // FM: how far the onboard lens (f 960) sits behind its view's origin, in metres                                                     // frames the kerbs are struck (X 118, 142)
+const SHOT = [[0, 'chase'], [30, 'onboard'], [86, 'kerb'], [104, 'onboard'], [140, 'heli']];
+const SHOTS = [
+  [0, { at: [960, 540], w: 1920 }], [0, { at: [960, 560], w: 1800 }, 'push', 30],
+  [30, { at: [960, 540], w: 2040 }, 'cut'],
+  [86, { at: [900, 700], w: 1200 }, 'cut'],
+  [104, { at: [960, 540], w: 2040 }, 'cut'],
+  [140, { at: [960, 540], w: 1920 }, 'cut'], [140, { at: [960, 540], w: 1700 }, 'push', 52],
+];
+const BANNER = 150;
+const towerRows = () => [{ num: 7, color: C.navy, gap: '선두' }, { num: 16, color: C.yellow, gap: '+0.4' }, { num: 22, color: C.lavender, gap: '+5.2' }, { num: 3, color: C.mint, gap: '+5.4', hi: true }];
+
+IB.actors = (t) => { const f = Math.floor(t * 24); return { shot: IB.held(SHOT, f), x3: Math.round(X3(t) * 10) / 10, lane: Math.round(lane(X3(t)) * 100) / 100, steer: Math.round(wheel(X3(t)) * 100) / 100 }; };
+
+MG.scene({
+  title: 'racing / onboard-chicane',
+  duration: 8, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = Math.floor(t * 24), d = IB.frame(IB.twos(t)), shot = IB.held(SHOT, f), cam = IB.shot(SHOTS, f, { jolt: [[KERB[0], 18], [KERB[1], 20]] });
+    const x3 = X3(t), x22 = X22(t);
+    const on = (T, X, off) => { const p = IB.trackPose(T, X, lane(X) + off); return { ...p, heading: p.heading + veer(X) }; };   // a car on the line (off m beside it), in a view on the track
+    const car = (V, T, X, who, extra = {}) => IB.racer(ctx, { ...V, ...who, ...on(T, X, who === CAR3 ? off3(t) : 0), steer: 6 * curv(X + 3), spin: X / 0.36, blur: true, ...extra });
+    IB.film(ctx, cam, (ctx) => {
+      if (shot === 'chase') {
+        const V = { at: [960, 1000], yaw: Math.PI / 2, look: 0.05, f: 2400, s: 2.2 }, T = { ...W, run: x3, lane: lane(x3) + off3(t), veer: veer(x3) };   // the camera rides 4 m behind #3, 1.5 m to its right
+        IB.trackStrip(ctx, { ...V, ...T, from: -6, to: 230, half: 5 });
+        car(V, T, x22, CAR22); car(V, T, x3, CAR3, { x: 4, z: 1.5, heading: 0 });
+      }
+      if (shot === 'onboard') {
+        const v = veer(x3), V = { at: [960, 660], yaw: Math.PI / 2, look: 0.146, f: 960, s: 1 }, T = { ...W, run: x3 + FM * Math.cos(v), lane: lane(x3) + off3(t) + FM * Math.sin(v), veer: v };   // a 90° lens 1 m up on the halo: the horizon at 520, the view's origin FM m ahead so the lens sits on the car
+        IB.trackStrip(ctx, { ...V, ...T, from: -4, to: 200, half: 5 });
+        car(V, T, x22, CAR22);
+        const hit = KERB.some((k) => f >= k && f < k + 3);
+        IB.cockpit(ctx, { color: C.mint, steer: wheel(x3), shake: hit ? 12 : 2, d: f });
+      }
+      if (shot === 'kerb') {
+        const hop = f >= HOP && f < HOP + 2 ? -14 : 0, V = { at: [1150, 900], yaw: -0.35, look: 0.05, f: 600, s: 1.6 }, T = { ...W, run: x3, lane: lane(x3) + off3(t), veer: veer(x3) };   // the camera rides with the car, its right front tyre just past the lens
+        IB.trackStrip(ctx, { ...V, ...T, from: -10, to: 20, half: 5, walls: false });
+        const r = car({ ...V, at: [V.at[0], V.at[1] + hop] }, T, x3, CAR3, { x: -2.2, z: -0.2, heading: 0, blur: false, bodyRoll: hop ? 0.04 : 0 });
+        if (f >= HOP && f < HOP + 6) IB.sparks(ctx, [(r.wheels[0][0] + r.wheels[2][0]) / 2, (r.wheels[0][1] + r.wheels[2][1]) / 2], { d, s: 1.4 });
+      }
+      if (shot === 'heli') {
+        const mid = (x3 + x22) / 2, V = { at: [960, 640], pitch: -0.75, yaw: 2.2, look: 0, f: 2200, s: 0.55 }, T = { ...W, run: mid };   // high, in front and to the side, looking back up the track
+        IB.trackStrip(ctx, { ...V, ...T, from: -200, to: 60, half: 5 });
+        car(V, T, x3, CAR3); car(V, T, x22, CAR22);
+      }
+    });
+    IB.broadcast(ctx, { lap: [41, 58], rows: towerRows(), banner: f >= BANNER ? '#3 · #22에 0.2초 차' : '' });
+  },
+});
+</script>

@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>work / friday-stretch-roll</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/office.js"></script>
+<script src="../../kit/props/nature.js"></script>
+<script src="../../kit/sets/officefloor.js"></script>
+<script>
+/* 책상에서 타자를 치던 사람이 벽시계를 올려다보고, 바늘이 여섯 시에 딸깍 닿는 순간 몸을 웅크렸다가 두 팔과 두 다리를 쭉 뻗어 기지개를 켠다. 뻗는 힘에 바퀴 의자가 뒤로 스르르 굴러가 멈추고, 그 자리에서 깍지 낀 손을 머리 뒤에 대고 "퇴근!" 한다. 원본에 없는 창작 장면으로, 앉은 포즈와 의자·책상 자리(IB.sit, IB.chair, IB.workstation), 벽시계(IB.wallClock), 구르는 의자의 바닥 줄(IB.chairRoll), 터짐선(IB.burst), 화분(IB.pottedPlant)으로 지었다. 전달하는 생각: 일이 끝나는 순간의 몸은 일하던 자세의 정반대로 간다.
+   Motion notes: one locked shot, 7 s, the sitter 360 px tall (line 3.1 px) at a desk 148 px high (0.41 h). The sitter on twos as one list of drawings, every drawing passing the one before as pose.prev (her bun trails every lean and the roll), except while typing (two drawings swapping, hands 8 px apart: no prev). The clock is a machine: its minute hand jumps on ones, 5:58 to 5:59 at 1.25 s and to 6:00 at 2.5 s, each jump one frame 0.4 minute past then back. 0-1.83 s typing; 1.83 s she looks up at the clock (head -0.32) and holds. 2.5 s the hand hits six: a five-line burst round the clock for two drawings, and on the next drawing her eyes go wide. 2.75 s the anticipation: she hunches over (spine 0.3, head 0.15, fists at her chest, hips 4 px down), held 3 drawings. 3.0 s the stretch in one drawing, past where it holds (spine -0.36, head -0.3, both open hands up 0.27 h over the shoulder, legs shot out to 0.4 h ahead and 0.07 h off the floor, hips 6 px up), then the hold (spine -0.3). The push rolls the chair back on twos from 3.08 s: 34, 32, 29, 26, 22, 18, 14, 10, 6, 3 px a drawing (194 px over 0.83 s), body and chair together with the feet off the floor; streaks trail each caster as long as 1.6 x that drawing's move. 3.92 s it stops: one drawing she tips further back (-0.36), then the hold. 4.5 s the arms come down behind the head through one in-between, one drawing past, feet back on the floor; 5.0 s the bubble. From 4.75 s nothing moves. Colours: her yellow tee and the floor's blue smear; everything else white and grey. */
+const F = IB.FIG, FLOOR = 920, H = 360, WHO = { ...IB.PEOPLE.designer, h: H, dir: 1, seed: 50, tuck: true };
+const X0 = 1000, DESK = FLOOR - Math.round(0.41 * H), CLOCK = [1330, 380];
+const P = IB.sit(X0, FLOOR, WHO), HY = P.hip[1], AY = FLOOR - F.ankle * H;
+const ROLL = [34, 32, 29, 26, 22, 18, 14, 10, 6, 3];   // px a drawing, from frame 74
+const R0 = 74;
+const rolled = (f) => { const n = Math.min(ROLL.length, Math.max(0, Math.floor((f - R0) / 2) + 1)); return ROLL.slice(0, n).reduce((a, b) => a + b, 0); };
+const moved = (f) => { const n = Math.floor((f - R0) / 2); return n >= 0 && n < ROLL.length ? ROLL[n] : 0; };
+
+/* the drawings, at the desk (x = X0); the roll shifts each by -rolled(f) */
+const shift = (p, dx) => ({ ...p, hip: [p.hip[0] + dx, p.hip[1]], feet: p.feet.map(([x, y, a]) => [x + dx, y, a]), hands: p.hands.map(([x, y]) => [x + dx, y]) });
+const sh = (lean, hy = HY) => [X0 + Math.sin(lean) * (F.torso - 0.012) * H, hy - Math.cos(lean) * (F.torso - 0.012) * H];
+const legsOut = [[X0 + 0.4 * H, AY - 0.07 * H, -0.3], [X0 + 0.36 * H, AY - 0.06 * H, -0.3]];
+const typing = (k) => { const a = k % 2 ? -8 : 0, b = k % 2 ? 0 : -8; return { ...P, lean: 0.1, hands: [[P.hands[0][0], P.hands[0][1] + a], [P.hands[1][0], P.hands[1][1] + b]], face: { eye: 'dot', mouth: 'flat' } }; };
+const [UPX, UPY] = sh(-0.36, HY - 6), [HX, HHY] = sh(-0.3);
+const D = {
+  look: { ...P, lean: 0, nod: -0.32, face: { eye: 'dot', mouth: 'flat' } },
+  wide: { ...P, lean: -0.04, nod: -0.34, face: { eye: 'wide', mouth: 'open' } },
+  hunch: { ...P, hip: [X0, HY + 4], lean: 0.3, nod: 0.15, hands: [[X0 + 0.12 * H, HY - 0.1 * H], [X0 + 0.15 * H, HY - 0.12 * H]], hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'flat' } },
+  stretchPast: { ...P, hip: [X0, HY - 6], lean: -0.36, nod: -0.3, feet: legsOut, hands: [[UPX - 10, UPY - 0.27 * H], [UPX + 8, UPY - 0.27 * H]], hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } },
+  stretch: { ...P, lean: -0.3, nod: -0.24, feet: legsOut, hands: [[HX - 10, HHY - 0.26 * H], [HX + 8, HHY - 0.26 * H]], hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } },
+  back: { ...P, lean: -0.26, nod: -0.1, hands: [[X0 - 0.15 * H, HY - 0.33 * H], [X0 - 0.12 * H, HY - 0.31 * H]], elbow: [-1, -1], face: { eye: 'closed', mouth: 'smile' } },
+};
+D.tipBack = { ...D.stretch, lean: -0.36, nod: -0.3 };
+D.down = { ...IB.poseMix(D.stretch, D.back, 0.5), feet: [[X0 + 0.34 * H, AY - 0.04 * H, -0.2], [X0 + 0.3 * H, AY - 0.04 * H, -0.2]], hand: ['open', 'open'], elbow: [-1, -1], face: { eye: 'closed', mouth: 'smile' } };
+D.backPast = { ...IB.poseMix(D.stretch, D.back, 1.08), face: D.back.face, elbow: [-1, -1] };
+const ACT = [[44, D.look], [62, D.wide], [66, D.hunch], [72, D.stretchPast], [74, D.stretch], [94, D.tipBack], [96, D.stretch], [108, D.down], [110, D.backPast], [112, D.back]];
+const TYPE_END = 44;
+const poseOn = (f) => (f < TYPE_END ? typing(f >> 1) : shift(IB.held(ACT, f), -rolled(f)));
+const poseAt = (t) => { const f = IB.frame(IB.twos(t)); return { ...poseOn(f), prev: f >= TYPE_END ? poseOn(f - 2) : undefined }; };
+
+/* the clock: the minute hand jumps on ones */
+const TICKS = [[30, 59], [60, 60]];
+function minute(f) {
+  let m = 58;
+  for (const [at, to] of TICKS) if (f >= at) m = f === at ? to + 0.4 : to;
+  return m;
+}
+const hands = (m) => { const a = (m / 60) * 2 * Math.PI, h = ((5 + m / 60) / 12) * 2 * Math.PI; return [[Math.sin(h) * 30, -Math.cos(h) * 30], [Math.sin(a) * 46, -Math.cos(a) * 46]]; };
+
+IB.actors = (t) => ({ sitter: poseAt(t), chair: rolled(IB.frame(IB.twos(t))), clock: minute(IB.frame(t)) });
+IB.actors.step = { clock: 1 };
+
+MG.scene({
+  title: 'work / friday-stretch-roll',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), p = poseAt(t), look = { ...WHO, face: p.face }, x = X0 - rolled(f);
+    IB.pottedPlant(ctx, [470, FLOOR], IB.PLANTS.tall);
+    IB.wallClock(ctx, CLOCK, { r: 62, hands: hands(minute(IB.frame(t))) });
+    const b = IB.drawn(tt, 60 / 24);
+    if (b >= 0 && b < 2) IB.burst(ctx, CLOCK, { n: 5, a0: -2.6, da: 0.55, r0: 84 + b * 14, r1: 118 + b * 12, w: 3, seed: 640 + b * 7 });
+    IB.smear(ctx, 1080, FLOOR - 6, 820, { h: 12, seed: 9 });
+    IB.chairRoll(ctx, x, FLOOR, H, 1, { k: f >> 1, v: moved(f) });
+    IB.chair(ctx, x, FLOOR, H, 1);
+    IB.figure(ctx, p, look, 'far');
+    IB.workstation(ctx, [X0, DESK], { floor: FLOOR });
+    IB.figure(ctx, p, look, 'near');
+    IB.bubble(ctx, ['퇴근!'], t, 5.0, { tip: [x + 40, HY - 0.5 * H], x: x + 130, y: HY - 0.72 * H, seed: 500 });
+  },
+});
+</script>

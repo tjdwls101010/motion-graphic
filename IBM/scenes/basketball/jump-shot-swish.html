@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>basketball / jump-shot-swish</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 점프슛: 공을 튀기며 수비를 기다리던 선수가 낮게 크로스오버를 하고 한 발 뒤로 물러나 공간을 만든 뒤, 무릎을 굽혔다 솟구쳐 꼭대기에서 손목을 꺾어 던진다. 뒤늦게 뛰어오른 수비수의 손끝 위로 높은 포물선이 그려지고, 공은 림을 건드리지 않고 그물만 흔든다. 슈터는 착지한 뒤에도 손목을 꺾은 채 팔을 든다. 원본에 없는 창작 장면이다. 전달하는 생각: 좋은 슛은 놓은 뒤에도 그 자세로 남는다.
+   Motion notes: seen from the sideline, 7.5 s, one camera framing (IB.crop of a 1180 px window, 1.63x). On the stage the players are 252 px (1.8 m, 140 px a metre, gravity 1373 px/s²), the rim 3.05 m up and the ball r 17 px. The dribble is 6 drawings a bounce (0.5 s): in the hand, three drawings down, the floor, two up; twice with the near hand, then the crossover, a lower, harder bounce in front with the shoulders dropped (1.0 s), and a step-back hop of 0.3 m, picking the ball up off the bounce in both hands (1.25 s). 1.5 s the gather (ball to the chest), 1.58 s the dip (knees down 0.1 h: the anticipation), and the jump on a gravity arc 0.45 m up: the ball goes to the set point over the forehead on the way up and leaves at the top (1.92 s) with the arm straight and the wrist snapped (gooseneck), held in the air and after the landing (2.25 s). The ball flies 1.0 s on an arc 1.4 m over the rim and drops through its middle: the net stretches and whips back over 6 drawings (IB.hoop net swish) while the ball slows through it and falls out, bouncing on the floor (e 0.75). The defender closes out from 1.25 s and jumps a drawing after the shot, peaking below the ball. After the swish the shooter's arm comes down and he backpedals; the defender's hands go to his head. The crowd cheers on twos from the swish to 4.75 s and stands; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard and the floor's mustard smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, H = 1.8 * M, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M];
+const SHO = IB.athlete('basketball', 'home', 5, { h: H, dir: 1, seed: 30 });
+const DEF = IB.athlete('basketball', 'away', 0, { h: H, dir: -1, seed: 40 });
+const HY = IB.stand(0, FLOOR, SHO).hip[1], AY = FLOOR - F.ankle * H, CAM = [860, 300, 1180];
+const toward = (look, p, i, target, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(target[1] - j.sh[1], target[0] - j.sh[0]), l = Math.min(Math.hypot(target[0] - j.sh[0], target[1] - j.sh[1]), max * look.h); p.hands[i] = IB.polar(j.sh, a, l); return p.hands[i]; };
+
+/* ---------- the shooter ---------- */
+const XS = 1060, sp = (hip, lean, feet, hands, more = {}) => IB.posed(SHO, { hip, lean, feet, hands, ...more });
+const set = (x, down, lean, more = {}) => sp([x, HY + down], lean, [[x - 0.1 * H, AY, 0], [x + 0.12 * H, AY, 0]], [{ a: 0.9, l: 0.25 }, { a: 1.0, l: 0.25 }], more);
+const DRIB = [0, 0.4, 0.75, 1, 0.55, 0.15];                  // the ball's way from hand (0) to floor (1), one drawing each
+const SACT = [], BALL = [];                                  // BALL: [frame, [x, y]] for the frames it is in play by hand
+for (let k = 0; k < 12; k++) {                               // two bounces with the near hand
+  const f = k * 2, u = DRIB[k % 6], p = set(XS, 0.07 * H + (u < 0.5 ? 0 : 0.01 * H), 0.18, { face: { eye: 'dot', mouth: 'flat' } });
+  const hand = toward(SHO, p, 1, [XS + 0.2 * H, HY + 0.05 * H + (1 - Math.abs(u - 0.5) * 2) * 0.03 * H]);
+  SACT.push([f, p]); BALL.push([f, [hand[0] + 0.02 * H, MG.lerp(hand[1] + R, FLOOR - R, u)]]);
+}
+[[24, 0.2], [26, 0.7], [28, 1]].forEach(([f, u], i) => {   // the crossover: low and hard in front, shoulders dropped
+  const p = set(XS + 4, 0.1 * H, 0.32, { nod: 0.1, face: { eye: 'dot', mouth: 'flat', brow: 1 } }), h1 = toward(SHO, p, i < 2 ? 1 : 0, [XS + 0.2 * H, HY + 0.12 * H]);
+  SACT.push([f, p]); BALL.push([f, [h1[0] + (i - 1) * 6, MG.lerp(h1[1] + R, FLOOR - R, u)]]);
+});
+const XB = XS - 0.3 * M;                                     // the step-back lands here
+const chest = (p) => { const j = IB.joints(p, SHO); return IB.polar(j.sh, 0.45, 0.22 * H); };
+const withBall = (p, at) => { toward(SHO, p, 0, [at[0] - 0.02 * H, at[1] + 2]); toward(SHO, p, 1, [at[0] - 0.01 * H, at[1] + R * 0.7]); return p; };
+{ const p = sp([XS - 0.12 * M, HY - 0.03 * H], 0.05, [{ a: PI / 2 + 0.3, l: 0.48, pitch: 0.4 }, { a: PI / 2 - 0.15, l: 0.48, pitch: 0.3 }], [[0, 0], [0, 0]]), b = chest(p); SACT.push([30, withBall(p, b)]); BALL.push([30, b]); }   // the step-back: the ball picked up off the bounce, both hands
+{ const p = sp([XB, HY + 0.06 * H], 0.12, [[XB - 0.1 * H, AY, 0], [XB + 0.1 * H, AY, 0]], [[0, 0], [0, 0]]), b = chest(p); SACT.push([32, withBall(p, b)]); BALL.push([32, b]); }
+let p36 = sp([XB, HY + 0.05 * H], 0.1, [[XB - 0.1 * H, AY, 0], [XB + 0.1 * H, AY, 0]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat' } });
+const b36 = chest(p36); SACT.push([36, withBall(p36, b36)]); BALL.push([36, b36]);
+let p38 = sp([XB, HY + 0.11 * H], 0.18, [[XB - 0.1 * H, AY, 0], [XB + 0.1 * H, AY, 0]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat', brow: 1 } });
+const b38 = [chest(p38)[0], chest(p38)[1] + 0.03 * H]; SACT.push([38, withBall(p38, b38)]); BALL.push([38, b38]);
+// the jump: a gravity arc 0.45 m up, the top on the release
+const REL = 46, UP = 0.45 * M, TUP = Math.sqrt((2 * UP) / G), TAKE = REL - Math.round(TUP * 24 / 2) * 2;
+const jHip = (f) => { const dt = (f - REL) / 24; return [XB + 0.02 * H, HY - UP + (G / 2) * dt * dt]; };
+let LAND = REL + 2; while (jHip(LAND)[1] < HY + 0.02 * H) LAND += 2;
+const air = (f, more) => sp(jHip(f), 0.0, [{ a: PI / 2 + 0.12, l: 0.5, pitch: 0.6 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.5 }], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat' }, ...more });
+for (let f = TAKE; f < REL; f += 2) {                        // rising: chest to the set point above the brow
+  const p = air(f), j = IB.joints(p, SHO), u = (f - TAKE + 2) / (REL - TAKE + 2), at = IB.polar(j.sh, MG.lerp(0.4, -1.25, u), MG.lerp(0.22, 0.25, u) * H);
+  SACT.push([f, withBall(p, at)]); BALL.push([f, at]);
+}
+const release = air(REL, { hand: ['open', 'open'] }); { const j = IB.joints(release, SHO); release.hands = [IB.polar(j.sh, -1.6, 0.24 * H), IB.polar(j.sh, -1.15, 0.285 * H)]; }
+SACT.push([REL, release]);
+const RP = [release.hands[1][0] + 0.03 * H, release.hands[1][1] - R * 0.8];
+const flick = (p) => { const j = IB.joints(p, SHO); p.hands = [IB.polar(j.sh, 0.9, 0.22 * H), IB.polar(j.sh, -1.15, 0.285 * H)]; p.hand = ['relax', 'relax']; return p; };   // the gooseneck: arm held, wrist dropped
+for (let f = REL + 2; f < LAND; f += 2) SACT.push([f, flick(air(f))]);
+SACT.push([LAND, flick(sp([XB + 0.02 * H, HY + 0.07 * H], 0.05, [[XB - 0.08 * H, AY, 0], [XB + 0.12 * H, AY, 0]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat' } }))]);
+SACT.push([LAND + 4, flick(sp([XB + 0.02 * H, HY + 0.02 * H], 0.0, [[XB - 0.08 * H, AY, 0], [XB + 0.12 * H, AY, 0]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat' } }))]);
+
+/* ---------- the ball ---------- */
+const TF = 1.0, SWISH = REL + 24, SHOT = { p: RP, v: IB.aim(RP, [RC[0] - 2, RC[1] - 2], TF, G), g: G };
+const NET_OUT = [RC[0] + 6, RC[1] + 0.5 * M], OUT = { p: NET_OUT, v: [60, 260], g: G, floor: FLOOR - R, e: 0.75, mu: 0.75, roll: 2 * M };
+function ballAt(f) {
+  if (f < REL) { const b = IB.held(BALL, f); return b || jHip(f); }
+  if (f < SWISH) { const q = IB.flight(SHOT, (f - REL) / 24); return q.p; }
+  if (f < SWISH + 6) return [MG.lerp(RC[0] - 2, NET_OUT[0], (f - SWISH) / 6), MG.lerp(RC[1] - 2, NET_OUT[1], (f - SWISH) / 6)];
+  return IB.flight(OUT, (f - SWISH - 6) / 24).p;
+}
+const ballRot = (f) => (f < REL ? 0 : -((f - REL) / 24) * 14);   // backspin
+// after the swish: the arm comes down and he backpedals
+const XE = XB + 0.02 * H;
+SACT.push([SWISH + 6, sp([XE, HY + 0.01 * H], -0.05, [[XE - 0.1 * H, AY, 0], [XE + 0.1 * H, AY, 0]], [{ a: 1.2, l: 0.26 }, { a: 0.4, l: 0.26 }], { hand: ['relax', 'point'], face: { eye: 'dot', mouth: 'smile' } })]);
+for (let k = 0; k < 4; k++) { const x = XE - (k + 1) * 0.12 * H, ph = (k % 2) * 0.5; SACT.push([SWISH + 10 + k * 2, sp([x, HY + 0.02 * H], -0.08, [[x + (ph ? 0.1 : -0.06) * H, AY, 0], [x + (ph ? -0.06 : 0.1) * H, AY - (k % 2 ? 0 : 8), 0]], [{ a: 1.3, l: 0.26 }, { a: 1.7, l: 0.26 }], { face: { eye: 'dot', mouth: 'smile' } })]); }
+
+/* ---------- the defender: a late close-out ---------- */
+const DX0 = 1500, DSTOP = XB + 0.75 * H, DR = IB.runLen(DEF) / 8;
+const dp = (hip, lean, feet, hands, more = {}) => IB.posed(DEF, { hip, lean, feet, hands, ...more });
+const guard = (x) => dp([x, HY + 0.08 * H], 0.2, [[x - 0.12 * H, AY, 0], [x + 0.1 * H, AY, 0]], [{ a: 0.5, l: 0.26 }, { a: 0.3, l: 0.26 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } });
+const DACT = [[0, guard(DX0)]];
+const nRun = Math.max(1, Math.round((DX0 - DSTOP) / DR));
+for (let k = 0; k < nRun; k++) DACT.push([30 + k * 2, IB.run(DX0 - k * DR, FLOOR, DEF, (k / 8) % 1)]);
+const DJ = REL + 2, dHip = (f) => { const dt = (f - DJ - 4) / 24; return [DSTOP, HY - 0.3 * M + (G / 2) * dt * dt]; };
+DACT.push([30 + nRun * 2, guard(DSTOP)]);
+for (let f = DJ; f < DJ + 10; f += 2) DACT.push([f, dp(dHip(f), 0.05, [{ a: PI / 2 + 0.1, l: 0.5, pitch: 0.5 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.5 }], [{ a: 0.6, l: 0.24 }, { a: -1.35, l: 0.285 }], { hand: ['relax', 'open'], nod: -0.2, face: { eye: 'wide', mouth: 'open' } })]);
+DACT.push([DJ + 10, dp([DSTOP, HY + 0.06 * H], 0.1, [[DSTOP - 0.1 * H, AY, 0], [DSTOP + 0.1 * H, AY, 0]], [{ a: 0.5, l: 0.25 }, { a: -0.6, l: 0.26 }], { nod: -0.3, face: { eye: 'dot', mouth: 'open' } })]);
+DACT.push([SWISH + 8, dp([DSTOP, HY + 0.01 * H], -0.1, [[DSTOP - 0.08 * H, AY, 0], [DSTOP + 0.08 * H, AY, 0]], [{ a: -PI / 2 - 0.5, l: 0.2 }, { a: -PI / 2 + 0.35, l: 0.2 }], { hand: ['open', 'open'], elbow: [-1, -1], nod: -0.2, face: { eye: 'closed', mouth: 'frown' } })]);
+
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const DRIBBLING = [0, 30];   // two drawings alternate with the bounce: no prev on the shooter there
+const shooter = (f) => { const p = IB.held(SACT, f); return { ...p, prev: f >= DRIBBLING[1] ? IB.held(SACT, f - 2) : undefined }; };
+const defender = withPrev(DACT);
+const cheerAt = (f) => (f < SWISH ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { shooter: shooter(f), defender: defender(f), ball: ballAt(f), net: f >= SWISH && f < SWISH + 12 ? f - SWISH : null, crowd: cheerAt(f) }; };
+
+MG.scene({
+  title: 'basketball / jump-shot-swish',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(IB.twos(t)), s = shooter(f), b = ballAt(f), net = f >= SWISH && f < SWISH + 12 ? { swish: (f - SWISH) / 2 } : {};
+    IB.crop(ctx, CAM);
+    IB.courtside(ctx, [600, 2100], FLOOR, { cheer: cheerAt(f) });
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'back', net });
+    IB.figure(ctx, defender(f), DEF);
+    IB.figure(ctx, s, SHO, 'far');
+    IB.basketball(ctx, b, { r: R, rot: ballRot(f), lw: 2.6, seed: 91 });
+    IB.figure(ctx, s, SHO, 'near');
+    IB.hoop(ctx, [BOARD, FLOOR], { s: HS, layer: 'front', net });
+  },
+});
+</script>

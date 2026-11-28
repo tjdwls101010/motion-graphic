@@ -1,0 +1,111 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>basketball / alley-oop</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 앨리웁: 공을 든 가드가 수비를 앞에 두고 서 있다가 림 위 빈 공간으로 공을 높이 띄우고, 뒤에서 달려든 동료가 수비수 머리 위로 솟아 공중에서 두 손으로 받아 그대로 내리꽂는다. 가드는 패스한 손을 든 채 지켜보고, 덩크한 선수는 착지해 가드를 가리킨다. 원본에 없는 창작 장면이다. 전달하는 생각: 패스는 사람이 아니라 그가 도착할 자리로 던진다.
+   Motion notes: seen from the sideline, 7 s, one camera framing (IB.crop of a 1250 px window, 1.54x). On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up; the guard 1.85 m, the finisher 1.98 m, the defender 1.95 m. 0-0.75 s the guard holds the ball at his chest (the defender in front, hands up). 0.83 s he dips the ball (anticipation) and lobs it overhead with both hands (0.92 s): it is aimed at where the finisher's hands will be 0.92 s later, an arc 1.6 m over the rim. The finisher runs in from off the left edge on IB.run, takes off on one foot (1.33 s) and flies a gravity arc 0.85 m up; he catches the ball two drawings before the top of the arc with both arms up and back (1.83 s, a small burst), brings it over the rim on the top drawing (1.92 s, a larger burst) and the rim bends 10 px for 2 drawings while the net shakes. The ball drops through the net and bounces (e 0.75). The guard holds the follow-through of the lob; the defender turns his head after the ball and jumps late. The rim takes most of his run off him at the slam; he lands under it (2.67 s, a thud) and points both hands back at the guard from 3.08 s. The crowd cheers on twos from the dunk to 4.75 s and stands; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], CAM = [760, 260, 1250];
+const GD = IB.athlete('basketball', 'home', 4, { h: 1.85 * M, dir: 1, seed: 30 }), FN = IB.athlete('basketball', 'home', 2, { h: 1.98 * M, dir: 1, seed: 50 }), DF = IB.athlete('basketball', 'away', 6, { h: 1.95 * M, dir: -1, seed: 40 });
+const hip0 = (look) => IB.stand(0, FLOOR, look).hip[1], ay = (look) => FLOOR - F.ankle * look.h;
+const hipForSh = (look, sh, lean) => { const o = IB.joints({ hip: [0, 0], lean, feet: [[0, 0], [0, 0]], hands: [[0, 0], [0, 0]] }, look).sh; return [sh[0] - o[0], sh[1] - o[1]]; };
+const reachTo = (look, p, i, t, max = 0.28) => { const j = IB.joints(p, look), a = Math.atan2(t[1] - j.sh[1], t[0] - j.sh[0]); p.hands[i] = IB.polar(j.sh, a, Math.min(max * look.h, Math.hypot(t[0] - j.sh[0], t[1] - j.sh[1]))); return p.hands[i]; };
+const hold2 = (look, p, b) => { reachTo(look, p, 0, [b[0] - 0.02 * look.h, b[1] + 3]); reachTo(look, p, 1, [b[0], b[1] + R * 0.7]); return p; };
+
+/* ---------- the finisher ---------- */
+const FS = 46, FC = FS - 2, HF = FN.h, HYF = hip0(FN);
+const SLAM = [RC[0] + 2, RC[1] - R * 0.4], SH_SLAM = IB.polar([SLAM[0] - 0.01 * HF, SLAM[1] - R * 0.6], PI + 1.15, 0.27 * HF);
+const HIP_SLAM = hipForSh(FN, SH_SLAM, 0.12), VX = 360, airHip = (f) => { const dt = (f - FS) / 24; return [HIP_SLAM[0] + VX * dt * (dt > 0 ? 0.25 : 1), HIP_SLAM[1] + (G / 2) * dt * dt]; };   // the rim takes most of his run off him at the slam
+let TAKE = FS - 2; while (airHip(TAKE - 2)[1] < HYF - 4) TAKE -= 2;
+const XT = airHip(TAKE)[0], RLF = IB.runLen(FN) / 8, NR = 10, XF0 = XT - 0.05 * HF - NR * RLF, RUN0 = TAKE - 2 - NR * 2;
+const fn = (hip, lean, feet, hands, more = {}) => IB.posed(FN, { hip, lean, feet, hands, ...more });
+const FACT = [[0, { ...IB.stand(XF0 - 0.3 * HF, FLOOR, FN) }]];
+for (let k = 0; k < NR; k++) FACT.push([RUN0 + k * 2, IB.run(XF0 + k * RLF, FLOOR, FN, (k / 8) % 1)]);
+FACT.push([TAKE - 2, fn([XT, HYF + 0.05 * HF], 0.1, [[XT + 0.08 * HF, ay(FN), 0.1], { a: 0.2, l: 0.32, pitch: 0.4 }], [{ a: -1.0, l: 0.26 }, { a: 2.2, l: 0.25 }], { face: { eye: 'wide', mouth: 'flat' } })]);
+const airLegs = [{ a: PI / 2 + 0.45, l: 0.46, pitch: 0.7 }, { a: 0.6, l: 0.36, pitch: 0.5 }];
+for (let f = TAKE; f < FC; f += 2) FACT.push([f, fn(airHip(f), 0.0, airLegs, [{ a: -1.35, l: 0.285 }, { a: -1.6, l: 0.285 }], { hand: ['open', 'open'], nod: -0.2, face: { eye: 'wide', mouth: 'open' } })]);
+const catchPose = fn(airHip(FC), -0.2, airLegs, [[0, 0], [0, 0]], { hand: ['open', 'open'], nod: -0.3, face: { eye: 'wide', mouth: 'open' } });
+const CATCH = IB.polar(IB.joints(catchPose, FN).sh, -2.0, 0.25 * HF);   // up and a little back: he takes it behind his head
+hold2(FN, catchPose, CATCH); FACT.push([FC, catchPose]);
+const slamPose = hold2(FN, fn(HIP_SLAM, 0.12, [{ a: PI / 2 + 0.25, l: 0.5, pitch: 0.7 }, { a: PI / 2 - 0.15, l: 0.48, pitch: 0.6 }], [[0, 0], [0, 0]], { hand: ['open', 'open'], nod: 0.15, face: { eye: 'closed', mouth: 'open' } }), SLAM);
+FACT.push([FS, slamPose]);
+let LAND = FS + 2; while (airHip(LAND)[1] < HYF + 0.02 * HF) LAND += 2;
+for (let f = FS + 2; f < LAND; f += 2) FACT.push([f, fn(airHip(f), 0.05, [{ a: PI / 2 + 0.15, l: Math.min(0.5, (ay(FN) - airHip(f)[1]) / HF), pitch: 0.5 }, { a: PI / 2 - 0.05, l: Math.min(0.5, (ay(FN) - airHip(f)[1]) / HF), pitch: 0.4 }], [{ a: -1.1, l: 0.27 }, { a: -1.4, l: 0.27 }], { hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } })]);
+const XL = airHip(LAND)[0];
+FACT.push([LAND, fn([XL, HYF + 0.12 * HF], 0.3, [[XL - 0.12 * HF, ay(FN), 0], [XL + 0.1 * HF, ay(FN), 0]], [{ a: 0.6, l: 0.25 }, { a: 0.3, l: 0.25 }], { face: { eye: 'closed', mouth: 'open' } })]);
+const BACKF = { ...FN, dir: -1 };
+FACT.push([LAND + 10, { ...IB.posed(BACKF, { hip: [XL, HYF + 0.02 * HF], lean: 0.05, feet: [[XL + 0.1 * HF, ay(FN), 0], [XL - 0.1 * HF, ay(FN), 0]], hands: [{ a: -0.15, l: 0.285 }, { a: 0.05, l: 0.285 }], hand: ['point', 'point'], face: { eye: 'dot', mouth: 'open' } }), dir: -1 }]);
+
+/* ---------- the guard and the lob ---------- */
+const XG = 1060, HG = GD.h, HYG = hip0(GD), FL = 22;
+const gd = (down, lean, arms, more = {}) => IB.posed(GD, { hip: [XG, HYG + down], lean, feet: [[XG - 0.1 * HG, ay(GD), 0], [XG + 0.12 * HG, ay(GD), 0]], hands: [[0, 0], [0, 0]], ...more });
+const GACT = [], GBALL = [];
+{ const p = gd(0.05 * HG, 0.1, null, { face: { eye: 'dot', mouth: 'flat' } }), b = IB.polar(IB.joints(p, GD).sh, 0.5, 0.22 * HG); GACT.push([0, hold2(GD, p, b)]); GBALL.push([0, b]); }
+{ const p = gd(0.1 * HG, 0.2, null, { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), b = IB.polar(IB.joints(p, GD).sh, 0.9, 0.22 * HG); GACT.push([FL - 2, hold2(GD, p, b)]); GBALL.push([FL - 2, b]); }
+const lobPose = gd(0.0, -0.08, null, { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'open' } }), LOBP = IB.polar(IB.joints(lobPose, GD).sh, -1.35, 0.3 * HG);
+hold2(GD, lobPose, LOBP); GACT.push([FL, lobPose]);
+const follow = gd(0.01 * HG, -0.05, null, { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'open' } }); { const j = IB.joints(follow, GD); follow.hands = [IB.polar(j.sh, -1.05, 0.28 * HG), IB.polar(j.sh, -0.95, 0.285 * HG)]; }
+GACT.push([FL + 2, follow]);
+GACT.push([LAND + 6, gd(0.01 * HG, -0.05, null, { hand: ['grip', 'grip'], face: { eye: 'closed', mouth: 'open' } })]);
+{ const p = IB.held(GACT, LAND + 6), j = IB.joints(p, GD); p.hands = [IB.polar(j.sh, -1.25, 0.28 * HG), IB.polar(j.sh, -1.9, 0.28 * HG)]; }
+const LOB = { p: LOBP, v: IB.aim(LOBP, CATCH, (FC - FL) / 24, G), g: G };
+const OUT = { p: [RC[0] + 4, RC[1] + 0.5 * M], v: [-200, 700], g: G, floor: FLOOR - R, e: 0.75, mu: 0.8, roll: 1.5 * M };
+function ballAt(f) {
+  if (f < FL) return IB.held(GBALL, f);
+  if (f < FC) return IB.flight(LOB, (f - FL) / 24).p;
+  if (f === FC) return CATCH;
+  if (f === FS) return SLAM;
+  return IB.flight(OUT, (f - FS - 2) / 24).p;
+}
+
+/* ---------- the defender ---------- */
+const XD = 1250, HD = DF.h, HYD = hip0(DF), df = (hip, lean, feet, hands, more = {}) => IB.posed(DF, { hip, lean, feet, hands, ...more });
+const dUp = (f) => { const dt = (f - (FS + 2)) / 24; return [XD + 30, HYD - 0.35 * M + (G / 2) * dt * dt]; };
+const DACT = [[0, df([XD, HYD + 0.08 * HD], 0.15, [[XD - 0.12 * HD, ay(DF), 0], [XD + 0.1 * HD, ay(DF), 0]], [{ a: -0.9, l: 0.27 }, { a: -0.5, l: 0.26 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } })],
+  [FL + 2, df([XD, HYD + 0.05 * HD], 0.0, [[XD - 0.12 * HD, ay(DF), 0], [XD + 0.1 * HD, ay(DF), 0]], [{ a: -1.2, l: 0.28 }, { a: -0.8, l: 0.27 }], { hand: ['open', 'open'], nod: -0.4, face: { eye: 'wide', mouth: 'open' } })]];
+const BACKD = { ...DF, dir: 1 };
+DACT.push([FL + 10, { ...IB.posed(BACKD, { hip: [XD, HYD + 0.08 * HD], lean: 0.1, feet: [[XD - 0.1 * HD, ay(DF), 0], [XD + 0.12 * HD, ay(DF), 0]], hands: [{ a: 0.6, l: 0.25 }, { a: 0.4, l: 0.25 }], nod: -0.4, face: { eye: 'wide', mouth: 'open' } }), dir: 1 }]);
+for (let f = FS - 4; f < FS + 10; f += 2) { const hip = dUp(f); if (hip[1] > HYD + 0.02 * HD && f > FS) break; DACT.push([f, { ...IB.posed(BACKD, { hip: [hip[0], Math.min(hip[1], HYD)], lean: 0.0, feet: [{ a: PI / 2 + 0.1, l: Math.min(0.5, (ay(DF) - Math.min(hip[1], HYD)) / HD), pitch: 0.5 }, { a: PI / 2 - 0.05, l: Math.min(0.5, (ay(DF) - Math.min(hip[1], HYD)) / HD), pitch: 0.5 }], hands: [{ a: -1.3, l: 0.28 }, { a: -1.5, l: 0.28 }], hand: ['open', 'open'], nod: -0.3, face: { eye: 'wide', mouth: 'open' } }), dir: 1 }]); }
+DACT.push([FS + 12, { ...IB.posed(BACKD, { hip: [XD + 30, HYD + 0.02 * HD], lean: -0.05, feet: [[XD + 30 - 0.08 * HD, ay(DF), 0], [XD + 30 + 0.08 * HD, ay(DF), 0]], hands: [{ a: PI / 2 + 0.25, l: 0.2 }, { a: PI / 2 - 0.1, l: 0.2 }], elbow: [-1, -1], nod: 0.15, face: { eye: 'closed', mouth: 'frown' } }), dir: 1 }]);
+
+const withPrev = (table) => (f) => { const p = IB.held(table, f), q = IB.held(table, f - 2); return { ...p, prev: f > 0 && (p.dir || 0) === (q.dir || 0) ? q : undefined }; };
+const finisher = withPrev(FACT), guard = withPrev(GACT), defender = withPrev(DACT);
+const lookOf = (p, look) => (p.dir ? { ...look, dir: p.dir } : look);
+const rimAt = (f) => (f >= FS && f < FS + 4 ? { bend: 10 } : {}), netAt = (f) => (f >= FS + 2 && f < FS + 10 ? { shake: (f - FS - 2) / 2 } : {});
+const cheerAt = (f) => (f < FS ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { finisher: finisher(f), guard: guard(f), defender: defender(f), ball: ballAt(f), rim: rimAt(f), net: netAt(f), crowd: cheerAt(f) }; };
+
+MG.scene({
+  title: 'basketball / alley-oop',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), fn1 = finisher(f), hp = { s: HS, rim: rimAt(f), net: netAt(f) };
+    IB.crop(ctx, CAM);
+    IB.courtside(ctx, [600, 2200], FLOOR, { cheer: cheerAt(f) });
+    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'back' });
+    const d = defender(f), g = guard(f);
+    IB.figure(ctx, d, lookOf(d, DF));
+    IB.figure(ctx, g, GD);
+    IB.figure(ctx, fn1, lookOf(fn1, FN), 'far');
+    IB.basketball(ctx, ballAt(f), { r: R, rot: f * 0.3, lw: 2.6, seed: 91 });
+    IB.figure(ctx, fn1, lookOf(fn1, FN), 'near');
+    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
+    const c = IB.drawn(tt, FC / 24), sl = IB.drawn(tt, FS / 24), ld = IB.drawn(tt, LAND / 24);
+    if (c >= 0 && c < 1) IB.burst(ctx, CATCH, { n: 4, a0: -2.8, da: 0.6, r0: 24, r1: 44, w: 2.8, seed: 60 });
+    if (sl >= 0 && sl < 2) IB.burst(ctx, [RC[0], RC[1] - 10], { n: 6, a0: -3.1, da: 0.55, r0: 40 + sl * 10, r1: 75 + sl * 8, w: 3.2, seed: 70 + sl });
+    if (ld >= 0 && ld < 2) IB.thud(ctx, [XL, FLOOR], { half: 0.2 * HF, k: ld });
+  },
+});
+</script>

@@ -219,3 +219,12 @@ establish, insert 계열의 문법을 원본과 다른 장소와 대상에 적�
 - **손발:** 공중이나 바닥의 포즈는 `IB.posed`로 손발을 어깨·골반에서의 각도와 길이(팔 0.285 h, 다리 0.51 h 안)로 놓는다: 손발이 목표에서 떨어지는 IK 실수가 이렇게 원천적으로 막힌다. 각도는 인물이 바라보는 방향 기준이라 왼쪽을 보는 골키퍼에게도 같은 숫자를 쓴다. 미끄러지는 몸은 척추를 1.1–1.2 rad 눕히고 앞다리를 잔디를 따라(각 0.3) 뻗는다.
 - **키트:** `kit/props/sports.js` (`IB.flight`, `IB.aim`, `IB.soccerBall`, `IB.ballTrail`, `IB.soccerGoal`, `IB.pitchside`, `IB.stands`, `IB.adBoards`, `IB.cornerFlag`, `IB.camera`), `kit/cast/athletes.js` (`IB.KITS.soccer`, `IB.athlete`), `kit/figure.js` (`IB.run`, `IB.posed`, `IB.joints`, `IB.polar`), `kit/marks.js` (`IB.burst`, `IB.thud`)
 - **장면:** `scenes/soccer/`
+
+### basketball: 농구
+
+사이드라인에서 본 골밑의 한 장면: 점프슛, 덩크, 블록, 앨리웁, 자유투, 버저비터. 축구처럼 실제 물리(림 3.05 m, 공 0.24 m, 중력)를 무대 축척(1 m = 140 px)으로 옮겼다.
+
+- **룩:** 무대에서 선수는 1.85–2.03 m(259–284 px)이고, 덩크하는 선수는 리그 팔이 짧아(0.29 h) 키 2.03 m라야 림 위로 손이 간다. 카메라는 1150–1300 px 창(1.5–1.7배)이고, 자유투의 림 돌기처럼 작은 사건은 640 px(3배)로 당긴다. 배경은 `IB.courtside` 하나다: 관중을 옅은 회색 선으로 그려(`IB.stands`의 faint) 골대의 먹선이 그 위에서 읽히게 하고, 코트 옆 벽(charcoal 띠)과 겨자색 마루 스미어를 깐다. 농구공은 팔레트에 주황이 없어 mustard다. 색은 두 팀(yellow, lavender)과 공.
+- **모션:** 드리블은 공이 손에서 바닥까지 갔다 오는 그림 넷이나 여섯(손, 반, 바닥, 반)이고 그 구간은 prev 없이 둔다. 슛은 준비(무릎을 굽혀 공을 낮춤), 중력 포물선의 점프, 꼭대기에서 놓기, 팔을 든 채 손목을 꺾은 팔로스루를 착지 뒤에도 붙잡는다. 공은 `IB.aim`으로 림 가운데를 겨냥하고, 그물을 지나는 여섯 프레임은 느려졌다가(그물이 `IB.hoop`의 swish로 늘어났다 채찍처럼 돌아옴) 마루에서 e 0.75로 튄다. 덩크는 공을 머리 뒤로 당기는 한 장(준비) 뒤 림 위로 내리꽂고, 림이 10–12 px 휘며 매달린 몸이 진자처럼 한 번 흔들린다. 블록은 막는 손이 공이 닿을 그림에 먼저 백보드에 가 있다. 경기 시계는 인터페이스라 1프레임 단위로 줄고, 버저가 울릴 때 공과 시계가 한 화면에 들어오도록 백보드 위에 작은 시계를 단다(`buzzer-beater`).
+- **키트:** `kit/props/sports.js` (`IB.flight`, `IB.aim`, `IB.basketball`, `IB.hoop`, `IB.courtside`, `IB.stands`, `IB.scoreboard`, `IB.segDigits`, `IB.camera`), `kit/cast/athletes.js` (`IB.KITS.basketball`, `IB.athlete`), `kit/figure.js` (`IB.run`, `IB.posed`, `IB.joints`, `IB.polar`), `kit/marks.js` (`IB.burst`, `IB.thud`)
+- **장면:** `scenes/basketball/`

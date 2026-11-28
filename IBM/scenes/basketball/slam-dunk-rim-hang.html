@@ -1,0 +1,101 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>basketball / slam-dunk-rim-hang</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/athletes.js"></script>
+<script src="../../kit/props/sports.js"></script>
+<script>
+/* 덩크: 공을 든 선수가 달려와 한 발로 솟구치고, 공을 머리 뒤로 당겼다가 막으려 뛴 수비수 위에서 림에 내리꽂는다. 림이 휘고, 선수는 림에 매달려 한 번 흔들린 뒤 내려와 포효하고, 부딪힌 수비수는 바닥에 주저앉는다. 원본에 없는 창작 장면이다. 전달하는 생각: 덩크는 내리꽂기 직전 공을 뒤로 당기는 한 장으로 커진다.
+   Motion notes: seen from the sideline, 7 s; the camera (IB.camera, on twos) frames 1250-1300 px of the stage (1.5x), following the run and settling on the hoop by 1.5 s. On the stage 140 px are a metre (gravity 1373 px/s²), the rim 3.05 m up; the dunker is 2.03 m tall (284 px) and the defender 1.9 m. The dunker runs on IB.run (IB.runLen / 8 a drawing) with the ball palmed at his side, gathers it to his chest on the penultimate step (1.08 s), plants and takes off on one foot (1.17 s) and flies a gravity arc 0.9 m up whose top is the slam (1.58 s): two drawings before it the ball is cocked behind his head (the anticipation), on it his arms come over the rim with the ball. The rim bends 12 px for the hang and the net shakes when he lets go; he hangs from its front edge and his body swings under it and back (pendulum, 3 drawings), drops 0.4 m and lands in a crouch (a thud), and roars with his fists down from 2.75 s. The ball goes through the net in one drawing and bounces away out of the frame (e 0.75). The defender crouches (1.08 s), jumps under the rim, peaks 0.55 m up a drawing before the dunk, beneath it, is knocked back and lands sitting (a thud). The crowd stands from the dunk and cheers on twos to 4.75 s; from 4.75 s nothing moves but the loose ball, rolling to a stop. Colours: the two kits' yellow and lavender, the ball's mustard, the floor's mustard smear. */
+const F = IB.FIG, FLOOR = 900, M = 140, G = 9.81 * M, R = 0.12 * M, PI = Math.PI;
+const BOARD = 1760, HS = 0.7, RC = [BOARD - 0.375 * M, FLOOR - 3.05 * M], RR = 0.225 * M, RIM_F = [RC[0] - RR, RC[1]];
+const DK = IB.athlete('basketball', 'home', 1, { h: 2.03 * M, dir: 1, seed: 30 }), HD = DK.h;
+const DF = IB.athlete('basketball', 'away', 3, { h: 1.9 * M, dir: -1, seed: 40 }), HF = DF.h;
+const HYD = IB.stand(0, FLOOR, DK).hip[1], AYD = FLOOR - F.ankle * HD, HYF = IB.stand(0, FLOOR, DF).hip[1], AYF = FLOOR - F.ankle * HF;
+const shOff = (look, lean) => IB.joints({ hip: [0, 0], lean, feet: [[0, 0], [0, 0]], hands: [[0, 0], [0, 0]] }, look).sh;
+const hipForSh = (look, sh, lean) => { const o = shOff(look, lean); return [sh[0] - o[0], sh[1] - o[1]]; };
+
+/* ---------- the dunk ---------- */
+const FS = 38, TAKE = 28;                                       // the slam, the take-off
+const BALL_SLAM = [RC[0] + 2, RC[1] - R * 0.3];
+const SH_SLAM = IB.polar([BALL_SLAM[0] - 0.01 * HD, BALL_SLAM[1] - R * 0.6], PI + 1.15, 0.27 * HD);   // the shoulder an arm's length back and down from the ball
+const HIP_SLAM = hipForSh(DK, SH_SLAM, 0.12);
+const VX = 760, airHip = (f) => { const dt = (f - FS) / 24; return [HIP_SLAM[0] + VX * dt, HIP_SLAM[1] + (G / 2) * dt * dt]; };
+const XT = airHip(TAKE)[0], RL = IB.runLen(DK) / 8, X0 = XT - 0.1 * HD - 12 * RL;
+const dk = (hip, lean, feet, hands, more = {}) => IB.posed(DK, { hip, lean, feet, hands, ...more });
+const holdAt = (p, ball, spread = 0.02) => { const j = IB.joints(p, DK); p.hands = [-1, 1].map((sd) => { const t = [ball[0] + sd * spread * HD, ball[1] + R * 0.4], a = Math.atan2(t[1] - j.sh[1], t[0] - j.sh[0]); return IB.polar(j.sh, a, Math.min(0.28 * HD, Math.hypot(t[0] - j.sh[0], t[1] - j.sh[1]))); }); return p; };
+const DACT = [], BALL = [];
+for (let k = 0; k < 12; k++) { const p = IB.run(X0 + k * RL, FLOOR, DK, (k / 8 + 0.3) % 1), j = IB.joints(p, DK); p.hands[1] = IB.polar(j.sh, 1.15, 0.27 * HD); DACT.push([k * 2, p]); BALL.push([k * 2, [p.hands[1][0] + 0.03 * HD, p.hands[1][1] + R * 0.6]]); }
+{ const x = XT - 0.08 * HD, p = dk([x, HYD + 0.1 * HD], 0.25, [[x - 0.15 * HD, AYD - IB.footLift(0.5, HD), 0.5], [x + 0.12 * HD, AYD, -0.2]], [[0, 0], [0, 0]], { face: { eye: 'dot', mouth: 'flat', brow: 1 } }), j = IB.joints(p, DK), b = IB.polar(j.sh, 0.5, 0.22 * HD); DACT.push([24, holdAt(p, b)]); BALL.push([24, b]); }   // the gather
+{ const p = dk([XT, HYD + 0.05 * HD], 0.1, [[XT + 0.08 * HD, AYD, 0.1], { a: 0.2, l: 0.32, pitch: 0.4 }], [[0, 0], [0, 0]], { face: { eye: 'wide', mouth: 'flat' } }), j = IB.joints(p, DK), b = IB.polar(j.sh, -0.6, 0.24 * HD); DACT.push([TAKE - 2, holdAt(p, b)]); BALL.push([TAKE - 2, b]); }   // plant
+const air = (f, lean, ballAt, more = {}) => { const p = dk(airHip(f), lean, [{ a: PI / 2 + 0.45, l: 0.46, pitch: 0.7 }, { a: 0.6, l: 0.36, pitch: 0.5 }], [[0, 0], [0, 0]], { face: { eye: 'wide', mouth: 'open' }, ...more }), j = IB.joints(p, DK), b = ballAt(j); return [holdAt(p, b), b]; };
+[[TAKE, 0.05, (j) => IB.polar(j.sh, -1.1, 0.26 * HD)], [TAKE + 2, 0.0, (j) => IB.polar(j.sh, -1.4, 0.26 * HD)], [TAKE + 4, -0.1, (j) => IB.polar(j.sh, -1.75, 0.25 * HD)],
+ [TAKE + 6, -0.2, (j) => IB.polar(j.sh, -2.15, 0.23 * HD)], [TAKE + 8, -0.25, (j) => IB.polar(j.sh, -2.35, 0.22 * HD)]].forEach(([f, lean, at]) => { const [p, b] = air(f, lean, at); DACT.push([f, p]); BALL.push([f, b]); });   // up, the ball rising and cocked behind the head
+{ const p = dk(HIP_SLAM, 0.12, [{ a: PI / 2 + 0.25, l: 0.5, pitch: 0.7 }, { a: PI / 2 - 0.15, l: 0.48, pitch: 0.6 }], [[0, 0], [0, 0]], { hand: ['open', 'open'], nod: 0.15, face: { eye: 'closed', mouth: 'open' } }); DACT.push([FS, holdAt(p, BALL_SLAM, 0.03)]); BALL.push([FS, BALL_SLAM]); }
+// the hang: both hands on the rim's front edge, the body swinging under it
+const BEND = 12, GRIP = [RIM_F[0] + 4, RIM_F[1] + BEND * 0.6];
+const hang = (swing, lean) => { const sh = [GRIP[0] + swing - 0.02 * HD, GRIP[1] + 0.27 * HD], hip = hipForSh(DK, sh, lean); const p = dk(hip, lean, [{ a: PI / 2 + 0.25 - swing / 200, l: 0.5, pitch: 0.6 }, { a: PI / 2 + 0.05 - swing / 200, l: 0.5, pitch: 0.5 }], [GRIP, [GRIP[0] + 3, GRIP[1] + 1]], { hand: ['grip', 'grip'], nod: -0.1, face: { eye: 'closed', mouth: 'open' } }); return p; };
+DACT.push([FS + 2, hang(30, -0.2)], [FS + 4, hang(18, -0.15)], [FS + 6, hang(-8, 0.05)], [FS + 8, hang(2, -0.05)]);
+const LET = FS + 10, LX = GRIP[0] - 0.02 * HD, dropHip = (f) => { const h0 = hang(2, -0.05).hip, dt = (f - LET) / 24; return [h0[0] - 6 * (f - LET), h0[1] + (G / 2) * dt * dt]; };
+let LAND = LET + 2; while (dropHip(LAND)[1] < HYD - 0.02 * HD) LAND += 2;
+for (let f = LET; f < LAND; f += 2) DACT.push([f, dk(dropHip(f), 0.05, [{ a: PI / 2 + 0.15, l: 0.5, pitch: 0.5 }, { a: PI / 2 - 0.05, l: 0.5, pitch: 0.4 }], [{ a: -1.3, l: 0.26 }, { a: -1.6, l: 0.26 }], { face: { eye: 'closed', mouth: 'open' } })]);
+const XL = dropHip(LAND)[0];
+DACT.push([LAND, dk([XL, HYD + 0.12 * HD], 0.3, [[XL - 0.12 * HD, AYD, 0], [XL + 0.1 * HD, AYD, 0]], [{ a: 0.6, l: 0.25 }, { a: 0.3, l: 0.25 }], { face: { eye: 'closed', mouth: 'open' } })]);
+const roar = (lean, nod) => dk([XL, HYD + 0.06 * HD], lean, [[XL - 0.14 * HD, AYD, 0], [XL + 0.12 * HD, AYD, 0]], [{ a: PI / 2 + 0.5, l: 0.25 }, { a: PI / 2 - 0.4, l: 0.25 }], { hand: ['grip', 'grip'], nod, face: { eye: 'closed', mouth: 'open', brow: 1 } });
+DACT.push([66, roar(-0.15, -0.35)], [70, roar(-0.1, -0.3)]);
+
+/* ---------- the ball after the slam ---------- */
+const NET_B = [RC[0] + 4, RC[1] + 0.5 * M], OUT = { p: NET_B, v: [-300, 820], g: G, floor: FLOOR - R, e: 0.75, mu: 0.8, roll: 1.5 * M };
+const ballAt = (f) => (f <= FS ? IB.held(BALL, f) : f === FS + 2 ? NET_B : IB.flight(OUT, (f - FS - 2) / 24).p);
+const rimAt = (f) => (f > FS && f < LET ? { bend: [BEND, BEND * 0.8, BEND, BEND * 0.7][(f - FS - 2) / 2] || 0 } : {});
+const netAt = (f) => (f >= FS + 2 && f < LET ? { swish: Math.min(5, (f - FS - 2) / 2) } : f >= LET && f < LET + 8 ? { shake: (f - LET) / 2 } : {});
+
+/* ---------- the defender ---------- */
+const XF = RC[0] - 0.05 * M, df = (hip, lean, feet, hands, more = {}) => IB.posed(DF, { hip, lean, feet, hands, ...more });
+const RISE = (G / 2) * (8 / 24) ** 2, dUp = (f) => { const dt = (f - (FS - 2)) / 24; return [XF, HYF - RISE + (G / 2) * dt * dt]; };   // off the floor at FS - 10, the top at FS - 2 (0.55 m)
+const FACT = [[0, df([XF, HYF + 0.08 * HF], 0.15, [[XF - 0.1 * HF, AYF, 0], [XF + 0.12 * HF, AYF, 0]], [{ a: 0.6, l: 0.25 }, { a: -0.4, l: 0.26 }], { hand: ['open', 'open'], face: { eye: 'dot', mouth: 'flat', brow: 1 } })],
+  [FS - 12, df([XF, HYF + 0.13 * HF], 0.25, [[XF - 0.1 * HF, AYF, 0], [XF + 0.12 * HF, AYF, 0]], [{ a: 0.3, l: 0.25 }, { a: -0.2, l: 0.25 }], { hand: ['open', 'open'], face: { eye: 'wide', mouth: 'flat' } })]];
+for (let f = FS - 8; f <= FS; f += 2) FACT.push([f, df(dUp(f), -0.05, [{ a: PI / 2 + 0.1, l: Math.min(0.5, (AYF - dUp(f)[1]) / HF), pitch: 0.5 }, { a: PI / 2 - 0.05, l: Math.min(0.5, (AYF - dUp(f)[1]) / HF), pitch: 0.5 }], [{ a: -1.4, l: 0.285 }, { a: -1.15, l: 0.285 }], { hand: ['open', 'open'], nod: -0.3, face: { eye: 'wide', mouth: 'open' } })]);
+FACT.push([FS + 2, df([XF + 0.12 * M, dUp(FS + 2)[1] + 10], -0.5, [{ a: 0.6, l: 0.48, pitch: -0.2 }, { a: 0.3, l: 0.5, pitch: -0.3 }], [{ a: -0.6, l: 0.27 }, { a: 0.4, l: 0.27 }], { hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } })]);
+const SIT = FS + 6, XSIT = XF + 0.3 * M;
+FACT.push([FS + 4, df([XF + 0.22 * M, HYF - 0.05 * HF], -0.7, [{ a: 0.5, l: 0.5, pitch: -0.3 }, { a: 0.25, l: 0.5, pitch: -0.3 }], [{ a: PI - 0.4, l: 0.27 }, { a: 0.6, l: 0.27 }], { hand: ['open', 'open'], face: { eye: 'closed', mouth: 'open' } })]);
+FACT.push([SIT, df([XSIT, FLOOR - 0.16 * HF], -0.35, [{ a: 0.22, l: 0.48, pitch: -0.5 }, { a: 0.16, l: 0.5, pitch: -0.5 }], [{ a: PI / 2 + 0.7, l: 0.27 }, { a: PI / 2 + 0.45, l: 0.27 }], { nod: -0.2, face: { eye: 'closed', mouth: 'frown' } })]);
+FACT.push([SIT + 8, df([XSIT, FLOOR - 0.16 * HF], -0.2, [{ a: 0.22, l: 0.48, pitch: -0.5 }, { a: 0.16, l: 0.5, pitch: -0.5 }], [{ a: PI / 2 + 0.7, l: 0.27 }, { a: PI / 2 + 0.45, l: 0.27 }], { nod: 0.25, face: { eye: 'dot', mouth: 'frown' } })]);
+
+const withPrev = (table) => (f) => ({ ...IB.held(table, f), prev: f > 0 ? IB.held(table, f - 2) : undefined });
+const dunker = withPrev(DACT), defender = withPrev(FACT);
+const CAMS = [[0, [Math.round(X0 - 250), 260, 1300]], [36, [820, 260, 1250]]];
+const cheerAt = (f) => (f < FS ? 0 : f < 114 ? 1 + (f / 2) % 2 : 'up');
+const hanging = (f) => f > FS && f < LET;
+
+IB.actors = (t) => { const f = IB.frame(IB.twos(t)); return { dunker: dunker(f), defender: defender(f), ball: ballAt(f), rim: rimAt(f), net: netAt(f), crowd: cheerAt(f), camera: IB.camera(CAMS, f) }; };
+
+MG.scene({
+  title: 'basketball / slam-dunk-rim-hang',
+  duration: 7, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const tt = IB.twos(t), f = IB.frame(tt), d = dunker(f), b = ballAt(f), hp = { s: HS, net: netAt(f), rim: rimAt(f) };
+    IB.crop(ctx, IB.camera(CAMS, f));
+    IB.courtside(ctx, [-200, 2200], FLOOR, { cheer: cheerAt(f) });
+    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'back' });
+    IB.figure(ctx, defender(f), DF);
+    IB.figure(ctx, d, DK, 'far');
+    IB.basketball(ctx, b, { r: R, rot: f * 0.25, lw: 2.6, seed: 91 });
+    if (!hanging(f)) IB.figure(ctx, d, DK, 'near');
+    IB.hoop(ctx, [BOARD, FLOOR], { ...hp, layer: 'front' });
+    if (hanging(f)) IB.figure(ctx, d, DK, 'near');   // the gripping hand over the rim
+    const slam = IB.drawn(tt, FS / 24), ld = IB.drawn(tt, LAND / 24), sit = IB.drawn(tt, SIT / 24);
+    if (slam >= 0 && slam < 2) IB.burst(ctx, [RC[0], RC[1] - 10], { n: 6, a0: -3.1, da: 0.55, r0: 40 + slam * 10, r1: 75 + slam * 8, w: 3.2, seed: 70 + slam });
+    if (ld >= 0 && ld < 2) IB.thud(ctx, [XL, FLOOR], { half: 0.2 * HD, k: ld });
+    if (sit >= 0 && sit < 2) IB.thud(ctx, [XSIT, FLOOR], { half: 0.2 * HF, k: sit });
+  },
+});
+</script>

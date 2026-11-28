@@ -7,23 +7,24 @@
 <script src="../../kit/ink.js"></script>
 <script src="../../kit/time.js"></script>
 <script src="../../kit/props/sports.js"></script>
+<script src="../../kit/camera.js"></script>
 <script src="../sample.js"></script>
 <script>
-/* 소품 견본: 축구 장면의 배경 IB.pitchside(관중석, 빈 광고판, 초록 분필 잔디를 한 번에)와 코너 플래그 IB.cornerFlag(두 그림을 2프레임마다 바꾸면 바람에 펄럭인다), 농구 장면의 배경 IB.courtside(옅은 회색 관중 네 줄, 코트 옆 벽, 겨자색 마루 스미어: 농구 골대의 먹선이 관중 위에서 읽히도록 관중을 옅게 그린다, 견본의 뒤쪽 절반), 그것을 따라가는 카메라 IB.camera. 카메라는 [프레임, [x, y, w]] 키 사이를 smoothstep으로 옮기는 크롭 창이고(IB.crop에 넘긴다), 선수와 같은 2프레임 격자의 프레임으로 부르면 카메라도 2프레임 단위로 움직인다. 여기서는 1100 px 창(1.75배)에서 0.5초 동안 오른쪽으로 팬했다가, 1540 px 창으로 물러난다: 페널티킥 장면이 키커에서 골키퍼로 공을 따라가는 그 이동이다. */
-const KEYS = [[0, [40, 400, 1100]], [16, [40, 400, 1100]], [28, [820, 400, 1100]], [52, [820, 400, 1100]], [68, [380, 222, 1540]], [96, [380, 222, 1540]]];
+/* 소품 견본: 축구 장면의 배경 IB.pitchside(관중석, 빈 광고판, 초록 분필 잔디를 한 번에)와 코너 플래그 IB.cornerFlag(두 그림을 2프레임마다 바꾸면 바람에 펄럭인다), 농구 장면의 배경 IB.courtside(옅은 회색 관중 네 줄, 코트 옆 벽, 겨자색 마루 스미어: 농구 골대의 먹선이 관중 위에서 읽히도록 관중을 옅게 그린다, 견본의 뒤쪽 절반). 둘 다 화면보다 넓게 깔아 카메라(kit/camera.js의 IB.shot)가 움직여도 끝이 보이지 않게 한다. 여기서는 1100 px 창(1.75배)에서 0.5초 동안 오른쪽으로 ease했다가 1540 px 창으로 물러난다. */
+const SHOTS = [[0, [40, 400, 1100]], [16, [820, 400, 1100], 'ease', 12], [52, [380, 222, 1540], 'ease', 16]];
 MG.scene({
   title: 'props / sports-pitch',
   duration: 4, ref: null, fps: 24, loop: true,
   setup: (stage) => MG.canvas(stage),
   render(t, ctx) {
     IB.bg(ctx);
-    const f = IB.frame(IB.twos(t)), cam = IB.camera(KEYS, f);
-    IB.crop(ctx, cam);
+    const f = IB.frame(IB.twos(t)), cam = IB.shot(SHOTS, Math.floor(t * 24) % 96);
     const indoor = t >= 2;   // the first half shows the pitch, the second the arena
-    if (!indoor) { IB.pitchside(ctx, [-20, 2100], 900, { cheer: f >= 40 ? 1 + (f / 2) % 2 : 0 }); IB.cornerFlag(ctx, [1500, 905], { s: 0.7, wave: (f / 2) % 2 }); }
-    else { IB.courtside(ctx, [-20, 2100], 900, { cheer: f >= 80 ? 1 + (f / 2) % 2 : 0 }); IB.hoop(ctx, [1760, 900], { s: 0.7 }); }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    SAMPLE.caption(ctx, `${indoor ? 'IB.courtside' : 'IB.pitchside'}(ctx, [x0, x1], floor, { cheer }) under IB.crop(ctx, IB.camera(keys, f)) — window [${cam.map((v) => Math.round(v)).join(', ')}]`);
+    IB.film(ctx, cam, (ctx) => {
+      if (!indoor) { IB.pitchside(ctx, [-20, 2100], 900, { cheer: f >= 40 ? 1 + (f / 2) % 2 : 0 }); IB.cornerFlag(ctx, [1500, 905], { s: 0.7, wave: (f / 2) % 2 }); }
+      else { IB.courtside(ctx, [-20, 2100], 900, { cheer: f >= 80 ? 1 + (f / 2) % 2 : 0 }); IB.hoop(ctx, [1760, 900], { s: 0.7 }); }
+    });
+    SAMPLE.caption(ctx, `${indoor ? 'IB.courtside' : 'IB.pitchside'}(ctx, [x0, x1], floor, { cheer }) filmed with IB.shot — w ${Math.round(cam.w)}`);
   },
 });
 </script>

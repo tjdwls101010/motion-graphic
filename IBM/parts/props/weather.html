@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>props / weather</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/weather.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 소품 견본: 비와 우산, IB.rain(장마다 새로 뿌리는 빗줄기 필드, 우산 지붕 아래는 마른다), IB.raindrop(머리에 떨어지는 작은 빗방울), IB.rainCloud(회색 비구름), IB.umbrella(접힌 것부터 둥글게 펴진 것과 그 너머 한 장까지, 펼침 0..1.15와 한쪽이 걸린 skew), IB.waterPuddle(바닥에 고인 물과 번지는 물결), IB.wheelSplash(바퀴가 웅덩이에서 쳐 올리는 물벽 다섯 장). 물은 원본 호스 스팟의 파랑 #5cacf5에 흰 결이고, 비는 2프레임마다 시드를 바꿔 새로 그려 흐르는 무늬가 아니라 그림으로 떨어진다. 우산은 키 330px 인물 크기(대 170px, 살 118px)이고 손목에 손잡이를 쥐여 두 번에 나눠 그린 인물의 손 사이에 놓는다. 신발 밑 분필 웅덩이와 바닥에 닿는 물방울은 IB.puddle, IB.drop, IB.splash(marks.js)를 쓴다. */
+const C = IB.C, FLOOR = 900, WHO = { ...IB.PEOPLE.clerk, h: 330, dir: 1, seed: 30 };
+MG.scene({
+  title: 'props / weather',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.rain, IB.raindrop, IB.rainCloud, IB.umbrella, IB.waterPuddle, IB.wheelSplash (props/weather.js)');
+    const f = IB.frame(t), d = f >> 1, c = SAMPLE.grid(10, 5);
+    const fit = (i, dy = 30) => SAMPLE.fit(c[i], [960, FLOOR], dy);
+    // the umbrella's states, each held in a hand at shoulder height
+    const opens = [[0, 0], [0.3, 0.6], [0.6, 0], [1, 0], [1.12, 0]];
+    opens.forEach(([open, skew], i) => SAMPLE.cell(ctx, c[i], SAMPLE.window([960, 860], c[i][2], c[i][3], 30), () => IB.umbrella(ctx, [960, 820], { open, skew }), `umbrella open ${opens[i][0]}${opens[i][1] ? ', skew ' + opens[i][1] : ''}`));
+    // a person under it in the rain: drawn in two passes with the umbrella between, the rain stopped by its roof
+    const wide = SAMPLE.span(c, 5, 6);
+    SAMPLE.cell(ctx, wide, SAMPLE.window([960, FLOOR], wide[2] * 1.3, wide[3] * 1.3, 30), () => {
+      IB.rainCloud(ctx, [600, 1040, 470, 64]);
+      const p = IB.stand(960, FLOOR, WHO);
+      p.hands[1] = [960 + 0.09 * 330, p.hip[1] - 0.2 * 330];
+      p.hand = ['relax', 'grip'];
+      IB.smear(ctx, 960, FLOOR - 9, 300, { h: 14, seed: 9 });
+      const j = IB.figure(ctx, p, WHO, 'far'), u = IB.umbrella(ctx, j.hands[1], { open: 1, a: -Math.PI / 2 + 0.08 });
+      IB.figure(ctx, p, WHO, 'near');
+      IB.rain(ctx, [960 - wide[2] / 2, 530, 960 + wide[2] / 2, FLOOR], { d }, { n: 70, roofs: [u.roof], floor: FLOOR + 6 });
+    }, 'rain { d: frame / 2 }, roofs: [umbrella().roof], floor');
+    // a drop falling on twos, landing on a head
+    SAMPLE.cell(ctx, c[7], fit(7), () => {
+      const p = IB.stand(960, FLOOR, WHO), y = 450 + (d % 6) * 30;
+      IB.figure(ctx, { ...p, nod: d % 6 === 5 ? -0.3 : 0 }, { ...WHO, face: { eye: d % 6 === 5 ? 'wide' : 'dot' } });
+      if (d % 6 < 5) IB.raindrop(ctx, [972, y], { stretch: d % 6 === 4 ? 1.5 : 1 });
+      else IB.burst(ctx, [972, 568], { n: 3, a0: -2.6, da: 0.55, r0: 10, r1: 24, w: 2.4, color: C.blue });
+    }, 'raindrop, IB.burst');
+    // the puddle and its ring
+    SAMPLE.cell(ctx, c[8], fit(8, 90), () => IB.waterPuddle(ctx, [960, FLOOR], { ring: d % 4 < 3 ? d % 4 : null, from: 990 }, { w: 220 }), 'waterPuddle { ring: 0..2 }');
+    // the wheel's splash, its five drawings on twos then a pause
+    SAMPLE.cell(ctx, c[9], fit(9, 30), () => { IB.waterPuddle(ctx, [960, FLOOR], {}, { w: 220 }); IB.wheelSplash(ctx, [990, FLOOR], { k: d % 8 }, { h: 300, w: 200, lean: -70 }); }, 'wheelSplash { k: 0..4 }');
+  },
+});
+</script>

@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>cast / dog</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/cast/dog.js"></script>
+<script src="../sample.js"></script>
+<script>
+/* 출연진 견본: 목줄을 맨 개 IB.dog와 그 걷기 IB.dogWalk, 한 사이클 거리 IB.dogWalkLen, 포즈 섞기 IB.dogMix, 목줄 IB.leash. 개는 고양이(cast/cat.js)처럼 흰 털에 3px 먹선, 검은 귀와 코, 색은 목걸이 하나다. 관절 리그라서 포즈는 몸통의 자리와 기울기, 목과 머리의 각도, 입, 귀, 꼬리, 네 발이고, 발은 바닥 기준이라 몸을 옮겨도 디딘 발이 미끄러지지 않는다. 위 줄은 이름 붙은 포즈 여섯(IB.dog.POSE: stand, point, crouch, pull, sniff, sit), 가운데 줄은 동작 다섯(IB.dog.MOVE: freeze, lunge, wag, sniffing, sitDown)과 제자리 걷기, 아래 줄은 무대를 가로지르는 걷기(한 장에 IB.dogWalkLen / 8), 같은 사이클을 당기는 자세 위에서 돌린 종종걸음, 그리고 사람 손에서 목걸이까지 처졌다 팽팽해지는 목줄(taut 0, 0.5, 1, 개의 자세는 IB.dogMix로 stand와 pull 사이를 같은 비율로 섞었다)이다. 크기는 키 330px 인물 옆의 중간 개(어깨 높이 96px, s 1)이고 장면은 s 0.85로 쓴다. */
+const C = IB.C, FLOOR = 900, D = IB.dog, P = D.POSE, WHO = { ...IB.PEOPLE.commuter, h: 330, dir: 1, seed: 20 };
+MG.scene({
+  title: 'cast / dog',
+  duration: 4, ref: null, fps: 24, loop: true,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    SAMPLE.title(ctx, 'IB.dog, IB.dogWalk, IB.dogWalkLen, IB.dogMix, IB.leash (cast/dog.js)');
+    const f = IB.frame(t), k = Math.round(IB.twos(t) * 12), c = SAMPLE.grid(18, 6);
+    const fit = (i) => SAMPLE.fit(c[i], [985, FLOOR], 30);
+    const smear = () => IB.smear(ctx, 960, FLOOR - 8, 200, { h: 12, seed: 9 });
+    Object.entries(P).forEach(([name, p], i) => SAMPLE.cell(ctx, c[i], fit(i), () => { smear(); D(ctx, [960, FLOOR], p); }, 'POSE.' + name));
+    Object.entries(D.MOVE).forEach(([name, move], i) => SAMPLE.cell(ctx, c[6 + i], fit(6 + i), () => { smear(); D(ctx, [960, FLOOR], SAMPLE.cycle(f, move, 18)); }, 'MOVE.' + name));
+    // the walk's drawings in one cell: 8 drawings a cycle, the dog walking on the spot, its tail wagging on twos
+    SAMPLE.cell(ctx, c[11], fit(11), () => { smear(); D(ctx, [960, FLOOR], { ...IB.dogWalk((k % 8) / 8), wag: IB.alternate(f, 2) }); }, 'dogWalk(i / 8), wag on twos');
+    // across the stage at dogWalkLen / 8 a drawing
+    const wide = SAMPLE.span(c, 12, 13), L = IB.dogWalkLen(), x = 960 - wide[2] / 2 + 110 + ((k * L) / 8) % (wide[2] - 280);
+    SAMPLE.cell(ctx, wide, SAMPLE.window([960, FLOOR], wide[2], wide[3], 30), () => {
+      IB.smear(ctx, 960, FLOOR - 8, wide[2] - 60, { h: 12, seed: 10 });
+      D(ctx, [x, FLOOR], IB.dogWalk((k % 8) / 8));
+    }, `x += IB.dogWalkLen() / 8 = ${(L / 8).toFixed(1)} px`);
+    // the same cycle run on the pull pose: a scrabble (trot, stride 14, 4 drawings a cycle)
+    const O = { stride: 14, gait: 'trot', base: P.pull, lift: 14 }, sx = 900 + ((k * IB.dogWalkLen(O)) / 4) % 60;
+    SAMPLE.cell(ctx, c[14], SAMPLE.fit(c[14], [960, FLOOR], 30), () => { smear(); D(ctx, [sx, FLOOR], IB.dogWalk((k % 4) / 4, O), { seed: 640 }); }, 'base: POSE.pull, trot');
+    // the leash from a hand to the collar, slack to taut, the dog moving away from a standing person
+    const leash = SAMPLE.span(c, 15, 17), taut = [0, 0.5, 1][Math.floor(f / 24) % 3];
+    SAMPLE.cell(ctx, leash, SAMPLE.window([1000, FLOOR], leash[2], leash[3], 30), () => {
+      IB.smear(ctx, 1000, FLOOR - 8, 460, { h: 12, seed: 11 });
+      const pose = IB.stand(820, FLOOR, WHO);
+      pose.hands[1] = [820 + 70, pose.hip[1] - 10];
+      pose.hand = ['relax', 'grip'];
+      const j = IB.figure(ctx, pose, WHO), dog = D(ctx, [1040 + taut * 90, FLOOR], IB.dogMix(P.stand, P.pull, taut), { s: 0.85 });
+      IB.leash(ctx, j.hands[1], dog.collar, { taut });
+    }, `IB.leash(hand, collar, { taut: ${taut} }), dog: IB.dogMix(stand, pull, taut)`);
+  },
+});
+</script>

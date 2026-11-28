@@ -1,0 +1,97 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>street / crosswalk-green-cross</title>
+<link rel="stylesheet" href="../../../core/base.css">
+<script src="../../../core/motion.js"></script>
+<script src="../../../core/stage.js"></script>
+<script src="../../kit/ink.js"></script>
+<script src="../../kit/time.js"></script>
+<script src="../../kit/marks.js"></script>
+<script src="../../kit/figure.js"></script>
+<script src="../../kit/cast/people.js"></script>
+<script src="../../kit/props/handheld.js"></script>
+<script src="../../kit/props/vehicles.js"></script>
+<script src="../../kit/props/traffic.js"></script>
+<script>
+/* 횡단보도 앞에서 셋이 빨간불을 기다리다 초록불로 바뀌자 한 박자 멈춘 뒤 한 장씩 늦게 차례로 건너가고, 맨 뒤에서 휴대폰만 보던 사람은 혼자 남은 걸 늦게 알아채고 뛰어서 둘을 앞지른다. 원본에 없는 창작 장면으로, 보행자 신호등(IB.walkSignal)과 옆에서 본 횡단보도(IB.crosswalk), 정류장(IB.busStop), 걷기와 뛰기(IB.walk, IB.run), 휴대폰(IB.mobilePhone)을 썼다. 전달하는 생각: 신호는 모두에게 같은 순간에 바뀌지만 사람은 저마다 한 박자씩 다르게 출발한다.
+   Motion notes: one locked shot, 7.5 s, three figures h 330 (line 3 px) on three floor rows 14 px apart (900, 914, 928: the nearer one drawn later), all acting on twos as [frame, drawing] functions floored to the drawing, each passing the drawing before as pose.prev except through the tap. Each waiter stands in a walk's stride (IB.walk at phase 1/3, feet put down flat: one 23 px ahead of the hip, one 23 px behind), so the walk starts from it with the planted foot where it was. 0-1.83 s red: the far walker glances up at the signal at 0.83 s (nod -0.08, then -0.14, held); the middle one taps the front foot, toe up 0.5 rad on the heel, one drawing up and one down, each held 4 frames, from 0.33 s; the near one reads a phone held at the chest, head down (nod 0.34). The tap stops 0.42 s before the change and nothing moves from 1.83 s. 2.25 s the signal goes green (a machine: on ones), ten cells lit; everything stays still one more beat (0.42 s). 2.67 s the far walker's anticipation (weight back: hip 6 px back, lean -0.05), one drawing, and the walk from 2.75 s at IB.walkLen / 12 = 23.1 px a drawing (277 px/s); the middle one a drawing later each time (2.75, 2.83 s). The phone reader is still reading; 3.5 s the head snaps up past where it stops (nod -0.14, eyes wide, the phone dropping half way) with three burst lines over the cap for two drawings, settles at 3.58 s and holds 0.33 s; 3.92 s anticipation (hip 14 px back, lean -0.08, fists back), and from 4.0 s a run at IB.runLen / 8 = 60.5 px a drawing (726 px/s, 2.6 times the walk) from run phase 0.15, whose planted foot is the near foot it stood on. It passes the tapper at about 5.2 s and draws level with the leader at the right edge; gone at 5.83 s, the leader at 6.08 s, the tapper at 6.83 s. The cells go out one every 0.5 s from 2.75 s, the last at 6.75 s with one left; from 6.83 s nothing moves. The crossing's stripes are 84 px with 66 px gaps, from 38 px above the floor line to 40 below, 3.5% perspective about x 1500. Colours: the signal's red or green (one lit at a time) and the phone reader's navy; the others in charcoal and white. */
+const C = IB.C, F = IB.FIG, H = 330, FLOOR = 914;
+const GREEN = 54;   // the frame the signal turns green
+// three waiting, far to near; each stands in a walk's stride (phase 1/3: one foot under the body, put down where it is) so the walk can start from it without the planted foot moving
+const PH = 1 / 3;
+const LEAD = { ...IB.PASSERSBY[7], h: H, dir: 1, seed: 40, x: 1070, floor: FLOOR - 14, go: 64 };
+const TAPPER = { ...IB.PASSERSBY[1], h: H, dir: 1, seed: 70, x: 890, floor: FLOOR, go: 66 };
+const HERO = { ...IB.PEOPLE.commuter, h: H, dir: 1, seed: 100, x: 700, floor: FLOOR + 14 };
+const PACE = IB.walkLen(LEAD) / 12, RUN = IB.runLen(HERO) / 8, OFF = 1990;   // past OFF the figure is gone off the right edge
+
+const standing = (w) => { const p = IB.walk(w.x, w.floor, w, PH); return { ...IB.stand(w.x, w.floor, w), feet: p.feet.map((ft) => [ft[0], w.floor - F.ankle * H, 0]) }; };
+const shoulder = (p) => [p.hip[0], p.hip[1] - F.torso * H];
+
+/* a walker who waits and then crosses: anticipation one drawing (weight back), then the walk from the stride it stood in */
+function crosser(w, f, extra) {
+  const S = standing(w);
+  if (f < w.go) return extra ? extra(S, f) : S;
+  if (f < w.go + 2) return { ...S, hip: [S.hip[0] - 6, S.hip[1] + 2], lean: -0.05 };
+  const k = (f - w.go - 2) >> 1, x = w.x + k * PACE;
+  return x > OFF ? null : { ...IB.walk(x, w.floor, w, (PH + k / 12) % 1), face: { mouth: 'flat' } };
+}
+const lead = (f) => crosser(LEAD, f, (S, g) => (g < 20 ? S : g < 22 ? { ...S, nod: -0.08 } : { ...S, nod: -0.14 }));   // glances up at the signal at 0.83 s and keeps watching it
+// the tapper's front foot taps on the beat: toe up, down, every 4 frames from 0.33 s until a beat before the change
+const TAP = [8, 44];
+const tapper = (f) => crosser(TAPPER, f, (S, g) => {
+  if (g < TAP[0] || g >= TAP[1] || IB.alternate(g - TAP[0], 4) === 0) return S;
+  const ft = S.feet[0].slice(); ft[2] = -0.5; ft[1] -= IB.footLift(-0.5, H);
+  return { ...S, feet: [ft, S.feet[1]] };
+});
+const tapping = (f) => f >= TAP[0] && f < TAP[1];
+
+/* the hero: reads the phone, notices late (84), a beat to take it in, anticipation (92), then runs from the stride it stood in */
+const NOTICE = 84, DASH = 96, RPH = 0.15;   // run phase 0.15: the near foot flat under the body, as it stands
+function hero(f) {
+  const S = standing(HERO), sh = shoulder(S), rest = S.hands[1];
+  const reading = (u, more) => ({ ...S, hands: [S.hands[0], [MG.lerp(rest[0], sh[0] + 0.15 * H, u), MG.lerp(rest[1], sh[1] + 0.09 * H, u)]], ...more });
+  if (f < NOTICE) return reading(1, { nod: 0.34, face: { mouth: 'flat' } });
+  if (f < NOTICE + 2) return reading(0.55, { nod: -0.14, lean: -0.04, face: { eye: 'wide', mouth: 'open' } });   // head snaps up, past where it stops
+  if (f < DASH - 2) return reading(0.5, { nod: -0.06, face: { eye: 'wide', mouth: 'open' } });
+  if (f < DASH) return { ...reading(0.3, { lean: -0.08, face: { eye: 'wide', mouth: 'flat' } }), hip: [S.hip[0] - 14, S.hip[1] + 4], hands: [[S.hip[0] - 0.1 * H, S.hip[1] + 0.02 * H], [S.hip[0] - 0.02 * H, S.hip[1] - 0.06 * H]], hand: ['grip', 'grip'] };   // anticipation: weight back, fists back
+  const k = (f - DASH) >> 1, x = S.feet[1][0] - IB.run(0, 0, HERO, RPH).feet[1][0] + k * RUN;   // the first drawing's planted foot is the near foot it stood on
+  return x > OFF ? null : { ...IB.run(x, HERO.floor, HERO, (RPH + k / 8) % 1), face: { eye: 'wide', mouth: 'open' } };
+}
+
+const poseOf = { lead, tapper, hero };
+const poseAt = (who, t) => {
+  const f = IB.frame(IB.twos(t)), p = poseOf[who](f);
+  if (!p) return null;
+  const q = f > 0 && !(who === 'tapper' && tapping(f)) ? poseOf[who](f - 2) : null;
+  return q ? { ...p, prev: q } : p;
+};
+// the signal: red, then green with ten cells that go out one every 0.5 s from 2.75 s, the last at 6.75 s with one cell left
+const signal = (f) => ({ go: f >= GREEN, left: f < GREEN ? 0 : 10 - Math.min(9, Math.max(0, Math.floor((f - (GREEN + 12)) / 12) + 1)) });
+IB.actors = (t) => ({ lead: poseAt('lead', t), tapper: poseAt('tapper', t), hero: poseAt('hero', t), signal: signal(IB.frame(t)) });
+
+MG.scene({
+  title: 'street / crosswalk-green-cross',
+  duration: 7.5, ref: null, fps: 24,
+  setup: (stage) => MG.canvas(stage),
+  render(t, ctx) {
+    IB.bg(ctx);
+    const f = IB.frame(t), ft = IB.frame(IB.twos(t));
+    IB.smear(ctx, 300, FLOOR - 49, 460, { h: 12, seed: 7 });
+    IB.busStop(ctx, [300, FLOOR - 40], { sign: 0, seed: 960 });
+    IB.walkSignal(ctx, [1640, FLOOR - 52], { ...signal(f), n: 10 });
+    IB.smear(ctx, 600, FLOOR - 9, 1080, { h: 16, seed: 8 });
+    IB.crosswalk(ctx, [1150, 1990, FLOOR], { vx: 1500, stripe: 84, gap: 66, far: 38, near: 40 });
+    IB.smear(ctx, 1500, FLOOR - 9, 900, { h: 14, seed: 9, alpha: 0.45 });
+    for (const [who, w] of [['lead', LEAD], ['tapper', TAPPER], ['hero', HERO]]) {
+      const p = poseAt(who, t);
+      if (!p) continue;
+      const j = IB.figure(ctx, p, { ...w, face: p.face || { mouth: 'flat' } });
+      if (who === 'hero') {
+        const [hx, hy] = j.hands[1], running = ft >= DASH - 2;
+        IB.mobilePhone(ctx, [hx + (running ? 2 : 6), hy - (running ? 22 : 30)], { lw: 2.2, seed: 823 });
+        if (ft >= NOTICE && ft < NOTICE + 4) IB.burst(ctx, [j.headAt[0] + 8, j.headAt[1] - 6], { r0: 34 + (ft - NOTICE) * 4, r1: 52 + (ft - NOTICE) * 8, n: 3, a0: -2.2, da: 0.55, seed: 300 + ft, w: 2.4 });
+      }
+    }
+  },
+});
+</script>
